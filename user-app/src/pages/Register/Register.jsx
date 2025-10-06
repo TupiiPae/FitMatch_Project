@@ -62,7 +62,7 @@ export default function Register() {
     else if (password.length < 6)    e.password = "Mật khẩu phải có ít nhất 6 ký tự";
     if (confirm !== password)        e.confirm  = "Mật khẩu xác nhận không khớp";
     if (!confirmInfo)     e.confirmInfo = "Bạn cần xác nhận thông tin trước khi đăng ký";
-    setErr(e);
+    setErr(e);    
     return Object.keys(e).length === 0;
   };
 
@@ -71,9 +71,27 @@ export default function Register() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const { data } = await api.post("/auth/register", { username, email, password });
-      if (data.success) nav("/dang-nhap");
-      else setErr({ global: data.message || "Đăng ký thất bại." });
+      // Gửi confirmPassword vì server kiểm tra trường này
+      const { data } = await api.post("/auth/register", {
+        username,
+        email,
+        password,
+        confirmPassword: confirm
+      });
+
+      // Nếu server trả token, lưu token/role vào localStorage
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+        if (data.user?.role) localStorage.setItem("role", data.user.role);
+      }
+
+      // Một số backend trả { success: true } — chuyển tới trang đăng nhập
+      if (data?.success || data?.token) {
+        // route hiện tại trong project dùng "/Login" ở component, giữ đồng nhất
+        nav("/Login");
+      } else {
+        setErr({ global: data?.message || "Đăng ký thất bại." });
+      }
     } catch (error) {
       setErr({ global: error?.response?.data?.message || "Đăng ký thất bại." });
     } finally {
