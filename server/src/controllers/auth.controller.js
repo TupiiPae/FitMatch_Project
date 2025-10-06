@@ -52,34 +52,45 @@ export const register = async (req, res) => {
  */
 export const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, username, password, identifier } = req.body;
 
-    if (!username || !password)
-      return res.status(400).json({ message: "Vui lòng nhập tên tài khoản và mật khẩu." });
+    // Hỗ trợ nhiều tên trường từ client: email hoặc username hoặc identifier
+    const id = identifier || email || username;
+    if (!id || !password) {
+      return res.status(400).json({ message: "Thiếu thông tin đăng nhập (identifier & password)" });
+    }
 
-    const user = await User.findOne({ username });
-    if (!user)
-      return res.status(400).json({ message: "Tài khoản không tồn tại." });
+    // Nếu id chứa '@' thì coi là email, ngược lại là username
+    const query = id.includes("@") ? { email: id } : { username: id };
+
+    // Lấy user và đảm bảo lấy cả password (nếu model để select: false)
+    const user = await User.findOne(query).select("+password");
+    if (!user) {
+      return res.status(400).json({ message: "Tài khoản không tồn tại" });
+    }
+
+    if (!user.password) {
+      console.error("Login error: user has no password field", user._id);
+      return res.status(500).json({ message: "Lỗi dữ liệu người dùng" });
+    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match)
-      return res.status(400).json({ message: "Mật khẩu không đúng." });
+    if (!match) {
+      return res.status(401).json({ message: "Sai mật khẩu" });
+    }
 
-    const token = generateToken(user);
+    const userObj = user.toObject();
+    delete userObj.password;
 
-    res.json({
-      message: "Đăng nhập thành công!",
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        onboarded: user.onboarded,
-      },
+    const token = generateToken({
+      id: user._id,
+      role: user.role,
+      username: user.username,
     });
-  } catch (error) {
-    console.error("Lỗi đăng nhập:", error);
-    res.status(500).json({ message: "Lỗi máy chủ." });
+
+    return res.json({ token, user: userObj });
+  } catch (err) {
+    console.error("Lỗi đăng nhập:", err);
+    return res.status(500).json({ message: "Lỗi server" });
   }
 };

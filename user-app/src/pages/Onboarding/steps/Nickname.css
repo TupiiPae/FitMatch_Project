@@ -1,0 +1,113 @@
+.nk-wrap {
+  min-height: 100vh;
+  background: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+}
+
+/* top bar with logo */
+.nk-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 150px;
+  background: #ffffffaa;
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid #eceff4;
+}
+.nk-logo { height: 150px; }
+
+/* center area */
+.nk-main {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px 40px;
+}
+
+.nk-card {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 24px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  text-align: center;
+  border: 1px solid #eef1f5;
+}
+
+.nk-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 6px;
+}
+
+.nk-desc {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.nk-field { margin-top: 8px; }
+.nk-input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.nk-input::placeholder { color: #9ca3af; }
+.nk-input:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25,118,210,0.12);
+}
+
+.nk-error {
+  margin-top: 8px;
+  color: #d32f2f;
+  font-size: 12px;
+}
+
+/* actions (under card) */
+.nk-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.btn {
+  min-width: 120px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform .05s, box-shadow .2s, background .2s, border-color .2s;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-outline {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #111827;
+}
+.btn-outline:hover { border-color: #9ca3af; box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+
+.btn-primary {
+  background: #1a73e8;
+  border: none;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(26,115,232,.25);
+}
+.btn-primary:hover { background: #1866d6; box-shadow: 0 8px 18px rgba(26,115,232,.32); }
+
+@media (max-width: 560px) {
+  .nk-card { padding: 22px 16px; }
+  .nk-actions { width: 100%; justify-content: center; }
+  .btn { flex: 1; max-width: 220px; }
+}

@@ -1,0 +1,6 @@
+.ns-wrap { margin: 18px 0; }
+.ns-label { display:block; color:#374151; margin-bottom:6px; }
+.ns-value { font-weight:600; margin-bottom:6px; }
+.ns-range { width:100%; accent-color:#1976d2; }
+.ns-marks { position:relative; height:12px; }
+.ns-marks span { position:absolute; transform: translateX(-50%); color:#9ca3af; font-size:12px; }

@@ -24,7 +24,7 @@ export default function Login() {
   // ====== NÚT QUAY LẠI ======
   const handleBack = () => {
     if (window.history.length > 1) nav(-1);
-    else nav("/"); // nếu không có lịch sử thì về trang chủ
+    else nav("/");
   };
 
   // ====== KIỂM TRA DỮ LIỆU ======
@@ -82,14 +82,18 @@ export default function Login() {
         password,
         remember: ghiNho,
       });
+
+      // Lưu token + user cho các guard/route dùng
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.user?.role || "user");
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Chuyển hướng
-      if (data.user?.onboarded) nav("/ung-dung");
-      else nav("/thong-tin-ban-dau");
+      // Điều hướng đúng theo router hiện tại
+      if (data.user?.onboarded) nav("/app");
+      else nav("/onboarding");
     } catch (err) {
-      setPasswordErr("Đăng nhập thất bại. Vui lòng thử lại.");
+      const msg = err?.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+      setPasswordErr(msg);
     } finally {
       setLoading(false);
     }
@@ -122,13 +126,10 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
-        {/*Nút quay lại */}
+        {/* Nút quay lại */}
         <button className="back-btn" onClick={handleBack} aria-label="Quay lại">
           <svg viewBox="0 0 24 24" className="back-icon">
-            <path
-              d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
-              fill="currentColor"
-            />
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor" />
           </svg>
         </button>
 
@@ -162,9 +163,7 @@ export default function Login() {
               <div className="input-line"></div>
               <div className="ripple-container" ref={usernameRippleRef}></div>
             </div>
-            <span className={`error-message ${usernameErr ? "show" : ""}`}>
-              {usernameErr}
-            </span>
+            <span className={`error-message ${usernameErr ? "show" : ""}`}>{usernameErr}</span>
           </div>
 
           <div className={`form-group ${passwordErr ? "error" : ""}`}>
@@ -191,9 +190,7 @@ export default function Login() {
               </button>
               <div className="ripple-container" ref={passRippleRef}></div>
             </div>
-            <span className={`error-message ${passwordErr ? "show" : ""}`}>
-              {passwordErr}
-            </span>
+            <span className={`error-message ${passwordErr ? "show" : ""}`}>{passwordErr}</span>
           </div>
 
           <div className="form-options">
@@ -214,11 +211,7 @@ export default function Login() {
               </span>
             </label>
 
-            <button
-              type="button"
-              className="forgot-password"
-              onClick={() => nav("/quen-mat-khau")}
-            >
+            <button type="button" className="forgot-password" onClick={() => nav("/quen-mat-khau")}>
               Quên mật khẩu?
             </button>
           </div>
@@ -234,15 +227,7 @@ export default function Login() {
             <span className="btn-text">Đăng nhập</span>
             <div className="btn-loader">
               <svg className="loader-circle" viewBox="0 0 50 50">
-                <circle
-                  className="loader-path"
-                  cx="25"
-                  cy="25"
-                  r="12"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                />
+                <circle className="loader-path" cx="25" cy="25" r="12" fill="none" stroke="currentColor" strokeWidth="3" />
               </svg>
             </div>
           </button>
@@ -276,7 +261,7 @@ export default function Login() {
         <div className="signup-link">
           <p>
             Chưa có tài khoản?{" "}
-            <button className="create-account" onClick={() => nav("/Register")}>
+            <button className="create-account" onClick={() => nav("/register")}>
               Tạo tài khoản
             </button>
           </p>
