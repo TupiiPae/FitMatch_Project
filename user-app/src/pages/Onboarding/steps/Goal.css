@@ -1,6 +1,6 @@
 .gl-wrap { min-height: 100vh; background: #f3f4f6; display:flex; flex-direction:column; }
-.gl-header { height:64px; display:flex; align-items:center; padding:0 24px; background:#ffffffaa; border-bottom:1px solid #eceff4; backdrop-filter: blur(4px); }
-.gl-logo { height:28px; }
+.gl-header { height:64px; display:flex; align-items:center; padding:0 150px; background:#ffffffaa; border-bottom:1px solid #eceff4; backdrop-filter: blur(4px); }
+.gl-logo { height:150px; }
 
 .gl-main { flex:1; display:grid; place-items:center; padding:24px 16px 40px; }
 .gl-card {

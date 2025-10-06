@@ -43,7 +43,7 @@ export default function WeeklyChange() {
   return (
     <div className="wk-wrap">
       <header className="wk-header">
-        <img src="/assets/logo/fitmatch-logo.png" alt="FitMatch" className="wk-logo" />
+        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="wk-logo" />
       </header>
 
       <main className="wk-main">

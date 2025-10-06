@@ -12,7 +12,7 @@ export default function Welcome() {
         {/* Logo: thay src bằng ảnh thật */}
         <img
           className="wl-logo"
-          src="/assets/logo/fitmatch-logo.png"
+          src="/images/logo-fitmatch.png"
           alt="FitMatch"
           onError={(e) => (e.currentTarget.style.display = "none")}
         />

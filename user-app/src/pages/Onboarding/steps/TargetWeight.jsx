@@ -45,7 +45,7 @@ export default function TargetWeight() {
   return (
     <div className="tw-wrap">
       <header className="tw-header">
-        <img src="/assets/logo/fitmatch-logo.png" alt="FitMatch" className="tw-logo" />
+        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="tw-logo" />
       </header>
 
       <main className="tw-main">

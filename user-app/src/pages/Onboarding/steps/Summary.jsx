@@ -49,7 +49,7 @@ export default function Summary() {
   return (
     <div className="sm-wrap">
       <header className="sm-header">
-        <img src="/assets/logo/fitmatch-logo.png" alt="FitMatch" className="sm-logo" />
+        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="sm-logo" />
       </header>
 
       <main className="sm-main">

@@ -11,8 +11,8 @@ export default function Nickname() {
   const [loading, setLoading] = useState(false);
 
   const handleNext = async () => {
-    // ✅ 1. Kiểm tra dữ liệu
-    if (!nickname.trim()) {
+    const value = nickname.trim();
+    if (!value) {
       setErr("Vui lòng nhập tên của bạn");
       return;
     }
@@ -20,7 +20,6 @@ export default function Nickname() {
     setLoading(true);
 
     try {
-      // ✅ 2. Gửi dữ liệu lên server
       const token = localStorage.getItem("token");
       if (!token) {
         setErr("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
@@ -28,20 +27,18 @@ export default function Nickname() {
         return;
       }
 
+      // ✅ Gửi đúng key theo BE: "profile.nickname"
       await api.patch(
         "/user/onboarding",
-        { nickname: nickname.trim() },
+        { "profile.nickname": value },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // ✅ 3. Lưu lại để client có thể tiếp tục flow (nếu cần)
-      localStorage.setItem("nickname", nickname.trim());
-
-      // ✅ 4. Chuyển sang bước kế tiếp
-      nav("/onboarding/muc-tieu");
+      localStorage.setItem("nickname", value);
+      nav("/onboarding/muc-tieu"); // 👉 sang bước chọn mục tiêu
     } catch (error) {
       console.error(error);
-      setErr("Đã xảy ra lỗi, vui lòng thử lại.");
+      setErr(error?.response?.data?.message || "Đã xảy ra lỗi, vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -50,20 +47,13 @@ export default function Nickname() {
   return (
     <div className="nk-wrap">
       <header className="nk-header">
-        <img
-          src="/assets/logo/fitmatch-logo.png"
-          alt="FitMatch"
-          className="nk-logo"
-        />
+        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
       </header>
 
       <main className="nk-main">
         <div className="nk-card">
           <h3 className="nk-title">Cho chúng tôi biết tên của bạn nhé !</h3>
-          <p className="nk-desc">
-            Chúng tôi rất vui khi được chào đón bạn.
-            <br /> Hãy cùng tìm hiểu một chút về bạn nhé.
-          </p>
+          <p className="nk-desc">Chúng tôi rất vui khi được chào đón bạn.<br/>Hãy cùng tìm hiểu một chút về bạn nhé.</p>
 
           <div className="nk-field">
             <input
@@ -71,6 +61,7 @@ export default function Nickname() {
               placeholder="Nhập tên"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleNext()}
               autoFocus
               disabled={loading}
             />
@@ -79,18 +70,13 @@ export default function Nickname() {
         </div>
 
         <div className="nk-actions">
-          <button
-            className="btn btn-outline"
-            onClick={() => nav("/onboarding/chao-mung")}
-            disabled={loading}
-          >
+          <button className="btn btn-outline" onClick={() => nav("/onboarding/chao-mung")} disabled={loading}>
             Hủy
           </button>
-
           <button
             className={`btn btn-primary ${loading ? "loading" : ""}`}
             onClick={handleNext}
-            disabled={loading}
+            disabled={loading || !nickname.trim()}
           >
             {loading ? "Đang lưu..." : "Tiếp theo"}
           </button>

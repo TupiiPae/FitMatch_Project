@@ -39,7 +39,7 @@ export default function Intensity() {
   return (
     <div className="in-wrap">
       <header className="in-header">
-        <img src="/assets/logo/fitmatch-logo.png" alt="FitMatch" className="in-logo" />
+        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="in-logo" />
       </header>
 
       <main className="in-main">

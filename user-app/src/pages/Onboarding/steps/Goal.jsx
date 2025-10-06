@@ -50,7 +50,7 @@ export default function Goal() {
   return (
     <div className="gl-wrap">
       <header className="gl-header">
-        <img src="/assets/logo/fitmatch-logo.png" alt="FitMatch" className="gl-logo" />
+        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="gl-logo" />
       </header>
 
       <main className="gl-main">

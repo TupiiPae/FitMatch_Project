@@ -39,7 +39,7 @@ export default function BasicMetrics() {
   return (
     <div className="bm-wrap">
       <header className="bm-header">
-        <img src="/assets/logo/fitmatch-logo.png" alt="FitMatch" className="bm-logo" />
+        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="bm-logo" />
       </header>
 
       <main className="bm-main">

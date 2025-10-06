@@ -34,7 +34,7 @@ export default function Motivation() {
   return (
     <div className="mv-wrap">
       <header className="mv-header">
-        <img src="/assets/logo/fitmatch-logo.png" alt="FitMatch" className="mv-logo" />
+        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="mv-logo" />
       </header>
 
       <main className="mv-main">
