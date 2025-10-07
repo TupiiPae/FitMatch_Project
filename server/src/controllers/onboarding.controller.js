@@ -1,52 +1,64 @@
-import { Onboarding } from "../models/onboarding.model.js";
+// server/src/controllers/onboarding.controller.js
+import { Onboarding } from "../models/OnboardingProfile.js";
 import { User } from "../models/User.js";
 import { OnboardingInputSchema } from "../validators/onboarding.schema.js";
-import { tinhBmi, tinhBmr } from "../utils/healthUtils.js";
+import { tinhBmi, tinhBmr } from "../utils/health.js";
 
 export async function upsertOnboarding(req, res) {
   try {
-    // auth.js của bạn đặt userId ở req.userId
-    if (!req.userId) return res.status(401).json({ success: false, message: "Chưa xác thực người dùng" });
+    if (!req.userId) {
+      return res.status(401).json({ success: false, message: "Chưa xác thực người dùng" });
+    }
 
-    const body = OnboardingInputSchema.parse(req.body);
+    const duLieu = OnboardingInputSchema.parse(req.body);
 
-    const bmi = tinhBmi(body.canNangHienTai, body.chieuCao);
+    const bmi = tinhBmi(duLieu.canNangHienTai, duLieu.chieuCao);
     const bmr = tinhBmr({
-      gioiTinh: body.gioiTinh,
-      canNangKg: body.canNangHienTai,
-      chieuCaoCm: body.chieuCao,
-      ngaySinh: body.ngaySinh,
+      gioiTinh: duLieu.gioiTinh,
+      canNangKg: duLieu.canNangHienTai,
+      chieuCaoCm: duLieu.chieuCao,
+      ngaySinh: duLieu.ngaySinh,
     });
 
-    const payload = {
-      ...body,
+    const $set = {
+      tenGoi: duLieu.tenGoi,
+      mucTieu: duLieu.mucTieu,
+      chieuCao: duLieu.chieuCao,
+      canNangHienTai: duLieu.canNangHienTai,
+      canNangMongMuon: duLieu.canNangMongMuon,
+      mucTieuTuan: duLieu.mucTieuTuan,
+      cuongDoLuyenTap: duLieu.cuongDoLuyenTap,
+      gioiTinh: duLieu.gioiTinh,
+      ngaySinh: duLieu.ngaySinh,
       bmi,
       bmr,
       hoanTatOnboarding: true,
+    };
+
+    const $setOnInsert = {
       user: req.userId,
+      phienBan: 1,
     };
 
     const doc = await Onboarding.findOneAndUpdate(
       { user: req.userId },
-      { $set: payload, $setOnInsert: { user: req.userId } },
+      { $set, $setOnInsert },
       { new: true, upsert: true }
     );
 
-    // Đồng bộ snapshot tối thiểu sang User.profile + onboarded
-    const userUpdate = {
-      onboarded: true,
-      "profile.nickname": body.tenGoi,
-      "profile.goal": body.mucTieu,
-      "profile.heightCm": body.chieuCao,
-      "profile.weightKg": body.canNangHienTai,
-      "profile.targetWeightKg": body.canNangMongMuon,
-      "profile.weeklyChangeKg": body.mucTieuTuan,
-      "profile.trainingIntensity": body.cuongDoLuyenTap,
-      // giữ User.profile không thêm sex/dob nếu bạn không muốn — có thể bổ sung nếu cần:
-      // "profile.sex": body.gioiTinh,
-      // "profile.dob": body.ngaySinh,
-    };
-    await User.findByIdAndUpdate(req.userId, { $set: userUpdate });
+    // Đồng bộ snapshot sang User (tùy chọn)
+    await User.findByIdAndUpdate(req.userId, {
+      $set: {
+        onboarded: true,
+        "profile.nickname": duLieu.tenGoi,
+        "profile.goal": duLieu.mucTieu,
+        "profile.heightCm": duLieu.chieuCao,
+        "profile.weightKg": duLieu.canNangHienTai,
+        "profile.targetWeightKg": duLieu.canNangMongMuon,
+        "profile.weeklyChangeKg": duLieu.mucTieuTuan,
+        "profile.trainingIntensity": duLieu.cuongDoLuyenTap,
+      },
+    });
 
     return res.json({ success: true, data: doc });
   } catch (err) {
@@ -60,9 +72,13 @@ export async function upsertOnboarding(req, res) {
 
 export async function getMyOnboarding(req, res) {
   try {
-    if (!req.userId) return res.status(401).json({ success: false, message: "Chưa xác thực người dùng" });
+    if (!req.userId) {
+      return res.status(401).json({ success: false, message: "Chưa xác thực người dùng" });
+    }
     const doc = await Onboarding.findOne({ user: req.userId });
-    if (!doc) return res.status(404).json({ success: false, message: "Chưa có dữ liệu onboarding" });
+    if (!doc) {
+      return res.status(404).json({ success: false, message: "Chưa có dữ liệu onboarding" });
+    }
     return res.json({ success: true, data: doc });
   } catch (e) {
     console.error("getMyOnboarding lỗi:", e);

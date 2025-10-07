@@ -1,31 +1,40 @@
-// src/routes/OnboardingGuard.jsx
-import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { api } from "../lib/api";
+import { Navigate } from "react-router-dom";
+import api from "../lib/api"; // dùng đúng axios instance của bạn
 
-export default function OnboardingGuard() {
-  const [checking, setChecking] = useState(true);
-  const [isOnboarded, setIsOnboarded] = useState(null);
+export default function OnboardingGuard({ children }) {
+  const token = localStorage.getItem("token");
+  const [dangTai, setDangTai] = useState(true);
+  const [daOnboard, setDaOnboard] = useState(false);
 
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const { data } = await api.get("/user/me");
-        setIsOnboarded(data?.user?.onboarded);
-      } catch {
-        setIsOnboarded(false);
-      } finally {
-        setChecking(false);
+    let huy = false;
+
+    (async () => {
+      if (!token) {               // không có token => chưa login
+        if (!huy) { setDaOnboard(false); setDangTai(false); }
+        return;
       }
-    };
-    checkUser();
-  }, []);
+      try {
+        // endpoint đúng theo server
+        const { data } = await api.get("/api/user/onboarding/me");
+        if (!huy) setDaOnboard(!!data?.data); // có doc onboarding = đã onboarding
+      } catch {
+        if (!huy) setDaOnboard(false);
+      } finally {
+        if (!huy) setDangTai(false);
+      }
+    })();
 
-  if (checking) return <div>Đang kiểm tra tài khoản...</div>;
+    return () => { huy = true; };
+  }, [token]);
 
-  // Nếu user chưa onboarded → đi tới trang onboarding
-  if (isOnboarded === false) return <Navigate to="/onboarding" replace />;
+  if (!token) return <Navigate to="/login" replace />;
+  if (dangTai) return <div>Đang kiểm tra trạng thái onboarding…</div>;
 
-  // Nếu user đã hoàn thành → cho phép vào ứng dụng chính
-  return <Outlet />;
+  // Nếu đã onboarding rồi thì chặn vào flow onboarding và đẩy về Home
+  if (daOnboard) return <Navigate to="/home" replace />;
+
+  // Chưa onboarding => cho vào các bước onboarding
+  return children;
 }

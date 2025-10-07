@@ -1,11 +1,12 @@
-import api from "./user-api";
+import { ENDPOINTS, apiCall } from "../lib/api.js";
 
-export async function upsertOnboarding(payload) {
-  const { data } = await api.post("/api/user/onboarding/upsert", payload);
-  return data.data; // Onboarding doc
-}
+export const getOnboardingData = () => apiCall(ENDPOINTS.USER.ONBOARDING.GET);
 
-export async function getMyOnboarding() {
-  const { data } = await api.get("/api/user/onboarding/me");
-  return data.data; // Onboarding doc
-}
+export const upsertOnboardingData = (payload) =>
+  apiCall(ENDPOINTS.USER.ONBOARDING.UPSERT, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const finalizeOnboarding = () =>
+  apiCall(ENDPOINTS.USER.ONBOARDING.FINALIZE, { method: "POST" });

@@ -1,6 +1,7 @@
+// src/controllers/auth.controller.js
 import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
-import { generateToken } from "../utils/tokens.js";
+import jwt from "jsonwebtoken";
 
 /**
  * [POST] /api/auth/register
@@ -32,9 +33,17 @@ export const register = async (req, res) => {
       // onboarded mặc định false theo schema
     });
 
-    const token = generateToken(newUser); // hàm của bạn
+    // 👇 BẮT BUỘC: truyền payload có id để token chứa id
+    const token = jwt.sign(
+      {
+        id: newUser._id,          // đảm bảo có id
+        role: newUser.role || "user"
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Đăng ký thành công!",
       token,
       user: {
@@ -42,13 +51,13 @@ export const register = async (req, res) => {
         username: newUser.username,
         email: newUser.email,
         role: newUser.role,
-        onboarded: !!newUser.onboarded,     // 👈 thêm cờ này
-        profile: newUser.profile || {},      // (tuỳ chọn) gửi kèm profile rỗng
+        onboarded: !!newUser.onboarded,
+        profile: newUser.profile || {},
       },
     });
   } catch (error) {
     console.error("Lỗi đăng ký:", error);
-    res.status(500).json({ message: "Lỗi máy chủ." });
+    return res.status(500).json({ message: "Lỗi máy chủ." });
   }
 };
 
@@ -60,15 +69,15 @@ export const login = async (req, res) => {
     const { email, username, password, identifier } = req.body;
 
     // Hỗ trợ nhiều tên trường từ client
-    const id = identifier || email || username;
-    if (!id || !password) {
+    const idField = identifier || email || username;
+    if (!idField || !password) {
       return res.status(400).json({ message: "Thiếu thông tin đăng nhập (identifier & password)" });
     }
 
     // Nếu có '@' → email, ngược lại → username
-    const query = id.includes("@") ? { email: id } : { username: id };
+    const query = idField.includes("@") ? { email: idField } : { username: idField };
 
-    // Lấy user + password (nếu schema có select:false)
+    // Lấy user + password (vì schema đặt select:false)
     const user = await User.findOne(query).select("+password");
     if (!user) {
       return res.status(400).json({ message: "Tài khoản không tồn tại" });
@@ -83,14 +92,16 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Sai mật khẩu" });
     }
 
-    // Tạo JWT
-    const token = generateToken({
-      id: user._id,
-      role: user.role,
-      username: user.username,
-    });
+    // 👇 BẮT BUỘC: truyền payload có id để token chứa id
+    const token = jwt.sign(
+      {
+        id: user._id,          // đảm bảo có id
+        role: user.role || "user"
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    // Trả về thông tin người dùng (không kèm password)
     return res.json({
       token,
       user: {
@@ -98,8 +109,8 @@ export const login = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        onboarded: !!user.onboarded,     // 👈 FE dựa vào đây để rẽ nhánh
-        profile: user.profile || {},      // (tuỳ chọn) gắn kèm
+        onboarded: !!user.onboarded,
+        profile: user.profile || {},
       },
     });
   } catch (err) {

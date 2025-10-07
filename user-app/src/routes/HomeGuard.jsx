@@ -1,7 +1,7 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
-// Chặn truy cập khi chưa đăng nhập (ví dụ)
-export default function HomeGuard() {
+export default function HomeGuard({ children }) {
   const token = localStorage.getItem("token");
-  return token ? <Outlet /> : <Navigate to="/dang-nhap" replace />;
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
 }

@@ -41,10 +41,45 @@ export default function Summary() {
   const percent = Math.min(100, Math.max(0, ((bmi - 15) / (35 - 15)) * 100)); // bar 15→35
 
   const handleConfirm = async () => {
-    await api.post("/user/onboarding/finalize");
-    // sang app chính
-    nav("/home");
+  const payload = {
+    tenGoi: localStorage.getItem("nickname"),
+    mucTieu: localStorage.getItem("goal"),
+    chieuCao: Number(localStorage.getItem("heightCm")),
+    canNangHienTai: Number(localStorage.getItem("weightKg")),
+    canNangMongMuon: Number(localStorage.getItem("targetWeightKg")),
+    mucTieuTuan: Number(localStorage.getItem("weeklyChangeKg")),
+    cuongDoLuyenTap: localStorage.getItem("trainingIntensity"),
+    gioiTinh: localStorage.getItem("sex"),
+    ngaySinh: localStorage.getItem("dob"),
   };
+
+  // ✅ Kiểm tra nhanh các trường bắt buộc
+  const missing = Object.entries(payload)
+    .filter(([_, v]) => v === null || v === undefined || v === "" || Number.isNaN(v))
+    .map(([k]) => k);
+
+  console.log("PAYLOAD SẼ GỬI:", payload);
+  if (missing.length) {
+    alert("Thiếu dữ liệu: " + missing.join(", ") + ". Hãy quay lại bổ sung.");
+    console.warn("Thiếu dữ liệu:", missing);
+    return;
+  }
+
+  try {
+    const { data } = await api.post("/api/user/onboarding/upsert", payload);
+    console.log("SERVER RESPONSE:", data);
+    // thành công -> về Home
+    nav("/home");
+  } catch (err) {
+    // Log chi tiết để biết chính xác lỗi gì (status, message, errors Zod)
+    console.error("POST /api/user/onboarding/upsert lỗi:", err?.response?.status, err?.response?.data || err);
+    alert(
+      "Gửi dữ liệu thất bại.\n" +
+      (err?.response?.data?.message || "Xem console để biết chi tiết.")
+    );
+  }
+};
+
 
   return (
     <div className="sm-wrap">
