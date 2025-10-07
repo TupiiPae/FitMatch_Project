@@ -43,7 +43,7 @@ export default function Summary() {
   const handleConfirm = async () => {
     await api.post("/user/onboarding/finalize");
     // sang app chính
-    nav("/ung-dung");
+    nav("/home");
   };
 
   return (

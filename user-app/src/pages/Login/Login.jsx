@@ -78,18 +78,16 @@ export default function Login() {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/login", {
-        username,
+        username,            // hoặc identifier nếu bạn dùng trường này
         password,
         remember: ghiNho,
       });
 
-      // Lưu token + user cho các guard/route dùng
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.user?.role || "user");
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
 
-      // Điều hướng đúng theo router hiện tại
-      if (data.user?.onboarded) nav("/app");
+      if (data.user?.onboarded) nav("/home");   // hoặc "/Home" nếu route của bạn viết hoa
       else nav("/onboarding");
     } catch (err) {
       const msg = err?.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.";

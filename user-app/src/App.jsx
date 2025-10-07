@@ -3,6 +3,7 @@ import Landing from "./pages/Landing/Landing";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import OnboardingGuard from "./routes/OnboardingGuard";
+import HomeGuard from "./routes/HomeGuard";
 import OnboardingRoutes from "./pages/Onboarding/OnboardingRoutes";
 import Home from "./pages/Home/Home";
 
@@ -14,13 +15,25 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Onboarding flow */}
-        <Route path="/onboarding/*" element={<OnboardingRoutes />} />
+        {/* Chưa onboard mới vào được các bước onboarding */}
+        <Route
+          path="/onboarding/*"
+          element={
+            <OnboardingGuard>
+              <OnboardingRoutes />
+            </OnboardingGuard>
+          }
+        />
 
-        {/* Khi đã hoàn tất onboarding thì mới vào app chính */}
-        <Route element={<OnboardingGuard />}>
-          <Route path="/app" element={<Home />} />
-        </Route>
+        {/* Đã onboard mới vào được Home */}
+        <Route
+          path="/home"
+          element={
+            <HomeGuard>
+              <Home />
+            </HomeGuard>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
