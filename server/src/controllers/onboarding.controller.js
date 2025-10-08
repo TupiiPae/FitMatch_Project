@@ -2,7 +2,7 @@
 import { Onboarding } from "../models/OnboardingProfile.js";
 import { User } from "../models/User.js";
 import { OnboardingInputSchema } from "../validators/onboarding.schema.js";
-import { tinhBmi, tinhBmr } from "../utils/health.js";
+import { tinhBmi, tinhBmr, tinhTdee } from "../utils/health.js";
 
 export async function upsertOnboarding(req, res) {
   try {
@@ -10,10 +10,8 @@ export async function upsertOnboarding(req, res) {
       return res.status(401).json({ success: false, message: "Chưa xác thực người dùng" });
     }
 
-    // 1) Validate input
     const duLieu = OnboardingInputSchema.parse(req.body);
 
-    // 2) Compute derived metrics
     const bmi = tinhBmi(duLieu.canNangHienTai, duLieu.chieuCao);
     const bmr = tinhBmr({
       gioiTinh: duLieu.gioiTinh,
@@ -21,8 +19,8 @@ export async function upsertOnboarding(req, res) {
       chieuCaoCm: duLieu.chieuCao,
       ngaySinh: duLieu.ngaySinh,
     });
+    const tdee = tinhTdee(bmr, duLieu.cuongDoLuyenTap); // ====== NEW
 
-    // 3) Prepare updates
     const $set = {
       tenGoi: duLieu.tenGoi,
       mucTieu: duLieu.mucTieu,
@@ -35,60 +33,18 @@ export async function upsertOnboarding(req, res) {
       ngaySinh: duLieu.ngaySinh,
       bmi,
       bmr,
+      tdee, // ====== NEW
       hoanTatOnboarding: true,
     };
 
-    const $setOnInsert = {
-      user: req.userId,
-      phienBan: 1,
-    };
+    const $setOnInsert = { user: req.userId, phienBan: 1 };
 
-    // (Tuỳ chọn) Transaction để atomic giữa 2 collection
-    // const session = await Onboarding.startSession();
-    // session.startTransaction();
-    // try {
-    //   const doc = await Onboarding.findOneAndUpdate(
-    //     { user: req.userId },
-    //     { $set, $setOnInsert },
-    //     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true, session }
-    //   );
-    //   await User.findByIdAndUpdate(
-    //     req.userId,
-    //     {
-    //       $set: {
-    //         onboarded: true,
-    //         "profile.nickname": duLieu.tenGoi,
-    //         "profile.goal": duLieu.mucTieu,
-    //         "profile.heightCm": duLieu.chieuCao,
-    //         "profile.weightKg": duLieu.canNangHienTai,
-    //         "profile.targetWeightKg": duLieu.canNangMongMuon,
-    //         "profile.weeklyChangeKg": duLieu.mucTieuTuan,
-    //         "profile.trainingIntensity": duLieu.cuongDoLuyenTap,
-    //         "profile.sex": duLieu.gioiTinh,
-    //         "profile.dob": duLieu.ngaySinh,
-    //         "profile.bmi": bmi,
-    //         "profile.bmr": bmr,
-    //       },
-    //     },
-    //     { session }
-    //   );
-    //   await session.commitTransaction();
-    //   session.endSession();
-    //   return res.json({ success: true, data: doc });
-    // } catch (e) {
-    //   await session.abortTransaction();
-    //   session.endSession();
-    //   throw e;
-    // }
-
-    // 4) Không dùng transaction (đơn giản, chấp nhận eventually consistent)
     const doc = await Onboarding.findOneAndUpdate(
       { user: req.userId },
       { $set, $setOnInsert },
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     );
 
-    // 5) Đồng bộ snapshot sang User (đủ trường)
     await User.findByIdAndUpdate(req.userId, {
       $set: {
         onboarded: true,
@@ -103,13 +59,14 @@ export async function upsertOnboarding(req, res) {
         "profile.dob": duLieu.ngaySinh,
         "profile.bmi": bmi,
         "profile.bmr": bmr,
+        "profile.tdee": tdee, // ====== NEW
       },
     });
 
     return res.json({ success: true, data: doc });
   } catch (err) {
-    if (err?.issues) {
-      return res.status(400).json({ success: false, message: "Dữ liệu không hợp lệ", errors: err.issues });
+    if (err?.issues || err?.message?.includes("hợp lệ")) {
+      return res.status(400).json({ success: false, message: err.message || "Dữ liệu không hợp lệ", errors: err.issues });
     }
     console.error("upsertOnboarding lỗi:", err);
     return res.status(500).json({ success: false, message: "Lỗi máy chủ" });
