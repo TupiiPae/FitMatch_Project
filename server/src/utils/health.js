@@ -52,7 +52,6 @@ export function tinhBmi(canNangKg, chieuCaoCm) {
   return Number(bmi.toFixed(2));
 }
 
-// ====== BMR (Mifflin–St Jeor), làm tròn số nguyên ======
 export function tinhBmr({ gioiTinh, canNangKg, chieuCaoCm, ngaySinh }) {
   assert(gioiTinh === "male" || gioiTinh === "female", "Giới tính phải là 'male' hoặc 'female'");
   const age = tinhTuoi(ngaySinh);
