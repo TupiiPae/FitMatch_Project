@@ -1,3 +1,4 @@
+/* ===== phần cũ giữ nguyên ===== */
 .tw-wrap{min-height:100vh;background:#f3f4f6;display:flex;flex-direction:column}
 .tw-header{height:64px;display:flex;align-items:center;padding:0 150px;background:#ffffffaa;border-bottom:1px solid #eceff4;backdrop-filter:blur(4px)}
 .tw-logo{height:150px}
@@ -5,8 +6,6 @@
 .tw-card{width:100%;max-width:560px;background:#fff;border-radius:12px;padding:24px;border:1px solid #eef1f5;box-shadow:0 10px 24px rgba(0,0,0,.08);text-align:center}
 .tw-title{font-size:18px;font-weight:700;color:#1f2937;margin-bottom:6px}
 .tw-desc{color:#6b7280;font-size:14px;margin-bottom:16px}
-.tw-value{font-weight:600;color:#374151;margin-bottom:6px}
-.tw-range{width:100%}
 .tw-bmi{margin-top:16px;display:flex;gap:12px;justify-content:center;align-items:center;color:#374151}
 .tw-chip{background:#e5f2ff;color:#1866d6;border-radius:8px;padding:2px 8px;font-size:12px;font-weight:600}
 .tw-error{margin-top:10px;color:#d32f2f;font-size:12px}
@@ -18,3 +17,84 @@
 .btn-primary{background:#1a73e8;border:none;color:#fff;box-shadow:0 6px 14px rgba(26,115,232,.25)}
 .btn-primary:hover{background:#1866d6;box-shadow:0 8px 18px rgba(26,115,232,.32)}
 @media(max-width:560px){.tw-card{padding:20px 16px}.tw-actions{width:100%;justify-content:center}.btn{flex:1;max-width:220px}}
+
+/* ===== nhãn phụ trên thước ===== */
+.tw-subtitle{
+  font-weight:600;
+  color:#0f172a;
+  text-align:left;
+  margin-bottom:6px;
+  font-size:14px;
+}
+
+/* ===== thước cuộn tối giản (rs-*) ===== */
+:root{
+  --rs-muted:#6b7280;
+  --rs-accent:#1a73e8;
+  --rs-accent-weak:rgba(26,115,232,.15);
+  --rs-track:#e5e7eb;
+}
+
+/* vùng thước */
+.rs-wrap{ position:relative; width:100%; height:120px; }
+
+/* hiển thị số nằm trên thước */
+.rs-value{
+  position:absolute;
+  top:-4px;
+  transform:translateX(-50%);
+  pointer-events:none;
+}
+.rs-value>span{
+  display:inline-block;
+  background:#fff;
+  color:#0f172a;
+  border:1px solid #e5e7eb;
+  padding:6px 10px;
+  border-radius:10px;
+  font-weight:700;
+  font-size:15px;
+  box-shadow:0 6px 14px rgba(0,0,0,.06);
+}
+
+/* thước (~35 vạch), không box bao quanh */
+.rs-ruler{
+  position:absolute; left:0; right:0; top:18px; bottom:22px;
+  border-radius:8px; overflow:hidden;
+  background:linear-gradient(to bottom, transparent 0, transparent 50%, rgba(99,102,241,0.04) 50%, rgba(99,102,241,0.04) 100%);
+}
+
+/* fade hai mép */
+.rs-fade{
+  position:absolute; top:0; bottom:0; width:36px; pointer-events:none;
+}
+.rs-fade.left{ left:0; background:linear-gradient(to right, #fff 0%, rgba(255,255,255,0) 100%) }
+.rs-fade.right{ right:0; background:linear-gradient(to left, #fff 0%, rgba(255,255,255,0) 100%) }
+
+/* vạch */
+.rs-tick{ position:absolute; bottom:20px; width:0; transform:translateX(-0.5px); color:var(--rs-muted) }
+.rs-tick::before{ content:""; display:block; width:2px; background:var(--rs-track); border-radius:2px }
+.rs-tick.minor::before{ height:16px }
+.rs-tick.major::before{ height:30px; background:#d1d5db }
+.rs-tick-label{ position:absolute; bottom:0; transform:translate(-50%,4px); font-size:12px; color:var(--rs-muted) }
+
+/* vạch đang chọn: chỉ 1 trục, dài & tô màu */
+.rs-tick.selected::before{
+  height:56px; background:var(--rs-accent); box-shadow:0 0 0 3px var(--rs-accent-weak);
+}
+.rs-tick.selected .rs-tick-label{ color:#0f172a; font-weight:700 }
+
+/* range thật phủ toàn vùng thước – thumb ẩn, kéo trực tiếp */
+.rs-range{
+  appearance:none; -webkit-appearance:none;
+  position:absolute; left:0; right:0; top:0; bottom:0;
+  width:100%; height:100%; background:transparent; outline:none; cursor:pointer;
+}
+.rs-range::-webkit-slider-runnable-track{ background:transparent; height:100% }
+.rs-range::-moz-range-track{ background:transparent; height:100% }
+.rs-range.invisible-thumb::-webkit-slider-thumb{
+  -webkit-appearance:none; width:1px; height:1px; background:transparent; border:none; box-shadow:none; margin:0;
+}
+.rs-range.invisible-thumb::-moz-range-thumb{
+  width:1px; height:1px; background:transparent; border:none; box-shadow:none;
+}

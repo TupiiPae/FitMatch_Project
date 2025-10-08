@@ -1,18 +1,99 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../../lib/api";
 import "./BasicMetrics.css";
 
+/* ===== Thước cuộn tối giản (~35 vạch) + 1 hiển thị số; kéo trái = tăng, kéo phải = giảm ===== */
+function RulerSliderWindow({ unit, min, max, step, value, onChange, disabled }) {
+  const valNum = Number(value);
+  const minInt = Math.ceil(min);
+  const maxInt = Math.floor(max);
+
+  const WINDOW_TICKS = 35; // ~30–35 vạch
+  const selectedInt = Math.round(valNum);
+
+  // Cửa sổ hiển thị quanh giá trị đang chọn
+  const { start, end } = useMemo(() => {
+    const half = Math.floor(WINDOW_TICKS / 2);
+    let s = selectedInt - half;
+    s = Math.max(minInt, Math.min(s, maxInt - WINDOW_TICKS + 1));
+    const e = Math.min(maxInt, s + WINDOW_TICKS - 1);
+    return { start: s, end: e };
+  }, [selectedInt, minInt, maxInt]);
+
+  const span = end - start || 1;
+  const pctInWindow = useMemo(() => ((valNum - start) / span) * 100, [valNum, start, span]);
+
+  // Tạo vạch (vạch lớn mỗi 10)
+  const ticks = useMemo(() => {
+    const arr = [];
+    for (let i = start; i <= end; i++) {
+      const isMajor = i % 10 === 0;
+      const isSelected = i === selectedInt;
+      const left = ((i - start) / span) * 100;
+      arr.push({ i, isMajor, isSelected, left });
+    }
+    return arr;
+  }, [start, end, span, selectedInt]);
+
+  // ==== ĐẢO CHIỀU KÉO: proxy = min + max - actual ====
+  const proxyValue = useMemo(() => min + max - valNum, [valNum, min, max]);
+  const handleChange = (e) => {
+    const proxy = Number(e.target.value);
+    const actual = min + max - proxy;
+    onChange(actual);
+  };
+
+  return (
+    <div className="rs-wrap">
+      {/* Hiển thị số duy nhất bên trên thanh */}
+      <div className="rs-value" style={{ left: `${pctInWindow}%` }} aria-hidden="true">
+        <span>{Number(value).toFixed(step >= 1 ? 0 : 1)} {unit}</span>
+      </div>
+
+      {/* Thước ~35 vạch với 1 trục nổi tại vị trí đang chọn */}
+      <div className="rs-ruler rs-ruler-window" role="presentation">
+        {ticks.map(t => (
+          <div
+            key={t.i}
+            className={`rs-tick ${t.isMajor ? "major" : "minor"} ${t.isSelected ? "selected" : ""}`}
+            style={{ left: `${t.left}%` }}
+            title={`${t.i} ${unit}`}
+          >
+            {t.isMajor && <div className="rs-tick-label">{t.i}</div>}
+          </div>
+        ))}
+        <div className="rs-fade left" />
+        <div className="rs-fade right" />
+      </div>
+
+      {/* Range thật – thumb ẩn, kéo trực tiếp trên thước; dùng proxy để đảo chiều */}
+      <input
+        className="rs-range invisible-thumb"
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={proxyValue}
+        onChange={handleChange}
+        disabled={disabled}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={proxyValue}
+      />
+    </div>
+  );
+}
+
 export default function BasicMetrics() {
   const nav = useNavigate();
-  const [nickname, setNickname] = useState(localStorage.getItem("nickname") || "");
+  const [nickname] = useState(localStorage.getItem("nickname") || "");
   const [height, setHeight] = useState(170);     // cm
   const [weight, setWeight] = useState(65.0);    // kg
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    // nếu đã có dữ liệu trước đó thì set lại
     const h = Number(localStorage.getItem("heightCm"));
     const w = Number(localStorage.getItem("weightKg"));
     if (h) setHeight(h);
@@ -45,27 +126,31 @@ export default function BasicMetrics() {
       <main className="bm-main">
         <div className="bm-card">
           <h3 className="bm-title">Cân nặng và chiều cao hiện tại của {nickname || "bạn"} là …</h3>
-          <p className="bm-desc">Kéo thanh trượt để chọn số cân nặng và chiều cao</p>
+          <p className="bm-desc">Kéo trên thước để chọn số liệu (kéo trái: tăng, kéo phải: giảm)</p>
 
           <div className="bm-block">
-            <div className="bm-value">{weight.toFixed(1)} kg</div>
-            <input
-              className="bm-range"
-              type="range"
-              min={20} max={200} step={0.1}
+            <div className="bm-subtitle">Cân nặng của bạn</div>
+            <RulerSliderWindow
+              unit="kg"
+              min={20}
+              max={200}
+              step={0.1}
               value={weight}
-              onChange={(e) => setWeight(Number(e.target.value))}
+              onChange={setWeight}
+              disabled={loading}
             />
           </div>
 
           <div className="bm-block">
-            <div className="bm-value">{height} cm</div>
-            <input
-              className="bm-range"
-              type="range"
-              min={120} max={200} step={1}
+            <div className="bm-subtitle">Chiều cao của bạn</div>
+            <RulerSliderWindow
+              unit="cm"
+              min={120}
+              max={200}
+              step={1}
               value={height}
-              onChange={(e) => setHeight(Number(e.target.value))}
+              onChange={setHeight}
+              disabled={loading}
             />
           </div>
 

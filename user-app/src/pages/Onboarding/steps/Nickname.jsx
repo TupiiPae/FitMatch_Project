@@ -58,7 +58,6 @@ export default function Nickname() {
       nav("/onboarding/muc-tieu");
     } catch (error) {
       console.error(error);
-      // Không alert to — để UX mượt. Nếu muốn có thể hiển thị toast ở đây.
     } finally {
       setLoading(false);
     }
@@ -77,66 +76,106 @@ export default function Nickname() {
             Chúng tôi rất vui khi được chào đón bạn. Hãy bắt đầu bằng vài thông tin cơ bản.
           </p>
 
-          {/* Tên gọi */}
+          {/* Nickname - dùng placeholder thay cho label */}
           <div className="nk-field">
-            <label className="nk-label">Tên gọi</label>
-            <input
-              className="nk-input"
-              placeholder="Nhập tên"
-              value={tenGoi}
-              onChange={(e) => setTenGoi(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleNext()}
-              autoFocus
-              disabled={loading}
-            />
+            <div className="nk-input-wrap">
+              <input
+                className="nk-input nk-input-large"
+                placeholder="Nhập nickname của bạn"
+                value={tenGoi}
+                onChange={(e) => setTenGoi(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleNext()}
+                autoFocus
+                disabled={loading}
+                aria-label="Nickname"
+              />
+            </div>
             {errTen && <div className="nk-error">{errTen}</div>}
           </div>
 
-          {/* Giới tính */}
-          <div className="nk-field">
-            <label className="nk-label">Giới tính</label>
-            <div className="nk-radio-group">
-              <label className={`nk-radio ${gioiTinh === "male" ? "active" : ""}`}>
-                <input
-                  type="radio"
-                  name="gioiTinh"
-                  value="male"
-                  checked={gioiTinh === "male"}
-                  onChange={(e) => setGioiTinh(e.target.value)}
-                  disabled={loading}
-                />
-                Nam
-              </label>
-              <label className={`nk-radio ${gioiTinh === "female" ? "active" : ""}`}>
-                <input
-                  type="radio"
-                  name="gioiTinh"
-                  value="female"
-                  checked={gioiTinh === "female"}
-                  onChange={(e) => setGioiTinh(e.target.value)}
-                  disabled={loading}
-                />
-                Nữ
-              </label>
-            </div>
-            {errGT && <div className="nk-error">{errGT}</div>}
-          </div>
+          {/* Hai cột: Trái = Giới tính (radio card), Phải = Ngày sinh (date input đẹp) */}
+          <div className="nk-two-col">
+            {/* Giới tính */}
+            <div className="nk-col nk-sex">
+              <div className="nk-group-title">Giới tính</div>
+              <div className="nk-sex-grid">
+                <label
+                  className={`sex-card ${gioiTinh === "male" ? "active" : ""}`}
+                  tabIndex={0}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setGioiTinh("male")}
+                >
+                  <input
+                    type="radio"
+                    name="gioiTinh"
+                    value="male"
+                    checked={gioiTinh === "male"}
+                    onChange={(e) => setGioiTinh(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span className="sex-icon" aria-hidden="true">
+                    {/* Male icon */}
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <path d="M14 5h7m0 0v7m0-7l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="9" cy="15" r="5" stroke="currentColor" strokeWidth="1.6"/>
+                    </svg>
+                  </span>
+                  <span className="sex-text">Nam</span>
+                </label>
 
-          {/* Ngày sinh */}
-          <div className="nk-field">
-            <label className="nk-label">Ngày sinh</label>
-            <input
-              className="nk-input"
-              type="date"
-              value={ngaySinh}
-              onChange={(e) => setNgaySinh(e.target.value)}
-              max={new Date().toISOString().slice(0, 10)}
-              disabled={loading}
-            />
-            {errDOB && <div className="nk-error">{errDOB}</div>}
-            {tuoi !== null && !errDOB && (
-              <div className="nk-hint">Tuổi của bạn: <b>{tuoi}</b></div>
-            )}
+                <label
+                  className={`sex-card ${gioiTinh === "female" ? "active" : ""}`}
+                  tabIndex={0}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setGioiTinh("female")}
+                >
+                  <input
+                    type="radio"
+                    name="gioiTinh"
+                    value="female"
+                    checked={gioiTinh === "female"}
+                    onChange={(e) => setGioiTinh(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span className="sex-icon" aria-hidden="true">
+                    {/* Female icon */}
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="8" r="5" stroke="currentColor" strokeWidth="1.6"/>
+                      <path d="M12 13v8M9 18h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                    </svg>
+                  </span>
+                  <span className="sex-text">Nữ</span>
+                </label>
+              </div>
+              {errGT && <div className="nk-error">{errGT}</div>}
+            </div>
+
+            {/* Ngày sinh */}
+            <div className="nk-col nk-dob">
+              <div className="nk-group-title">Ngày sinh</div>
+              <div className="dob-input">
+                <span className="calendar-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6"/>
+                    <path d="M16 3v4M8 3v4M3 9h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                  </svg>
+                </span>
+                <input
+                  className="nk-input nk-input-date"
+                  type="date"
+                  value={ngaySinh}
+                  onChange={(e) => setNgaySinh(e.target.value)}
+                  max={new Date().toISOString().slice(0, 10)}
+                  disabled={loading}
+                  aria-label="Ngày sinh"
+                />
+              </div>
+
+              {errDOB && <div className="nk-error">{errDOB}</div>}
+              {tuoi !== null && !errDOB && (
+                <div className="nk-hint">
+                  Tuổi của bạn: <b>{tuoi}</b>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
