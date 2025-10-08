@@ -10,8 +10,10 @@ export async function upsertOnboarding(req, res) {
       return res.status(401).json({ success: false, message: "Chưa xác thực người dùng" });
     }
 
+    // 1) Validate input
     const duLieu = OnboardingInputSchema.parse(req.body);
 
+    // 2) Compute derived metrics
     const bmi = tinhBmi(duLieu.canNangHienTai, duLieu.chieuCao);
     const bmr = tinhBmr({
       gioiTinh: duLieu.gioiTinh,
@@ -20,6 +22,7 @@ export async function upsertOnboarding(req, res) {
       ngaySinh: duLieu.ngaySinh,
     });
 
+    // 3) Prepare updates
     const $set = {
       tenGoi: duLieu.tenGoi,
       mucTieu: duLieu.mucTieu,
@@ -40,13 +43,52 @@ export async function upsertOnboarding(req, res) {
       phienBan: 1,
     };
 
+    // (Tuỳ chọn) Transaction để atomic giữa 2 collection
+    // const session = await Onboarding.startSession();
+    // session.startTransaction();
+    // try {
+    //   const doc = await Onboarding.findOneAndUpdate(
+    //     { user: req.userId },
+    //     { $set, $setOnInsert },
+    //     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true, session }
+    //   );
+    //   await User.findByIdAndUpdate(
+    //     req.userId,
+    //     {
+    //       $set: {
+    //         onboarded: true,
+    //         "profile.nickname": duLieu.tenGoi,
+    //         "profile.goal": duLieu.mucTieu,
+    //         "profile.heightCm": duLieu.chieuCao,
+    //         "profile.weightKg": duLieu.canNangHienTai,
+    //         "profile.targetWeightKg": duLieu.canNangMongMuon,
+    //         "profile.weeklyChangeKg": duLieu.mucTieuTuan,
+    //         "profile.trainingIntensity": duLieu.cuongDoLuyenTap,
+    //         "profile.sex": duLieu.gioiTinh,
+    //         "profile.dob": duLieu.ngaySinh,
+    //         "profile.bmi": bmi,
+    //         "profile.bmr": bmr,
+    //       },
+    //     },
+    //     { session }
+    //   );
+    //   await session.commitTransaction();
+    //   session.endSession();
+    //   return res.json({ success: true, data: doc });
+    // } catch (e) {
+    //   await session.abortTransaction();
+    //   session.endSession();
+    //   throw e;
+    // }
+
+    // 4) Không dùng transaction (đơn giản, chấp nhận eventually consistent)
     const doc = await Onboarding.findOneAndUpdate(
       { user: req.userId },
       { $set, $setOnInsert },
-      { new: true, upsert: true }
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     );
 
-    // Đồng bộ snapshot sang User (tùy chọn)
+    // 5) Đồng bộ snapshot sang User (đủ trường)
     await User.findByIdAndUpdate(req.userId, {
       $set: {
         onboarded: true,
@@ -57,6 +99,10 @@ export async function upsertOnboarding(req, res) {
         "profile.targetWeightKg": duLieu.canNangMongMuon,
         "profile.weeklyChangeKg": duLieu.mucTieuTuan,
         "profile.trainingIntensity": duLieu.cuongDoLuyenTap,
+        "profile.sex": duLieu.gioiTinh,
+        "profile.dob": duLieu.ngaySinh,
+        "profile.bmi": bmi,
+        "profile.bmr": bmr,
       },
     });
 

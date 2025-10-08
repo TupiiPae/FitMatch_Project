@@ -3,39 +3,86 @@ import mongoose from "mongoose";
 // ====== Schema con: lưu thông tin cá nhân và mục tiêu của người dùng ======
 const profileSchema = new mongoose.Schema(
   {
+    // từ Onboarding.tenGoi
     nickname: {
       type: String,
       trim: true,
       maxlength: [30, "Nickname không được vượt quá 30 ký tự"],
     },
+
+    // từ Onboarding.mucTieu
     goal: {
       type: String,
       enum: ["giam_can", "duy_tri", "tang_can", "giam_mo", "tang_co"],
       default: "",
     },
+
+    // từ Onboarding.chieuCao
     heightCm: {
       type: Number,
       min: [100, "Chiều cao tối thiểu là 100 cm"],
       max: [220, "Chiều cao tối đa là 220 cm"],
     },
+
+    // từ Onboarding.canNangHienTai
     weightKg: {
       type: Number,
       min: [20, "Cân nặng tối thiểu là 20 kg"],
       max: [300, "Cân nặng tối đa là 300 kg"],
     },
+
+    // từ Onboarding.canNangMongMuon
     targetWeightKg: {
       type: Number,
       min: [20, "Cân nặng mục tiêu tối thiểu là 20 kg"],
       max: [300, "Cân nặng mục tiêu tối đa là 300 kg"],
     },
+
+    // từ Onboarding.mucTieuTuan (âm: giảm, dương: tăng)
     weeklyChangeKg: {
-      type: Number, // ± giá trị tuỳ theo mục tiêu tăng/giảm
+      type: Number,
       default: 0,
     },
+
+    // từ Onboarding.cuongDoLuyenTap (giữ linh hoạt chuỗi)
+    // (Nếu muốn chặt chẽ hơn: enum: ["level_1","level_2","level_3","level_4"])
     trainingIntensity: {
-      type: String, // người dùng chọn 1 trong 4 mức
+      type: String,
       trim: true,
       default: "",
+    },
+
+    // ====== BỔ SUNG từ Onboarding để đủ hồ sơ sức khoẻ ======
+
+    // từ Onboarding.gioiTinh
+    sex: {
+      type: String,
+      enum: ["male", "female"],
+      default: undefined, // để biết đã/ chưa điền
+    },
+
+    // từ Onboarding.ngaySinh (YYYY-MM-DD)
+    dob: {
+      type: String,
+      validate: {
+        validator: (v) =>
+          typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v),
+        message: "Ngày sinh phải theo định dạng YYYY-MM-DD",
+      },
+    },
+
+    // từ hệ thống tính trong Onboarding
+    bmi: {
+      type: Number, // (kg / m^2)
+      min: [5, "BMI không hợp lệ"],
+      max: [80, "BMI không hợp lệ"],
+    },
+
+    // từ hệ thống tính trong Onboarding
+    bmr: {
+      type: Number, // kcal/ngày
+      min: [500, "BMR không hợp lệ"],
+      max: [5000, "BMR không hợp lệ"],
     },
   },
   { _id: false }
@@ -62,7 +109,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Mật khẩu là bắt buộc"],
       minlength: [6, "Mật khẩu phải có ít nhất 6 ký tự"],
-      select: false, // không tự động trả password trong truy vấn
+      select: false,
     },
     role: {
       type: String,
@@ -71,12 +118,11 @@ const userSchema = new mongoose.Schema(
     },
     onboarded: {
       type: Boolean,
-      default: false, // true nếu người dùng đã nhập thông tin ban đầu
+      default: false,
     },
-    profile: profileSchema, // gắn thông tin mục tiêu, số liệu ở đây
+    profile: profileSchema, // gắn thông tin mục tiêu & sức khoẻ đã tổng hợp
   },
   { timestamps: true }
 );
 
-// ====== Model ======
 export const User = mongoose.model("User", userSchema);
