@@ -181,7 +181,7 @@ export default function Nickname() {
 
         <div className="nk-actions">
           <button className="btn btn-outline" onClick={() => nav("/onboarding/chao-mung")} disabled={loading}>
-            Hủy
+            Quay lại
           </button>
           <button
             className={`btn btn-primary ${loading ? "loading" : ""}`}

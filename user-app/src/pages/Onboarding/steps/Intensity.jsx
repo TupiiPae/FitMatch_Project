@@ -64,7 +64,7 @@ export default function Intensity() {
         </div>
 
         <div className="in-actions">
-          <button className="btn btn-outline" onClick={() => nav(-1)} disabled={loading}>Hủy</button>
+          <button className="btn btn-outline" onClick={() => nav(-1)} disabled={loading}>Quay lại</button>
           <button className="btn btn-primary" onClick={handleNext} disabled={!selected || loading}>
             {loading ? "Đang lưu..." : "Tiếp theo"}
           </button>

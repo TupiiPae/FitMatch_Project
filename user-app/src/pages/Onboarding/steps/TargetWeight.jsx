@@ -154,7 +154,7 @@ export default function TargetWeight() {
         </div>
 
         <div className="tw-actions">
-          <button className="btn btn-outline" onClick={() => nav("/onboarding/so-lieu-co-ban")} disabled={loading}>Hủy</button>
+          <button className="btn btn-outline" onClick={() => nav("/onboarding/so-lieu-co-ban")} disabled={loading}>Quay lại</button>
           <button className="btn btn-primary" onClick={handleNext} disabled={loading}>
             {loading ? "Đang lưu..." : "Tiếp theo"}
           </button>

@@ -69,7 +69,7 @@ export default function WeeklyChange() {
         </div>
 
         <div className="wk-actions">
-          <button className="btn btn-outline" onClick={() => nav("/onboarding/can-nang-muc-tieu")} disabled={loading}>Hủy</button>
+          <button className="btn btn-outline" onClick={() => nav("/onboarding/can-nang-muc-tieu")} disabled={loading}>Quay lại</button>
           <button className="btn btn-primary" onClick={handleNext} disabled={loading}>
             {loading ? "Đang lưu..." : "Tiếp theo"}
           </button>

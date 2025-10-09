@@ -57,7 +57,7 @@ export default function Motivation() {
 
         <div className="mv-actions">
           <button className="btn btn-outline" onClick={() => nav("/onboarding/muc-tieu")}>
-            Hủy
+            Quay lại
           </button>
           <button className="btn btn-primary" onClick={handleNext}>
             Tiếp theo

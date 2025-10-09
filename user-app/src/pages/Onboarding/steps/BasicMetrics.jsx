@@ -158,7 +158,7 @@ export default function BasicMetrics() {
         </div>
 
         <div className="bm-actions">
-          <button className="btn btn-outline" onClick={() => nav("/onboarding/dong-luc")} disabled={loading}>Hủy</button>
+          <button className="btn btn-outline" onClick={() => nav("/onboarding/dong-luc")} disabled={loading}>Quay lại</button>
           <button className="btn btn-primary" onClick={handleNext} disabled={loading}>
             {loading ? "Đang lưu..." : "Tiếp theo"}
           </button>

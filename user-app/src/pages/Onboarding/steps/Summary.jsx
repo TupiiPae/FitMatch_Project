@@ -123,7 +123,7 @@ export default function Summary() {
         </div>
 
         <div className="sm-actions">
-          <button className="btn btn-outline" onClick={() => nav(-1)}>Hủy</button>
+          <button className="btn btn-outline" onClick={() => nav(-1)}>Quay lại</button>
           <button className="btn btn-primary" onClick={handleConfirm}>Xác nhận</button>
         </div>
       </main>

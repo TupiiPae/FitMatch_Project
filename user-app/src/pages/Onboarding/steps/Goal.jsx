@@ -82,7 +82,7 @@ export default function Goal() {
             onClick={() => nav("/onboarding/ten-goi")}
             disabled={loading}
           >
-            Hủy
+            Quay lại
           </button>
           <button
             className="btn btn-primary"
