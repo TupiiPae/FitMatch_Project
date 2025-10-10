@@ -96,14 +96,41 @@ export default function TargetWeight() {
   const [err, setErr] = useState("");
 
   const title = `Mục tiêu cân nặng của ${nickname} là …`;
+
+  // Phạm vi target hợp lý theo mục tiêu (giữ nguyên)
+  const min = 20, max = 200, step = 0.1;
+
+  // Tính BMI + gán màu theo yêu cầu
   const bmiBox = useMemo(() => {
     const h = (Number(localStorage.getItem("heightCm")) || 170) / 100;
     const bmi = target / (h * h);
-    let tag = "Bình thường";
-    if (bmi < 18.5) tag = "Thiếu cân";
-    else if (bmi >= 25 && bmi < 30) tag = "Thừa cân";
-    else if (bmi >= 30) tag = "Béo phì";
-    return { bmi: bmi.toFixed(1), tag };
+
+    let tag = "";
+    let bgColor = "";
+    let textColor = "#fff"; // mặc định chữ trắng
+
+    if (bmi < 18.5) {
+      tag = "Gầy";
+      bgColor = "#40E0D0"; // xanh ngọc
+    } else if (bmi < 25) {
+      tag = "Bình thường";
+      bgColor = "#4CAF50"; // xanh lá
+    } else if (bmi < 30) {
+      tag = "Thừa cân";
+      bgColor = "#FFD54F"; // vàng
+      textColor = "#000";
+    } else if (bmi < 35) {
+      tag = "Béo phì độ I";
+      bgColor = "#FF9800"; // cam
+    } else if (bmi < 40) {
+      tag = "Béo phì độ II";
+      bgColor = "#FF6E6E"; // đỏ nhạt
+    } else {
+      tag = "Béo phì độ III";
+      bgColor = "#D32F2F"; // đỏ đậm
+    }
+
+    return { bmi: bmi.toFixed(1), tag, bgColor, textColor };
   }, [target]);
 
   const handleNext = async () => {
@@ -119,9 +146,6 @@ export default function TargetWeight() {
       setLoading(false);
     }
   };
-
-  // Phạm vi target hợp lý theo mục tiêu (giữ nguyên)
-  const min = 20, max = 200, step = 0.1;
 
   return (
     <div className="tw-wrap">
@@ -147,7 +171,12 @@ export default function TargetWeight() {
 
           <div className="tw-bmi">
             <span>BMI của bạn: <b>{bmiBox.bmi}</b></span>
-            <span className="tw-chip">{bmiBox.tag}</span>
+            <span
+              className="tw-chip"
+              style={{ backgroundColor: bmiBox.bgColor, color: bmiBox.textColor }}
+            >
+              {bmiBox.tag}
+            </span>
           </div>
 
           {err && <div className="tw-error">{err}</div>}

@@ -27,59 +27,61 @@ export default function Summary() {
   const inten = localStorage.getItem("trainingIntensity");
 
   const bmi = useMemo(() => {
-    const v = weight / Math.pow(height/100, 2);
+    const v = weight / Math.pow(height / 100, 2);
     return Number(v.toFixed(1));
   }, [height, weight]);
 
-  const bmiTag = useMemo(() => {
-    if (bmi < 18.5) return "Thiếu cân";
-    if (bmi < 25) return "Bình thường";
-    if (bmi < 30) return "Thừa cân";
-    return "Béo phì";
+  // 6 mức BMI + màu (đồng bộ)
+  const bmiInfo = useMemo(() => {
+    let tag = "Bình thường";
+    let bgColor = "#4CAF50";
+    let textColor = "#fff";
+    if (bmi < 18.5) { tag = "Gầy"; bgColor = "#40E0D0"; }
+    else if (bmi < 25) { tag = "Bình thường"; bgColor = "#4CAF50"; }
+    else if (bmi < 30) { tag = "Thừa cân"; bgColor = "#FFD54F"; textColor = "#000"; }
+    else if (bmi < 35) { tag = "Béo phì độ I"; bgColor = "#FF9800"; }
+    else if (bmi < 40) { tag = "Béo phì độ II"; bgColor = "#FF6E6E"; }
+    else { tag = "Béo phì độ III"; bgColor = "#D32F2F"; }
+    return { tag, bgColor, textColor };
   }, [bmi]);
 
-  const percent = Math.min(100, Math.max(0, ((bmi - 15) / (35 - 15)) * 100)); // bar 15→35
+  // Map BMI về dải 15 → 40 để đặt marker
+  const toPercent = (val) => Math.min(100, Math.max(0, ((val - 15) / (40 - 15)) * 100));
+  const percent = toPercent(bmi);
+
+  // Các mốc hiển thị dưới thanh
+  const scaleMarks = [18.5, 25, 30, 35];
 
   const handleConfirm = async () => {
-  const payload = {
-    tenGoi: localStorage.getItem("nickname"),
-    mucTieu: localStorage.getItem("goal"),
-    chieuCao: Number(localStorage.getItem("heightCm")),
-    canNangHienTai: Number(localStorage.getItem("weightKg")),
-    canNangMongMuon: Number(localStorage.getItem("targetWeightKg")),
-    mucTieuTuan: Number(localStorage.getItem("weeklyChangeKg")),
-    cuongDoLuyenTap: localStorage.getItem("trainingIntensity"),
-    gioiTinh: localStorage.getItem("sex"),
-    ngaySinh: localStorage.getItem("dob"),
+    const payload = {
+      tenGoi: localStorage.getItem("nickname"),
+      mucTieu: localStorage.getItem("goal"),
+      chieuCao: Number(localStorage.getItem("heightCm")),
+      canNangHienTai: Number(localStorage.getItem("weightKg")),
+      canNangMongMuon: Number(localStorage.getItem("targetWeightKg")),
+      mucTieuTuan: Number(localStorage.getItem("weeklyChangeKg")),
+      cuongDoLuyenTap: localStorage.getItem("trainingIntensity"),
+      gioiTinh: localStorage.getItem("sex"),
+      ngaySinh: localStorage.getItem("dob"),
+    };
+
+    const missing = Object.entries(payload)
+      .filter(([_, v]) => v === null || v === undefined || v === "" || Number.isNaN(v))
+      .map(([k]) => k);
+
+    if (missing.length) {
+      alert("Thiếu dữ liệu: " + missing.join(", ") + ". Hãy quay lại bổ sung.");
+      return;
+    }
+
+    try {
+      await api.post("/api/user/onboarding/upsert", payload);
+      nav("/home");
+    } catch (err) {
+      alert("Gửi dữ liệu thất bại.\n" + (err?.response?.data?.message || "Xem console để biết chi tiết."));
+      console.error(err);
+    }
   };
-
-  // ✅ Kiểm tra nhanh các trường bắt buộc
-  const missing = Object.entries(payload)
-    .filter(([_, v]) => v === null || v === undefined || v === "" || Number.isNaN(v))
-    .map(([k]) => k);
-
-  console.log("PAYLOAD SẼ GỬI:", payload);
-  if (missing.length) {
-    alert("Thiếu dữ liệu: " + missing.join(", ") + ". Hãy quay lại bổ sung.");
-    console.warn("Thiếu dữ liệu:", missing);
-    return;
-  }
-
-  try {
-    const { data } = await api.post("/api/user/onboarding/upsert", payload);
-    console.log("SERVER RESPONSE:", data);
-    // thành công -> về Home
-    nav("/home");
-  } catch (err) {
-    // Log chi tiết để biết chính xác lỗi gì (status, message, errors Zod)
-    console.error("POST /api/user/onboarding/upsert lỗi:", err?.response?.status, err?.response?.data || err);
-    alert(
-      "Gửi dữ liệu thất bại.\n" +
-      (err?.response?.data?.message || "Xem console để biết chi tiết.")
-    );
-  }
-};
-
 
   return (
     <div className="sm-wrap">
@@ -112,12 +114,43 @@ export default function Summary() {
             )}
           </div>
 
+          {/* ===== BMI ===== */}
           <div className="sm-bmi">
             <div className="sm-bar">
+              {/* Marker tròn (không số) */}
+              <div
+                className="sm-marker"
+                style={{
+                  left: `${percent}%`,
+                  borderColor: bmiInfo.bgColor,
+                  boxShadow: `0 0 0 6px ${bmiInfo.bgColor}22`
+                }}
+                aria-label={`BMI của bạn: ${bmi}`}
+                title={`BMI: ${bmi}`}
+              />
+              {/* phần đã đi qua */}
               <div className="sm-bar-inner" style={{ width: `${percent}%` }} />
             </div>
+
+            {/* Nhãn mốc dưới thanh */}
+            <div className="sm-scale">
+              <div className="sm-scale-end left">{`<18.5`}</div>
+              {scaleMarks.map((m) => (
+                <div key={m} className="sm-scale-mark" style={{ left: `${toPercent(m)}%` }}>
+                  {m}
+                </div>
+              ))}
+              <div className="sm-scale-end right">{`≥40`}</div>
+            </div>
+
             <div className="sm-bmi-info">
-              BMI hiện tại: <b>{bmi}</b> <span className="sm-chip">{bmiTag}</span>
+              BMI hiện tại: <b>{bmi}</b>
+              <span
+                className="sm-chip"
+                style={{ backgroundColor: bmiInfo.bgColor, color: bmiInfo.textColor }}
+              >
+                {bmiInfo.tag}
+              </span>
             </div>
           </div>
         </div>
