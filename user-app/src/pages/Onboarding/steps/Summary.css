@@ -1,4 +1,4 @@
-/* ===== Layout & Header (giữ nguyên màu sáng) ===== */
+/* ===== Layout & Header ===== */
 .sm-wrap {
   min-height: 100vh;
   background: #f3f4f6;
@@ -27,7 +27,7 @@
   padding: 24px 16px 40px;
 }
 
-/* ===== Card & Typography (giữ nguyên) ===== */
+/* ===== Card & Typography ===== */
 .sm-card {
   width: 100%;
   max-width: 560px;
@@ -41,10 +41,10 @@
 }
 
 .sm-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #1f2937;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .sm-box {
@@ -74,30 +74,27 @@
   color: #111827;
 }
 
-/* ===== BMI Section (mới: gradient + marker tròn + mốc số) ===== */
+/* ===== BMI Bar (nằm giữa hai box) ===== */
 .sm-bmi {
-  margin-top: 8px;
+  margin: 14px 0;          /* tạo khoảng cách giữa 2 box */
   text-align: left;
 }
 
-/* Gradient 5 vùng theo mốc: <18.5 / 18.5–25 / 25–30 / 30–35 / 35–40
-   Dải chuẩn hóa 15→40 nên % mốc xấp xỉ: 18.5≈14%, 25≈40%, 30≈60%, 35≈80%, 40=100% */
 .sm-bar {
   position: relative;
   height: 14px;
   background: linear-gradient(
     90deg,
-    #40e0d0 0% 14%,  /* Xanh ngọc: Gầy */
-    #4caf50 14% 40%, /* Xanh lá: Bình thường */
-    #ffd54f 40% 60%, /* Vàng: Thừa cân */
-    #ff9800 60% 80%, /* Cam: Béo phì I */
-    #ff6e6e 80% 100% /* Đỏ nhạt: Béo phì II đến 40 */
+    #40e0d0 0% 14%,
+    #4caf50 14% 40%,
+    #ffd54f 40% 60%,
+    #ff9800 60% 80%,
+    #ff6e6e 80% 100%
   );
   border-radius: 999px;
   overflow: hidden;
 }
 
-/* Phần đã “đi qua” dưới thanh (nhạt hơn) */
 .sm-bar-inner {
   position: absolute;
   top: 0;
@@ -106,22 +103,7 @@
   background: rgba(17, 24, 39, 0.2);
 }
 
-/* Marker tròn đặt đúng vị trí BMI (không hiển thị số) */
-.sm-marker {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  background: #ffffff;
-  border: 4px solid #4caf50; /* màu viền sẽ override inline theo mức BMI */
-  box-shadow: 0 0 0 6px rgba(76, 175, 80, 0.15); /* override inline cùng màu */
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* Hàng mốc số dưới thanh (18.5 / 25 / 30 / 35 + hai đầu) */
+/* Mốc dưới thanh */
 .sm-scale {
   position: relative;
   height: 18px;
@@ -141,22 +123,49 @@
   top: 0;
 }
 
-.sm-scale-end.left {
-  left: 0;
+.sm-scale-end.left { left: 0; }
+.sm-scale-end.right { right: 0; }
+
+/* ===== BMI Box (căn đều 2 chỉ số & trục giữa) ===== */
+.sm-bmi-box {
+  position: relative;           /* để đặt midline */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 14px;
 }
 
-.sm-scale-end.right {
-  right: 0;
+.sm-midline {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  bottom: 12px;
+  width: 1px;
+  background: #e5e7eb;
+  transform: translateX(-50%);
 }
 
-/* Dòng mô tả BMI (giữ nguyên) */
-.sm-bmi-info {
-  margin-top: 8px;
-  color: #374151;
+.sm-bmi-item {
+  flex: 1;                     /* hai bên bằng nhau */
+  text-align: center;          /* căn giữa nội dung */
+  min-width: 140px;
 }
 
-.sm-bmi-info b {
-  color: #111827;
+.sm-bmi-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.sm-bmi-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
 }
 
 .sm-chip {
@@ -164,12 +173,10 @@
   padding: 2px 8px;
   font-size: 12px;
   font-weight: 600;
-  margin-left: 6px;
-  background: #e5f2ff; /* sẽ được override inline theo mức BMI */
-  color: #1866d6;       /* sẽ được override inline theo mức BMI */
+  margin-left: 0;              /* trong box này không cần lệch trái */
 }
 
-/* ===== Actions & Buttons (giữ nguyên) ===== */
+/* ===== Actions & Buttons ===== */
 .sm-actions {
   display: flex;
   gap: 14px;
@@ -186,16 +193,13 @@
   transition: transform 0.05s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
 }
 
-.btn:active {
-  transform: translateY(1px);
-}
+.btn:active { transform: translateY(1px); }
 
 .btn-outline {
   background: #fff;
   border: 1px solid #d1d5db;
   color: #111827;
 }
-
 .btn-outline:hover {
   border-color: #9ca3af;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
@@ -207,31 +211,18 @@
   color: #fff;
   box-shadow: 0 6px 14px rgba(26, 115, 232, 0.25);
 }
-
 .btn-primary:hover {
   background: #1866d6;
   box-shadow: 0 8px 18px rgba(26, 115, 232, 0.32);
 }
 
-/* ===== Responsive (giữ nguyên) ===== */
+/* ===== Responsive ===== */
 @media (max-width: 560px) {
-  .sm-card {
-    padding: 20px 16px;
-  }
+  .sm-card { padding: 20px 16px; }
+  .sm-actions { width: 100%; justify-content: center; }
+  .btn { flex: 1; max-width: 220px; }
 
-  .sm-actions {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .btn {
-    flex: 1;
-    max-width: 220px;
-  }
-
-  .sm-marker {
-    width: 22px;
-    height: 22px;
-    border-width: 3px;
-  }
+  .sm-bmi-box { gap: 16px; padding: 12px; }
+  .sm-bmi-value { font-size: 18px; }
+  .sm-midline { top: 10px; bottom: 10px; }
 }

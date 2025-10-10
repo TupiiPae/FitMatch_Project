@@ -3,45 +3,54 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../../lib/api";
 import "./TargetWeight.css";
 
-/* ===== Thước cuộn tối giản (~35 vạch) + 1 hiển thị số; kéo trái = tăng, kéo phải = giảm ===== */
+/* ===== Thước cuộn ~35 vạch; vạch = 0.1 nếu step < 1; kéo trái = tăng, kéo phải = giảm ===== */
 function RulerSliderWindow({ unit, min, max, step, value, onChange, disabled }) {
-  const valNum = Number(value);
-  const minInt = Math.ceil(min);
-  const maxInt = Math.floor(max);
+  const val = Number(value);
+  const TICKS = 35;
+  const tickStep = step >= 1 ? 1 : 0.1;
 
-  const WINDOW_TICKS = 35; // khoảng 30–35 vạch
-  const selectedInt = Math.round(valNum);
+  // Làm tròn về bội số tickStep (để vạch selected khớp)
+  const rounded = useMemo(() => Number((Math.round(val / tickStep) * tickStep).toFixed(step >= 1 ? 0 : 1)), [val, tickStep, step]);
 
-  // Tạo cửa sổ hiển thị quanh giá trị đang chọn
+  // Tính cửa sổ hiển thị start/end theo tickStep
   const { start, end } = useMemo(() => {
-    const half = Math.floor(WINDOW_TICKS / 2);
-    let s = selectedInt - half;
-    s = Math.max(minInt, Math.min(s, maxInt - WINDOW_TICKS + 1));
-    const e = Math.min(maxInt, s + WINDOW_TICKS - 1);
-    return { start: s, end: e };
-  }, [selectedInt, minInt, maxInt]);
+    const half = Math.floor(TICKS / 2);
+    const minIdx = Math.ceil(min / tickStep);
+    const maxIdx = Math.floor(max / tickStep);
+    const idx = Math.round(rounded / tickStep);
 
-  const span = end - start || 1;
-  const pctInWindow = useMemo(() => ((valNum - start) / span) * 100, [valNum, start, span]);
+    let sIdx = idx - half;
+    sIdx = Math.max(minIdx, Math.min(sIdx, maxIdx - TICKS + 1));
+    const eIdx = Math.min(maxIdx, sIdx + TICKS - 1);
 
-  // Vạch lớn mỗi 10, còn lại vạch nhỏ
+    return { start: sIdx * tickStep, end: eIdx * tickStep };
+  }, [rounded, tickStep, min, max]);
+
+  const span = end - start || tickStep;
+  const pctInWindow = ((val - start) / span) * 100;
+
+  // Sinh vạch: major mỗi 1.0, còn lại là minor. Selected nếu trùng rounded.
   const ticks = useMemo(() => {
     const arr = [];
-    for (let i = start; i <= end; i++) {
-      const isMajor = i % 10 === 0;
-      const isSelected = i === selectedInt;
-      const left = ((i - start) / span) * 100;
-      arr.push({ i, isMajor, isSelected, left });
+    // tránh sai số nổi
+    const fix = (x) => Number(x.toFixed(step >= 1 ? 0 : 1));
+    for (let v = start; v <= end + 1e-9; v += tickStep) {
+      const fv = fix(v);
+      const isMajor = Math.abs(fv % 1) < 1e-9; // bội số 1.0
+      const isSelected = Math.abs(fv - rounded) < 1e-9;
+      const left = ((fv - start) / span) * 100;
+      arr.push({ v: fv, isMajor, isSelected, left });
     }
     return arr;
-  }, [start, end, span, selectedInt]);
+  }, [start, end, tickStep, rounded, span, step]);
 
   // Đảo chiều kéo: proxy = min + max - actual
-  const proxyValue = useMemo(() => min + max - valNum, [valNum, min, max]);
+  const proxyValue = min + max - val;
   const handleChange = (e) => {
     const proxy = Number(e.target.value);
     const actual = min + max - proxy;
-    onChange(actual);
+    const fixed = Number(actual.toFixed(step >= 1 ? 0 : 1));
+    onChange(fixed);
   };
 
   return (
@@ -55,19 +64,19 @@ function RulerSliderWindow({ unit, min, max, step, value, onChange, disabled }) 
       <div className="rs-ruler rs-ruler-window" role="presentation">
         {ticks.map(t => (
           <div
-            key={t.i}
+            key={`${t.v}-${t.left}`}
             className={`rs-tick ${t.isMajor ? "major" : "minor"} ${t.isSelected ? "selected" : ""}`}
             style={{ left: `${t.left}%` }}
-            title={`${t.i} ${unit}`}
+            title={`${t.v} ${unit}`}
           >
-            {t.isMajor && <div className="rs-tick-label">{t.i}</div>}
+            {t.isMajor && <div className="rs-tick-label">{t.v.toFixed(0)}</div>}
           </div>
         ))}
         <div className="rs-fade left" />
         <div className="rs-fade right" />
       </div>
 
-      {/* Range thật – thumb ẩn, kéo trực tiếp trên thước; dùng proxy để đảo chiều */}
+      {/* Range thật – thumb ẩn; dùng proxy để đảo chiều */}
       <input
         className="rs-range invisible-thumb"
         type="range"
@@ -90,45 +99,62 @@ export default function TargetWeight() {
   const nickname = localStorage.getItem("nickname") || "bạn";
   const goal = localStorage.getItem("goal") || "giam_can";
 
-  const initCurrent = Number(localStorage.getItem("weightKg")) || 65;
-  const [target, setTarget] = useState(initCurrent);
+  // Cân nặng hiện tại để ràng buộc target theo mục tiêu
+  const current = Number(localStorage.getItem("weightKg")) || 65;
+
+  // Phạm vi tổng thể (giữ nguyên)
+  const ABS_MIN = 20, ABS_MAX = 200, STEP = 0.1;
+
+  // Ràng buộc theo mục tiêu
+  const isLose = goal === "giam_can" || goal === "giam_mo";
+  const isGain = goal === "tang_can" || goal === "tang_co";
+
+  const effectiveMin = isGain ? Math.max(ABS_MIN, Number((current + 0.1).toFixed(1))) : ABS_MIN;
+  const effectiveMax = isLose ? Math.min(ABS_MAX, Number((current - 0.1).toFixed(1))) : ABS_MAX;
+
+  // Giá trị khởi tạo: ưu tiên localStorage; nếu không hợp lệ thì rơi về current và clamp theo ràng buộc
+  const storedTarget = Number(localStorage.getItem("targetWeightKg"));
+  const initial = Number.isFinite(storedTarget) ? storedTarget : current;
+
+  const clampToRange = (v) => {
+    if (v < effectiveMin) return effectiveMin;
+    if (v > effectiveMax) return effectiveMax;
+    return Number(v.toFixed(1));
+  };
+
+  const [target, setTarget] = useState(clampToRange(initial));
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
+  // Đồng bộ localStorage ngay khi đổi để các trang khác/bmi dùng số mới
+  useEffect(() => {
+    if (Number.isFinite(target)) {
+      localStorage.setItem("targetWeightKg", String(target));
+    }
+  }, [target]);
+
+  // Nếu goal hoặc current thay đổi (hiếm), re-clamp
+  useEffect(() => {
+    setTarget((prev) => clampToRange(prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveMin, effectiveMax]);
+
   const title = `Mục tiêu cân nặng của ${nickname} là …`;
 
-  // Phạm vi target hợp lý theo mục tiêu (giữ nguyên)
-  const min = 20, max = 200, step = 0.1;
-
-  // Tính BMI + gán màu theo yêu cầu
+  // BMI + màu 6 mức
   const bmiBox = useMemo(() => {
     const h = (Number(localStorage.getItem("heightCm")) || 170) / 100;
     const bmi = target / (h * h);
 
     let tag = "";
     let bgColor = "";
-    let textColor = "#fff"; // mặc định chữ trắng
-
-    if (bmi < 18.5) {
-      tag = "Gầy";
-      bgColor = "#40E0D0"; // xanh ngọc
-    } else if (bmi < 25) {
-      tag = "Bình thường";
-      bgColor = "#4CAF50"; // xanh lá
-    } else if (bmi < 30) {
-      tag = "Thừa cân";
-      bgColor = "#FFD54F"; // vàng
-      textColor = "#000";
-    } else if (bmi < 35) {
-      tag = "Béo phì độ I";
-      bgColor = "#FF9800"; // cam
-    } else if (bmi < 40) {
-      tag = "Béo phì độ II";
-      bgColor = "#FF6E6E"; // đỏ nhạt
-    } else {
-      tag = "Béo phì độ III";
-      bgColor = "#D32F2F"; // đỏ đậm
-    }
+    let textColor = "#fff";
+    if (bmi < 18.5)      { tag = "Gầy";          bgColor = "#40E0D0"; }
+    else if (bmi < 25)   { tag = "Bình thường";  bgColor = "#4CAF50"; }
+    else if (bmi < 30)   { tag = "Thừa cân";     bgColor = "#FFD54F"; textColor = "#000"; }
+    else if (bmi < 35)   { tag = "Béo phì độ I"; bgColor = "#FF9800"; }
+    else if (bmi < 40)   { tag = "Béo phì độ II";bgColor = "#FF6E6E"; }
+    else                 { tag = "Béo phì độ III";bgColor = "#D32F2F"; }
 
     return { bmi: bmi.toFixed(1), tag, bgColor, textColor };
   }, [target]);
@@ -137,7 +163,7 @@ export default function TargetWeight() {
     setLoading(true); setErr("");
     try {
       await api.patch("/user/onboarding", { "profile.targetWeightKg": Number(target) });
-      localStorage.setItem("targetWeightKg", String(target));
+      // localStorage đã cập nhật trong useEffect
       if (goal === "duy_tri") nav("/onboarding/cuong-do");
       else nav("/onboarding/muc-tieu-hang-tuan");
     } catch (e) {
@@ -156,16 +182,18 @@ export default function TargetWeight() {
       <main className="tw-main">
         <div className="tw-card">
           <h3 className="tw-title">{title}</h3>
-          <p className="tw-desc">Kéo trên thước để chọn số cân — <b>kéo trái: tăng</b>, <b>kéo phải: giảm</b></p>
+          <p className="tw-desc">
+            Kéo trên thước để chọn số cân — <b>kéo trái: tăng</b>, <b>kéo phải: giảm</b>
+          </p>
 
           <div className="tw-subtitle">Cân nặng mục tiêu của bạn</div>
           <RulerSliderWindow
             unit="kg"
-            min={min}
-            max={max}
-            step={step}
+            min={effectiveMin}
+            max={effectiveMax}
+            step={STEP}
             value={target}
-            onChange={setTarget}
+            onChange={(v) => setTarget(clampToRange(v))}
             disabled={loading}
           />
 
@@ -183,7 +211,13 @@ export default function TargetWeight() {
         </div>
 
         <div className="tw-actions">
-          <button className="btn btn-outline" onClick={() => nav("/onboarding/so-lieu-co-ban")} disabled={loading}>Quay lại</button>
+          <button
+            className="btn btn-outline"
+            onClick={() => nav("/onboarding/so-lieu-co-ban")}
+            disabled={loading}
+          >
+            Quay lại
+          </button>
           <button className="btn btn-primary" onClick={handleNext} disabled={loading}>
             {loading ? "Đang lưu..." : "Tiếp theo"}
           </button>

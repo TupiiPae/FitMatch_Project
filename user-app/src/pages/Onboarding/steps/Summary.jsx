@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../../../lib/api";
 import "./Summary.css";
 
@@ -10,6 +10,7 @@ const GOAL_LABEL = {
   giam_mo: "Giảm mỡ",
   tang_co: "Tăng cơ",
 };
+
 const INTEN_LABEL = {
   level_1: "Không tập luyện, ít vận động",
   level_2: "Vận động nhẹ nhàng",
@@ -19,37 +20,70 @@ const INTEN_LABEL = {
 
 export default function Summary() {
   const nav = useNavigate();
-  const goal = localStorage.getItem("goal");
-  const height = Number(localStorage.getItem("heightCm") || 170);
-  const weight = Number(localStorage.getItem("weightKg") || 65);
-  const target = Number(localStorage.getItem("targetWeightKg") || weight);
-  const weekly = Number(localStorage.getItem("weeklyChangeKg") || 0);
-  const inten = localStorage.getItem("trainingIntensity");
+  const location = useLocation();
 
-  const bmi = useMemo(() => {
-    const v = weight / Math.pow(height / 100, 2);
-    return Number(v.toFixed(1));
-  }, [height, weight]);
+  const [goal, setGoal] = useState(localStorage.getItem("goal") || "");
+  const [height, setHeight] = useState(Number(localStorage.getItem("heightCm")) || 170);
+  const [weight, setWeight] = useState(Number(localStorage.getItem("weightKg")) || 65);
+  const [target, setTarget] = useState(
+    Number(localStorage.getItem("targetWeightKg")) ||
+      Number(localStorage.getItem("weightKg")) ||
+      65
+  );
+  const [weekly, setWeekly] = useState(Number(localStorage.getItem("weeklyChangeKg")) || 0);
+  const [inten, setInten] = useState(localStorage.getItem("trainingIntensity") || "");
 
-  // 6 mức BMI + màu (đồng bộ)
-  const bmiInfo = useMemo(() => {
-    let tag = "Bình thường";
-    let bgColor = "#4CAF50";
-    let textColor = "#fff";
-    if (bmi < 18.5) { tag = "Gầy"; bgColor = "#40E0D0"; }
-    else if (bmi < 25) { tag = "Bình thường"; bgColor = "#4CAF50"; }
-    else if (bmi < 30) { tag = "Thừa cân"; bgColor = "#FFD54F"; textColor = "#000"; }
-    else if (bmi < 35) { tag = "Béo phì độ I"; bgColor = "#FF9800"; }
-    else if (bmi < 40) { tag = "Béo phì độ II"; bgColor = "#FF6E6E"; }
+  const loadFromStorage = () => {
+    const g = localStorage.getItem("goal") || "";
+    const h = Number(localStorage.getItem("heightCm")) || 170;
+    const w = Number(localStorage.getItem("weightKg")) || 65;
+    const t = Number(localStorage.getItem("targetWeightKg")) || w;
+    const wk = Number(localStorage.getItem("weeklyChangeKg")) || 0;
+    const it = localStorage.getItem("trainingIntensity") || "";
+    setGoal(g); setHeight(h); setWeight(w); setTarget(t); setWeekly(wk); setInten(it);
+  };
+
+  useEffect(() => { loadFromStorage(); /* eslint-disable-next-line */ }, [location.key]);
+  useEffect(() => {
+    const onFocus = () => loadFromStorage();
+    const onVisibility = () => { if (document.visibilityState === "visible") loadFromStorage(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (["goal","heightCm","weightKg","targetWeightKg","weeklyChangeKg","trainingIntensity"].includes(e.key)) {
+        loadFromStorage();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  // BMI hiện tại & mục tiêu
+  const bmi = useMemo(() => Number((weight / Math.pow(height / 100, 2)).toFixed(1)), [height, weight]);
+  const bmiTarget = useMemo(() => Number((target / Math.pow(height / 100, 2)).toFixed(1)), [height, target]);
+
+  const mapBmiInfo = (x) => {
+    let tag = "Bình thường", bgColor = "#4CAF50", textColor = "#fff";
+    if (x < 18.5) { tag = "Gầy"; bgColor = "#40E0D0"; }
+    else if (x < 25) { tag = "Bình thường"; bgColor = "#4CAF50"; }
+    else if (x < 30) { tag = "Thừa cân"; bgColor = "#FFD54F"; textColor = "#000"; }
+    else if (x < 35) { tag = "Béo phì độ I"; bgColor = "#FF9800"; }
+    else if (x < 40) { tag = "Béo phì độ II"; bgColor = "#FF6E6E"; }
     else { tag = "Béo phì độ III"; bgColor = "#D32F2F"; }
     return { tag, bgColor, textColor };
-  }, [bmi]);
+  };
 
-  // Map BMI về dải 15 → 40 để đặt marker
+  const bmiInfo = useMemo(() => mapBmiInfo(bmi), [bmi]);
+  const bmiTargetInfo = useMemo(() => mapBmiInfo(bmiTarget), [bmiTarget]);
+
   const toPercent = (val) => Math.min(100, Math.max(0, ((val - 15) / (40 - 15)) * 100));
   const percent = toPercent(bmi);
-
-  // Các mốc hiển thị dưới thanh
   const scaleMarks = [18.5, 25, 30, 35];
 
   const handleConfirm = async () => {
@@ -65,15 +99,14 @@ export default function Summary() {
       ngaySinh: localStorage.getItem("dob"),
     };
 
-    const missing = Object.entries(payload)
-      .filter(([_, v]) => v === null || v === undefined || v === "" || Number.isNaN(v))
-      .map(([k]) => k);
+    const missing = Object.entries(payload).filter(([_, v]) =>
+      v === null || v === undefined || v === "" || Number.isNaN(v)
+    ).map(([k]) => k);
 
     if (missing.length) {
       alert("Thiếu dữ liệu: " + missing.join(", ") + ". Hãy quay lại bổ sung.");
       return;
     }
-
     try {
       await api.post("/api/user/onboarding/upsert", payload);
       nav("/home");
@@ -93,6 +126,7 @@ export default function Summary() {
         <div className="sm-card">
           <h3 className="sm-title">FitMatch tổng hợp lại thông tin giúp bạn nhé !</h3>
 
+          {/* Box tổng hợp mục tiêu & thông số */}
           <div className="sm-box">
             <div className="sm-row">
               <span>Mục tiêu</span>
@@ -114,25 +148,11 @@ export default function Summary() {
             )}
           </div>
 
-          {/* ===== BMI ===== */}
+          {/* === Thanh BMI nằm GIỮA hai box === */}
           <div className="sm-bmi">
             <div className="sm-bar">
-              {/* Marker tròn (không số) */}
-              <div
-                className="sm-marker"
-                style={{
-                  left: `${percent}%`,
-                  borderColor: bmiInfo.bgColor,
-                  boxShadow: `0 0 0 6px ${bmiInfo.bgColor}22`
-                }}
-                aria-label={`BMI của bạn: ${bmi}`}
-                title={`BMI: ${bmi}`}
-              />
-              {/* phần đã đi qua */}
               <div className="sm-bar-inner" style={{ width: `${percent}%` }} />
             </div>
-
-            {/* Nhãn mốc dưới thanh */}
             <div className="sm-scale">
               <div className="sm-scale-end left">{`<18.5`}</div>
               {scaleMarks.map((m) => (
@@ -142,14 +162,30 @@ export default function Summary() {
               ))}
               <div className="sm-scale-end right">{`≥40`}</div>
             </div>
+          </div>
 
-            <div className="sm-bmi-info">
-              BMI hiện tại: <b>{bmi}</b>
+          {/* Box chỉ số BMI (hiện tại vs mục tiêu) – căn giữa & cân bằng 2 bên */}
+          <div className="sm-bmi-box">
+            <div className="sm-midline" />
+            <div className="sm-bmi-item">
+              <div className="sm-bmi-label">BMI hiện tại</div>
+              <div className="sm-bmi-value">{bmi}</div>
               <span
                 className="sm-chip"
                 style={{ backgroundColor: bmiInfo.bgColor, color: bmiInfo.textColor }}
               >
                 {bmiInfo.tag}
+              </span>
+            </div>
+
+            <div className="sm-bmi-item">
+              <div className="sm-bmi-label">BMI mục tiêu</div>
+              <div className="sm-bmi-value">{bmiTarget}</div>
+              <span
+                className="sm-chip"
+                style={{ backgroundColor: bmiTargetInfo.bgColor, color: bmiTargetInfo.textColor }}
+              >
+                {bmiTargetInfo.tag}
               </span>
             </div>
           </div>
