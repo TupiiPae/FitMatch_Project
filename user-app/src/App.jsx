@@ -6,6 +6,7 @@ import OnboardingGuard from "./routes/OnboardingGuard";
 import HomeGuard from "./routes/HomeGuard";
 import OnboardingRoutes from "./pages/Onboarding/OnboardingRoutes";
 import Home from "./pages/Home/Home";
+import Profile from "./pages/Account/Profile/index.jsx";
 
 // Layout có Navbar + Footer
 import AppShell from "./components/layout/AppShell";
@@ -32,7 +33,7 @@ const GoiYTap = () => <div>Gợi ý tập luyện</div>;
 const CongDong = () => <div>Cộng đồng (đang phát triển)</div>;
 const UngDung = () => <div>Ứng dụng di động</div>;
 
-/** 
+/**
  * Layout được bảo vệ (đã có dữ liệu đầu vào) + bọc AppShell
  * Dùng <Outlet/> để render các route con bên trong AppShell
  */
@@ -77,19 +78,25 @@ export default function App() {
           {/* Kết nối (Teammate) */}
           <Route path="/ket-noi" element={<KetNoi />} />
 
-          {/* Dinh dưỡng (mặc định: /dinh-duong/nhat-ky) */}
+          {/* Dinh dưỡng */}
+          <Route path="/dinh-duong" element={<Navigate to="/dinh-duong/nhat-ky" replace />} />
           <Route path="/dinh-duong/nhat-ky" element={<NhatKy />} />
           <Route path="/dinh-duong/ghi-lai" element={<GhiLai />} />
           <Route path="/dinh-duong/ghi-lai/tao-mon" element={<TaoMon />} />
           <Route path="/dinh-duong/ghi-lai/tinh-calo-ai" element={<TinhCaloAI />} />
           <Route path="/dinh-duong/thuc-don-goi-y" element={<ThucDonGoiY />} />
 
-          {/* Tập luyện (mặc định: /tap-luyen/lich-cua-ban) */}
+          {/* Tập luyện */}
+          <Route path="/tap-luyen" element={<Navigate to="/tap-luyen/lich-cua-ban" replace />} />
           <Route path="/tap-luyen/lich-cua-ban" element={<LichTap />} />
           <Route path="/tap-luyen/bai-tap" element={<BaiTap />} />
           <Route path="/tap-luyen/bai-tap/cardio" element={<Cardio />} />
           <Route path="/tap-luyen/bai-tap/workout" element={<Workout />} />
           <Route path="/tap-luyen/goi-y" element={<GoiYTap />} />
+
+          {/* Trang tài khoản */}
+          <Route path="/tai-khoan" element={<Navigate to="/tai-khoan/ho-so" replace />} />
+          <Route path="/tai-khoan/ho-so" element={<Profile />} />
 
           {/* Khác */}
           <Route path="/cong-dong" element={<CongDong />} />

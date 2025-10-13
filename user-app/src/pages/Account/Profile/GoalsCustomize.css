@@ -1,0 +1,126 @@
+/* Giới hạn bề rộng box ngoài + căn giữa toàn khối */
+:root{
+  --goal-frame-max: 820px;  /* bạn có thể chỉnh 760–900 tuỳ mắt */
+}
+
+.goal-frame{
+  border:1px solid var(--fm-ring);
+  border-radius:10px;
+  padding:10px 12px;
+  background:#fff;
+  margin: 0 auto 12px;           /* căn giữa khối */
+  max-width: var(--goal-frame-max);
+  width: 100%;
+}
+
+/* 4 phần tử căn đều – grid 4 cột, canh giữa từng ô */
+.goal-row-center{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  justify-items:center;
+  align-items:center;
+  gap:24px;
+}
+
+/* Calo mục tiêu – box trắng bên trong */
+.kpi-cal{
+  width: 200px;
+  height: 92px;
+  background:#fff;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center;
+}
+.cal-val{ font-size:22px; font-weight:800; line-height:1; }
+.cal-sub{ font-size:12px; color:#6b7280; margin-top:4px; }
+
+/* Macro ring */
+.kpi-macro{ display:grid; place-items:center; gap:6px; }
+.kpi-label{ font-size:14px; font-weight:600; color:#111827; }
+
+.ring{
+  --size:70px; --thick:10px;
+  width:var(--size); height:var(--size);
+  border-radius:50%;
+  position:relative;
+  background: conic-gradient(var(--tone,#22c55e) calc(var(--p)*1%), #e5e7eb 0);
+  display:grid; place-items:center;
+}
+.ring::after{
+  content:""; position:absolute; inset:var(--thick);
+  background:#fff; border-radius:50%;
+}
+.ring-text{ position:relative; font-size:14px; color:#0f172a; }
+.tone-prot .ring{ --tone:#0ea5e9; }  /* đạm */
+.tone-carb .ring{ --tone:#22c55e; }  /* carb */
+.tone-fat  .ring{ --tone:#f59e0b; }  /* béo */
+
+/* BMR/TDEE – giữ cấu trúc cũ, thêm fill nổi bật */
+.goal-facts{
+  border:1px solid var(--fm-ring);
+  border-radius:10px;
+  overflow:hidden;
+  background:#fff;
+}
+.goal-facts.filled .fact-row{
+  background:#eef6ff;
+  border-bottom:1px solid #dbeafe;
+}
+.goal-facts.filled .fact-row + .fact-row{
+  border-top:1px solid #dbeafe;
+}
+.fact-row{
+  display:grid;
+  grid-template-columns:1fr auto;
+  padding:8px 10px;
+}
+.fact-row strong{ font-weight:700; }
+
+/* Divider mờ */
+.pf-line{ height:1px; background:#e5e7eb; margin:12px 0; }
+
+/* Accordion (như trước) */
+.goal-acc{
+  border:1px solid var(--fm-ring);
+  border-radius:10px;
+  overflow:hidden;
+  background:#fff;
+}
+.acc-head{
+  background:#f8fafc;
+  padding:10px 12px;
+  font-weight:700;
+  border-bottom:1px solid var(--fm-ring);
+}
+.acc-row{
+  width:100%;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 12px;
+  background:#fff; border:0; cursor:pointer;
+  border-top:1px solid var(--fm-ring);
+  font-size:14px;
+}
+.acc-row .chev{ transition: transform .2s ease; }
+.acc-row.is-open .chev{ transform: rotate(90deg); }
+.acc-panel{
+  padding:12px;
+  border-top:1px dashed #e5e7eb;
+  background:#fff;
+}
+
+/* Nút cập nhật */
+.btn-success{
+  background:#22c55e; color:#fff; border:0;
+  border-radius:8px; padding:10px 14px;
+  font-weight:600; cursor:pointer;
+}
+.btn-success:hover{ filter:brightness(0.96); }
+
+/* Responsive */
+@media (max-width: 1024px){
+  .goal-row-center{ grid-template-columns: repeat(2, 1fr); gap:20px; }
+}
+@media (max-width: 640px){
+  .goal-row-center{ grid-template-columns: 1fr; gap:16px; }
+  .kpi-cal{ width: 100%; max-width: 320px; }
+}
