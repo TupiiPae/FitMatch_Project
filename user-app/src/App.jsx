@@ -6,12 +6,16 @@ import OnboardingGuard from "./routes/OnboardingGuard";
 import HomeGuard from "./routes/HomeGuard";
 import OnboardingRoutes from "./pages/Onboarding/OnboardingRoutes";
 import Home from "./pages/Home/Home";
-import Profile from "./pages/Account/Profile/index.jsx";
 
-// Layout có Navbar + Footer
+// Account pages
+import Profile from "./pages/Account/Profile"; // index.jsx => chỉ cần tới thư mục
+import AccountSettings from "./pages/Account/AccountSettings";
+import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy"; // index.jsx => chỉ cần tới thư mục
+
+// Layout (Navbar + Footer)
 import AppShell from "./components/layout/AppShell";
 
-// TODO: thay các placeholder này bằng component thật của bạn
+// PLACEHOLDER (thay bằng component thật sau)
 const ThongKe = () => <div>Trang Thống kê</div>;
 const KetNoi = () => <div>Trang Kết nối (Teammate)</div>;
 
@@ -33,12 +37,9 @@ const GoiYTap = () => <div>Gợi ý tập luyện</div>;
 const CongDong = () => <div>Cộng đồng (đang phát triển)</div>;
 const UngDung = () => <div>Ứng dụng di động</div>;
 
-/**
- * Layout được bảo vệ (đã có dữ liệu đầu vào) + bọc AppShell
- * Dùng <Outlet/> để render các route con bên trong AppShell
- */
+/** Layout bảo vệ + bọc AppShell */
 function ProtectedLayout() {
-  const nickname = "Tupi"; // TODO: lấy từ store/context (vd: auth.user.nickname)
+  const nickname = "Tupi"; // TODO: lấy từ store/context
   return (
     <HomeGuard>
       <AppShell nickname={nickname}>
@@ -57,7 +58,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Chưa onboard → vào flow Onboarding */}
+        {/* Onboarding (chỉ vào khi chưa onboard) */}
         <Route
           path="/onboarding/*"
           element={
@@ -67,15 +68,14 @@ export default function App() {
           }
         />
 
-        {/* Đã onboard → vào khu vực có Navbar/Footer */}
+        {/* Khu vực app có Navbar/Footer */}
         <Route element={<ProtectedLayout />}>
-          {/* Home có thể là dashboard / trang chào khi đã onboard */}
           <Route path="/home" element={<Home />} />
 
           {/* Thống kê */}
           <Route path="/thong-ke" element={<ThongKe />} />
 
-          {/* Kết nối (Teammate) */}
+          {/* Kết nối */}
           <Route path="/ket-noi" element={<KetNoi />} />
 
           {/* Dinh dưỡng */}
@@ -94,9 +94,10 @@ export default function App() {
           <Route path="/tap-luyen/bai-tap/workout" element={<Workout />} />
           <Route path="/tap-luyen/goi-y" element={<GoiYTap />} />
 
-          {/* Trang tài khoản */}
-          <Route path="/tai-khoan" element={<Navigate to="/tai-khoan/ho-so" replace />} />
+          {/* Tài khoản */}
           <Route path="/tai-khoan/ho-so" element={<Profile />} />
+          <Route path="/tai-khoan/tai-khoan" element={<AccountSettings />} />
+          <Route path="/tai-khoan/quyen-rieng-tu" element={<PrivacyPolicyPage />} />
 
           {/* Khác */}
           <Route path="/cong-dong" element={<CongDong />} />

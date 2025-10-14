@@ -1,0 +1,6 @@
+/* Chỉ style cho title của trang Privacy Policy, vẫn bám scope an toàn */
+.acc-page .pf-content .pp-title {
+  font-size: 28px;
+  text-align: center;
+  margin-bottom: 60px; /* giữ nhịp với pf-desc bên dưới */
+}

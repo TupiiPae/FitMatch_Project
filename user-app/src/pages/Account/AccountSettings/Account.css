@@ -1,0 +1,268 @@
+/* ===========================
+   Account.css (scoped an toàn)
+   =========================== */
+/* TẤT CẢ rule scoped theo .acc-page .pf-content để không ảnh hưởng trang khác */
+
+/* Card tổng */
+.acc-page .pf-content .acc-card {
+  padding-top: 16px;
+}
+
+/* ============ AVATAR GIỮA + BUTTON RIÊNG (kiểu navbar) ============ */
+
+/* Khung hero: relative + chừa chỗ cho avatar */
+.acc-page .pf-content .acc-hero {
+  position: relative;
+  width: 100%;
+  /* chiều cao hiển thị avatar + khoảng đệm phía dưới */
+  padding-top: 200px;          /* 180px avatar + 20px khoảng trống */
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+}
+
+/* Khung bọc avatar + button (để định vị nút ở góc dưới-phải ngoài avatar) */
+.acc-page .pf-content .acc-avatarWrap {
+  position: absolute;          /* đặt giữa card */
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 188px;                /* 180 + viền; rộng hơn avatar một chút để chứa nút */
+  height: 188px;
+  overflow: visible;
+}
+
+/* Avatar: đặt tuyệt đối, căn GIỮA theo trục X ở đỉnh khung */
+.acc-page .pf-content .acc-avatar {
+  position: absolute !important; /* đè mọi rule cũ */
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--fm-ring);
+  background: #fff;
+  display: grid;
+  place-items: center;
+  margin: 0;                    /* tránh rule cũ đẩy lệch */
+  float: none !important;       /* chặn float từ CSS khác */
+}
+.acc-page .pf-content .acc-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Nút đổi ảnh (button riêng) – đặt ở góc DƯỚI-PHẢI, nhô ra ngoài avatar giống navbar */
+.acc-page .pf-content .acc-avatar-btn {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  transform: translate(1%, 1%); /* nhô ra 1 chút tạo cảm giác “gài” vào avatar */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  color: #fff;
+  border: 2px solid #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 20px;
+  z-index: 2;
+  box-shadow: 0 6px 18px rgba(0,0,0,.15);
+}
+.acc-page .pf-content .acc-avatar-btn:hover {
+  filter: brightness(1.05);
+}
+.acc-page .pf-content .acc-file {
+  display: none;
+}
+
+/* Ghi chú: nằm dưới avatar (vì khung .acc-hero đã padding-top) và căn giữa */
+.acc-page .pf-content .acc-note {
+  position: relative;
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+  margin-bottom: 2px;
+}
+
+/* ============ (Tuỳ chọn) Nút dài “Thay đổi hình ảnh” dưới avatar ============ */
+.acc-page .pf-content .acc-change-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--fm-ring);
+  background: #fff;
+  cursor: pointer;
+}
+.acc-page .pf-content .acc-change-btn:hover {
+  background: #f9fafb;
+}
+
+/* ============ Khung dữ liệu & Form (đồng bộ + full width) ============ */
+
+/* Title (đồng bộ Hồ sơ, căn lề với frame) */
+.acc-page .pf-content .pf-title {
+  margin: 0 0 10px;
+  padding: 0 12px;          /* căn đều với acc-frame */
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Khung dữ liệu: full bề rộng card */
+.acc-page .pf-content .acc-frame {
+  max-width: none;          /* bỏ giới hạn 820px để căn theo card */
+  width: 100%;
+  margin: 0;
+  padding: 0 12px;          /* đệm trong cho đẹp, khớp pf-title */
+}
+
+/* Form blocks */
+.acc-page .pf-content .pf-form-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.acc-page .pf-content .pf-form-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.acc-page .pf-content .pf-form-row {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+/* Nhãn */
+.acc-page .pf-content .pf-form-row label,
+.acc-page .pf-content .pf-form-cell label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+}
+
+/* Input/select: full width + cao 40px cho đồng bộ */
+.acc-page .pf-content .pf-form-row input,
+.acc-page .pf-content .pf-form-row select,
+.acc-page .pf-content .pf-form-cell input,
+.acc-page .pf-content .pf-form-cell select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--fm-ring);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  color: inherit;
+}
+
+/* Date input – viền rõ & đồng bộ chiều cao */
+.acc-page .pf-content input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff;
+  border: 1px solid var(--fm-ring);
+  border-radius: 10px;
+  padding: 0 12px;
+  width: 100%;
+  height: 40px;
+  line-height: 40px;
+}
+.acc-page .pf-content input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+/* Readonly (không cho sửa) – giống input nhưng fill xám + cursor */
+.acc-page .pf-content .pf-form-row[data-readonly] input {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* ============ Segmented control cho Giới tính – FULL WIDTH ============ */
+.acc-page .pf-content .seg-group {
+  display: grid;                    /* full width + 2 cột đều nhau */
+  grid-template-columns: 1fr 1fr;
+  height: 40px;
+  width: 100%;
+  border: 1px solid var(--fm-ring);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.acc-page .pf-content .seg-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.acc-page .pf-content .seg-option + .seg-option {
+  border-left: 1px solid var(--fm-ring);
+}
+
+.acc-page .pf-content .seg-option input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.acc-page .pf-content .seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 40px;
+  font-weight: 600;
+  color: #111827;
+  background: #fff;
+  user-select: none;
+}
+.acc-page .pf-content .seg-option input:checked + .seg-btn {
+  background: #111827;
+  color: #fff;
+}
+.acc-page .pf-content .seg-option input:focus-visible + .seg-btn {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+/* Nút submit */
+.acc-page .pf-content .btn-success {
+  background: #22c55e;
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.acc-page .pf-content .btn-success:hover {
+  filter: brightness(0.96);
+}
+
+/* Trạng thái tải */
+.acc-page .pf-content .acc-loading {
+  padding: 8px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .acc-page .pf-content .pf-form-2 {
+    grid-template-columns: 1fr;
+  }
+}

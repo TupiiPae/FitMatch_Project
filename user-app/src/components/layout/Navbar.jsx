@@ -254,11 +254,11 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
         <div className="acc-sep" />
         <NavLink to="/tin-nhan" className="acc-item"><FontAwesomeIcon icon={faMessage} />Tin nhắn</NavLink>
         <div className="acc-sep" />
-        <NavLink to="/tai-khoan" className="acc-item"><FontAwesomeIcon icon={faGear} />Tài khoản</NavLink>
+        <NavLink to="/tai-khoan/tai-khoan" className="acc-item"><FontAwesomeIcon icon={faGear} />Tài khoản</NavLink>
         <div className="acc-sep" />
         <NavLink to="/ve-fitmatch" className="acc-item"><FontAwesomeIcon icon={faCircleInfo} />Về FitMatch</NavLink>
         <div className="acc-sep" />
-        <NavLink to="/quyen-rieng-tu" className="acc-item"><FontAwesomeIcon icon={faShieldHalved} />Chính sách quyền riêng tư</NavLink>
+        <NavLink to="/tai-khoan/quyen-rieng-tu" className="acc-item"><FontAwesomeIcon icon={faShieldHalved} />Chính sách quyền riêng tư</NavLink>
       </div>
 
       <button className="acc-logout">
