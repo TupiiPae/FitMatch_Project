@@ -26,6 +26,12 @@ const profileSchema = new mongoose.Schema(
     bmi: { type: Number, min: [5, "BMI không hợp lệ"], max: [80, "BMI không hợp lệ"] },
     bmr: { type: Number, min: [500, "BMR không hợp lệ"], max: [5000, "BMR không hợp lệ"] },
     tdee: { type: Number, min: [800, "TDEE không hợp lệ"], max: [8000, "TDEE không hợp lệ"] },
+        // --- Nutrition targets ---
+    calorieTarget: { type: Number, min: [800, "Calo tối thiểu 800"], max: [8000, "Calo tối đa 8000"] },
+    macroProtein: { type: Number, min: [0, ">=0"], max: [100, "<=100"] }, // %
+    macroCarb:    { type: Number, min: [0, ">=0"], max: [100, "<=100"] }, // %
+    macroFat:     { type: Number, min: [0, ">=0"], max: [100, "<=100"] }, // %
+
   },
   { _id: false }
 );

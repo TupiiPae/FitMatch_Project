@@ -1,8 +1,8 @@
 // server/src/controllers/onboarding.controller.js
-import { Onboarding } from "../models/OnboardingProfile.js";
+import { OnboardingProfile } from "../models/OnboardingProfile.js";
 import { User } from "../models/User.js";
 import { OnboardingInputSchema } from "../validators/onboarding.schema.js";
-import { tinhBmi, tinhBmr, tinhTdee } from "../utils/health.js";
+import { tinhBmi, tinhBmr, tinhTdee, tinhCalorieTarget } from "../utils/health.js";
 
 export async function upsertOnboarding(req, res) {
   try {
@@ -19,7 +19,13 @@ export async function upsertOnboarding(req, res) {
       chieuCaoCm: duLieu.chieuCao,
       ngaySinh: duLieu.ngaySinh,
     });
-    const tdee = tinhTdee(bmr, duLieu.cuongDoLuyenTap); // ====== NEW
+    const tdee = tinhTdee(bmr, duLieu.cuongDoLuyenTap);
+    const calorieTarget = tinhCalorieTarget({
+      tdee,
+      mucTieu: duLieu.mucTieu,
+      mucTieuTuan: duLieu.mucTieuTuan,
+      bmr,
+    });
 
     const $set = {
       tenGoi: duLieu.tenGoi,
@@ -33,13 +39,14 @@ export async function upsertOnboarding(req, res) {
       ngaySinh: duLieu.ngaySinh,
       bmi,
       bmr,
-      tdee, // ====== NEW
+      tdee,
+      calorieTarget,
       hoanTatOnboarding: true,
     };
 
     const $setOnInsert = { user: req.userId, phienBan: 1 };
 
-    const doc = await Onboarding.findOneAndUpdate(
+    const doc = await OnboardingProfile.findOneAndUpdate(
       { user: req.userId },
       { $set, $setOnInsert },
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
@@ -59,7 +66,8 @@ export async function upsertOnboarding(req, res) {
         "profile.dob": duLieu.ngaySinh,
         "profile.bmi": bmi,
         "profile.bmr": bmr,
-        "profile.tdee": tdee, // ====== NEW
+        "profile.tdee": tdee,
+        "profile.calorieTarget": calorieTarget,
       },
     });
 
@@ -78,7 +86,7 @@ export async function getMyOnboarding(req, res) {
     if (!req.userId) {
       return res.status(401).json({ success: false, message: "Chưa xác thực người dùng" });
     }
-    const doc = await Onboarding.findOne({ user: req.userId });
+    const doc = await OnboardingProfile.findOne({ user: req.userId });
     if (!doc) {
       return res.status(404).json({ success: false, message: "Chưa có dữ liệu onboarding" });
     }

@@ -1,4 +1,6 @@
-import React from "react";
+// user-app/src/pages/Account/Profile/BodyProfile.jsx
+import React, { useEffect, useState } from "react";
+import api from "../../../lib/api"; // đường dẫn từ Profile/BodyProfile.jsx lên lib/api.js
 import "./BodyProfile.css";
 
 const calcAge = (dob) => {
@@ -12,7 +14,50 @@ const calcAge = (dob) => {
   return Number.isNaN(a) ? "" : a;
 };
 
-export default function BodyProfile({ user }) {
+export default function BodyProfile() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setErr("");
+        const res = await api.get("/api/user/me");
+        if (!mounted) return;
+        setUser(res?.data?.user || null);
+      } catch (e) {
+        if (!mounted) return;
+        setErr(e?.response?.data?.message || "Không thể tải hồ sơ");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="card">
+        <h2 className="pf-title">Hồ sơ thể chất</h2>
+        <div className="pf-loading">Đang tải...</div>
+      </div>
+    );
+  }
+
+  if (err) {
+    return (
+      <div className="card">
+        <h2 className="pf-title">Hồ sơ thể chất</h2>
+        <div className="pf-error">{err}</div>
+      </div>
+    );
+  }
+
   const p = user?.profile || {};
 
   return (
@@ -26,7 +71,8 @@ export default function BodyProfile({ user }) {
 
           <div className="pf-form-row">
             <label>Giới tính</label>
-            <select value={p.sex || "male"} disabled>
+            <select value={p.sex || ""} disabled>
+              <option value="" disabled>—</option>
               <option value="male">Nam</option>
               <option value="female">Nữ</option>
             </select>
@@ -36,7 +82,7 @@ export default function BodyProfile({ user }) {
             <div className="pf-form-cell">
               <label>Tuổi</label>
               <div className="pf-unit" data-muted>
-                 <input disabled value={p.dob ? calcAge(p.dob) : ""} placeholder="21" />
+                <input disabled value={p.dob ? calcAge(p.dob) : ""} placeholder="21" />
               </div>
             </div>
             <div className="pf-form-cell">
@@ -84,7 +130,11 @@ export default function BodyProfile({ user }) {
             <div className="pf-tr">
               <div className="pf-td">Mục tiêu hằng tuần</div>
               <div className="pf-td pf-td-end">
-                {p.weeklyChangeKg ? `Giảm ${p.weeklyChangeKg} kg/tuần` : "—"}
+                {typeof p.weeklyChangeKg === "number"
+                  ? (p.goal === "tang_can" || p.goal === "tang_co"
+                      ? `Tăng ${p.weeklyChangeKg} kg/tuần`
+                      : `Giảm ${p.weeklyChangeKg} kg/tuần`)
+                  : "—"}
               </div>
             </div>
             <div className="pf-tr">
@@ -93,7 +143,9 @@ export default function BodyProfile({ user }) {
             </div>
             <div className="pf-tr">
               <div className="pf-td">Calo mục tiêu (ước tính)</div>
-              <div className="pf-td pf-td-end">{p.tdee ? `${Math.round(p.tdee)} kcal` : "—"}</div>
+              <div className="pf-td pf-td-end">
+                {typeof p.tdee === "number" ? `${Math.round(p.tdee)} kcal` : "—"}
+              </div>
             </div>
             <div className="pf-tr">
               <div className="pf-td">Dự kiến hoàn thành</div>
@@ -102,7 +154,7 @@ export default function BodyProfile({ user }) {
           </div>
 
           <div className="pf-actions">
-            <button className="btn-primary">Thiết lập mục tiêu mới</button>
+            <button className="btn-primary" disabled>Thiết lập mục tiêu mới</button>
           </div>
         </div>
 
@@ -115,16 +167,16 @@ export default function BodyProfile({ user }) {
                 <div key={i} className="measure">
                   <div className="measure-top">
                     <div className="measure-name">{label}</div>
-                    <button className="measure-add">+</button>
+                    <button className="measure-add" disabled>+</button>
                   </div>
-                  <div className="measure-value">xx.x cm</div>
+                  <div className="measure-value">—</div>
                 </div>
               )
             )}
           </div>
 
           <div className="pf-actions pf-actions-right">
-            <button className="btn-secondary">Cập nhật</button>
+            <button className="btn-secondary" disabled>Cập nhật</button>
           </div>
         </div>
       </div>
