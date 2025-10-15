@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -6,27 +6,80 @@ import {
   faBookmark, faRightFromBracket, faUser, faMessage, faGear, faCircleInfo,
   faShieldHalved, faCamera
 } from "@fortawesome/free-solid-svg-icons";
+import { getMe } from "../../api/account"; // 👈 đảm bảo đường dẫn đúng tới hàm getMe() trả user
 
 const logoHref =
   (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") +
   "images/logo-fitmatch.png";
 
+// Helpers
+const fmtDate = (iso) => {
+  if (!iso) return "xx/xx/xxxx";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "xx/xx/xxxx";
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
+
+const calcAge = (dob) => {
+  if (!dob || typeof dob !== "string") return "xx";
+  const m = /^\d{4}-\d{2}-\d{2}$/.exec(dob);
+  if (!m) return "xx";
+  const [y, mo, d] = dob.split("-").map(Number);
+  const birth = new Date(y, (mo || 1) - 1, d || 1);
+  if (Number.isNaN(birth.getTime())) return "xx";
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const md = today.getMonth() - birth.getMonth();
+  if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
+  return age >= 0 && age <= 120 ? String(age) : "xx";
+};
+
 export default function Navbar({
-  nickname = "Bạn",
-  avatarSrc,
-  joinDate = "xx/xx/xxxx",
-  age = "xx",
-  heightCm = "xxx",
-  weightKg = "xx"
+  // Các props này giờ chỉ là fallback nếu API không trả về
+  nickname: nicknameProp = "Bạn",
+  avatarSrc: avatarProp,
+  joinDate: joinDateProp = "xx/xx/xxxx",
+  age: ageProp = "xx",
+  heightCm: heightProp = "xxx",
+  weightKg: weightProp = "xx",
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [accountOpen, setAccountOpen] = useState(false);
-
-  // NEW: modal xác nhận đăng xuất
   const [openLogout, setOpenLogout] = useState(false);
 
+  const [me, setMe] = useState(null);     // 👈 user từ API
+  const [loading, setLoading] = useState(true);
+
   const accRef = useRef(null);
+
+  // Fetch /api/user/me một lần
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const u = await getMe();    // implement: return res.data.user
+        if (!mounted) return;
+        setMe(u || null);
+      } catch {
+        if (!mounted) return;
+        setMe(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // Derive dữ liệu hiển thị từ API (fallback sang props nếu thiếu)
+  const p = me?.profile || {};
+  const displayNickname = p.nickname || me?.username || nicknameProp || "Bạn";
+  const displayJoinDate = fmtDate(me?.createdAt) || joinDateProp;
+  const displayAge      = (p.dob ? calcAge(p.dob) : ageProp) || "xx";
+  const displayHeight   = (typeof p.heightCm === "number" ? p.heightCm : heightProp) || "xxx";
+  const displayWeight   = (typeof p.weightKg === "number" ? p.weightKg : weightProp) || "xx";
+  const displayAvatar   = avatarProp || "/images/avatar.png"; // (nếu sau này có avatar trong DB thì map vào đây)
 
   const toggleMobile = () => setMobileOpen(v => !v);
   const dropdownToggle = key => setOpenDropdown(prev => (prev === key ? null : key));
@@ -43,7 +96,7 @@ export default function Navbar({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  // NEW: Esc để đóng modal đăng xuất
+  // Esc để đóng modal đăng xuất
   useEffect(() => {
     if (!openLogout) return;
     const onKey = (e) => { if (e.key === "Escape") setOpenLogout(false); };
@@ -51,13 +104,12 @@ export default function Navbar({
     return () => document.removeEventListener("keydown", onKey);
   }, [openLogout]);
 
-  // NEW: xử lý đăng xuất (giống trang Tài khoản)
+  // Đăng xuất
   const handleLogout = async () => {
     try {
       localStorage.removeItem("token");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("jwt");
-      // Nếu dùng cookie-session, bạn có thể gọi /auth/logout tại đây.
     } finally {
       window.location.href = "/";
     }
@@ -168,27 +220,29 @@ export default function Navbar({
 
           {/* RIGHT: HELLO + AVATAR + ACCOUNT DROPDOWN */}
           <div className="fm-right" ref={accRef}>
-            <span className="fm-hello">Xin chào, <strong>{nickname}</strong></span>
+            <span className="fm-hello">
+              Xin chào, <strong>{displayNickname}</strong>
+              {loading ? "…" : ""}
+            </span>
             <div className="fm-avatar" title="Tài khoản" role="button" tabIndex={0} onClick={toggleAccount}>
-              <img src={avatarSrc || "/images/avatar.png"} alt="Avatar" />
+              <img src={displayAvatar} alt="Avatar" />
             </div>
 
             <AccountDropdown
               open={accountOpen}
               onClose={closeAccount}
-              nickname={nickname}
-              joinDate={joinDate}
-              age={age}
-              heightCm={heightCm}
-              weightKg={weightKg}
-              // NEW: truyền mở modal logout từ dropdown
+              nickname={displayNickname}
+              joinDate={displayJoinDate}
+              age={displayAge}
+              heightCm={displayHeight}
+              weightKg={displayWeight}
               onAskLogout={() => { setAccountOpen(false); setOpenLogout(true); }}
             />
           </div>
         </div>
       </div>
 
-      {/* NEW: Modal xác nhận Đăng xuất (dùng chung style với trang Account, nhưng tách scope cho navbar) */}
+      {/* Modal xác nhận Đăng xuất */}
       {openLogout && (
         <div className="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
           <div className="logout-backdrop" onClick={() => setOpenLogout(false)} />
@@ -269,7 +323,6 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
         <NavLink to="/tai-khoan/quyen-rieng-tu" className="acc-item"><FontAwesomeIcon icon={faShieldHalved} />Chính sách quyền riêng tư</NavLink>
       </div>
 
-      {/* Nút Đăng xuất → mở modal xác nhận */}
       <button className="acc-logout" type="button" onClick={onAskLogout}>
         <FontAwesomeIcon icon={faRightFromBracket} /> Đăng xuất
       </button>

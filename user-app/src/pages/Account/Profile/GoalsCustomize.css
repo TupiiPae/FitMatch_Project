@@ -38,22 +38,58 @@
 .kpi-macro{ display:grid; place-items:center; gap:6px; }
 .kpi-label{ font-size:14px; font-weight:600; color:#111827; }
 
+/* Vòng tròn: ưu tiên CSS var --p; có fallback bằng class pct-XX */
 .ring{
-  --size:70px; --thick:10px;
-  width:var(--size); height:var(--size);
+  --size:70px; 
+  --thick:10px;
+  width:var(--size); 
+  height:var(--size);
   border-radius:50%;
   position:relative;
-  background: conic-gradient(var(--tone,#22c55e) calc(var(--p)*1%), #e5e7eb 0);
-  display:grid; place-items:center;
+  display:grid; 
+  place-items:center;
+  /* ƯU TIÊN: var(--p) nếu có */
+  background: conic-gradient(var(--tone,#22c55e) calc(var(--p, 0)*1%), #e5e7eb 0);
 }
+/* Mặt nạ trong */
 .ring::after{
-  content:""; position:absolute; inset:var(--thick);
-  background:#fff; border-radius:50%;
+  content:""; 
+  position:absolute; 
+  inset:var(--thick);
+  background:#fff; 
+  border-radius:50%;
+  z-index: 0; /* ở dưới text */
 }
-.ring-text{ position:relative; font-size:14px; color:#0f172a; }
+/* Số % ở giữa – luôn trên cùng */
+.ring-text{ 
+  position:relative; 
+  z-index:1;         /* ở trên ::after */
+  font-size:14px; 
+  font-weight:700; 
+  color:#0f172a; 
+  line-height:1;
+  pointer-events:none;
+}
+
+/* Tone màu theo loại */
 .tone-prot .ring{ --tone:#0ea5e9; }  /* đạm */
 .tone-carb .ring{ --tone:#22c55e; }  /* carb */
 .tone-fat  .ring{ --tone:#f59e0b; }  /* béo */
+
+/* ======= Fallback ring nếu CSS var --p không hoạt động ======= */
+/* Ghi đè bằng class phần trăm (bạn có thể rút gọn chỉ giữ 20/50/30 nếu muốn) */
+
+.ring.pct-0   { background: conic-gradient(var(--tone,#22c55e) 0%,   #e5e7eb 0); }
+.ring.pct-10  { background: conic-gradient(var(--tone,#22c55e) 10%,  #e5e7eb 0); }
+.ring.pct-20  { background: conic-gradient(var(--tone,#22c55e) 20%,  #e5e7eb 0); }
+.ring.pct-30  { background: conic-gradient(var(--tone,#22c55e) 30%,  #e5e7eb 0); }
+.ring.pct-40  { background: conic-gradient(var(--tone,#22c55e) 40%,  #e5e7eb 0); }
+.ring.pct-50  { background: conic-gradient(var(--tone,#22c55e) 50%,  #e5e7eb 0); }
+.ring.pct-60  { background: conic-gradient(var(--tone,#22c55e) 60%,  #e5e7eb 0); }
+.ring.pct-70  { background: conic-gradient(var(--tone,#22c55e) 70%,  #e5e7eb 0); }
+.ring.pct-80  { background: conic-gradient(var(--tone,#22c55e) 80%,  #e5e7eb 0); }
+.ring.pct-90  { background: conic-gradient(var(--tone,#22c55e) 90%,  #e5e7eb 0); }
+.ring.pct-100 { background: conic-gradient(var(--tone,#22c55e) 100%, #e5e7eb 0); }
 
 /* BMR/TDEE – giữ cấu trúc cũ, thêm fill nổi bật */
 .goal-facts{

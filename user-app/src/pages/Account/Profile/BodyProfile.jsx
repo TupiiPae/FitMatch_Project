@@ -63,11 +63,10 @@ export default function BodyProfile() {
   return (
     <div className="card">
       <h2 className="pf-title">Hồ sơ thể chất</h2>
-
+          <h3 className="pf-subtitle">Thông tin cơ bản</h3>
       <div className="pf-grid-2">
         {/* Cột trái */}
         <div>
-          <h3 className="pf-subtitle">Thông tin cơ bản</h3>
 
           <div className="pf-form-row">
             <label>Giới tính</label>

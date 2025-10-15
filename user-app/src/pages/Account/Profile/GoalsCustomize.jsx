@@ -4,29 +4,18 @@ import "./GoalsCustomize.css";
 export default function GoalsCustomize({ user }) {
   const p = user?.profile || {};
 
-  // Macro % (chuẩn hóa tổng = 100%)
-  const { prot, carb, fat } = useMemo(() => {
-    const _prot = Number.isFinite(+p.macroProtein) ? +p.macroProtein : 20;
-    const _carb = Number.isFinite(+p.macroCarb) ? +p.macroCarb : 50;
-    const _fat  = Number.isFinite(+p.macroFat)  ? +p.macroFat  : 30;
-    const total = _prot + _carb + _fat;
-    if (!total || total <= 0) return { prot: 20, carb: 50, fat: 30 };
-    const nProt = Math.round((_prot / total) * 100);
-    const nCarb = Math.round((_carb / total) * 100);
-    return { prot: nProt, carb: nCarb, fat: 100 - nProt - nCarb };
-  }, [p.macroProtein, p.macroCarb, p.macroFat]);
+  // Calo mục tiêu: ưu tiên calorieTarget, fallback TDEE (nếu là number)
+  const calDisplay = useMemo(() => {
+    const t = typeof p.calorieTarget === "number" ? p.calorieTarget : p.tdee;
+    return typeof t === "number" ? Math.round(t) : "";
+  }, [p.calorieTarget, p.tdee]);
 
-  const calTarget = useMemo(() => {
-    const t = Number(p.tdee);
-    return Number.isFinite(t) && t > 0 ? Math.round(t) : "XXXX";
-  }, [p.tdee]);
+  // Macro mặc định (chỉ hiển thị – không sửa)
+  const prot = 20;
+  const carb = 50;
+  const fat  = 30;
 
-  const items = [
-    { key: "cal",   label: "Tùy chỉnh Calo mục tiêu" },
-    { key: "macro", label: "Tùy chỉnh tỷ lệ dinh dưỡng đa lượng" },
-    { key: "water", label: "Lượng nước" },
-    { key: "steps", label: "Bước chân mục tiêu" },
-  ];
+  // Accordion UI (chỉ mở/đóng, không thực thi lưu)
   const [openKey, setOpenKey] = useState(null);
   const toggle = (k) => setOpenKey((prev) => (prev === k ? null : k));
 
@@ -36,31 +25,31 @@ export default function GoalsCustomize({ user }) {
 
       <h3 className="pf-subtitle">Thông tin dinh dưỡng</h3>
 
-      {/* Box ngoài (thu hẹp & căn giữa), 4 phần tử căn đều bên trong */}
+      {/* KPI: chỉ hiển thị */}
       <div className="goal-frame">
         <div className="goal-row-center">
-          {/* Calo mục tiêu (box trắng) */}
+          {/* Calo mục tiêu (từ DB) */}
           <div className="kpi-cal">
-            <div className="cal-val">{calTarget}</div>
+            <div className="cal-val">{calDisplay || "—"}</div>
             <div className="cal-sub">CALO MỤC TIÊU</div>
           </div>
 
-          {/* 3 macro progress circle */}
+          {/* 3 vòng macro – số % ở TRUNG TÂM */}
           <MacroRing label="Chất đạm" pct={prot} tone="prot" />
           <MacroRing label="Đường bột" pct={carb} tone="carb" />
           <MacroRing label="Chất béo" pct={fat}  tone="fat" />
         </div>
       </div>
 
-      {/* BMR/TDEE: giữ cấu trúc cũ, thêm fill để nổi bật */}
+      {/* BMR/TDEE (tính sẵn từ server) */}
       <div className="goal-facts filled">
         <div className="fact-row">
           <span>Tỷ lệ trao đổi chất cơ bản (BMR)</span>
-          <strong>{p.bmr ? Math.round(p.bmr) : "xxxx"}</strong>
+          <strong>{typeof p.bmr === "number" ? Math.round(p.bmr) : "—"}</strong>
         </div>
         <div className="fact-row">
           <span>Tổng năng lượng tiêu thụ mỗi ngày (TDEE)</span>
-          <strong>{p.tdee ? Math.round(p.tdee) : "xxxx"}</strong>
+          <strong>{typeof p.tdee === "number" ? Math.round(p.tdee) : "—"}</strong>
         </div>
       </div>
 
@@ -68,44 +57,109 @@ export default function GoalsCustomize({ user }) {
 
       <h3 className="pf-subtitle">Tùy chỉnh mục tiêu dinh dưỡng</h3>
 
+      {/* BOX "Mục tiêu" – UI only */}
       <div className="goal-acc">
         <div className="acc-head">Mục tiêu</div>
-        {items.map((it) => {
-          const isOpen = openKey === it.key;
-          return (
-            <div key={it.key}>
-              <button
-                className={`acc-row ${isOpen ? "is-open" : ""}`}
-                onClick={() => toggle(it.key)}
-                aria-expanded={isOpen}
-              >
-                <span>{it.label}</span>
-                <i className="chev">{">"}</i>
-              </button>
 
-              {isOpen && (
-                <div className="acc-panel">
-                  {/* Placeholder form – sẽ nối API ở bước sau */}
-                  <div className="pf-form-5">
-                    <div className="pf-form-cell">
-                      <label>Giá trị</label>
-                      <input placeholder="Nhập giá trị…" />
-                    </div>
-                    <div className="pf-form-cell">
-                      <label>Ghi chú</label>
-                      <input placeholder="Tùy chọn" />
-                    </div>
-                  </div>
+        {/* Calorie Target (UI) */}
+        <div>
+          <button
+            className={`acc-row ${openKey === "cal" ? "is-open" : ""}`}
+            onClick={() => toggle("cal")}
+            aria-expanded={openKey === "cal"}
+          >
+            <span>Tùy chỉnh Calo mục tiêu</span>
+            <i className="chev">{">"}</i>
+          </button>
+
+          {openKey === "cal" && (
+            <div className="acc-panel">
+              <div className="pf-form-5">
+                <div className="pf-form-cell">
+                  <label>Calo mục tiêu (kcal)</label>
+                  <input type="number" placeholder={calDisplay || "vd. 2200"} disabled />
                 </div>
-              )}
+                <div className="pf-form-cell">
+                  <label>&nbsp;</label>
+                  <button className="btn-success" disabled>
+                    Lưu calo
+                  </button>
+                </div>
+              </div>
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
 
-      <div className="pf-actions pf-actions-right">
-        <button className="btn-success">Cập nhật</button>
+        {/* Macro Ratios (UI) */}
+        <div>
+          <button
+            className={`acc-row ${openKey === "macro" ? "is-open" : ""}`}
+            onClick={() => toggle("macro")}
+            aria-expanded={openKey === "macro"}
+          >
+            <span>Tùy chỉnh tỷ lệ dinh dưỡng đa lượng</span>
+            <i className="chev">{">"}</i>
+          </button>
+
+          {openKey === "macro" && (
+            <div className="acc-panel">
+              <div className="pf-form-5">
+                <div className="pf-form-cell">
+                  <label>Đạm (%)</label>
+                  <input type="number" placeholder={`${prot}`} disabled />
+                </div>
+                <div className="pf-form-cell">
+                  <label>Đường bột (%)</label>
+                  <input type="number" placeholder={`${carb}`} disabled />
+                </div>
+                <div className="pf-form-cell">
+                  <label>Chất béo (%)</label>
+                  <input type="number" placeholder={`${fat}`} disabled />
+                </div>
+                <div className="pf-form-cell">
+                  <label>Tổng</label>
+                  <input disabled value={`${prot + carb + fat}%`} />
+                </div>
+                <div className="pf-form-cell">
+                  <label>&nbsp;</label>
+                  <button className="btn-success" disabled>
+                    Lưu Macro
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Placeholders */}
+        <AccDisabled label="Lượng nước" openKey={openKey} toggle={toggle} k="water" />
+        <AccDisabled label="Bước chân mục tiêu" openKey={openKey} toggle={toggle} k="steps" />
       </div>
+    </div>
+  );
+}
+
+function AccDisabled({ label, openKey, toggle, k }) {
+  return (
+    <div>
+      <button
+        className={`acc-row ${openKey === k ? "is-open" : ""}`}
+        onClick={() => toggle(k)}
+        aria-expanded={openKey === k}
+      >
+        <span>{label}</span>
+        <i className="chev">{">"}</i>
+      </button>
+      {openKey === k && (
+        <div className="acc-panel">
+          <div className="pf-form-5">
+            <div className="pf-form-cell">
+              <label>Giá trị</label>
+              <input placeholder="Đang phát triển…" disabled />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -113,10 +167,16 @@ export default function GoalsCustomize({ user }) {
 function MacroRing({ label, pct, tone = "prot" }) {
   return (
     <div className={`kpi-macro tone-${tone}`}>
-      <div className="ring" style={{ ["--p"]: pct }}>
+      <div
+        className={`ring pct-${pct}`}            
+        style={{ ["--p"]: pct }}               
+        aria-label={`${label} ${pct}%`}
+        title={`${label}: ${pct}%`}
+      >
         <span className="ring-text"><strong>{pct}%</strong></span>
       </div>
       <div className="kpi-label">{label}</div>
     </div>
   );
 }
+

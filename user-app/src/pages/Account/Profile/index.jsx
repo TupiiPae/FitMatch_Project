@@ -4,58 +4,38 @@ import { getMe } from "../../../api/account";
 import BodyProfile from "./BodyProfile";
 import GoalsCustomize from "./GoalsCustomize";
 
-// === Fallback user (gần giống bản Profile.jsx cũ) ===
-const fallbackUser = {
-  username: "Tupae",
-  createdAt: null,
-  profile: {
-    nickname: "Tupae",
-    sex: "male",
-    dob: "2003-01-01",
-    heightCm: "",
-    weightKg: "",
-    goal: "",
-    targetWeightKg: "",
-    weeklyChangeKg: "",
-    trainingIntensity: "",
-    bmi: "",
-    bmr: "",
-    tdee: "",
-  },
-};
-
 const fmtDate = (iso) => {
   if (!iso) return "xx/xx/xxxx";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "xx/xx/xxxx";
-  return `${String(d.getDate()).padStart(2, "0")}/${String(
-    d.getMonth() + 1
-  ).padStart(2, "0")}/${d.getFullYear()}`;
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
 export default function Profile() {
   const [tab, setTab] = useState("body"); // 'body' | 'goals' | 'nutri' | 'weight'
-  const [user, setUser] = useState(fallbackUser); // luôn có dữ liệu để render
-  const [loaded, setLoaded] = useState(false);
+  const [user, setUser] = useState(null); // null cho đến khi API trả về
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
       try {
-        const me = await getMe(); // có thể null nếu endpoint/token chưa đúng
-        if (me && typeof me === "object") {
-          setUser((prev) => ({
-            ...prev,
-            ...me,
-            profile: { ...(prev.profile || {}), ...(me.profile || {}) },
-          }));
-        }
+        setLoading(true);
+        setErr("");
+        const me = await getMe();            // implement: return res.data.user
+        const apiUser = me?.user ?? me;      // phòng khi getMe trả { user: {...} }
+        if (!mounted) return;
+        setUser(apiUser || null);
       } catch (e) {
-        // im lặng fallback; vẫn render bằng fallbackUser
-        // console.error("getMe failed", e);
+        if (!mounted) return;
+        setErr(e?.response?.data?.message || "Không thể tải dữ liệu tài khoản");
+        setUser(null);
       } finally {
-        setLoaded(true);
+        if (mounted) setLoading(false);
       }
     })();
+    return () => { mounted = false; };
   }, []);
 
   const p = user?.profile || {};
@@ -111,29 +91,47 @@ export default function Profile() {
 
         {/* Content */}
         <section className="pf-content">
-          {tab === "body" && <BodyProfile user={user} />}
-          {tab === "goals" && <GoalsCustomize user={user} setUser={setUser} />}
-          {tab === "nutri" && (
+          {loading && (
             <div className="card">
-              <h2 className="pf-title">Xem thống kê Dinh dưỡng</h2>
-              <p className="pf-desc">Đang phát triển…</p>
+              <h2 className="pf-title">Đang tải dữ liệu…</h2>
+              <p className="pf-desc">Vui lòng chờ trong giây lát.</p>
             </div>
           )}
-          {tab === "weight" && (
+
+          {!loading && err && (
             <div className="card">
-              <h2 className="pf-title">Xem thống kê Cân nặng</h2>
-              <p className="pf-desc">Đang phát triển…</p>
+              <h2 className="pf-title">Không thể tải dữ liệu</h2>
+              <p className="pf-desc">{err}</p>
             </div>
+          )}
+
+          {!loading && !err && !user && (
+            <div className="card">
+              <h2 className="pf-title">Chưa có hồ sơ</h2>
+              <p className="pf-desc">Bạn chưa hoàn tất onboarding hoặc chưa có dữ liệu hồ sơ.</p>
+            </div>
+          )}
+
+          {!loading && !err && user && (
+            <>
+              {tab === "body" && <BodyProfile user={user} />}
+              {tab === "goals" && <GoalsCustomize user={user} />}
+              {tab === "nutri" && (
+                <div className="card">
+                  <h2 className="pf-title">Xem thống kê Dinh dưỡng</h2>
+                  <p className="pf-desc">Đang phát triển…</p>
+                </div>
+              )}
+              {tab === "weight" && (
+                <div className="card">
+                  <h2 className="pf-title">Xem thống kê Cân nặng</h2>
+                  <p className="pf-desc">Đang phát triển…</p>
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
-
-      {/* Gợi ý debug nhẹ, chỉ hiện khi API chưa load được lần đầu */}
-      {!loaded && (
-        <div style={{ padding: 12, color: "#6b7280", fontSize: 13 }}>
-          Đang tải dữ liệu tài khoản…
-        </div>
-      )}
     </div>
   );
 }
