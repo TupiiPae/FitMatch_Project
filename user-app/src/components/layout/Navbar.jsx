@@ -2,23 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faCaretDown,
-  faAngleRight,
-  faCalendar,
-  faFire,
-  faLightbulb,
-  faPenToSquare,
-  faBookmark,
-  faRightFromBracket,
-  faUser,
-  faMessage,
-  faGear,
-  faCircleInfo,
-  faShieldHalved,
-  faCamera
+  faCaretDown, faAngleRight, faCalendar, faFire, faLightbulb, faPenToSquare,
+  faBookmark, faRightFromBracket, faUser, faMessage, faGear, faCircleInfo,
+  faShieldHalved, faCamera
 } from "@fortawesome/free-solid-svg-icons";
 
-// Logo ở public/images/logo-fitmatch.png
 const logoHref =
   (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") +
   "images/logo-fitmatch.png";
@@ -26,15 +14,18 @@ const logoHref =
 export default function Navbar({
   nickname = "Bạn",
   avatarSrc,
-  // Thông tin hiển thị trong dropdown:
   joinDate = "xx/xx/xxxx",
   age = "xx",
   heightCm = "xxx",
   weightKg = "xx"
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState(null); // menu dinh dưỡng/tập luyện (mobile)
-  const [accountOpen, setAccountOpen] = useState(false);  // dropdown tài khoản
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+
+  // NEW: modal xác nhận đăng xuất
+  const [openLogout, setOpenLogout] = useState(false);
+
   const accRef = useRef(null);
 
   const toggleMobile = () => setMobileOpen(v => !v);
@@ -52,6 +43,26 @@ export default function Navbar({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
+  // NEW: Esc để đóng modal đăng xuất
+  useEffect(() => {
+    if (!openLogout) return;
+    const onKey = (e) => { if (e.key === "Escape") setOpenLogout(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [openLogout]);
+
+  // NEW: xử lý đăng xuất (giống trang Tài khoản)
+  const handleLogout = async () => {
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("jwt");
+      // Nếu dùng cookie-session, bạn có thể gọi /auth/logout tại đây.
+    } finally {
+      window.location.href = "/";
+    }
+  };
+
   return (
     <header className="fm-header" role="banner">
       <div className="fm-nav">
@@ -59,9 +70,7 @@ export default function Navbar({
           {/* LEFT: LOGO */}
           <div className="fm-left">
             <button className="fm-burger" aria-label="Mở menu" onClick={toggleMobile}>
-              <span />
-              <span />
-              <span />
+              <span /><span /><span />
             </button>
             <NavLink to="/" className="fm-brand" aria-label="FitMatch">
               <img className="fm-logo" src={logoHref} alt="FitMatch" />
@@ -79,7 +88,6 @@ export default function Navbar({
                 <NavLink to="/dinh-duong/nhat-ky" className="fm-link">
                   Dinh dưỡng <FontAwesomeIcon icon={faCaretDown} className="fm-caret" />
                 </NavLink>
-                {/* Mobile toggle */}
                 <button
                   className="fm-dd-toggle"
                   aria-label="Mở Dinh dưỡng"
@@ -100,7 +108,6 @@ export default function Navbar({
                       <span>Ghi lại bữa ăn</span>
                       <FontAwesomeIcon icon={faAngleRight} className="fm-angle" />
                     </NavLink>
-                    {/* Submenu: chỉ bung khi trỏ vào mục "Ghi lại bữa ăn" */}
                     <div className="fm-dd-sub" role="menu">
                       <NavLink to="/dinh-duong/ghi-lai/yeu-thich" className="fm-dd-sublink" role="menuitem">
                         Yêu thích của tôi
@@ -122,7 +129,6 @@ export default function Navbar({
                 <NavLink to="/tap-luyen/lich-cua-ban" className="fm-link">
                   Tập luyện <FontAwesomeIcon icon={faCaretDown} className="fm-caret" />
                 </NavLink>
-                {/* Mobile toggle */}
                 <button
                   className="fm-dd-toggle"
                   aria-label="Mở Tập luyện"
@@ -143,7 +149,6 @@ export default function Navbar({
                       <span>Các bài tập</span>
                       <FontAwesomeIcon icon={faAngleRight} className="fm-angle" />
                     </div>
-                    {/* Submenu: chỉ bung khi trỏ vào mục "Các bài tập" */}
                     <div className="fm-dd-sub" role="menu">
                       <NavLink to="/tap-luyen/bai-tap/cardio" className="fm-dd-sublink" role="menuitem">Cardio</NavLink>
                       <NavLink to="/tap-luyen/bai-tap/workout" className="fm-dd-sublink" role="menuitem">Workout</NavLink>
@@ -176,17 +181,34 @@ export default function Navbar({
               age={age}
               heightCm={heightCm}
               weightKg={weightKg}
+              // NEW: truyền mở modal logout từ dropdown
+              onAskLogout={() => { setAccountOpen(false); setOpenLogout(true); }}
             />
           </div>
         </div>
       </div>
+
+      {/* NEW: Modal xác nhận Đăng xuất (dùng chung style với trang Account, nhưng tách scope cho navbar) */}
+      {openLogout && (
+        <div className="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
+          <div className="logout-backdrop" onClick={() => setOpenLogout(false)} />
+          <div className="logout-dialog card" role="document">
+            <div id="logout-title" className="logout-title">Đăng xuất tài khoản?</div>
+            <p className="logout-desc">Bạn sắp đăng xuất khỏi FitMatch. Bạn có chắc chắn muốn tiếp tục?</p>
+            <div className="logout-actions">
+              <button className="btn-secondary" type="button" onClick={() => setOpenLogout(false)}>Hủy</button>
+              <button className="btn-danger" type="button" onClick={handleLogout}>Xác nhận</button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
 
 /* ================= Account Dropdown Component ================= */
 
-function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, weightKg }) {
+function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, weightKg, onAskLogout }) {
   const [preview, setPreview] = useState(null);
   const fileRef = useRef(null);
 
@@ -201,31 +223,17 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
 
   return (
     <div className={`acc-pop ${open ? "is-open" : ""}`} role="menu" aria-hidden={!open}>
-      {/* vùng đệm 5px để không tắt ngay khi lia chuột */}
       <div className="acc-hit" />
 
       <div className="acc-top">
-        {/* Avatar + nút đổi ảnh (nút ở góc dưới-phải avatar) */}
         <div className="acc-avatarWrap">
           <div className="acc-avatar">
             <img src={preview || "/images/avatar.png"} alt="avatar" />
           </div>
-          <button
-            className="acc-avatar-btn"
-            title="Đổi avatar"
-            aria-label="Đổi avatar"
-            type="button"
-            onClick={onPickAvatar}
-          >
+          <button className="acc-avatar-btn" title="Đổi avatar" aria-label="Đổi avatar" type="button" onClick={onPickAvatar}>
             <FontAwesomeIcon icon={faCamera} />
           </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="acc-file"
-            onChange={onFile}
-          />
+          <input ref={fileRef} type="file" accept="image/*" className="acc-file" onChange={onFile} />
         </div>
 
         <div className="acc-name">{nickname}</div>
@@ -261,7 +269,8 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
         <NavLink to="/tai-khoan/quyen-rieng-tu" className="acc-item"><FontAwesomeIcon icon={faShieldHalved} />Chính sách quyền riêng tư</NavLink>
       </div>
 
-      <button className="acc-logout">
+      {/* Nút Đăng xuất → mở modal xác nhận */}
+      <button className="acc-logout" type="button" onClick={onAskLogout}>
         <FontAwesomeIcon icon={faRightFromBracket} /> Đăng xuất
       </button>
     </div>

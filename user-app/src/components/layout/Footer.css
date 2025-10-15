@@ -1,15 +1,79 @@
-.fm-footer { border-top:1px solid #e5e7eb; background:#fff; }
-.fm-footer__inner {
-  max-width:1200px; margin:0 auto; padding:22px 16px;
-  display:grid; grid-template-columns: 1.2fr .8fr .8fr; gap:16px;
+/* ===== MOCK #07 STYLE ===== */
+.fm-footer--mock07{
+  background:#002C3E;
+  color:#d1d5db;
+  border-top:0;
+  font-family:'Roboto', sans-serif;
 }
-.fm-foot-col ul { list-style:none; padding:0; margin:8px 0 0; display:flex; flex-direction:column; gap:6px; }
-.fm-foot-col a { color:#111827; text-decoration:none; }
-.fm-foot-col a:hover { text-decoration:underline; }
-.fm-foot-title { font-weight:700; font-size:14px; color:#111827; }
-.fm-foot-note { color:#6b7280; font-size: 13px; }
-.fm-brand { font-weight: 800; letter-spacing: .2px; font-size: 18px; }
 
-@media (max-width: 980px) {
-  .fm-footer__inner { grid-template-columns: 1fr; }
+.fm-foot-container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:25px 16px 25px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  gap:18px;
+}
+
+/* Brand trung tâm */
+.fm-foot-brand{
+  color:#fff;
+  font-weight:800;
+  font-size:22px;
+  letter-spacing:.2px;
+}
+
+/* Nav – uppercase, tracking rộng, xám nhạt như mock */
+.fm-foot-nav{
+  display:flex;
+  gap:26px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:4px;
+}
+.fm-foot-nav a{
+  text-decoration:none;
+  text-transform:uppercase;
+  letter-spacing:.18em;
+  font-size:12px;
+  color:#cbd5e1;
+  transition:color .15s ease;
+}
+.fm-foot-nav a:hover{ color:#ffffff; }
+
+/* Social – vòng tròn viền xanh lá, icon xanh lá */
+:root{ --foot-accent:#a3e635; } /* lime-500 gần với ảnh */
+.fm-foot-social{
+  display:flex;
+  gap:12px;
+  margin-top:6px;
+}
+.fm-foot-social a{
+  width:34px;height:34px;border-radius:999px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1.6px solid var(--foot-accent);
+  color:var(--foot-accent);
+  text-decoration:none;
+  transition:transform .15s ease, background .15s ease;
+}
+.fm-foot-social a:hover{
+  transform:translateY(-1px);
+  background:rgba(163,230,53,.08);
+}
+
+/* Copyright – xám mảnh, link xanh lá nhạt */
+.fm-foot-copy{
+  margin-top:4px;
+  font-size:12px;
+  color:#9ca3af;
+}
+.fm-foot-copy a{ color:var(--foot-accent); text-decoration:none; }
+.fm-foot-copy a:hover{ text-decoration:underline; }
+
+/* Responsive */
+@media (max-width:640px){
+  .fm-foot-container{ padding:36px 12px 40px; }
+  .fm-foot-nav{ gap:16px; }
 }
