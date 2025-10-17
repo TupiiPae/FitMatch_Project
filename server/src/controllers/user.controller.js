@@ -18,24 +18,32 @@ function computeDerived(profile) {
 
   const { weightKg, heightCm, sex, dob, trainingIntensity } = profile;
 
+  const out = {};
+
+  // ✅ BMI: chỉ cần weight + height
+  if (typeof weightKg === "number" && typeof heightCm === "number") {
+    out.bmi = tinhBmi(weightKg, heightCm);
+  }
+
+  // ✅ BMR/TDEE: cần đủ sex + dob + weight + height
   if (
     typeof weightKg === "number" &&
     typeof heightCm === "number" &&
     sex &&
     dob
   ) {
-    const bmi = tinhBmi(weightKg, heightCm);
+    // utils/tinhBmr đang dùng dạng object theo “VN keys”
     const bmr = tinhBmr({
       gioiTinh: sex,
       canNangKg: weightKg,
       chieuCaoCm: heightCm,
       ngaySinh: dob,
     });
-    const tdee = tinhTdee(bmr, trainingIntensity || "level_1");
-    return { bmi, bmr, tdee };
+    out.bmr = bmr;
+    out.tdee = tinhTdee(bmr, trainingIntensity || "level_1");
   }
 
-  return {};
+  return out;
 }
 
 /** GET /api/user/me */
@@ -61,9 +69,9 @@ export const getMe = async (req, res) => {
           me._id,
           {
             $set: {
-              "profile.bmi": derived.bmi,
-              "profile.bmr": derived.bmr,
-              "profile.tdee": derived.tdee,
+              ...(derived.bmi != null ? { "profile.bmi": derived.bmi } : {}),
+              ...(derived.bmr != null ? { "profile.bmr": derived.bmr } : {}),
+              ...(derived.tdee != null ? { "profile.tdee": derived.tdee } : {}),
             },
           },
           { runValidators: true }
@@ -92,6 +100,8 @@ export const patchOnboarding = async (req, res) => {
     "profile.trainingIntensity", // level_1..4
     "profile.sex",
     "profile.dob",
+    // optional: cho phép cập nhật bodyFat trong giai đoạn onboarding nếu muốn
+    "profile.bodyFat",
   ];
   const forbidden = [
     "profile.bmi",
@@ -117,6 +127,14 @@ export const patchOnboarding = async (req, res) => {
       $set["profile.weeklyChangeKg"] = Math.abs(w);
     } else {
       return res.status(400).json({ message: "weeklyChangeKg phải là số" });
+    }
+  }
+
+  // (tuỳ chọn) ràng buộc bodyFat 0–70
+  if ($set["profile.bodyFat"] != null) {
+    const bf = Number($set["profile.bodyFat"]);
+    if (!Number.isFinite(bf) || bf < 0 || bf > 70) {
+      return res.status(400).json({ message: "bodyFat phải trong khoảng 0–70 (%)" });
     }
   }
 
@@ -193,12 +211,14 @@ export const finalizeOnboarding = async (_req, res) => {
 
 /** PATCH /api/user/account
  *  — cập nhật email + mục tiêu (calorieTarget/macro…) + profile cơ bản
+ *  — bổ sung heightCm, weightKg, bodyFat
  *  — nếu thay đổi field nền → tính lại bmi/bmr/tdee
+ *  — CHẤP NHẬN CẢ PAYLOAD PHẲNG và LỒNG
  */
 export const updateAccount = async (req, res) => {
   try {
     const allowedRoot = ["email"];
-    const allowedProfile = [
+    const allowedProfileFlat = [
       "profile.nickname",
       "profile.sex",
       "profile.dob",
@@ -207,6 +227,9 @@ export const updateAccount = async (req, res) => {
       "profile.macroProtein",
       "profile.macroCarb",
       "profile.macroFat",
+      "profile.heightCm",
+      "profile.weightKg",
+      "profile.bodyFat",
     ];
     const forbidden = [
       "profile.bmi",
@@ -217,33 +240,67 @@ export const updateAccount = async (req, res) => {
       "username",
     ];
 
+    const body = req.body || {};
     const $set = {};
-    for (const [k, v] of Object.entries(req.body || {})) {
+
+    // 1) Hỗ trợ kiểu PHẲNG: { "profile.heightCm": 170, ... }
+    for (const [k, v] of Object.entries(body)) {
       if (forbidden.includes(k)) continue;
-      if (allowedRoot.includes(k) || allowedProfile.includes(k)) $set[k] = v;
+      if (allowedRoot.includes(k) || allowedProfileFlat.includes(k)) {
+        $set[k] = v;
+      }
     }
+
+    // 2) Hỗ trợ kiểu LỒNG: { profile: { heightCm, weightKg, bodyFat, ... }, email }
+    if (body.profile && typeof body.profile === "object") {
+      const prof = body.profile;
+      const allowedProfileNested = [
+        "nickname", "sex", "dob", "trainingIntensity",
+        "calorieTarget", "macroProtein", "macroCarb", "macroFat",
+        "heightCm", "weightKg", "bodyFat",
+      ];
+      for (const k of allowedProfileNested) {
+        if (prof[k] !== undefined) {
+          $set[`profile.${k}`] = prof[k];
+        }
+      }
+      if (body.email !== undefined) $set.email = body.email;
+    }
+
     if (!Object.keys($set).length) {
       return res.status(400).json({ message: "Không có trường hợp lệ để cập nhật" });
     }
+
+    // (tuỳ chọn) ràng buộc bodyFat 0–70 nếu có
+    if ($set["profile.bodyFat"] != null) {
+      const bf = Number($set["profile.bodyFat"]);
+      if (!Number.isFinite(bf) || bf < 0 || bf > 70) {
+        return res.status(400).json({ message: "bodyFat phải trong khoảng 0–70 (%)" });
+      }
+      $set["profile.bodyFat"] = bf;
+    }
+
+    // Ép kiểu số cho height/weight nếu là chuỗi
+    if ($set["profile.heightCm"] != null) $set["profile.heightCm"] = Number($set["profile.heightCm"]);
+    if ($set["profile.weightKg"] != null) $set["profile.weightKg"] = Number($set["profile.weightKg"]);
 
     const current = await User.findById(req.userId)
       .select("_id email profile")
       .lean();
     if (!current) return res.status(404).json({ message: "Không tìm thấy người dùng" });
 
+    // Kiểm tra email trùng
     if ($set.email && $set.email !== current.email) {
-      const existed = await User.findOne({ email: $set.email })
-        .select("_id")
-        .lean();
+      const existed = await User.findOne({ email: $set.email }).select("_id").lean();
       if (existed) return res.status(409).json({ message: "Email đã được sử dụng" });
     }
 
+    // Merge để tính lại derived
     const mergedProfile = {
       ...(current.profile || {}),
       ...Object.keys($set).reduce((acc, k) => {
         if (k.startsWith("profile.")) {
-          const key = k.replace(/^profile\./, "");
-          acc[key] = $set[k];
+          acc[k.replace(/^profile\./, "")] = $set[k];
         }
         return acc;
       }, {}),

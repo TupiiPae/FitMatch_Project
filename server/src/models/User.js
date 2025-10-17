@@ -23,6 +23,7 @@ const profileSchema = new mongoose.Schema(
         message: "Ngày sinh phải theo định dạng YYYY-MM-DD",
       },
     },
+    bodyFat: { type: Number, min: 0, max: 70 },
     bmi: { type: Number, min: [5, "BMI không hợp lệ"], max: [80, "BMI không hợp lệ"] },
     bmr: { type: Number, min: [500, "BMR không hợp lệ"], max: [5000, "BMR không hợp lệ"] },
     tdee: { type: Number, min: [800, "TDEE không hợp lệ"], max: [8000, "TDEE không hợp lệ"] },

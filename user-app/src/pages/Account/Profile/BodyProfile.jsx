@@ -1,6 +1,7 @@
 // user-app/src/pages/Account/Profile/BodyProfile.jsx
 import React, { useEffect, useState } from "react";
-import api from "../../../lib/api"; // đường dẫn từ Profile/BodyProfile.jsx lên lib/api.js
+import api from "../../../lib/api";
+import { toast } from "react-toastify";
 import "./BodyProfile.css";
 
 const calcAge = (dob) => {
@@ -19,26 +20,91 @@ export default function BodyProfile() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
+  // === NEW: edit mode + form state ===
+  const [edit, setEdit] = useState(false);
+  const [form, setForm] = useState({ heightCm: "", weightKg: "", bodyFat: "" });
+  const [saving, setSaving] = useState(false);
+
+  const loadMe = async () => {
+    setLoading(true);
+    setErr("");
+    try {
+      const res = await api.get("/api/user/me");
+      const u = res?.data?.user || null;
+      setUser(u);
+      const p = u?.profile || {};
+      setForm({
+        heightCm: p.heightCm ?? "",
+        weightKg: p.weightKg ?? "",
+        bodyFat: p.bodyFat ?? "", // NEW
+      });
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Không thể tải hồ sơ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
     (async () => {
-      try {
-        setLoading(true);
-        setErr("");
-        const res = await api.get("/api/user/me");
-        if (!mounted) return;
-        setUser(res?.data?.user || null);
-      } catch (e) {
-        if (!mounted) return;
-        setErr(e?.response?.data?.message || "Không thể tải hồ sơ");
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      if (!mounted) return;
+      await loadMe();
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
+
+  const p = user?.profile || {};
+
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    // chỉ cho số (có thể rỗng) – vẫn cho phép dấu chấm
+    if (/^[0-9]*\.?[0-9]*$/.test(value) || value === "") {
+      setForm((s) => ({ ...s, [name]: value }));
+    }
+  };
+
+  const onCancel = () => {
+    const p2 = user?.profile || {};
+    setForm({
+      heightCm: p2.heightCm ?? "",
+      weightKg: p2.weightKg ?? "",
+      bodyFat: p2.bodyFat ?? "",
+    });
+    setEdit(false);
+  };
+
+  const onSave = async () => {
+    // ép kiểu number nếu có
+    const payload = {
+      profile: {
+        heightCm: form.heightCm === "" ? undefined : Number(form.heightCm),
+        weightKg: form.weightKg === "" ? undefined : Number(form.weightKg),
+        bodyFat: form.bodyFat === "" ? undefined : Number(form.bodyFat),
+      },
+    };
+    setSaving(true);
+    try {
+      const res = await api.patch("/api/user/account", payload);
+      const u = res?.data?.user;
+      if (u) {
+        setUser(u);
+        const p3 = u.profile || {};
+        setForm({
+          heightCm: p3.heightCm ?? "",
+          weightKg: p3.weightKg ?? "",
+          bodyFat: p3.bodyFat ?? "",
+        });
+      }
+      setEdit(false);
+      toast.success("Cập nhật hồ sơ thành công!");
+    } catch (e) {
+      const msg = e?.response?.data?.message || "Cập nhật thất bại";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -58,16 +124,14 @@ export default function BodyProfile() {
     );
   }
 
-  const p = user?.profile || {};
-
   return (
     <div className="card">
       <h2 className="pf-title">Hồ sơ thể chất</h2>
-          <h3 className="pf-subtitle">Thông tin cơ bản</h3>
+      <h3 className="pf-subtitle">Thông tin cơ bản</h3>
+
       <div className="pf-grid-2">
         {/* Cột trái */}
         <div>
-
           <div className="pf-form-row">
             <label>Giới tính</label>
             <select value={p.sex || ""} disabled>
@@ -84,27 +148,49 @@ export default function BodyProfile() {
                 <input disabled value={p.dob ? calcAge(p.dob) : ""} placeholder="21" />
               </div>
             </div>
+
             <div className="pf-form-cell">
               <label>Chiều cao</label>
               <div className="pf-unit">
-                <input disabled value={p.heightCm ?? ""} placeholder="xxx" />
+                <input
+                  name="heightCm"
+                  disabled={!edit}
+                  value={edit ? form.heightCm : (p.heightCm ?? "")}
+                  onChange={onChange}
+                  placeholder="xxx"
+                />
                 <span>cm</span>
               </div>
             </div>
+
             <div className="pf-form-cell">
               <label>Cân nặng</label>
               <div className="pf-unit">
-                <input disabled value={p.weightKg ?? ""} placeholder="xx" />
+                <input
+                  name="weightKg"
+                  disabled={!edit}
+                  value={edit ? form.weightKg : (p.weightKg ?? "")}
+                  onChange={onChange}
+                  placeholder="xx"
+                />
                 <span>kg</span>
               </div>
             </div>
+
             <div className="pf-form-cell">
               <label>Body fat</label>
               <div className="pf-unit">
-                <input disabled placeholder="—" />
+                <input
+                  name="bodyFat"
+                  disabled={!edit}
+                  value={edit ? form.bodyFat : (p.bodyFat ?? "")}
+                  onChange={onChange}
+                  placeholder="—"
+                />
                 <span>%</span>
               </div>
             </div>
+
             <div className="pf-form-cell">
               <label>BMI</label>
               <div className="pf-unit" data-muted>
@@ -152,6 +238,7 @@ export default function BodyProfile() {
             </div>
           </div>
 
+          {/* Nút hành động bên trái nếu muốn */}
           <div className="pf-actions">
             <button className="btn-primary" disabled>Thiết lập mục tiêu mới</button>
           </div>
@@ -174,8 +261,31 @@ export default function BodyProfile() {
             )}
           </div>
 
+          {/* Nút hành động bên phải – CHÍNH: Cập nhật / Lưu + Hủy */}
           <div className="pf-actions pf-actions-right">
-            <button className="btn-secondary" disabled>Cập nhật</button>
+            {!edit ? (
+              <button className="btn-secondary" onClick={() => setEdit(true)}>
+                Cập nhật
+              </button>
+            ) : (
+              <>
+                <button
+                  className="btn-tertiary"
+                  onClick={onCancel}
+                  disabled={saving}
+                  style={{ marginRight: 8 }}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="btn-primary"
+                  onClick={onSave}
+                  disabled={saving}
+                >
+                  {saving ? "Đang lưu..." : "Lưu"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
