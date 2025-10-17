@@ -280,7 +280,9 @@ export default function BodyProfile() {
             <div className="pf-tr">
               <div className="pf-td">Calo mục tiêu (ước tính)</div>
               <div className="pf-td pf-td-end">
-                {typeof p.tdee === "number" ? `${Math.round(p.tdee)} kcal` : "—"}
+                {typeof p.calorieTarget === "number"
+                  ? `${Math.round(p.calorieTarget)} kcal`
+                  : (typeof p.tdee === "number" ? `${Math.round(p.tdee)} kcal` : "—")}
               </div>
             </div>
             <div className="pf-tr">
