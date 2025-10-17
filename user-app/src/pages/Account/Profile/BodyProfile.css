@@ -24,6 +24,7 @@
 .pf-tr-head{ background:#f8fafc; font-weight:600; }
 .pf-td{ padding:8px 10px; }    /* padding bằng fact-row/pill vùng Goals */
 .pf-td-end{ text-align:right; }
+.pf-actions .btn-primary-1{ display: flex; align-items: center; justify-self: center; padding: 10px 450px; background:#0b6fdc; color: #fff; border-radius: 8px; cursor:pointer;}
 
 /* Khối đo lường: đồng bộ card nhỏ */
 .pf-measures{
@@ -56,6 +57,18 @@
 /* Nút hành động: giữ nhịp như Goals */
 .pf-actions{ margin-top:12px; }
 .pf-actions-right{ text-align:right; }
+
+.pf-modal { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; z-index: 60; }
+.pf-modal-backdrop { position:absolute; inset:0; background: rgba(0,0,0,.35); }
+.pf-modal-card {
+  position: relative; z-index: 1; width: 96%; max-width: 580px;
+  background:#fff; border:1px solid var(--fm-ring); border-radius:12px; padding:16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+}
+.pf-form-2 { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+.pf-form-2 > label { display:flex; flex-direction:column; gap:6px; font-size:14px; color:#334155; }
+.pf-form-2 input, .pf-form-2 select { padding:8px 10px; border:1px solid var(--fm-ring); border-radius:8px; }
+
 
 /* Responsive khớp với Goals */
 @media (max-width:1024px){

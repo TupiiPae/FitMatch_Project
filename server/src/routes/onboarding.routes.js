@@ -1,12 +1,12 @@
 // server/src/routes/onboarding.routes.js
 import { Router } from "express";
 import { auth } from "../middleware/auth.js";
-import { upsertOnboarding, getMyOnboarding } from "../controllers/onboarding.controller.js";
+import { upsertOnboarding, getMyOnboarding, createGoal } from "../controllers/onboarding.controller.js";
 
 const router = Router();
 
-router.use(auth);
-router.get("/me", getMyOnboarding);
-router.post("/upsert", upsertOnboarding);
+router.post("/upsert", auth, upsertOnboarding);
+router.get("/me", auth, getMyOnboarding);
+router.post("/goal", auth, createGoal); // nếu bạn đã thêm createGoal
 
 export default router;

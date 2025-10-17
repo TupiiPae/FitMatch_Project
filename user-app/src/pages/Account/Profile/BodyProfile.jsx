@@ -20,10 +20,23 @@ export default function BodyProfile() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  // === NEW: edit mode + form state ===
+  // Chế độ chỉnh sửa các trường lẻ
   const [edit, setEdit] = useState(false);
   const [form, setForm] = useState({ heightCm: "", weightKg: "", bodyFat: "" });
   const [saving, setSaving] = useState(false);
+
+  // Modal “Thiết lập mục tiêu mới”
+  const [showNewGoal, setShowNewGoal] = useState(false);
+  const [goalForm, setGoalForm] = useState({
+    chieuCao: "",
+    canNangHienTai: "",
+    canNangMongMuon: "",
+    mucTieu: "",
+    mucTieuTuan: "",
+    cuongDoLuyenTap: "",
+    bodyFat: "",
+  });
+  const [creatingGoal, setCreatingGoal] = useState(false);
 
   const loadMe = async () => {
     setLoading(true);
@@ -36,7 +49,7 @@ export default function BodyProfile() {
       setForm({
         heightCm: p.heightCm ?? "",
         weightKg: p.weightKg ?? "",
-        bodyFat: p.bodyFat ?? "", // NEW
+        bodyFat: p.bodyFat ?? "",
       });
     } catch (e) {
       setErr(e?.response?.data?.message || "Không thể tải hồ sơ");
@@ -58,7 +71,6 @@ export default function BodyProfile() {
 
   const onChange = (e) => {
     const { name, value } = e.target;
-    // chỉ cho số (có thể rỗng) – vẫn cho phép dấu chấm
     if (/^[0-9]*\.?[0-9]*$/.test(value) || value === "") {
       setForm((s) => ({ ...s, [name]: value }));
     }
@@ -75,7 +87,6 @@ export default function BodyProfile() {
   };
 
   const onSave = async () => {
-    // ép kiểu number nếu có
     const payload = {
       profile: {
         heightCm: form.heightCm === "" ? undefined : Number(form.heightCm),
@@ -103,6 +114,46 @@ export default function BodyProfile() {
       toast.error(msg);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ===== Modal “Thiết lập mục tiêu mới”
+  const openNewGoal = () => {
+    const curr = user?.profile || {};
+    setGoalForm({
+      chieuCao: curr.heightCm ?? "",
+      canNangHienTai: curr.weightKg ?? "",
+      canNangMongMuon: curr.targetWeightKg ?? "",
+      mucTieu: curr.goal ?? "",
+      mucTieuTuan: curr.weeklyChangeKg ?? "",
+      cuongDoLuyenTap: curr.trainingIntensity ?? "",
+      bodyFat: curr.bodyFat ?? "",
+    });
+    setShowNewGoal(true);
+  };
+
+  const createNewGoal = async () => {
+    const payload = {
+      chieuCao: goalForm.chieuCao === "" ? undefined : Number(goalForm.chieuCao),
+      canNangHienTai: goalForm.canNangHienTai === "" ? undefined : Number(goalForm.canNangHienTai),
+      canNangMongMuon: goalForm.canNangMongMuon === "" ? undefined : Number(goalForm.canNangMongMuon),
+      mucTieu: goalForm.mucTieu || undefined,
+      mucTieuTuan: goalForm.mucTieuTuan === "" ? undefined : Number(goalForm.mucTieuTuan),
+      cuongDoLuyenTap: goalForm.cuongDoLuyenTap || undefined,
+      bodyFat: goalForm.bodyFat === "" ? undefined : Number(goalForm.bodyFat),
+    };
+
+    setCreatingGoal(true);
+    try {
+      await api.post("/api/user/onboarding/goal", payload);
+      toast.success("Đã tạo mục tiêu mới!");
+      setShowNewGoal(false);
+      await loadMe();
+    } catch (e) {
+      const msg = e?.response?.data?.message || "Tạo mục tiêu thất bại";
+      toast.error(msg);
+    } finally {
+      setCreatingGoal(false);
     }
   };
 
@@ -238,9 +289,10 @@ export default function BodyProfile() {
             </div>
           </div>
 
-          {/* Nút hành động bên trái nếu muốn */}
           <div className="pf-actions">
-            <button className="btn-primary" disabled>Thiết lập mục tiêu mới</button>
+            <button type="button" className="btn-primary-1" onClick={openNewGoal}>
+              Thiết lập mục tiêu mới
+            </button>
           </div>
         </div>
 
@@ -261,7 +313,7 @@ export default function BodyProfile() {
             )}
           </div>
 
-          {/* Nút hành động bên phải – CHÍNH: Cập nhật / Lưu + Hủy */}
+          {/* Cập nhật / Lưu + Hủy */}
           <div className="pf-actions pf-actions-right">
             {!edit ? (
               <button className="btn-secondary" onClick={() => setEdit(true)}>
@@ -289,6 +341,104 @@ export default function BodyProfile() {
           </div>
         </div>
       </div>
+
+      {/* Modal mục tiêu mới */}
+      {showNewGoal && (
+        <div className="pf-modal">
+          <div
+            className="pf-modal-backdrop"
+            onClick={() => !creatingGoal && setShowNewGoal(false)}
+          />
+          <div className="pf-modal-card">
+            <h3 className="pf-subtitle">Thiết lập mục tiêu mới</h3>
+
+            <div className="pf-form-2">
+              <label>Chiều cao (cm)
+                <input
+                  value={goalForm.chieuCao}
+                  onChange={(e)=>setGoalForm(g=>({...g, chieuCao: e.target.value}))}
+                  placeholder="170"
+                />
+              </label>
+              <label>Cân nặng hiện tại (kg)
+                <input
+                  value={goalForm.canNangHienTai}
+                  onChange={(e)=>setGoalForm(g=>({...g, canNangHienTai: e.target.value}))}
+                  placeholder="65"
+                />
+              </label>
+              <label>Cân nặng mục tiêu (kg)
+                <input
+                  value={goalForm.canNangMongMuon}
+                  onChange={(e)=>setGoalForm(g=>({...g, canNangMongMuon: e.target.value}))}
+                  placeholder="58"
+                />
+              </label>
+
+              <label>Mục tiêu
+                <select
+                  value={goalForm.mucTieu}
+                  onChange={(e)=>setGoalForm(g=>({...g, mucTieu: e.target.value}))}
+                >
+                  <option value="">— chọn —</option>
+                  <option value="giam_can">Giảm cân</option>
+                  <option value="giam_mo">Giảm mỡ</option>
+                  <option value="duy_tri">Duy trì</option>
+                  <option value="tang_can">Tăng cân</option>
+                  <option value="tang_co">Tăng cơ</option>
+                </select>
+              </label>
+
+              <label>Mục tiêu tuần (kg/tuần)
+                <input
+                  value={goalForm.mucTieuTuan}
+                  onChange={(e)=>setGoalForm(g=>({...g, mucTieuTuan: e.target.value}))}
+                  placeholder="0.5"
+                />
+              </label>
+
+              <label>Cường độ luyện tập
+                <select
+                  value={goalForm.cuongDoLuyenTap}
+                  onChange={(e)=>setGoalForm(g=>({...g, cuongDoLuyenTap: e.target.value}))}
+                >
+                  <option value="">— chọn —</option>
+                  <option value="level_1">level_1</option>
+                  <option value="level_2">level_2</option>
+                  <option value="level_3">level_3</option>
+                  <option value="level_4">level_4</option>
+                </select>
+              </label>
+
+              <label>BodyFat (%)
+                <input
+                  value={goalForm.bodyFat}
+                  onChange={(e)=>setGoalForm(g=>({...g, bodyFat: e.target.value}))}
+                  placeholder="18"
+                />
+              </label>
+            </div>
+
+            <div className="pf-actions pf-actions-right" style={{ marginTop: 12 }}>
+              <button
+                className="btn-tertiary"
+                onClick={()=>!creatingGoal && setShowNewGoal(false)}
+                disabled={creatingGoal}
+              >
+                Hủy
+              </button>
+              <button
+                className="btn-primary"
+                onClick={createNewGoal}
+                disabled={creatingGoal}
+                style={{ marginLeft: 8 }}
+              >
+                {creatingGoal ? "Đang tạo..." : "Tạo mục tiêu"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
