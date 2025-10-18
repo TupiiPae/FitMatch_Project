@@ -1,38 +1,44 @@
 // server/src/controllers/user.controller.js
 import bcrypt from "bcryptjs";
+import path from "path";
+import fs from "fs";
+import sharp from "sharp";
+import { fileURLToPath } from "url";
+
 import { User } from "../models/User.js";
-import { OnboardingProfile } from "../models/OnboardingProfile.js"; // khớp model bạn vừa chốt
-import {
-  tinhBmi,
-  tinhBmr,
-  tinhTdee,
-  // có thể bạn đã thêm hàm này; nếu chưa, guard bên dưới sẽ tránh lỗi
-  tinhCalorieTarget as _tinhCalorieTarget,
-} from "../utils/health.js";
+import { OnboardingProfile } from "../models/OnboardingProfile.js";
+import { tinhBmi, tinhBmr, tinhTdee, tinhCalorieTarget as _tinhCalorieTarget, } from "../utils/health.js";
+
+import { AVATAR_DIR } from "../middleware/upload.js";
 
 const tinhCalorieTarget = _tinhCalorieTarget;
+
+// ==== ESM __dirname + thư mục uploads/avatars ====
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+// const UPLOAD_ROOT = path.join(__dirname, "..", "uploads");
+// const AVATAR_DIR = path.join(UPLOAD_ROOT, "avatars");
+// fs.mkdirSync(AVATAR_DIR, { recursive: true });
 
 /** Tính lại BMI/BMR/TDEE khi đủ dữ liệu nền */
 function computeDerived(profile) {
   if (!profile) return {};
 
   const { weightKg, heightCm, sex, dob, trainingIntensity } = profile;
-
   const out = {};
 
-  // ✅ BMI: chỉ cần weight + height
+  // BMI
   if (typeof weightKg === "number" && typeof heightCm === "number") {
     out.bmi = tinhBmi(weightKg, heightCm);
   }
 
-  // ✅ BMR/TDEE: cần đủ sex + dob + weight + height
+  // BMR/TDEE
   if (
     typeof weightKg === "number" &&
     typeof heightCm === "number" &&
     sex &&
     dob
   ) {
-    // utils/tinhBmr đang dùng dạng object theo “VN keys”
     const bmr = tinhBmr({
       gioiTinh: sex,
       canNangKg: weightKg,
@@ -86,9 +92,7 @@ export const getMe = async (req, res) => {
   res.json({ user: { id: me._id, ...me } });
 };
 
-/** PATCH /api/user/onboarding
- *  — chỉ cho phép cập nhật trường nền; tự tính lại chỉ số dẫn xuất
- */
+/** PATCH /api/user/onboarding — cập nhật trường nền; tự tính lại chỉ số dẫn xuất */
 export const patchOnboarding = async (req, res) => {
   const allowed = [
     "profile.nickname",
@@ -97,10 +101,9 @@ export const patchOnboarding = async (req, res) => {
     "profile.weightKg",
     "profile.targetWeightKg",
     "profile.weeklyChangeKg",
-    "profile.trainingIntensity", // level_1..4
+    "profile.trainingIntensity",
     "profile.sex",
     "profile.dob",
-    // optional: cho phép cập nhật bodyFat trong giai đoạn onboarding nếu muốn
     "profile.bodyFat",
   ];
   const forbidden = [
@@ -120,7 +123,7 @@ export const patchOnboarding = async (req, res) => {
     return res.status(400).json({ message: "Không có trường hợp lệ" });
   }
 
-  // 🔧 CHUẨN HOÁ weeklyChangeKg: luôn dương 0.1..1
+  // Chuẩn hoá weeklyChangeKg
   if ($set["profile.weeklyChangeKg"] != null) {
     const w = Number($set["profile.weeklyChangeKg"]);
     if (Number.isFinite(w)) {
@@ -130,7 +133,7 @@ export const patchOnboarding = async (req, res) => {
     }
   }
 
-  // (tuỳ chọn) ràng buộc bodyFat 0–70
+  // Ràng buộc bodyFat 0–70
   if ($set["profile.bodyFat"] != null) {
     const bf = Number($set["profile.bodyFat"]);
     if (!Number.isFinite(bf) || bf < 0 || bf > 70) {
@@ -138,9 +141,7 @@ export const patchOnboarding = async (req, res) => {
     }
   }
 
-  const current = await User.findById(req.userId)
-    .select("_id profile")
-    .lean();
+  const current = await User.findById(req.userId).select("_id profile").lean();
   if (!current) return res.status(404).json({ message: "Không tìm thấy người dùng" });
 
   // Merge profile
@@ -153,7 +154,7 @@ export const patchOnboarding = async (req, res) => {
     }, {}),
   };
 
-  // Tính lại dẫn xuất (bmi/bmr/tdee)
+  // Tính lại dẫn xuất
   let derived = {};
   try {
     derived = computeDerived(mergedProfile);
@@ -161,7 +162,7 @@ export const patchOnboarding = async (req, res) => {
     return res.status(400).json({ message: e?.message || "Dữ liệu không hợp lệ" });
   }
 
-  // (Tuỳ chọn) tính calorieTarget nếu có hàm và đủ dữ liệu
+  // Tính calorieTarget nếu có hàm
   let calorieTarget;
   try {
     const baseTdee =
@@ -182,10 +183,9 @@ export const patchOnboarding = async (req, res) => {
       });
     }
   } catch {
-    // thiếu dữ liệu thì bỏ qua
+    // ignore
   }
 
-  // Gộp set cuối
   const finalSet = {
     ...$set,
     ...(derived.bmi != null ? { "profile.bmi": derived.bmi } : {}),
@@ -230,6 +230,7 @@ export const updateAccount = async (req, res) => {
       "profile.heightCm",
       "profile.weightKg",
       "profile.bodyFat",
+      "profile.avatarUrl", // nếu muốn cho phép set thủ công
     ];
     const forbidden = [
       "profile.bmi",
@@ -243,7 +244,7 @@ export const updateAccount = async (req, res) => {
     const body = req.body || {};
     const $set = {};
 
-    // 1) Hỗ trợ kiểu PHẲNG: { "profile.heightCm": 170, ... }
+    // 1) Hỗ trợ kiểu PHẲNG
     for (const [k, v] of Object.entries(body)) {
       if (forbidden.includes(k)) continue;
       if (allowedRoot.includes(k) || allowedProfileFlat.includes(k)) {
@@ -251,13 +252,13 @@ export const updateAccount = async (req, res) => {
       }
     }
 
-    // 2) Hỗ trợ kiểu LỒNG: { profile: { heightCm, weightKg, bodyFat, ... }, email }
+    // 2) Hỗ trợ kiểu LỒNG
     if (body.profile && typeof body.profile === "object") {
       const prof = body.profile;
       const allowedProfileNested = [
         "nickname", "sex", "dob", "trainingIntensity",
         "calorieTarget", "macroProtein", "macroCarb", "macroFat",
-        "heightCm", "weightKg", "bodyFat",
+        "heightCm", "weightKg", "bodyFat", "avatarUrl",
       ];
       for (const k of allowedProfileNested) {
         if (prof[k] !== undefined) {
@@ -271,7 +272,7 @@ export const updateAccount = async (req, res) => {
       return res.status(400).json({ message: "Không có trường hợp lệ để cập nhật" });
     }
 
-    // (tuỳ chọn) ràng buộc bodyFat 0–70 nếu có
+    // Ràng buộc bodyFat
     if ($set["profile.bodyFat"] != null) {
       const bf = Number($set["profile.bodyFat"]);
       if (!Number.isFinite(bf) || bf < 0 || bf > 70) {
@@ -280,7 +281,7 @@ export const updateAccount = async (req, res) => {
       $set["profile.bodyFat"] = bf;
     }
 
-    // Ép kiểu số cho height/weight nếu là chuỗi
+    // Ép số cho height/weight nếu là chuỗi
     if ($set["profile.heightCm"] != null) $set["profile.heightCm"] = Number($set["profile.heightCm"]);
     if ($set["profile.weightKg"] != null) $set["profile.weightKg"] = Number($set["profile.weightKg"]);
 
@@ -363,20 +364,51 @@ export const changePassword = async (req, res) => {
   }
 };
 
-/** DELETE /api/user
- *  — Xoá tài khoản và dữ liệu liên quan (onboarding)
- */
+/** DELETE /api/user — Xoá tài khoản và dữ liệu liên quan (onboarding) */
 export const deleteAccount = async (req, res) => {
   try {
-    // Xoá bản ghi onboarding nếu có
     await OnboardingProfile.findOneAndDelete({ user: req.userId });
-
-    // Xoá user
     await User.findByIdAndDelete(req.userId);
-
     return res.json({ success: true, message: "Tài khoản đã được xoá" });
   } catch (e) {
     console.error("deleteAccount lỗi:", e?.message || e);
     return res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+};
+
+export const uploadAvatar = async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ success: false, message: "Không có tệp avatar" });
+    }
+
+    // Tạo tên file .webp
+    const baseName = `${req.userId || "guest"}-${Date.now()}`;
+    const outPath = path.join(AVATAR_DIR, `${baseName}.webp`);
+
+    // Xử lý ảnh: auto-rotate, crop vuông, resize 512, convert webp
+    await sharp(file.buffer)
+      .rotate()
+      .resize(512, 512, { fit: "cover", position: "centre" })
+      .toFormat("webp", { quality: 85 })
+      .toFile(outPath);
+
+    const avatarUrl = `/uploads/avatars/${baseName}.webp`;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { $set: { "profile.avatarUrl": avatarUrl } },
+      { new: true, runValidators: true }
+    ).select("_id username email role onboarded profile createdAt");
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
+    }
+
+    return res.json({ success: true, avatarUrl, user: updatedUser });
+  } catch (e) {
+    console.error("uploadAvatar lỗi:", e?.message || e);
+    return res.status(500).json({ success: false, message: "Lỗi máy chủ" });
   }
 };

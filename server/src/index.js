@@ -3,6 +3,9 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -12,11 +15,29 @@ import onboardingRoutes from "./routes/onboarding.routes.js";
 
 const app = express();
 
-// ===== Cấu hình chung =====
-app.use(express.json({ limit: "1mb" }));
-
-// CORS: ưu tiên ENV, tự thêm localhost khi DEV
+// ===== Env & paths =====
 const isDev = process.env.NODE_ENV !== "production";
+const PORT = process.env.PORT || 5000;
+const MONGO = process.env.MONGO || process.env.MONGO_URI;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// === Static uploads (make sure folders exist) ===
+const UPLOAD_ROOT = path.join(__dirname, "..", "uploads");
+const AVATAR_DIR = path.join(UPLOAD_ROOT, "avatars");
+fs.mkdirSync(AVATAR_DIR, { recursive: true });
+
+app.use("/uploads",
+  (req,res,next)=>{res.setHeader("Cross-Origin-Resource-Policy","cross-origin"); next();},
+  express.static(UPLOAD_ROOT, { maxAge: isDev ? 0 : "7d", etag: true })
+);
+
+// ===== Parsers =====
+app.use(express.json({ limit: "1mb" }));
+// (Không cần express.urlencoded cho upload; multer sẽ xử lý multipart)
+
+// ===== CORS =====
 const allowlist = [
   process.env.CLIENT_USER_ORIGIN,
   process.env.CLIENT_ADMIN_ORIGIN,
@@ -29,7 +50,7 @@ const allowlist = [
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Cho phép các request không có Origin (Postman/cURL) hoặc trong allowlist
+      // Cho phép request không có Origin (Postman/cURL) hoặc trong allowlist
       if (!origin || allowlist.includes(origin)) return cb(null, true);
       return cb(new Error(`CORS bị chặn cho origin: ${origin}`));
     },
@@ -37,7 +58,7 @@ app.use(
   })
 );
 
-// Log request đơn giản
+// ===== Logging =====
 app.use((req, _res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
@@ -48,10 +69,8 @@ if (isDev) mongoose.set("debug", true);
 
 // Normalise duplicated /api prefix (fix requests like /api/api/...)
 app.use((req, _res, next) => {
-  // only adjust when there's a duplicated /api at the beginning
   if (/^\/api\/api(\/|$)/.test(req.url)) {
     req.url = req.url.replace(/^\/api\/api/, "/api");
-    // also set originalUrl for any debug logic that reads it
     if (req.originalUrl) req.originalUrl = req.originalUrl.replace(/^\/api\/api/, "/api");
     console.log("[FIX] Normalised duplicated /api prefix ->", req.url);
   }
@@ -68,27 +87,14 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/user/onboarding", onboardingRoutes);
 app.use("/api/user", userRoutes);
 
-// Simple request logger (debug)
-app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  next();
-});
-
-// --- DEBUG: in danh sách route và log req base/path (xóa khi xong) ---
-app.use((req, _res, next) => {
-  console.log("[DBG] req.baseUrl:", req.baseUrl, " req.path:", req.path, " method:", req.method);
-  next();
-});
-
+// (Tùy chọn) In danh sách routes khi khởi động
 const printRegisteredRoutes = (appInstance) => {
   const out = [];
   appInstance._router.stack.forEach((layer) => {
     if (layer.route) {
-      // route registered directly on app
       const methods = Object.keys(layer.route.methods).join(",").toUpperCase();
       out.push(`${methods} ${layer.route.path}`);
     } else if (layer.name === "router" && layer.handle && layer.handle.stack) {
-      // router mounted; try to extract mount path from layer.regexp
       const mountPath = layer.regexp?.toString() || "<router>";
       layer.handle.stack.forEach((handler) => {
         if (handler.route) {
@@ -100,8 +106,7 @@ const printRegisteredRoutes = (appInstance) => {
   });
   console.log("=== Registered routes ===\n" + out.join("\n"));
 };
-
-printRegisteredRoutes(app);
+if (isDev) printRegisteredRoutes(app);
 
 // 404 cho API
 app.use((req, res) => {
@@ -119,10 +124,6 @@ app.use((err, _req, res, _next) => {
 });
 
 // ===== Khởi động =====
-const PORT = process.env.PORT || 5000;
-// Sử dụng biến MONGO (viết hoa) trước, fallback về MONGO_URI
-const MONGO = process.env.MONGO || process.env.MONGO_URI;
-
 connectDB(MONGO)
   .then(() => app.listen(PORT, () => console.log(`🚀 API on http://localhost:${PORT}`)))
   .catch((e) => {

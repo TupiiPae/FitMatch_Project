@@ -4,12 +4,17 @@ import { getMe } from "../../../api/account";
 import Account from "./Account";
 import ChangePassword from "./ChangePassword";
 import DeleteAccount from "./DeleteAccount";
+import api from "../../../lib/api";
 
-const fallbackUser = {
-  username: "Tupae",
-  createdAt: null,
-  email: "tupae@example.com",
-  profile: { nickname: "Tupae" },
+// Helpers dựng URL tuyệt đối + (tuỳ chọn) cache-busting
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
+const toAbs = (u) => {
+  if (!u) return u;
+  try {
+    return new URL(u, API_ORIGIN).toString();
+  } catch {
+    return u;
+  }
 };
 
 const fmtDate = (iso) => {
@@ -21,24 +26,17 @@ const fmtDate = (iso) => {
 
 export default function AccountSettings() {
   const [tab, setTab] = useState("account"); // 'account' | 'password' | 'delete'
-  const [user, setUser] = useState(fallbackUser);
-
-  // Modal xác nhận đăng xuất
+  const [user, setUser] = useState(null);     // ⬅️ bỏ fallback cứng
   const [openLogout, setOpenLogout] = useState(false);
 
+  // tải user 1 lần
   useEffect(() => {
     (async () => {
       try {
         const me = await getMe();
-        if (me && typeof me === "object") {
-          setUser((prev) => ({
-            ...prev,
-            ...me,
-            profile: { ...(prev.profile || {}), ...(me.profile || {}) },
-          }));
-        }
+        setUser(me || null);
       } catch {
-        /* fallback */
+        setUser(null);
       }
     })();
   }, []);
@@ -46,14 +44,17 @@ export default function AccountSettings() {
   const p = user?.profile || {};
   const joinDate = useMemo(() => fmtDate(user?.createdAt), [user?.createdAt]);
 
+  // avatar lấy từ DB (nếu có) -> URL tuyệt đối, fallback ảnh mặc định
+  const avatarSrc = useMemo(() => {
+    const u = p.avatarUrl ? toAbs(p.avatarUrl) : "/images/avatar.png";
+    return u;
+  }, [p.avatarUrl]);
+
   const handleLogout = async () => {
     try {
-      // Tuỳ cơ chế auth của bạn:
-      // Nếu Bearer token trong localStorage:
       localStorage.removeItem("token");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("jwt");
-      // Nếu dùng cookie-session, có thể gọi /auth/logout ở đây.
     } finally {
       window.location.href = "/";
     }
@@ -64,7 +65,7 @@ export default function AccountSettings() {
       <div className="pf-head">
         <div className="pf-user">
           <div className="pf-avatar sm">
-            <img src="/images/avatar.png" alt="avatar" />
+            <img src={avatarSrc} alt="avatar" />
           </div>
           <div className="pf-userinfo">
             <div className="pf-name">{p.nickname || user?.username || "Bạn"}</div>
@@ -102,13 +103,13 @@ export default function AccountSettings() {
         </aside>
 
         <section className="pf-content">
-          {tab === "account" && <Account />}
+          {/* Truyền xuống callback để child báo user mới lên parent */}
+          {tab === "account" && <Account onUserChange={setUser} />}
           {tab === "password" && <ChangePassword />}
           {tab === "delete" && <DeleteAccount />}
         </section>
       </div>
 
-      {/* Modal xác nhận Đăng xuất */}
       {openLogout && (
         <div className="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
           <div className="logout-backdrop" onClick={() => setOpenLogout(false)} />

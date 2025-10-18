@@ -6,7 +6,9 @@ import {
   faBookmark, faRightFromBracket, faUser, faMessage, faGear, faCircleInfo,
   faShieldHalved, faCamera
 } from "@fortawesome/free-solid-svg-icons";
-import { getMe } from "../../api/account"; // 👈 đảm bảo đường dẫn đúng tới hàm getMe() trả user
+import { getMe } from "../../api/account";
+import api from "../../lib/api";
+import { toast } from "react-toastify";
 
 const logoHref =
   (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") +
@@ -34,8 +36,12 @@ const calcAge = (dob) => {
   return age >= 0 && age <= 120 ? String(age) : "xx";
 };
 
+// Build absolute URL + cache bust
+const apiBase = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE) || api.defaults?.baseURL || "";
+const toAbs = (u) => (u ? new URL(u, apiBase).toString() : u);
+const withBust = (u) => (u ? `${u}${u.includes("?") ? "&" : "?"}t=${Date.now()}` : u);
+
 export default function Navbar({
-  // Các props này giờ chỉ là fallback nếu API không trả về
   nickname: nicknameProp = "Bạn",
   avatarSrc: avatarProp,
   joinDate: joinDateProp = "xx/xx/xxxx",
@@ -48,18 +54,18 @@ export default function Navbar({
   const [accountOpen, setAccountOpen] = useState(false);
   const [openLogout, setOpenLogout] = useState(false);
 
-  const [me, setMe] = useState(null);     // 👈 user từ API
+  const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const accRef = useRef(null);
 
-  // Fetch /api/user/me một lần
+  // Fetch /api/user/me
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         setLoading(true);
-        const u = await getMe();    // implement: return res.data.user
+        const u = await getMe(); // should return res.data.user
         if (!mounted) return;
         setMe(u || null);
       } catch {
@@ -72,21 +78,27 @@ export default function Navbar({
     return () => { mounted = false; };
   }, []);
 
-  // Derive dữ liệu hiển thị từ API (fallback sang props nếu thiếu)
   const p = me?.profile || {};
   const displayNickname = p.nickname || me?.username || nicknameProp || "Bạn";
   const displayJoinDate = fmtDate(me?.createdAt) || joinDateProp;
   const displayAge      = (p.dob ? calcAge(p.dob) : ageProp) || "xx";
   const displayHeight   = (typeof p.heightCm === "number" ? p.heightCm : heightProp) || "xxx";
   const displayWeight   = (typeof p.weightKg === "number" ? p.weightKg : weightProp) || "xx";
-  const displayAvatar   = avatarProp || "/images/avatar.png"; // (nếu sau này có avatar trong DB thì map vào đây)
+
+  // Avatar ưu tiên DB → props → default
+  const avatarFromDb = useMemo(() => {
+    if (!p?.avatarUrl) return null;
+    return withBust(toAbs(p.avatarUrl));
+  }, [p?.avatarUrl]);
+
+  const displayAvatar = avatarFromDb || avatarProp || "/images/avatar.png";
 
   const toggleMobile = () => setMobileOpen(v => !v);
   const dropdownToggle = key => setOpenDropdown(prev => (prev === key ? null : key));
   const toggleAccount = () => setAccountOpen(v => !v);
   const closeAccount = () => setAccountOpen(false);
 
-  // Đóng dropdown tài khoản khi click ra ngoài
+  // Click outside to close account dropdown
   useEffect(() => {
     const onDocClick = (e) => {
       if (!accRef.current) return;
@@ -96,13 +108,40 @@ export default function Navbar({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  // Esc để đóng modal đăng xuất
+  // Esc close logout modal
   useEffect(() => {
     if (!openLogout) return;
     const onKey = (e) => { if (e.key === "Escape") setOpenLogout(false); };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [openLogout]);
+
+  // Upload avatar từ dropdown nhanh
+  const uploadAvatarQuick = async (file) => {
+    try {
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        toast.error("Vui lòng chọn tệp hình ảnh!");
+        return;
+      }
+      const MAX = 2 * 1024 * 1024;
+      if (file.size > MAX) {
+        toast.error("Kích thước ảnh tối đa 2MB");
+        return;
+      }
+      const fd = new FormData();
+      fd.append("avatar", file);
+      const res = await api.post("/api/user/avatar", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const updated = res?.data?.user;
+      if (updated) setMe(updated);
+      toast.success("Đã cập nhật ảnh đại diện!");
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || "Upload avatar thất bại";
+      toast.error(msg);
+    }
+  };
 
   // Đăng xuất
   const handleLogout = async () => {
@@ -236,6 +275,8 @@ export default function Navbar({
               age={displayAge}
               heightCm={displayHeight}
               weightKg={displayWeight}
+              avatarUrl={displayAvatar}
+              onUploadAvatar={uploadAvatarQuick}
               onAskLogout={() => { setAccountOpen(false); setOpenLogout(true); }}
             />
           </div>
@@ -262,17 +303,24 @@ export default function Navbar({
 
 /* ================= Account Dropdown Component ================= */
 
-function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, weightKg, onAskLogout }) {
+function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, weightKg, avatarUrl, onUploadAvatar, onAskLogout }) {
   const [preview, setPreview] = useState(null);
   const fileRef = useRef(null);
 
+  useEffect(() => {
+    // reset preview khi đóng
+    if (!open) setPreview(null);
+  }, [open]);
+
   const onPickAvatar = () => fileRef.current?.click();
-  const onFile = (e) => {
+
+  const onFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // hiển thị tạm trước
     const url = URL.createObjectURL(file);
     setPreview(url);
-    // TODO: gọi API upload sau
+    await onUploadAvatar?.(file); // gọi API upload nhanh
   };
 
   return (
@@ -282,7 +330,7 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
       <div className="acc-top">
         <div className="acc-avatarWrap">
           <div className="acc-avatar">
-            <img src={preview || "/images/avatar.png"} alt="avatar" />
+            <img src={preview || avatarUrl || "/images/avatar.png"} alt="avatar" />
           </div>
           <button className="acc-avatar-btn" title="Đổi avatar" aria-label="Đổi avatar" type="button" onClick={onPickAvatar}>
             <FontAwesomeIcon icon={faCamera} />

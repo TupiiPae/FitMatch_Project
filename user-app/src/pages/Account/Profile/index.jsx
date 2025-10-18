@@ -1,6 +1,8 @@
+// user-app/src/pages/Account/Profile/index.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import "./ProfileLayout.css";
 import { getMe } from "../../../api/account";
+import api from "../../../lib/api";
 import BodyProfile from "./BodyProfile";
 import GoalsCustomize from "./GoalsCustomize";
 
@@ -11,9 +13,20 @@ const fmtDate = (iso) => {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
+// Helper: chuyển đường dẫn tương đối (/uploads/...) thành URL tuyệt đối dựa vào api.defaults.baseURL
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
+const toAbs = (u) => {
+  if (!u) return u;
+  try {
+    return new URL(u, API_ORIGIN).toString();
+  } catch {
+    return u; // nếu u đã là absolute
+  }
+};
+
 export default function Profile() {
   const [tab, setTab] = useState("body"); // 'body' | 'goals' | 'nutri' | 'weight'
-  const [user, setUser] = useState(null); // null cho đến khi API trả về
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -23,10 +36,9 @@ export default function Profile() {
       try {
         setLoading(true);
         setErr("");
-        const me = await getMe();            // implement: return res.data.user
-        const apiUser = me?.user ?? me;      // phòng khi getMe trả { user: {...} }
+        const me = await getMe();             // getMe() trả {id, username, email, profile, createdAt...}
         if (!mounted) return;
-        setUser(apiUser || null);
+        setUser(me || null);
       } catch (e) {
         if (!mounted) return;
         setErr(e?.response?.data?.message || "Không thể tải dữ liệu tài khoản");
@@ -41,20 +53,26 @@ export default function Profile() {
   const p = user?.profile || {};
   const joinDate = useMemo(() => fmtDate(user?.createdAt), [user?.createdAt]);
 
+  // 👇 Avatar lấy từ user.profile.avatarUrl (nếu có) và chuyển sang URL tuyệt đối
+  const avatarSrc = useMemo(
+    () => (p.avatarUrl ? toAbs(p.avatarUrl) : "/images/avatar.png"),
+    [p.avatarUrl]
+  );
+
   return (
     <div className="pf-wrap">
       {/* Header */}
       <div className="pf-head">
         <div className="pf-user">
           <div className="pf-avatar">
-            <img src="/images/avatar.png" alt="avatar" />
+            <img src={avatarSrc} alt="avatar" />
           </div>
           <div className="pf-userinfo">
             <div className="pf-name">{p.nickname || user?.username || "Bạn"}</div>
             <div className="pf-join">Đã tham gia từ {joinDate}</div>
           </div>
         </div>
-        <button className="pf-cta">Đi tới trang chỉnh sửa tài khoản</button>
+        <a className="pf-cta" href="/tai-khoan/tai-khoan">Đi tới trang chỉnh sửa tài khoản</a>
       </div>
 
       <div className="pf-body">
