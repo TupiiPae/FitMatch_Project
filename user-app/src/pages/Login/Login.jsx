@@ -220,7 +220,7 @@ export default function Login() {
               </span>
             </label>
 
-            <button type="button" className="forgot-password" onClick={() => nav("/quen-mat-khau")}>
+            <button type="button" className="forgot-password" onClick={() => nav("/reset-password")}>
               Quên mật khẩu?
             </button>
           </div>
