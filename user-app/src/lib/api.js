@@ -2,10 +2,7 @@ import axios from "axios";
 
 // Build API base robustly from env to avoid producing /api/api
 const raw = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const trimmed = raw.replace(/\/+$/, ""); // remove trailing slashes
-
-// If trimmed already ends with /api (e.g. "/api" used for Vite proxy or "http://host/api"),
-/// keep it. Otherwise append /api so endpoints become "<base>/api/..."
+const trimmed = raw.replace(/\/+$/, "");
 const API_BASE = trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
 
 export const ENDPOINTS = {
@@ -49,13 +46,10 @@ export const apiCall = async (endpoint, opts = {}) => {
   return data;
 };
 
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
+// ✅ Quan trọng: dùng API_BASE cho axios
 export const api = axios.create({
-  baseURL: BASE,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: API_BASE, // <— đây là fix chính
+  headers: { "Content-Type": "application/json" },
 });
 
 // Gắn token tự động nếu có

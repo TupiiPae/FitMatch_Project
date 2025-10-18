@@ -1,5 +1,6 @@
 // server/src/controllers/user.controller.js
-import bcrypt from "bcryptjs";
+// ❌ Không cần bcrypt ở controller nếu đã có comparePassword trong model
+// import bcrypt from "bcryptjs";
 import path from "path";
 import fs from "fs";
 import sharp from "sharp";
@@ -7,18 +8,16 @@ import { fileURLToPath } from "url";
 
 import { User } from "../models/User.js";
 import { OnboardingProfile } from "../models/OnboardingProfile.js";
-import { tinhBmi, tinhBmr, tinhTdee, tinhCalorieTarget as _tinhCalorieTarget, } from "../utils/health.js";
+import {
+  tinhBmi,
+  tinhBmr,
+  tinhTdee,
+  tinhCalorieTarget as _tinhCalorieTarget,
+} from "../utils/health.js";
 
 import { AVATAR_DIR } from "../middleware/upload.js";
 
 const tinhCalorieTarget = _tinhCalorieTarget;
-
-// ==== ESM __dirname + thư mục uploads/avatars ====
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-// const UPLOAD_ROOT = path.join(__dirname, "..", "uploads");
-// const AVATAR_DIR = path.join(UPLOAD_ROOT, "avatars");
-// fs.mkdirSync(AVATAR_DIR, { recursive: true });
 
 /** Tính lại BMI/BMR/TDEE khi đủ dữ liệu nền */
 function computeDerived(profile) {
@@ -230,7 +229,7 @@ export const updateAccount = async (req, res) => {
       "profile.heightCm",
       "profile.weightKg",
       "profile.bodyFat",
-      "profile.avatarUrl", // nếu muốn cho phép set thủ công
+      "profile.avatarUrl",
     ];
     const forbidden = [
       "profile.bmi",
@@ -256,9 +255,18 @@ export const updateAccount = async (req, res) => {
     if (body.profile && typeof body.profile === "object") {
       const prof = body.profile;
       const allowedProfileNested = [
-        "nickname", "sex", "dob", "trainingIntensity",
-        "calorieTarget", "macroProtein", "macroCarb", "macroFat",
-        "heightCm", "weightKg", "bodyFat", "avatarUrl",
+        "nickname",
+        "sex",
+        "dob",
+        "trainingIntensity",
+        "calorieTarget",
+        "macroProtein",
+        "macroCarb",
+        "macroFat",
+        "heightCm",
+        "weightKg",
+        "bodyFat",
+        "avatarUrl",
       ];
       for (const k of allowedProfileNested) {
         if (prof[k] !== undefined) {
@@ -282,8 +290,10 @@ export const updateAccount = async (req, res) => {
     }
 
     // Ép số cho height/weight nếu là chuỗi
-    if ($set["profile.heightCm"] != null) $set["profile.heightCm"] = Number($set["profile.heightCm"]);
-    if ($set["profile.weightKg"] != null) $set["profile.weightKg"] = Number($set["profile.weightKg"]);
+    if ($set["profile.heightCm"] != null)
+      $set["profile.heightCm"] = Number($set["profile.heightCm"]);
+    if ($set["profile.weightKg"] != null)
+      $set["profile.weightKg"] = Number($set["profile.weightKg"]);
 
     const current = await User.findById(req.userId)
       .select("_id email profile")
@@ -292,7 +302,9 @@ export const updateAccount = async (req, res) => {
 
     // Kiểm tra email trùng
     if ($set.email && $set.email !== current.email) {
-      const existed = await User.findOne({ email: $set.email }).select("_id").lean();
+      const existed = await User.findOne({ email: $set.email })
+        .select("_id")
+        .lean();
       if (existed) return res.status(409).json({ message: "Email đã được sử dụng" });
     }
 
@@ -347,14 +359,13 @@ export const changePassword = async (req, res) => {
     const user = await User.findById(req.userId).select("+password");
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
 
-    const match = await bcrypt.compare(currentPassword, user.password || "");
-    if (!match)
+    const match = await user.comparePassword(currentPassword);
+    if (!match) {
       return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
+    }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(String(newPassword), salt);
-
-    user.password = hashed;
+    // Ghi đè password cũ bằng plain — pre('save') trong model sẽ tự hash
+    user.password = String(newPassword);
     await user.save();
 
     return res.json({ success: true, message: "Đổi mật khẩu thành công" });
@@ -390,7 +401,7 @@ export const uploadAvatar = async (req, res) => {
     // Xử lý ảnh: auto-rotate, crop vuông, resize 512, convert webp
     await sharp(file.buffer)
       .rotate()
-      .resize(512, 512, { fit: "cover", position: "centre" })
+      .resize(512, 512, { fit: "cover", position: "center" }) // ✅ "center" (không phải "centre")
       .toFormat("webp", { quality: 85 })
       .toFile(outPath);
 

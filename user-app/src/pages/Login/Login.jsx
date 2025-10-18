@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
-import { api } from "../../lib/api";
+import api from "../../lib/api"; // nếu có alias: import api from "@/lib/api";
 
 export default function Login() {
   const nav = useNavigate();
@@ -76,10 +76,12 @@ export default function Login() {
     if (!okUser || !okPass) return;
 
     setLoading(true);
+    console.log("axios baseURL =", api.defaults.baseURL);
     try {
+      // baseURL đã là "/api" trong api.js -> chỉ gọi "/auth/login"
       const { data } = await api.post("/auth/login", {
-        username,            // hoặc identifier nếu bạn dùng trường này
-        password,
+        identifier: username.trim(), // để BE tự nhận email/username
+        password,                    // không trim password
         remember: ghiNho,
       });
 
@@ -87,10 +89,18 @@ export default function Login() {
       localStorage.setItem("role", data.user?.role || "user");
       localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
 
-      if (data.user?.onboarded) nav("/home");   // hoặc "/Home" nếu route của bạn viết hoa
+      if (data.user?.onboarded) nav("/home");
       else nav("/onboarding");
     } catch (err) {
-      const msg = err?.response?.data?.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+      const status = err?.response?.status;
+      const msg =
+        err?.response?.data?.message ||
+        (status === 401
+          ? "Sai mật khẩu."
+          : status === 400
+          ? "Tài khoản không tồn tại hoặc thông tin không hợp lệ."
+          : "Đăng nhập thất bại. Vui lòng thử lại.");
+      // Hiển thị lỗi ở ô mật khẩu để người dùng thấy ngay
       setPasswordErr(msg);
     } finally {
       setLoading(false);
@@ -174,6 +184,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={validatePassword}
+                autoComplete="current-password"
               />
               <label htmlFor="password">Mật khẩu</label>
               <div className="input-line"></div>
