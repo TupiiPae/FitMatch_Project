@@ -232,7 +232,7 @@
   user-select: none;
 }
 .acc-page .pf-content .seg-option input:checked + .seg-btn {
-  background: #111827;
+  background: #002C3E;
   color: #fff;
 }
 .acc-page .pf-content .seg-option input:focus-visible + .seg-btn {

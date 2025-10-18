@@ -236,8 +236,7 @@ export default function Navbar({
 
                   <div className="fm-dd-group">
                     <div className="fm-dd-link fm-dd-link--row is-accent" role="menuitem" tabIndex={0}>
-                      <FontAwesomeIcon icon={faFire} />
-                      <span>Các bài tập</span>
+                      <FontAwesomeIcon icon={faFire} />Các bài tập
                       <FontAwesomeIcon icon={faAngleRight} className="fm-angle" />
                     </div>
                     <div className="fm-dd-sub" role="menu">
@@ -366,11 +365,10 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
         <div className="acc-sep" />
         <NavLink to="/tai-khoan/tai-khoan" className="acc-item"><FontAwesomeIcon icon={faGear} />Tài khoản</NavLink>
         <div className="acc-sep" />
-        <NavLink to="/ve-fitmatch" className="acc-item"><FontAwesomeIcon icon={faCircleInfo} />Về FitMatch</NavLink>
+        <a href="https://www.facebook.com/tupae.1509" className="acc-item"target="_blank" rel="noopener noreferrer"><FontAwesomeIcon icon={faCircleInfo} />Về FitMatch</a>
         <div className="acc-sep" />
         <NavLink to="/tai-khoan/quyen-rieng-tu" className="acc-item"><FontAwesomeIcon icon={faShieldHalved} />Chính sách quyền riêng tư</NavLink>
       </div>
-
       <button className="acc-logout" type="button" onClick={onAskLogout}>
         <FontAwesomeIcon icon={faRightFromBracket} /> Đăng xuất
       </button>

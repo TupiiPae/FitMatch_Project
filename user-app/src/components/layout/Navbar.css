@@ -116,7 +116,6 @@
 .fm-dd-link--row:hover { background: #f3f4f6; }
 .fm-dd-link--row i:first-child, .fm-dd-link--row svg:first-child { width: 18px; text-align: center; }
 .fm-angle { margin-left: 8px; }
-.is-accent { color: #F7444E; }
 
 .fm-dd-sub {
   position: absolute; top: 0; left: calc(100% + 10px); min-width: 190px;
