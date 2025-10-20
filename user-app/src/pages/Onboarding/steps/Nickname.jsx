@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "./Nickname.css";
 import './step-progress.css'
 
@@ -100,7 +100,9 @@ export default function Nickname() {
   return (
     <div className="nk-wrap">
       <header className="nk-header">
-        <img src="/images/logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
+        <Link to="/" className="logo-link" aria-label="Về trang chủ">
+          <img src="/images/logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
+        </Link>
       </header>
 
       <main className="nk-main">

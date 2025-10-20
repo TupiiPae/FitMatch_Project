@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { api } from "../../../lib/api";
 import "./Goal.css";
 import './step-progress.css';
@@ -96,7 +96,9 @@ export default function Goal() {
   return (
     <div className="gl-wrap">
       <header className="gl-header">
-        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="gl-logo" />
+        <Link to="/" className="logo-link" aria-label="Về trang chủ">
+          <img src="/images/logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
+        </Link>
       </header>
 
       <main className="gl-main">

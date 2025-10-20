@@ -23,8 +23,9 @@
 .sm-main {
   flex: 1;
   display: grid;
-  place-items: center;
-  padding: 24px 16px 40px;
+  justify-items: center;  
+  align-content: start;    
+  padding-top: 20px;  
 }
 
 /* ===== Card & Typography ===== */

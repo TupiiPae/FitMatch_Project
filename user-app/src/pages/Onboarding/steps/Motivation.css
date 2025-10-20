@@ -21,10 +21,11 @@
 }
 
 .mv-main { 
-  flex:1; 
-  display:grid; 
-  place-items:center; 
-  padding:24px 16px 40px; 
+  flex: 1;
+  display: grid;
+  justify-items: center;  
+  align-content: start;    
+  padding-top: 20px;  
 }
 
 .mv-card {

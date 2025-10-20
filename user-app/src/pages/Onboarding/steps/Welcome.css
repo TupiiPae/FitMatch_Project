@@ -18,17 +18,26 @@
   font-size: 40px;
   color: #222;
 }
-.wl-logo {
-  height: 150px;
-  margin: 0 auto;
+
+.logo-link{
+  display: inline-block;  
+  text-decoration: none;
+  color: inherit;
+  line-height: 0;       
 }
+.logo-link img{ display: block; } 
+.logo-link:focus-visible{
+  outline: 2px solid #1a73e8;  
+  outline-offset: 3px;
+}
+
 
 /* Grid */
 .wl-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 200px;
-  margin-bottom: 160px;
+  margin-bottom: 120px;
 }
 .wl-item { text-align: center; }
 

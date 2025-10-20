@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "./Welcome.css";
 import { useState } from "react";
 
@@ -29,13 +29,9 @@ export default function Welcome() {
     <div className="wl-wrap">
       <div className="wl-head">
         <h2 className="wl-title">~ Chào mừng đến với ~</h2>
-
-        <img
-          className="wl-logo"
-          src="/images/logo-fitmatch.png"
-          alt="FitMatch"
-          onError={(e) => (e.currentTarget.style.display = "none")}
-        />
+        <Link to="/" className="logo-link" aria-label="Về trang chủ">
+          <img src="/images/logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
+        </Link>
       </div>
 
       <div className="wl-grid">
