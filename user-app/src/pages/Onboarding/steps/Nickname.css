@@ -17,13 +17,13 @@
   border-bottom: 1px solid #eceff4;
 }
 .nk-logo { height: 150px; }
-
 /* center area */
 .nk-main {
   flex: 1;
   display: grid;
-  place-items: center;
-  padding: 24px 16px 40px;
+  justify-items: center;  
+  align-content: start;    
+  padding-top: 20px;    
 }
 
 .nk-card {

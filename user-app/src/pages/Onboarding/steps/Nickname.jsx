@@ -1,6 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Nickname.css";
+import './step-progress.css'
+
+const STEPS = [
+  { slug: "ten-goi",            label: "B1" },
+  { slug: "muc-tieu",           label: "B2" },
+  { slug: "dong-luc",           label: "B3" },
+  { slug: "so-lieu-co-ban",     label: "B4" },
+  { slug: "can-nang-muc-tieu",  label: "B5" },
+  { slug: "muc-tieu-hang-tuan", label: "B6" },
+  { slug: "cuong-do",           label: "B7" },
+  { slug: "tong-hop",           label: "B8" },
+];
+
+function StepProgress({ currentSlug }) {
+  const currentIndex = Math.max(0, STEPS.findIndex(s => s.slug === currentSlug));
+  return (
+    <div className="sp">
+      <ol className="sp-progress">
+        {STEPS.map((s, idx) => {
+          const completed = idx < currentIndex;
+          const active = idx === currentIndex;
+          return (
+            <li key={s.slug} className={`sp-step ${completed ? "is-complete" : ""} ${active ? "is-active" : ""}`}>
+              {idx !== 0 && <span className="sp-line" aria-hidden="true" />}
+              <span className="sp-dot">
+                {completed ? (
+                  <svg viewBox="0 0 24 24" className="sp-check" aria-hidden="true">
+                    <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ) : <span className="sp-num">{idx + 1}</span>}
+              </span>
+              <span className="sp-label">{s.label}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+/* ===== /Progress ===== */
 
 function tinhTuoi(ngaySinh) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ngaySinh)) return null;
@@ -29,7 +69,6 @@ export default function Nickname() {
   const tuoi = useMemo(() => (ngaySinh ? tinhTuoi(ngaySinh) : null), [ngaySinh]);
 
   useEffect(() => {
-    // Xoá lỗi khi người dùng sửa dữ liệu
     if (tenGoi.trim()) setErrTen("");
     if (gioiTinh) setErrGT("");
     if (ngaySinh && tuoi !== null) setErrDOB("");
@@ -49,15 +88,10 @@ export default function Nickname() {
 
     setLoading(true);
     try {
-      // ✅ Lưu vào localStorage để bước Summary submit lên BE
       localStorage.setItem("nickname", v);
-      localStorage.setItem("sex", gioiTinh);       // "male" | "female"
-      localStorage.setItem("dob", ngaySinh);       // "YYYY-MM-DD"
-
-      // 👉 Không gọi API ở bước này. BE chỉ nhận /api/user/onboarding/upsert ở bước cuối (Summary).
+      localStorage.setItem("sex", gioiTinh);
+      localStorage.setItem("dob", ngaySinh);
       nav("/onboarding/muc-tieu");
-    } catch (error) {
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -66,17 +100,18 @@ export default function Nickname() {
   return (
     <div className="nk-wrap">
       <header className="nk-header">
-        <img src="\images\logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
+        <img src="/images/logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
       </header>
 
       <main className="nk-main">
+        {/* Progress nằm ngay dưới navbar, trên card */}
+        <StepProgress currentSlug="ten-goi" />
+
         <div className="nk-card">
           <h3 className="nk-title">Cho chúng tôi biết về bạn nhé!</h3>
-          <p className="nk-desc">
-            Chúng tôi rất vui khi được chào đón bạn. Hãy bắt đầu bằng vài thông tin cơ bản.
-          </p>
+          <p className="nk-desc">Chúng tôi rất vui khi được chào đón bạn. Hãy bắt đầu bằng vài thông tin cơ bản.</p>
 
-          {/* Nickname - dùng placeholder thay cho label */}
+          {/* Nickname */}
           <div className="nk-field">
             <div className="nk-input-wrap">
               <input
@@ -93,7 +128,7 @@ export default function Nickname() {
             {errTen && <div className="nk-error">{errTen}</div>}
           </div>
 
-          {/* Hai cột: Trái = Giới tính (radio card), Phải = Ngày sinh (date input đẹp) */}
+          {/* Hai cột */}
           <div className="nk-two-col">
             {/* Giới tính */}
             <div className="nk-col nk-sex">
@@ -113,7 +148,6 @@ export default function Nickname() {
                     disabled={loading}
                   />
                   <span className="sex-icon" aria-hidden="true">
-                    {/* Male icon */}
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                       <path d="M14 5h7m0 0v7m0-7l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                       <circle cx="9" cy="15" r="5" stroke="currentColor" strokeWidth="1.6"/>
@@ -136,7 +170,6 @@ export default function Nickname() {
                     disabled={loading}
                   />
                   <span className="sex-icon" aria-hidden="true">
-                    {/* Female icon */}
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="8" r="5" stroke="currentColor" strokeWidth="1.6"/>
                       <path d="M12 13v8M9 18h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
@@ -171,9 +204,7 @@ export default function Nickname() {
 
               {errDOB && <div className="nk-error">{errDOB}</div>}
               {tuoi !== null && !errDOB && (
-                <div className="nk-hint">
-                  Tuổi của bạn: <b>{tuoi}</b>
-                </div>
+                <div className="nk-hint">Tuổi của bạn: <b>{tuoi}</b></div>
               )}
             </div>
           </div>
@@ -183,11 +214,7 @@ export default function Nickname() {
           <button className="btn btn-outline" onClick={() => nav("/onboarding/chao-mung")} disabled={loading}>
             Quay lại
           </button>
-          <button
-            className={`btn btn-primary ${loading ? "loading" : ""}`}
-            onClick={handleNext}
-            disabled={loading}
-          >
+          <button className={`btn btn-primary ${loading ? "loading" : ""}`} onClick={handleNext} disabled={loading}>
             {loading ? "Đang lưu..." : "Tiếp theo"}
           </button>
         </div>
