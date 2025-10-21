@@ -1,27 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AuthLayout from "../Style/AuthLayout";
+import "../Style/style.css";
 import api from "../../lib/api";
-import "./ResetPassword.css";
 
 export default function ResetPassword() {
   const nav = useNavigate();
 
-  // steps: email | otp | reset | done
   const [step, setStep] = useState("email");
-
-  // form states
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // ui states
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ type: "", text: "" });
   const clearMsg = () => setMsg({ type: "", text: "" });
 
-  // resend cooldown
   const [cooldown, setCooldown] = useState(0);
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -29,273 +25,151 @@ export default function ResetPassword() {
     return () => clearInterval(t);
   }, [cooldown]);
 
-  /* ---------------- Handlers ---------------- */
   const handleSendOtp = async (e) => {
-    e.preventDefault();
-    clearMsg();
+    e.preventDefault(); clearMsg();
     const v = email.trim().toLowerCase();
-    if (!v) {
-      setMsg({ type: "error", text: "Vui lòng nhập email." });
-      return;
-    }
+    if (!v) { setMsg({ type: "error", text: "Vui lòng nhập email." }); return; }
     try {
       setLoading(true);
       const res = await api.post("/auth/password/forgot", { email: v });
-      setMsg({
-        type: "success",
-        text: res?.data?.message || "Nếu email hợp lệ, OTP đã được gửi.",
-      });
-      setCooldown(60);
-      setStep("otp");
+      setMsg({ type: "success", text: res?.data?.message || "Email hợp lệ, OTP đã được gửi." });
+      setCooldown(60); setStep("otp");
     } catch (err) {
       const m = err?.response?.data?.message || err?.message || "Không thể gửi OTP. Vui lòng thử lại.";
       setMsg({ type: "error", text: m });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleResendOtp = async () => {
-    clearMsg();
-    const v = email.trim().toLowerCase();
-    if (!v) {
-      setMsg({ type: "error", text: "Vui lòng nhập email trước khi gửi lại OTP." });
-      return;
-    }
+    clearMsg(); const v = email.trim().toLowerCase();
+    if (!v) { setMsg({ type: "error", text: "Vui lòng nhập email trước khi gửi lại OTP." }); return; }
     if (cooldown > 0) return;
     try {
       setLoading(true);
       const res = await api.post("/auth/password/resend", { email: v });
-      setMsg({
-        type: "success",
-        text: res?.data?.message || "OTP đã được gửi (nếu email hợp lệ).",
-      });
+      setMsg({ type: "success", text: res?.data?.message || "OTP đã được gửi (nếu email hợp lệ)." });
       setCooldown(60);
     } catch (err) {
       const m = err?.response?.data?.message || err?.message || "Không thể gửi lại OTP lúc này.";
       setMsg({ type: "error", text: m });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    clearMsg();
+    e.preventDefault(); clearMsg();
     const vEmail = email.trim().toLowerCase();
     const vOtp = otp.trim();
-    if (!vOtp) {
-      setMsg({ type: "error", text: "Vui lòng nhập mã OTP." });
-      return;
-    }
+    if (!vOtp) { setMsg({ type: "error", text: "Vui lòng nhập mã OTP." }); return; }
     try {
       setLoading(true);
       const res = await api.post("/auth/password/verify", { email: vEmail, otp: vOtp });
       const token = res?.data?.resetToken;
       if (!token) throw new Error("Không nhận được resetToken.");
-      setResetToken(token);
-      setMsg({ type: "success", text: "Xác minh OTP thành công." });
-      setStep("reset");
+      setResetToken(token); setMsg({ type: "success", text: "Xác minh OTP thành công." }); setStep("reset");
     } catch (err) {
       const m = err?.response?.data?.message || err?.message || "OTP không hợp lệ. Vui lòng thử lại.";
       setMsg({ type: "error", text: m });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleResetPassword = async (e) => {
-    e.preventDefault();
-    clearMsg();
-    if (!newPassword || !confirmPassword) {
-      setMsg({ type: "error", text: "Vui lòng nhập đủ mật khẩu mới và xác nhận." });
-      return;
-    }
-    if (newPassword.length < 6) {
-      setMsg({ type: "error", text: "Mật khẩu mới phải từ 6 ký tự." });
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setMsg({ type: "error", text: "Xác nhận mật khẩu mới không khớp." });
-      return;
-    }
+    e.preventDefault(); clearMsg();
+    if (!newPassword || !confirmPassword) { setMsg({ type:"error", text:"Vui lòng nhập đủ mật khẩu mới và xác nhận." }); return; }
+    if (newPassword.length < 6) { setMsg({ type:"error", text:"Mật khẩu mới phải từ 6 ký tự." }); return; }
+    if (newPassword !== confirmPassword) { setMsg({ type:"error", text:"Xác nhận mật khẩu mới không khớp." }); return; }
     try {
       setLoading(true);
-      const res = await api.post("/auth/password/reset", {
-        email: email.trim().toLowerCase(),
-        resetToken,
-        newPassword,
-      });
+      const res = await api.post("/auth/password/reset", { email: email.trim().toLowerCase(), resetToken, newPassword });
       setMsg({ type: "success", text: res?.data?.message || "Đặt lại mật khẩu thành công." });
-      setOtp("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setStep("done");
+      setOtp(""); setNewPassword(""); setConfirmPassword(""); setStep("done");
     } catch (err) {
       const m = err?.response?.data?.message || err?.message || "Không thể đặt lại mật khẩu.";
       setMsg({ type: "error", text: m });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  /* ---------------- UI ---------------- */
-  const Alert = ({ type, children }) =>
-    children ? <div className={`rp-alert ${type === "success" ? "rp-ok" : "rp-err"}`}>{children}</div> : null;
+  const Alert = () =>
+    msg.text ? (
+      <span className="error-message" style={{ color: msg.type === "success" ? "#166534" : "#dc2626" }}>
+        {msg.text}
+      </span>
+    ) : null;
 
-  const renderEmail = () => (
-    <form className="rp-form" onSubmit={handleSendOtp}>
-      <Alert type={msg.type}>{msg.text}</Alert>
-      <div className="rp-group">
-        <div className="rp-input-wrap">
-          <input
-            type="email"
-            id="rp_email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onFocus={clearMsg}
-            autoComplete="email"
-          />
-          <label htmlFor="rp_email">Email</label>
-          <div className="rp-line"></div>
-        </div>
-      </div>
-      <button className={`rp-btn ${loading ? "loading" : ""}`} type="submit" disabled={loading}>
+  const renderEmail = (
+    <form className="auth-form" onSubmit={handleSendOtp} style={{ width:"100%", maxWidth:520 }}>
+      <h1>Cập nhật mật khẩu</h1>
+      <span>Nhập email để nhận mã OTP</span>
+
+      <input className="auth-input" type="email" id="rp_email" placeholder="Email"
+             value={email} onChange={(e)=>setEmail(e.target.value)} onFocus={clearMsg}
+             required autoComplete="email" />
+      <Alert />
+
+      <button className={`material-btn ${loading ? "loading" : ""}`} type="submit" disabled={loading} style={{ marginTop: 6 }}>
         <span className="btn-text">Gửi OTP</span>
-        <div className="btn-loader">
-          <svg className="loader-circle" viewBox="0 0 50 50">
-            <circle className="loader-path" cx="25" cy="25" r="12" fill="none" stroke="currentColor" strokeWidth="3" />
-          </svg>
-        </div>
+        <div className="btn-loader"></div>
       </button>
     </form>
   );
 
-  const renderOtp = () => (
-    <form className="rp-form" onSubmit={handleVerifyOtp}>
-      <Alert type={msg.type}>{msg.text}</Alert>
-      <div className="rp-group">
-        <div className="rp-input-wrap">
-          <input
-            type="text"
-            id="rp_otp"
-            inputMode="numeric"
-            maxLength={6}
-            required
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            onFocus={clearMsg}
-          />
-          <label htmlFor="rp_otp">Mã OTP (6 số)</label>
-          <div className="rp-line"></div>
-        </div>
-      </div>
+  const renderOtp = (
+    <form className="auth-form" onSubmit={handleVerifyOtp} style={{ width:"100%", maxWidth:520 }}>
+      <h1>Xác minh OTP</h1>
+      <span>Nhập mã OTP đã gửi tới email</span>
 
-      <button className={`rp-btn ${loading ? "loading" : ""}`} type="submit" disabled={loading}>
+      <input className="auth-input" type="text" id="rp_otp" placeholder="Mã OTP (6 số)"
+             inputMode="numeric" maxLength={6} value={otp} onChange={(e)=>setOtp(e.target.value)} onFocus={clearMsg} required />
+      <Alert />
+
+      <button className={`material-btn ${loading ? "loading" : ""}`} type="submit" disabled={loading} style={{ marginTop: 6 }}>
         <span className="btn-text">Xác minh OTP</span>
-        <div className="btn-loader">
-          <svg className="loader-circle" viewBox="0 0 50 50">
-            <circle className="loader-path" cx="25" cy="25" r="12" fill="none" stroke="currentColor" strokeWidth="3" />
-          </svg>
-        </div>
+        <div className="btn-loader"></div>
       </button>
 
-      <div className="rp-actions">
-        <button
-          type="button"
-          className="rp-link"
-          onClick={handleResendOtp}
-          disabled={loading || cooldown > 0}
-        >
-          {cooldown > 0 ? `Gửi lại OTP (${cooldown}s)` : "Gửi lại OTP"}
+      <div style={{ display:"flex", gap:16, marginTop: 8 }}>
+        <button type="button" className="btn btn-text" onClick={handleResendOtp} disabled={loading || cooldown>0}>
+          {cooldown>0 ? `Gửi lại OTP (${cooldown}s)` : "Gửi lại OTP"}
         </button>
+        <button type="button" className="btn btn-text" onClick={()=>nav("/login")}>Quay lại Đăng nhập</button>
       </div>
     </form>
   );
 
-  const renderReset = () => (
-    <form className="rp-form" onSubmit={handleResetPassword}>
-      <Alert type={msg.type}>{msg.text}</Alert>
+  const renderReset = (
+    <form className="auth-form" onSubmit={handleResetPassword} style={{ width:"100%", maxWidth:520 }}>
+      <h1>Đặt mật khẩu mới</h1>
+      <span>Nhập mật khẩu mới cho tài khoản</span>
 
-      <div className="rp-group">
-        <div className="rp-input-wrap">
-          <input
-            type="password"
-            id="rp_new"
-            required
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            onFocus={clearMsg}
-            autoComplete="new-password"
-          />
-          <label htmlFor="rp_new">Mật khẩu mới (≥ 6 ký tự)</label>
-          <div className="rp-line"></div>
-        </div>
-      </div>
+      <input className="auth-input" type="password" id="rp_new" placeholder="Mật khẩu mới (≥ 6 ký tự)"
+             value={newPassword} onChange={(e)=>setNewPassword(e.target.value)} onFocus={clearMsg} required autoComplete="new-password" />
+      <input className="auth-input" type="password" id="rp_confirm" placeholder="Xác nhận mật khẩu mới"
+             value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} onFocus={clearMsg} required autoComplete="new-password" />
+      <Alert />
 
-      <div className="rp-group">
-        <div className="rp-input-wrap">
-          <input
-            type="password"
-            id="rp_confirm"
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            onFocus={clearMsg}
-            autoComplete="new-password"
-          />
-          <label htmlFor="rp_confirm">Xác nhận mật khẩu mới</label>
-          <div className="rp-line"></div>
-        </div>
-      </div>
-
-      <button className={`rp-btn ${loading ? "loading" : ""}`} type="submit" disabled={loading}>
+      <button className={`material-btn ${loading ? "loading" : ""}`} type="submit" disabled={loading} style={{ marginTop: 6 }}>
         <span className="btn-text">Đặt mật khẩu mới</span>
-        <div className="btn-loader">
-          <svg className="loader-circle" viewBox="0 0 50 50">
-            <circle className="loader-path" cx="25" cy="25" r="12" fill="none" stroke="currentColor" strokeWidth="3" />
-          </svg>
-        </div>
+        <div className="btn-loader"></div>
       </button>
     </form>
   );
 
-  const renderDone = () => (
-    <div className="rp-form">
-      <Alert type={msg.type}>{msg.text}</Alert>
-      <p className="rp-desc">
-        Bạn đã đặt lại mật khẩu thành công cho email <b>{email}</b>. Hãy dùng mật khẩu mới để đăng nhập.
+  const renderDone = (
+    <div className="auth-form" style={{ width:"100%", maxWidth:520 }}>
+      <h1>Hoàn tất</h1>
+      <p style={{ textAlign:"center" }}>
+        Bạn đã đặt lại mật khẩu cho <b>{email}</b>. Hãy dùng mật khẩu mới để đăng nhập.
       </p>
+      <button type="button" className="material-btn" onClick={()=>nav("/login")} style={{ marginTop: 6 }}>
+        <span className="btn-text">Đăng nhập</span>
+      </button>
     </div>
   );
 
-  return (
-    <div className="rp-container">
-      <div className="rp-card">
-        <button className="back-btn" onClick={() => nav(-1)} aria-label="Quay lại">
-          <svg viewBox="0 0 24 24" className="back-icon">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor" />
-          </svg>
-        </button>
+  const renderSignIn = <div />;
+  const renderSignUp =
+    step === "email" ? renderEmail :
+    step === "otp"   ? renderOtp   :
+    step === "reset" ? renderReset : renderDone;
 
-        <div className="rp-header">
-          <div className="rp-logo">
-            <div className="logo-layers">
-              <div className="layer layer-1"></div>
-              <div className="layer layer-2"></div>
-              <div className="layer layer-3"></div>
-            </div>
-          </div>
-          <h1>Cập nhật mật khẩu</h1>
-          <p>Vui lòng nhập email của bạn. Chúng tôi sẽ gửi mã OTP để bạn đặt lại mật khẩu</p>
-        </div>
-
-        {step === "email" && renderEmail()}
-        {step === "otp" && renderOtp()}
-        {step === "reset" && renderReset()}
-        {step === "done" && renderDone()}
-      </div>
-    </div>
-  );
+  return <AuthLayout mode="reset" renderSignIn={renderSignIn} renderSignUp={renderSignUp} />;
 }

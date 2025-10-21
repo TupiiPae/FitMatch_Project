@@ -1,64 +1,24 @@
-.register-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f5f6fa;
-  min-height: 100vh;
-  padding: 20px;
-}
+/* Register dùng chung style với Login – chỉ giữ vài tinh chỉnh nhỏ nếu cần */
 
-.register-box {
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 40px 32px 30px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-  text-align: center;
-}
+/* Tiêu đề thống nhất */
+.auth-container .auth-form h1 { font-family:'Montserrat',sans-serif; }
 
-/* Đảm bảo label không lệch */
-.input-wrapper label {
-  position: absolute;
-  top: 14px;
-  left: 0;
-  font-size: 16px;
-  color: #757575;
-  transition: all 0.2s ease;
-}
-.input-wrapper input:focus + label,
-.input-wrapper input:valid + label {
-  transform: translateY(-24px) scale(0.75);
-  color: #1976d2;
-}
+/* Đảm bảo khoảng cách đều giữa các input */
+.auth-container .auth-form .auth-input + .error-message { margin-bottom: 4px; }
 
-/* Nút quay lại */
-.back-btn {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background: transparent;
-  border: none;
-  color: #424242;
-  padding: 8px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.back-btn:hover { background: rgba(0,0,0,0.05); }
-.back-icon { width: 24px; height: 24px; }
+/* Tuỳ chọn: thu nhỏ khoảng trắng phần mô tả */
+.auth-container .auth-form > span { margin-bottom: 12px; }
 
-/* Material logo */
-.material-logo .logo-layers { margin: 0 auto 20px; position: relative; width: 56px; height: 56px; }
-.layer-1 { background:#1976d2; width:56px;height:56px;border-radius:50%;position:absolute;}
-.layer-2 { background:#2196f3; width:40px;height:40px;border-radius:50%;position:absolute;top:8px;left:8px;}
-.layer-3 { background:#64b5f6; width:24px;height:24px;border-radius:50%;position:absolute;top:16px;left:16px;}
-.material-logo:hover .layer-1{transform:scale(1.1);}
-.material-logo:hover .layer-2{transform:scale(1.15);}
-.material-logo:hover .layer-3{transform:scale(1.2);}
-
-/* Responsive */
-@media (max-width:480px){
-  .register-box{padding:30px 20px;}
+/* Social bar giống Login */
+.auth-container .auth-social .icon{
+  border: 1px solid #e5e7eb;
+  border-radius: 20%;
+  width: 40px; height: 40px;
+  display:inline-flex; align-items:center; justify-content:center;
+  color:#374151; background:#fff; box-shadow: 0 1px 2px rgba(0,0,0,.06);
 }
+.auth-container .auth-social .icon:hover{ transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,.12); }
+
+/* Nút chính & link dưới giống Login */
+.auth-container .material-btn{ background:#512da8; }
+.auth-container .create-account{ color:#512da8; }
