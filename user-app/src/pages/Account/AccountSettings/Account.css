@@ -1,11 +1,7 @@
-/* ===========================
-   Account.css (scoped an toàn)
-   =========================== */
-/* TẤT CẢ rule scoped theo .acc-page .pf-content để không ảnh hưởng trang khác */
-
 /* Card tổng */
 .acc-page .pf-content .acc-card {
   padding-top: 16px;
+  font-family: 'Roboto', sans-serif;
 }
 
 /* ============ AVATAR GIỮA + BUTTON RIÊNG (kiểu navbar) ============ */
@@ -259,6 +255,124 @@
   padding: 8px;
   color: #6b7280;
   font-size: 13px;
+}
+
+/* ===== Layout 3 box giống hình ===== */
+.acc-page .pf-content .acc-box { margin-bottom: 16px; }
+
+/* Box header */
+.acc-page .pf-content .acc-box .acc-box-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 10px 12px 0;
+}
+.acc-page .pf-content .acc-box .acc-box-head h3{
+  margin:0; font-size:16px; font-weight:700; color:#111827;
+}
+
+/* Edit buttons on header */
+.acc-page .pf-content .acc-edit{
+  display:inline-flex; align-items:center; gap:8px;
+  border:1px solid var(--fm-ring); background:#fff; color:#78BCC4;
+  border-radius:30px; padding:6px 10px; cursor:pointer; font-weight:400;
+}
+.acc-page .pf-content .acc-edit:hover{ background:#f9fafb; }
+.acc-page .pf-content .acc-edit-actions{ display:flex; gap:8px; }
+.acc-page .pf-content .btn-tertiary{
+  border:1px solid var(--fm-ring); background:#fff; border-radius:10px; padding:6px 10px; font-weight:600; cursor:pointer;
+}
+.acc-page .pf-content .btn-tertiary:hover{ background:#f9fafb; }
+
+/* Box 1 profile row */
+.acc-page .pf-content .acc-profile-row{
+  display:flex; align-items:center; gap:16px; padding: 12px;
+}
+.acc-page .pf-content .acc-avatarWrap--inline{
+  position: relative !important;
+  top: auto !important;
+  left: 30px;
+  transform: none !important;
+  width: 72px;
+  height: 72px;
+  overflow: visible;
+}
+.acc-page .pf-content .acc-avatarWrap--inline .acc-avatar{
+  position: absolute;
+  inset: 0;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--fm-ring);
+  background: #fff;
+}
+.acc-page .pf-content .acc-avatarWrap--inline .acc-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+.acc-page .pf-content .acc-avatarWrap--inline .acc-avatar-btn{
+  position: absolute;
+  right: 25px; bottom: -4px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #1d4ed8; color: #fff;
+  display: grid; place-items: center;
+  font-size: 14px; cursor: pointer;
+  box-shadow: 0 6px 12px rgba(0,0,0,.15);
+}
+.acc-page .pf-content .acc-profile-main .acc-name{ font-weight:700; color:#111827; }
+.acc-page .pf-content .acc-profile-main .acc-sub{ display:flex; flex-wrap:wrap; gap:8px; color:#6b7280; font-size:13px; }
+.acc-page .pf-content .acc-profile-main .acc-sub .dot{ opacity:.6; }
+
+/* Grid nhãn:giá trị (read view) */
+.acc-page .pf-content .acc-grid{
+  display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; padding: 12px;
+}
+.acc-page .pf-content .acc-field{ display:grid; gap:6px; }
+.acc-page .pf-content .acc-field .label{ color:#6b7280; font-size:13px; }
+.acc-page .pf-content .acc-field .value{ color:#111827; font-weight:450; }
+
+/* Edit form (ẩn/hiện theo state) */
+.acc-page .pf-content .acc-form{ padding: 12px; display:grid; gap:12px; }
+.acc-page .pf-content .acc-two{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.acc-page .pf-content .acc-one{ display:grid; gap:6px; }
+.acc-page .pf-content .acc-form-col{ display:grid; gap:6px; }
+.acc-page .pf-content .acc-form input, 
+.acc-page .pf-content .acc-form select{
+  width:100%; height:40px; border:1px solid var(--fm-ring); border-radius:10px; padding:0 12px; background:#fff;
+  font:inherit; color:inherit;
+}
+
+/* Segmented control reuse */
+.acc-page .pf-content .seg-group{ display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--fm-ring); border-radius:10px; overflow:hidden; height:40px; }
+.acc-page .pf-content .seg-option{ position:relative; }
+.acc-page .pf-content .seg-option + .seg-option{ border-left:1px solid var(--fm-ring); }
+.acc-page .pf-content .seg-option input{ position:absolute; inset:0; opacity:0; }
+.acc-page .pf-content .seg-btn{ display:flex; align-items:center; justify-content:center; width:100%; height:40px; font-weight:600; }
+.acc-page .pf-content .seg-option input:checked + .seg-btn{ background:#002C3E; color:#fff; }
+
+/* ===== Sections nằm trong card lớn ===== */
+.acc-page .pf-content .acc-card .acc-sec{
+  padding: 12px;
+  border-top: 1px solid var(--fm-ring);
+}
+.acc-page .pf-content .acc-card .acc-sec:first-of-type{
+  border-top: 0;
+  padding-top: 6px;
+}
+
+/* Header nhỏ mỗi section */
+.acc-page .pf-content .acc-card .acc-sec-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom: 8px;
+}
+.acc-page .pf-content .acc-card .acc-sec-head h3{
+  margin:0; font-size:15px; font-weight:700; color:#111827;
+}
+
+/* Reuse các style đã có cho profile row/grid/form */
+
+
+/* Responsive */
+@media (max-width: 900px){
+  .acc-page .pf-content .acc-grid{ grid-template-columns: 1fr; }
+  .acc-page .pf-content .acc-two{ grid-template-columns: 1fr; }
 }
 
 /* Responsive */

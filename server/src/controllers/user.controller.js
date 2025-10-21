@@ -54,7 +54,7 @@ function computeDerived(profile) {
 /** GET /api/user/me */
 export const getMe = async (req, res) => {
   const me = await User.findById(req.userId)
-    .select("_id username email role onboarded profile createdAt")
+    .select("_id username email phone role onboarded profile createdAt") 
     .lean();
 
   if (!me) return res.status(404).json({ message: "Không tìm thấy người dùng" });
@@ -216,128 +216,85 @@ export const finalizeOnboarding = async (_req, res) => {
  */
 export const updateAccount = async (req, res) => {
   try {
-    const allowedRoot = ["email"];
+    const allowedRoot = ["email","phone"];
     const allowedProfileFlat = [
-      "profile.nickname",
-      "profile.sex",
-      "profile.dob",
-      "profile.trainingIntensity",
-      "profile.calorieTarget",
-      "profile.macroProtein",
-      "profile.macroCarb",
-      "profile.macroFat",
-      "profile.heightCm",
-      "profile.weightKg",
-      "profile.bodyFat",
-      "profile.avatarUrl",
-    ];
-    const forbidden = [
-      "profile.bmi",
-      "profile.bmr",
-      "profile.tdee",
-      "password",
-      "role",
-      "username",
+      "profile.nickname","profile.sex","profile.dob","profile.trainingIntensity",
+      "profile.calorieTarget","profile.macroProtein","profile.macroCarb","profile.macroFat",
+      "profile.heightCm","profile.weightKg","profile.bodyFat","profile.avatarUrl",
+      "profile.address.country","profile.address.city","profile.address.district",
+      "profile.address.countryCode","profile.address.regionCode","profile.address.districtCode",
+      "profile.location.coordinates" // [lng,lat]
     ];
 
-    const body = req.body || {};
-    const $set = {};
-
-    // 1) Hỗ trợ kiểu PHẲNG
-    for (const [k, v] of Object.entries(body)) {
-      if (forbidden.includes(k)) continue;
-      if (allowedRoot.includes(k) || allowedProfileFlat.includes(k)) {
-        $set[k] = v;
-      }
-    }
-
-    // 2) Hỗ trợ kiểu LỒNG
-    if (body.profile && typeof body.profile === "object") {
+    // nested
+    if (body.profile && typeof body.profile==="object") {
       const prof = body.profile;
-      const allowedProfileNested = [
-        "nickname",
-        "sex",
-        "dob",
-        "trainingIntensity",
-        "calorieTarget",
-        "macroProtein",
-        "macroCarb",
-        "macroFat",
-        "heightCm",
-        "weightKg",
-        "bodyFat",
-        "avatarUrl",
-      ];
-      for (const k of allowedProfileNested) {
-        if (prof[k] !== undefined) {
-          $set[`profile.${k}`] = prof[k];
+      if (prof.address && typeof prof.address==="object") {
+        const a = prof.address;
+        if (a.country!==undefined)      $set["profile.address.country"]=a.country;
+        if (a.countryCode!==undefined)  $set["profile.address.countryCode"]=a.countryCode;
+        if (a.city!==undefined)         $set["profile.address.city"]=a.city;
+        if (a.regionCode!==undefined)   $set["profile.address.regionCode"]=a.regionCode;
+        if (a.district!==undefined)     $set["profile.address.district"]=a.district;
+        if (a.districtCode!==undefined) $set["profile.address.districtCode"]=a.districtCode;
+      }
+      if (prof.location && Array.isArray(prof.location.coordinates)) {
+        const [lng,lat] = prof.location.coordinates.map(Number);
+        if (Number.isFinite(lng) && Number.isFinite(lat)) {
+          $set["profile.location"] = { type:"Point", coordinates:[lng,lat] };
         }
       }
-      if (body.email !== undefined) $set.email = body.email;
+      if (body.phone!==undefined) $set.phone = body.phone;
+      if (body.email!==undefined) $set.email = body.email;
     }
 
-    if (!Object.keys($set).length) {
-      return res.status(400).json({ message: "Không có trường hợp lệ để cập nhật" });
+    if (!Object.keys($set).length) return res.status(400).json({ message:"Không có trường hợp lệ để cập nhật" });
+
+    // validate số %
+    if ($set["profile.bodyFat"]!=null) {
+      const bf=Number($set["profile.bodyFat"]);
+      if (!Number.isFinite(bf)||bf<0||bf>70) return res.status(400).json({ message:"bodyFat phải trong khoảng 0–70 (%)" });
+      $set["profile.bodyFat"]=bf;
     }
 
-    // Ràng buộc bodyFat
-    if ($set["profile.bodyFat"] != null) {
-      const bf = Number($set["profile.bodyFat"]);
-      if (!Number.isFinite(bf) || bf < 0 || bf > 70) {
-        return res.status(400).json({ message: "bodyFat phải trong khoảng 0–70 (%)" });
-      }
-      $set["profile.bodyFat"] = bf;
-    }
+    if ($set["profile.heightCm"]!=null) $set["profile.heightCm"]=Number($set["profile.heightCm"]);
+    if ($set["profile.weightKg"]!=null) $set["profile.weightKg"]=Number($set["profile.weightKg"]);
 
-    // Ép số cho height/weight nếu là chuỗi
-    if ($set["profile.heightCm"] != null)
-      $set["profile.heightCm"] = Number($set["profile.heightCm"]);
-    if ($set["profile.weightKg"] != null)
-      $set["profile.weightKg"] = Number($set["profile.weightKg"]);
+    const current = await User.findById(req.userId).select("_id email phone profile").lean(); // ➕ phone
+    if (!current) return res.status(404).json({ message:"Không tìm thấy người dùng" });
 
-    const current = await User.findById(req.userId)
-      .select("_id email profile")
-      .lean();
-    if (!current) return res.status(404).json({ message: "Không tìm thấy người dùng" });
-
-    // Kiểm tra email trùng
+    // email trùng
     if ($set.email && $set.email !== current.email) {
-      const existed = await User.findOne({ email: $set.email })
-        .select("_id")
-        .lean();
-      if (existed) return res.status(409).json({ message: "Email đã được sử dụng" });
+      const existed = await User.findOne({ email:$set.email }).select("_id").lean();
+      if (existed) return res.status(409).json({ message:"Email đã được sử dụng" });
     }
 
-    // Merge để tính lại derived
+    // Merge để tính derived
     const mergedProfile = {
-      ...(current.profile || {}),
-      ...Object.keys($set).reduce((acc, k) => {
-        if (k.startsWith("profile.")) {
-          acc[k.replace(/^profile\./, "")] = $set[k];
-        }
+      ...(current.profile||{}),
+      ...Object.keys($set).reduce((acc,k)=>{
+        if (k.startsWith("profile.")) acc[k.replace(/^profile\./,"")]=$set[k];
         return acc;
-      }, {}),
+      },{})
     };
 
     const derived = computeDerived(mergedProfile);
-
     const finalSet = {
       ...$set,
-      ...(derived.bmi != null ? { "profile.bmi": derived.bmi } : {}),
-      ...(derived.bmr != null ? { "profile.bmr": derived.bmr } : {}),
-      ...(derived.tdee != null ? { "profile.tdee": derived.tdee } : {}),
+      ...(derived.bmi!=null?{"profile.bmi":derived.bmi}:{ }),
+      ...(derived.bmr!=null?{"profile.bmr":derived.bmr}:{ }),
+      ...(derived.tdee!=null?{"profile.tdee":derived.tdee}:{ }),
     };
 
     const updated = await User.findByIdAndUpdate(
-      req.userId,
-      { $set: finalSet },
-      { new: true, runValidators: true }
-    ).select("_id username email role onboarded profile createdAt");
+      req.userId, { $set: finalSet },
+      { new:true, runValidators:true }
+    ).select("_id username email phone role onboarded profile createdAt"); // ➕ phone
 
-    return res.json({ success: true, user: updated });
+    return res.json({ success:true, user:updated });
   } catch (e) {
-    console.error("updateAccount lỗi:", e?.message || e);
-    return res.status(500).json({ message: "Lỗi máy chủ" });
+    console.error("updateAccount lỗi:", e?.message||e);
+    return res.status(500).json({ message:"Lỗi máy chủ" });
   }
 };
 
