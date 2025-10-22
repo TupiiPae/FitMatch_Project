@@ -92,7 +92,7 @@ export default function DailyJournal(){
               className={`wbtn ${dayjs(date).isSame(d,"day") ? "on":""}`}
               onClick={()=> setDate(d.format("YYYY-MM-DD"))}
             >
-              {["CN","T2","T3","T4","T5","T6","T7"][d.day()]}
+              {["Chủ Nhật","Thứ hai","Thứ ba","Thứ tư","Thứ năm","Thứ sáu","Thứ bảy"][d.day()]}
             </button>
           ))}
         </div>

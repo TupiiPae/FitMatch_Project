@@ -113,100 +113,102 @@ export default function RecordMeal(){
         <Link to="/dinh-duong/ghi-lai/tao-mon" className="create-btn">Tạo món ăn mới</Link>
       </div>
 
-      <div className="nm-list">
-        {items.map(it=>(
-          <div key={it._id} className="nm-item" onClick={()=>openDetail(it)}>
-            <img src={it.imageUrl || "/images/food-placeholder.jpg"} alt={it.name}/>
-            <div className="info">
-              <div className="title">{it.name}</div>
-              <div className="sub">
-                {it.portionName || "Khẩu phần tiêu chuẩn"} · {it.massG ?? "-"} g · {kcalStr(it.kcal)} cal
+      <div className="nm-list-frame">
+          <div className="nm-list">
+            {items.map(it=>(
+              <div key={it._id} className="nm-item" onClick={()=>openDetail(it)}>
+                <img src={it.imageUrl || "/images/food-placeholder.jpg"} alt={it.name}/>
+                <div className="info">
+                  <div className="title">{it.name}</div>
+                  <div className="sub">
+                    {it.portionName || "Khẩu phần tiêu chuẩn"} · {it.massG ?? "-"} g · {kcalStr(it.kcal)} cal
+                  </div>
+                  <div className="macro">
+                    <span><i className="fa-solid fa-drumstick-bite"></i> Đạm {gStr(it.proteinG)} g</span>
+                    <span><i className="fa-solid fa-bread-slice"></i> Carb {gStr(it.carbG)} g</span>
+                    <span><i className="fa-solid fa-bacon"></i> Béo {gStr(it.fatG)} g</span>
+                  </div>
+                </div>
+                <div className="act" onClick={(e)=> e.stopPropagation()}>
+                  <button className={`heart ${it.isFavorite ? "on":""}`} onClick={()=>onFav(it._id)}>
+                    <i className="fa-solid fa-heart"></i>
+                  </button>
+                  <button className="add" onClick={()=>openAdd(it)}>Thêm</button>
+                </div>
               </div>
-              <div className="macro">
-                <span><i className="fa-solid fa-drumstick-bite"></i> Đạm {gStr(it.proteinG)} g</span>
-                <span><i className="fa-solid fa-bread-slice"></i> Carb {gStr(it.carbG)} g</span>
-                <span><i className="fa-solid fa-bacon"></i> Béo {gStr(it.fatG)} g</span>
-              </div>
-            </div>
-            <div className="act" onClick={(e)=> e.stopPropagation()}>
-              <button className={`heart ${it.isFavorite ? "on":""}`} onClick={()=>onFav(it._id)}>
-                <i className="fa-solid fa-heart"></i>
-              </button>
-              <button className="add" onClick={()=>openAdd(it)}>Thêm</button>
-            </div>
+            ))}
           </div>
-        ))}
+
+          {hasMore && (
+            <div className="more">
+              <button disabled={loading} onClick={()=>load(false)}>{loading? "Đang tải..." : "Xem thêm"}</button>
+            </div>
+          )}
+
+          {/* Popup thêm vào nhật ký */}
+          {showAdd && (
+            <div className="modal" onClick={()=>setShowAdd(false)}>
+              <div className="modal-card" onClick={e=>e.stopPropagation()}>
+                <h3>Thêm vào nhật ký</h3>
+                <p className="muted">{addFood?.name}</p>
+                <div className="row">
+                  <label>Ngày</label>
+                  <input type="date" value={date} onChange={e=>setDate(e.target.value)} />
+                </div>
+                <div className="row">
+                  <label>Giờ</label>
+                  <select value={hour} onChange={e=>setHour(+e.target.value)}>
+                    {HOUR_OPTIONS.map(h=> <option key={h} value={h}>{`${h}:00`}</option>)}
+                  </select>
+                </div>
+                <div className="row">
+                  <label>Số lượng khẩu phần</label>
+                  <input type="number" min="0.1" step="0.1" value={quantity} onChange={e=>setQuantity(+e.target.value)} />
+                </div>
+                <div className="row">
+                  <label>Khối lượng (g)</label>
+                  <input type="number" min="0" step="1" placeholder="mặc định theo món" value={massG} onChange={e=>setMassG(e.target.value)} />
+                </div>
+                <div className="actions">
+                  <button onClick={()=>setShowAdd(false)}>Hủy</button>
+                  <button className="primary" onClick={confirmAdd}>Thêm</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Popup chi tiết món */}
+          {showDetail && !!detail && (
+            <div className="modal" onClick={()=>setShowDetail(false)}>
+              <div className="modal-card" onClick={e=>e.stopPropagation()}>
+                <h3>{detail.name}</h3>
+                <div className="grid2">
+                  <img className="bigimg" src={detail.imageUrl || "/images/food-placeholder.jpg"} alt={detail.name}/>
+                  <div className="kv">
+                    <div><b>Khối lượng:</b> {detail.massG ?? "-"} g ({detail.unit || "g"})</div>
+                    <div><b>Calo:</b> {detail.kcal ?? "-"} cal</div>
+                    <div><b>Đạm:</b> {detail.proteinG ?? "-"} g</div>
+                    <div><b>Carb:</b> {detail.carbG ?? "-"} g</div>
+                    <div><b>Béo:</b> {detail.fatG ?? "-"} g</div>
+                    <div><b>Muối (NaCl):</b> {detail.saltG ?? "-"} g</div>
+                    <div><b>Đường:</b> {detail.sugarG ?? "-"} g</div>
+                    <div><b>Chất xơ:</b> {detail.fiberG ?? "-"} g</div>
+                    <div><b>Nguồn:</b> {detail.sourceType || "khác"}</div>
+                  </div>
+                </div>
+                <div className="muted small">
+                  * Logic nguồn: <i>thực phẩm tươi</i> (khối lượng linh hoạt, thường không có đường/naCl sẵn) ·
+                  <i>đóng gói</i> (có label dinh dưỡng — nên nhập đủ macro, đường, muối) ·
+                  <i>món nấu chín</i> (macro ước lượng theo khẩu phần; massG là khối lượng sau nấu).
+                </div>
+                <div className="actions">
+                  <button onClick={()=>setShowDetail(false)}>Đóng</button>
+                  <button className="primary" onClick={()=>{ setShowDetail(false); openAdd(detail); }}>Thêm vào nhật ký</button>
+                </div>
+              </div>
+            </div>
+        )}
       </div>
-
-      {hasMore && (
-        <div className="more">
-          <button disabled={loading} onClick={()=>load(false)}>{loading? "Đang tải..." : "Xem thêm"}</button>
-        </div>
-      )}
-
-      {/* Popup thêm vào nhật ký */}
-      {showAdd && (
-        <div className="modal" onClick={()=>setShowAdd(false)}>
-          <div className="modal-card" onClick={e=>e.stopPropagation()}>
-            <h3>Thêm vào nhật ký</h3>
-            <p className="muted">{addFood?.name}</p>
-            <div className="row">
-              <label>Ngày</label>
-              <input type="date" value={date} onChange={e=>setDate(e.target.value)} />
-            </div>
-            <div className="row">
-              <label>Giờ</label>
-              <select value={hour} onChange={e=>setHour(+e.target.value)}>
-                {HOUR_OPTIONS.map(h=> <option key={h} value={h}>{`${h}:00`}</option>)}
-              </select>
-            </div>
-            <div className="row">
-              <label>Số lượng khẩu phần</label>
-              <input type="number" min="0.1" step="0.1" value={quantity} onChange={e=>setQuantity(+e.target.value)} />
-            </div>
-            <div className="row">
-              <label>Khối lượng (g)</label>
-              <input type="number" min="0" step="1" placeholder="mặc định theo món" value={massG} onChange={e=>setMassG(e.target.value)} />
-            </div>
-            <div className="actions">
-              <button onClick={()=>setShowAdd(false)}>Hủy</button>
-              <button className="primary" onClick={confirmAdd}>Thêm</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Popup chi tiết món */}
-      {showDetail && !!detail && (
-        <div className="modal" onClick={()=>setShowDetail(false)}>
-          <div className="modal-card" onClick={e=>e.stopPropagation()}>
-            <h3>{detail.name}</h3>
-            <div className="grid2">
-              <img className="bigimg" src={detail.imageUrl || "/images/food-placeholder.jpg"} alt={detail.name}/>
-              <div className="kv">
-                <div><b>Khối lượng:</b> {detail.massG ?? "-"} g ({detail.unit || "g"})</div>
-                <div><b>Calo:</b> {detail.kcal ?? "-"} cal</div>
-                <div><b>Đạm:</b> {detail.proteinG ?? "-"} g</div>
-                <div><b>Carb:</b> {detail.carbG ?? "-"} g</div>
-                <div><b>Béo:</b> {detail.fatG ?? "-"} g</div>
-                <div><b>Muối (NaCl):</b> {detail.saltG ?? "-"} g</div>
-                <div><b>Đường:</b> {detail.sugarG ?? "-"} g</div>
-                <div><b>Chất xơ:</b> {detail.fiberG ?? "-"} g</div>
-                <div><b>Nguồn:</b> {detail.sourceType || "khác"}</div>
-              </div>
-            </div>
-            <div className="muted small">
-              * Logic nguồn: <i>thực phẩm tươi</i> (khối lượng linh hoạt, thường không có đường/naCl sẵn) ·
-              <i>đóng gói</i> (có label dinh dưỡng — nên nhập đủ macro, đường, muối) ·
-              <i>món nấu chín</i> (macro ước lượng theo khẩu phần; massG là khối lượng sau nấu).
-            </div>
-            <div className="actions">
-              <button onClick={()=>setShowDetail(false)}>Đóng</button>
-              <button className="primary" onClick={()=>{ setShowDetail(false); openAdd(detail); }}>Thêm vào nhật ký</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
