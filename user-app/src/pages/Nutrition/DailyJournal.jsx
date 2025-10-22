@@ -13,7 +13,9 @@ export default function DailyJournal(){
   const [streak, setStreak] = useState(0);
   const [hot, setHot] = useState(false);
 
-  const [logs, setLogs] = useState([]); // [{_id, hour, quantity, massG, food{...}}]
+  // logs từ DB: [{_id, hour, quantity, massG, food{...}}]
+  const [logs, setLogs] = useState([]);
+  // totals/targets từ DB (đã chuẩn hoá về number)
   const [totals, setTotals] = useState({ kcal:0, proteinG:0, carbG:0, fatG:0, sugarG:0, saltG:0, fiberG:0 });
   const [targets, setTargets] = useState({ kcal:0, proteinG:0, carbG:0, fatG:0, sugarG:0, saltG:0, fiberG:0 });
 
@@ -28,20 +30,53 @@ export default function DailyJournal(){
     setCurDow(base.day());
   }
 
+  // --- GHIM DỮ LIỆU DB VÀO BIẾN ---
   async function load(){
     const { data } = await getDayLogs(date);
-    setLogs(data.items || []);
-    setTotals(data.totals || {});
-    setTargets(data.targets || {});
+    // logs: chuẩn hoá hour về number, food luôn là object
+    const safeLogs = (data?.items || []).map(it => ({
+      ...it,
+      hour: Number(it.hour),
+      quantity: Number(it.quantity ?? 1),
+      massG: (it.massG ?? null),
+      food: it.food || {}
+    }));
+    setLogs(safeLogs);
+
+    // totals: ép number + fallback 0
+    const t = data?.totals || {};
+    setTotals({
+      kcal: Number(t.kcal || 0),
+      proteinG: Number(t.proteinG || 0),
+      carbG: Number(t.carbG || 0),
+      fatG: Number(t.fatG || 0),
+      sugarG: Number(t.sugarG || 0),
+      saltG: Number(t.saltG || 0),
+      fiberG: Number(t.fiberG || 0),
+    });
+
+    // targets từ server: tinhMacroMucTieu* đã tính sẵn (kcal + grams)
+    const g = data?.targets || {};
+    setTargets({
+      kcal: Number(g.kcal || 0),
+      proteinG: Number(g.proteinG || 0),
+      carbG: Number(g.carbG || 0),
+      fatG: Number(g.fatG || 0),
+      sugarG: Number(g.sugarG || 0),
+      saltG: Number(g.saltG || 0),
+      fiberG: Number(g.fiberG || 0),
+    });
   }
+
   async function loadStreak(){
     const { data } = await getStreak();
-    setStreak(data.streak || 0);
-    setHot((data.streak||0) >= 2);
+    const s = Number(data?.streak || 0);
+    setStreak(s);
+    setHot(s >= 2);
   }
   async function loadWater(){
     const { data } = await getWater(date);
-    setWaterMl(data.amountMl || 0);
+    setWaterMl(Number(data?.amountMl || 0));
   }
 
   useEffect(()=>{ calcWeek(date); },[date]);
@@ -52,20 +87,21 @@ export default function DailyJournal(){
     const map = {};
     for (const h of HOURS) map[h] = [];
     for (const it of logs) {
-      if (map[it.hour]) map[it.hour].push(it);
+      // chỉ push nếu giờ nằm trong dải 6..23
+      if (map.hasOwnProperty(it.hour)) map[it.hour].push(it);
     }
     return map;
   },[logs]);
 
-    async function onDelete(logId){
+  async function onDelete(logId){
     try{
-        await deleteLog(logId);
-        await load();
-        toast.success("Xóa khỏi nhật ký thành công");
+      await deleteLog(logId);
+      await load();
+      toast.success("Xóa khỏi nhật ký thành công");
     }catch(err){
-        toast.error(err?.response?.data?.message || "Xóa khỏi nhật ký thất bại");
+      toast.error(err?.response?.data?.message || "Xóa khỏi nhật ký thất bại");
     }
-    }
+  }
 
   function pct(v,t){ if(!t) return 0; const p = (v/t)*100; return Math.max(0, Math.min(100, p)); }
 
@@ -183,7 +219,12 @@ export default function DailyJournal(){
             </div>
             <div className="wctl">
               <button onClick={()=> waterDelta(-stepMl)}>-</button>
-              <input type="number" min="50" max="10000" step="50" value={stepMl} onChange={e=> setStepMl(Math.max(50, Math.min(10000, +e.target.value||100)))} />
+              <input
+                type="number"
+                min="50" max="10000" step="50"
+                value={stepMl}
+                onChange={e=> setStepMl(Math.max(50, Math.min(10000, +e.target.value||100)))}
+              />
               <button onClick={()=> waterDelta(+stepMl)}>+</button>
             </div>
           </div>

@@ -152,3 +152,84 @@ export function tinhMacroGram({ calorieTarget, macroProtein = 20, macroCarb = 50
   return { proteinGram: pGram, carbGram: cGram, fatGram: fGram };
 }
 
+/**
+ * Tính mục tiêu dinh dưỡng đa lượng theo GOAL + cân nặng + calorieTarget/tdee.
+ * Mapping theo yêu cầu:
+ *  - Giảm mỡ (cut):            "giam_can","giam_mo"  -> Protein 2.4 g/kg, Fat 0.8 g/kg
+ *  - Giữ cân (duy trì):        "duy_tri"             -> Protein 2.0 g/kg, Fat 0.8 g/kg
+ *  - Tăng cơ (bulk lean):      "tang_can","tang_co"  -> Protein 2.2 g/kg, Fat 1.0 g/kg
+ *  - Carb = phần kcal còn lại.
+ *  - Muối: 5 g/ngày; Đường tự do: 10% kcal; Xơ: 14 g / 1000 kcal.
+ */
+export function tinhMacroMucTieu({ mucTieu = "duy_tri", canNangKg, calorieTarget, tdee }) {
+  // validate input
+  assert(typeof canNangKg === "number" && canNangKg >= MIN_WEIGHT_KG && canNangKg <= MAX_WEIGHT_KG, "Cân nặng ngoài phạm vi hợp lệ");
+  let cal = Number.isFinite(calorieTarget) && calorieTarget > 0
+    ? Math.round(calorieTarget)
+    : (Number.isFinite(tdee) && tdee > 0 ? Math.round(tdee) : 2000);
+
+  // preset protein/fat theo goal
+  let pPerKg, fPerKg;
+  switch (mucTieu) {
+    case "giam_can":
+    case "giam_mo":
+      pPerKg = 2.4; fPerKg = 0.8;     // cut
+      break;
+    case "tang_can":
+    case "tang_co":
+      pPerKg = 2.2; fPerKg = 1.0;     // bulk lean
+      break;
+    case "duy_tri":
+    default:
+      pPerKg = 2.0; fPerKg = 0.8;     // maintain
+      break;
+  }
+
+  const proteinG = Math.max(0, Math.round(canNangKg * pPerKg));
+  const fatG     = Math.max(0, Math.round(canNangKg * fPerKg));
+
+  const kcalFromProtein = proteinG * 4;
+  const kcalFromFat     = fatG * 9;
+  const kcalLeft        = Math.max(0, cal - (kcalFromProtein + kcalFromFat));
+  const carbG           = Math.max(0, Math.round(kcalLeft / 4));
+
+  // Muối/Đường/Xơ áp dụng chung
+  const saltG  = 5;                                 // g/ngày
+  const sugarG = Math.round((cal * 0.10) / 4);      // 10% cal → g đường tự do
+  const fiberG = Math.round(14 * (cal / 1000));     // 14 g / 1000 kcal
+
+  // % macro (nếu cần lưu/hiển thị)
+  const macroProtein = Math.round((kcalFromProtein / cal) * 100);
+  const macroFat     = Math.round((kcalFromFat     / cal) * 100);
+  const macroCarb    = Math.max(0, 100 - macroProtein - macroFat);
+
+  return {
+    // năng lượng
+    kcal: cal,
+
+    // mục tiêu theo gram
+    proteinG, fatG, carbG,
+
+    // ràng buộc phụ
+    saltG, sugarG, fiberG,
+
+    // phần trăm (tham khảo/hiển thị)
+    macroProtein, macroCarb, macroFat,
+  };
+}
+
+/**
+ * Tiện lợi: nhận trực tiếp từ user.profile (schema bạn đã cung cấp).
+ * - Ưu tiên calorieTarget; fallback tdee.
+ */
+export function tinhMacroMucTieuTuProfile(profile = {}) {
+  const {
+    goal: mucTieu = "duy_tri",
+    weightKg: canNangKg,
+    calorieTarget,
+    tdee,
+  } = profile || {};
+
+  return tinhMacroMucTieu({ mucTieu, canNangKg, calorieTarget, tdee });
+}
+
