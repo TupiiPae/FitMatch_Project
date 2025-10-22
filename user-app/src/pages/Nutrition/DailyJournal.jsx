@@ -55,7 +55,7 @@ export default function DailyJournal(){
       fiberG: Number(t.fiberG || 0),
     });
 
-    // targets từ server: tinhMacroMucTieu* đã tính sẵn (kcal + grams)
+    // targets từ server
     const g = data?.targets || {};
     setTargets({
       kcal: Number(g.kcal || 0),
@@ -87,7 +87,6 @@ export default function DailyJournal(){
     const map = {};
     for (const h of HOURS) map[h] = [];
     for (const it of logs) {
-      // chỉ push nếu giờ nằm trong dải 6..23
       if (map.hasOwnProperty(it.hour)) map[it.hour].push(it);
     }
     return map;
@@ -143,7 +142,7 @@ export default function DailyJournal(){
       <div className="dj-grid">
         {/* LEFT main (2/3) */}
         <div className="dj-main">
-          <div className="col-title">Nhật ký hôm nay</div>
+          <div className="col-title">Nhật ký dinh dưỡng</div>
           <div className="hour-grid">
             {HOURS.map(h=>(
               <div key={h} className="hour-row" style={{height: (logsByHour[h]?.length ? "auto" : "36px")}}>
@@ -171,61 +170,143 @@ export default function DailyJournal(){
 
         {/* RIGHT sidebar (1/3) */}
         <div className="dj-side">
-          <div className="panel">
-            <div className="pitem">
-              <div className="label">Calorie</div>
-              <div className="pbar"><span style={{width:`${pct(totals.kcal, targets.kcal)}%`}} /></div>
-              <div className="pval">{Math.round(totals.kcal||0)}/{Math.round(targets.kcal||0)} cal</div>
+          {/* ======= BẢNG GIÁ TRỊ ĐA LƯỢNG MỚI ======= */}
+          <div className="panel macro">
+            {/* Calorie ring */}
+            <div className="cal-wrapper">
+              <div className="cal-ring">
+                {(() => {
+                  const size = 132;                 // đường kính SVG
+                  const stroke = 10;                // bề dày nét
+                  const r = (size - stroke) / 2;    // bán kính
+                  const C = 2 * Math.PI * r;        // chu vi
+                  const ratio = (targets.kcal || 0) > 0 ? (totals.kcal || 0) / targets.kcal : 0;
+                  const progress = Math.max(0, Math.min(1, ratio)); // 0..1
+                  const dashOffset = C * (1 - progress);
+
+                  return (
+                    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                      {/* nền vòng */}
+                      <circle
+                        cx={size/2} cy={size/2} r={r}
+                        className="ring-bg"
+                        strokeWidth={stroke}
+                        fill="none"
+                      />
+                      {/* vòng tiến độ */}
+                      <circle
+                        cx={size/2} cy={size/2} r={r}
+                        className="ring-fg"
+                        strokeWidth={stroke}
+                        fill="none"
+                        strokeDasharray={C}
+                        strokeDashoffset={dashOffset}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  );
+                })()}
+                <div className="cal-center">
+                  <div className="cc-label">Calorie</div>
+                  <div className="cc-val">
+                    {Math.round(totals.kcal||0)}
+                    <span className="cc-unit">/{Math.round(targets.kcal||0)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="pitem">
-              <div className="label">Chất đạm</div>
-              <div className="pbar red"><span style={{width:`${pct(totals.proteinG, targets.proteinG)}%`}} /></div>
-              <div className="pval">{(totals.proteinG||0)}/{Math.round(targets.proteinG||0)}g</div>
-            </div>
-            <div className="pitem">
-              <div className="label">Đường bột</div>
-              <div className="pbar purple"><span style={{width:`${pct(totals.carbG, targets.carbG)}%`}} /></div>
-              <div className="pval">{(totals.carbG||0)}/{Math.round(targets.carbG||0)}g</div>
-            </div>
-            <div className="pitem">
-              <div className="label">Chất béo</div>
-              <div className="pbar green"><span style={{width:`${pct(totals.fatG, targets.fatG)}%`}} /></div>
-              <div className="pval">{(totals.fatG||0)}/{Math.round(targets.fatG||0)}g</div>
-            </div>
-            <div className="pitem">
-              <div className="label">Muối</div>
-              <div className="pbar gray"><span style={{width:`${pct(totals.saltG, targets.saltG)}%`}} /></div>
-              <div className="pval">{(totals.saltG||0)}/{Math.round(targets.saltG||0)}g</div>
-            </div>
-            <div className="pitem">
-              <div className="label">Đường</div>
-              <div className="pbar orange"><span style={{width:`${pct(totals.sugarG, targets.sugarG)}%`}} /></div>
-              <div className="pval">{(totals.sugarG||0)}/{Math.round(targets.sugarG||0)}g</div>
-            </div>
-            <div className="pitem">
-              <div className="label">Chất xơ</div>
-              <div className="pbar teal"><span style={{width:`${pct(totals.fiberG, targets.fiberG)}%`}} /></div>
-              <div className="pval">{(totals.fiberG||0)}/{Math.round(targets.fiberG||0)}g</div>
+
+            {/* 2 cột macro */}
+            <div className="macro-grid">
+              <div className="col">
+                {/* Đạm */}
+                <div className="mitem">
+                  <div className="mhead">
+                    <span>Chất đạm</span>
+                    <span className="mval">{(totals.proteinG||0)}/{Math.round(targets.proteinG||0)}g</span>
+                  </div>
+                  <div className="mbar red">
+                    <span style={{width:`${pct(totals.proteinG, targets.proteinG)}%`}} />
+                  </div>
+                </div>
+                {/* Đường bột */}
+                <div className="mitem">
+                  <div className="mhead">
+                    <span>Đường bột</span>
+                    <span className="mval">{(totals.carbG||0)}/{Math.round(targets.carbG||0)}g</span>
+                  </div>
+                  <div className="mbar purple">
+                    <span style={{width:`${pct(totals.carbG, targets.carbG)}%`}} />
+                  </div>
+                </div>
+                {/* Chất béo */}
+                <div className="mitem">
+                  <div className="mhead">
+                    <span>Chất béo</span>
+                    <span className="mval">{(totals.fatG||0)}/{Math.round(targets.fatG||0)}g</span>
+                  </div>
+                  <div className="mbar green">
+                    <span style={{width:`${pct(totals.fatG, targets.fatG)}%`}} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="col">
+                {/* Muối */}
+                <div className="mitem">
+                  <div className="mhead">
+                    <span>Muối</span>
+                    <span className="mval">{(totals.saltG||0)}/{Math.round(targets.saltG||0)}g</span>
+                  </div>
+                  <div className="mbar gray">
+                    <span style={{width:`${pct(totals.saltG, targets.saltG)}%`}} />
+                  </div>
+                </div>
+                {/* Đường */}
+                <div className="mitem">
+                  <div className="mhead">
+                    <span>Đường</span>
+                    <span className="mval">{(totals.sugarG||0)}/{Math.round(targets.sugarG||0)}g</span>
+                  </div>
+                  <div className="mbar orange">
+                    <span style={{width:`${pct(totals.sugarG, targets.sugarG)}%`}} />
+                  </div>
+                </div>
+                {/* Chất xơ */}
+                <div className="mitem">
+                  <div className="mhead">
+                    <span>Chất xơ</span>
+                    <span className="mval">{(totals.fiberG||0)}/{Math.round(targets.fiberG||0)}g</span>
+                  </div>
+                  <div className="mbar teal">
+                    <span style={{width:`${pct(totals.fiberG, targets.fiberG)}%`}} />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
+          {/* ======= NƯỚC UỐNG ======= */}
           <div className="panel water">
             <div className="wtop">
-              <i className="fa-solid fa-glass-water-droplet"></i>
-              <div>
-                <div className="wlabel">Lượng nước</div>
-                <div className="wval">{waterMl} ml</div>
+              <div className="wleft">
+                <i className="fa-solid fa-glass-water-droplet"></i>
+                <div>
+                  <div className="wlabel">Lượng nước</div>
+                  <div className="wval">{waterMl} ml</div>
+                </div>
               </div>
-            </div>
-            <div className="wctl">
-              <button onClick={()=> waterDelta(-stepMl)}>-</button>
-              <input
-                type="number"
-                min="50" max="10000" step="50"
-                value={stepMl}
-                onChange={e=> setStepMl(Math.max(50, Math.min(10000, +e.target.value||100)))}
-              />
-              <button onClick={()=> waterDelta(+stepMl)}>+</button>
+
+              <div className="wctl">
+                <button type="button" onClick={() => waterDelta(-stepMl)}>–</button>
+                <input
+                  type="number"
+                  min="50" max="10000" step="50"
+                  value={stepMl}
+                  onChange={e => setStepMl(Math.max(50, Math.min(10000, +e.target.value || 100)))}
+                />
+                <button type="button" onClick={() => waterDelta(+stepMl)}>+</button>
+              </div>
             </div>
           </div>
         </div>
