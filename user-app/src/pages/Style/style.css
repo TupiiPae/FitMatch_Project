@@ -23,7 +23,7 @@
 .auth-root::before{
   content:"";
   position:absolute; inset:0;
-  background: url("/images/landing-bg.jpg") center/cover no-repeat;
+  background: url("/images/bg-fitmatch.png") center/cover no-repeat;
   filter: blur(8px);
   transform: scale(1); /* tránh viền mờ */
 }
@@ -54,7 +54,7 @@
 /* Typography */
 .auth-container h1{
   font-weight: 700;
-  font-size: 38px;
+  font-size: 36px;
   line-height: 1.15;
   color:#141414;
   margin: 0 0 10px;
@@ -172,8 +172,7 @@
   color:#6b7280;
   transition: background .15s ease, color .15s ease, transform .12s ease;
 }
-.field .eye-toggle:hover{ background: rgba(0,0,0,.06); color:#374151; transform: translateY(-1px); }
-.field .eye-toggle:active{ transform: translateY(0); }
+.field .eye-toggle:hover{ background: rgba(0,0,0,.06); color:#374151; }
 .field .eye-toggle i{ font-size: 16px; }
 
 /* Info text / links */
@@ -283,24 +282,3 @@
   .auth-form{ padding: 0 28px; }
   .auth-input, .field, .divider, .signup-link, .forgot-row, .error-stack{ width: 100%; }
 }
-
-/* Tốc độ mặc định */
-.auth-container {
-  --auth-speed: 3s; /* mặc định như hiện tại */
-  --auth-ease: cubic-bezier(.22,.61,.36,1);
-}
-
-/* Áp tốc độ này cho các phần slide */
-.auth-form-container,
-.auth-toggle-wrap,
-.auth-toggle {
-  transition:
-    transform var(--auth-speed) var(--auth-ease),
-    opacity   var(--auth-speed) ease,
-    border-radius var(--auth-speed) var(--auth-ease);
-  will-change: transform, opacity; 
-  backface-visibility: hidden;
-}
-
-/* Rất chậm (tuỳ chọn) */
-.auth-container.auth-xslow { --auth-speed: 3s; }

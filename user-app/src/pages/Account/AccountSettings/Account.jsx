@@ -187,17 +187,6 @@ export default function AccountInfo() {
               <div className="acc-sub">
                 <span>{user.profile?.sex === "female" ? "Nữ" : "Nam"}</span><span className="dot">•</span>
                 <span>{formatDobDMY(user.profile?.dob) || "Chưa có ngày sinh"}</span>
-                {(user.profile?.address?.city || user.profile?.address?.country) && (
-                  <>
-                    <span className="dot">•</span>
-                    <span>{[
-                      user.profile?.address?.ward,
-                      user.profile?.address?.district,
-                      user.profile?.address?.city,
-                      user.profile?.address?.country
-                    ].filter(Boolean).join(", ")}</span>
-                  </>
-                )}
               </div>
             </div>
           </div>
