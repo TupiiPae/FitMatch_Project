@@ -13,6 +13,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import onboardingRoutes from "./routes/onboarding.routes.js";
 import foodRoutes from "./routes/food.routes.js";
+import nutritionRoutes from "./routes/nutrition.routes.js";
 
 const app = express();
 
@@ -86,6 +87,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/user/onboarding", onboardingRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api", foodRoutes);
+app.use("/api", nutritionRoutes);
 
 // (Tùy chọn) In danh sách routes khi khởi động
 const printRegisteredRoutes = (appInstance) => {

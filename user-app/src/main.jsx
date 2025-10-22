@@ -13,16 +13,6 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <App />
-    <ToastContainer
-      position="top-center"
-      autoClose={1800}
-      newestOnTop
-      closeOnClick
-      pauseOnFocusLoss={false}
-      draggable
-      pauseOnHover={false}
-      limit={3}
-      theme="colored"
-    />
+    <ToastContainer position="top-right" autoClose={2200} />
   </React.StrictMode>
 );

@@ -4,8 +4,10 @@ import {
   searchFoods, toggleFavoriteFood, addLog, getFood, viewFood
 } from "../../api/foods";
 import "./RecordMeal.css";
+import { toast } from "react-toastify";
 
 const HOUR_OPTIONS = Array.from({length: 18}, (_,i)=> 6+i); // 6..23
+
 
 export default function RecordMeal(){
   const nav = useNavigate();
@@ -65,10 +67,15 @@ export default function RecordMeal(){
     setShowAdd(true);
   }
 
-  async function confirmAdd(){
-    await addLog({ foodId: addFood._id, date, hour, quantity, massG: massG===""? null : Number(massG) });
-    setShowAdd(false);
-  }
+    async function confirmAdd(){
+    try{
+        await addLog({ foodId: addFood._id, date, hour, quantity, massG: massG===""? null : Number(massG) });
+        setShowAdd(false);
+        toast.success("Thêm vào nhật ký thành công");
+    }catch(err){
+        toast.error(err?.response?.data?.message || "Thêm vào nhật ký thất bại");
+    }
+    }
 
   async function openDetail(it){
     const { data } = await getFood(it._id);
