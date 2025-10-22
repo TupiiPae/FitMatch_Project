@@ -107,22 +107,25 @@ export async function incWaterDay(req, res) {
   const { date, deltaMl = 0 } = req.body || {};
   if (!date) return res.status(400).json({ message: "date required" });
 
+  const incVal = Number(deltaMl) || 0;
+
+  // KHÔNG set amountMl trong $setOnInsert để tránh xung đột với $inc
   const doc = await WaterLog.findOneAndUpdate(
     { user: userId, date },
     {
-      $inc: { amountMl: Number(deltaMl) || 0 },
-      $setOnInsert: { user: userId, date, amountMl: 0 },
+      $inc: { amountMl: incVal },
+      $setOnInsert: { user: userId, date },
     },
     { new: true, upsert: true }
   );
 
-  // clamp 0..10000
-  let needSave = false;
-  if (doc.amountMl < 0) { doc.amountMl = 0; needSave = true; }
-  if (doc.amountMl > 10000) { doc.amountMl = 10000; needSave = true; }
-  if (needSave) await doc.save();
+  // clamp 0..10000 sau khi cập nhật
+  let changed = false;
+  if (doc.amountMl < 0) { doc.amountMl = 0; changed = true; }
+  if (doc.amountMl > 10000) { doc.amountMl = 10000; changed = true; }
+  if (changed) await doc.save();
 
-  res.json({ amountMl: doc.amountMl });
+  return res.json({ amountMl: doc.amountMl });
 }
 
 /* --------------------------------------------
