@@ -13,6 +13,10 @@ import Profile from "./pages/Account/Profile"; // index.jsx => chỉ cần tới
 import AccountSettings from "./pages/Account/AccountSettings";
 import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy"; // index.jsx => chỉ cần tới thư mục
 
+// Diary
+import RecordMeal from "./pages/Nutrition/RecordMeal";
+import CreateFood from "./pages/Nutrition/CreateFood";
+
 // Layout (Navbar + Footer)
 import AppShell from "./components/layout/AppShell";
 
@@ -83,8 +87,8 @@ export default function App() {
           {/* Dinh dưỡng */}
           <Route path="/dinh-duong" element={<Navigate to="/dinh-duong/nhat-ky" replace />} />
           <Route path="/dinh-duong/nhat-ky" element={<NhatKy />} />
-          <Route path="/dinh-duong/ghi-lai" element={<GhiLai />} />
-          <Route path="/dinh-duong/ghi-lai/tao-mon" element={<TaoMon />} />
+          <Route path="/dinh-duong/ghi-lai" element={<RecordMeal />} />
+          <Route path="/dinh-duong/ghi-lai/tao-mon" element={<CreateFood/>} />
           <Route path="/dinh-duong/ghi-lai/tinh-calo-ai" element={<TinhCaloAI />} />
           <Route path="/dinh-duong/thuc-don-goi-y" element={<ThucDonGoiY />} />
 

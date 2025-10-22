@@ -12,6 +12,7 @@ import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import onboardingRoutes from "./routes/onboarding.routes.js";
+import foodRoutes from "./routes/food.routes.js";
 
 const app = express();
 
@@ -82,10 +83,9 @@ app.get("/", (_req, res) => res.send("FitMatch API v1"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
-
-// Mount onboarding BEFORE generic user routes
 app.use("/api/user/onboarding", onboardingRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api", foodRoutes);
 
 // (Tùy chọn) In danh sách routes khi khởi động
 const printRegisteredRoutes = (appInstance) => {

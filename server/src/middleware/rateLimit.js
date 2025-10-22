@@ -12,3 +12,14 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+export default function rl(options = {}) {
+  return rateLimit({
+    windowMs: 60 * 1000,     // 1 phút
+    max: 300,                // tối đa 300 req/phút
+    standardHeaders: true,   // gửi thông tin rate limit qua headers chuẩn
+    legacyHeaders: false,    // tắt X-RateLimit-* cũ
+    message: "Too many requests, please try again later.",
+    ...options,
+  });
+}
