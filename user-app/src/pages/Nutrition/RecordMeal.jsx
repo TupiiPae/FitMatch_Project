@@ -124,9 +124,9 @@ export default function RecordMeal(){
                     {it.portionName || "Khẩu phần tiêu chuẩn"} · {it.massG ?? "-"} g · {kcalStr(it.kcal)} cal
                   </div>
                   <div className="macro">
-                    <span><i className="fa-solid fa-drumstick-bite"></i> Đạm {gStr(it.proteinG)} g</span>
-                    <span><i className="fa-solid fa-bread-slice"></i> Carb {gStr(it.carbG)} g</span>
-                    <span><i className="fa-solid fa-bacon"></i> Béo {gStr(it.fatG)} g</span>
+                    <span className="protein"><i className="fa-solid fa-drumstick-bite"></i> {gStr(it.proteinG)} g</span>
+                    <span className="carb"><i className="fa-solid fa-bread-slice"></i> {gStr(it.carbG)} g</span>
+                    <span className="fat"><i className="fa-solid fa-bacon"></i> {gStr(it.fatG)} g</span>
                   </div>
                 </div>
                 <div className="act" onClick={(e)=> e.stopPropagation()}>
@@ -148,30 +148,119 @@ export default function RecordMeal(){
           {/* Popup thêm vào nhật ký */}
           {showAdd && (
             <div className="modal" onClick={()=>setShowAdd(false)}>
-              <div className="modal-card" onClick={e=>e.stopPropagation()}>
-                <h3>Thêm vào nhật ký</h3>
-                <p className="muted">{addFood?.name}</p>
-                <div className="row">
-                  <label>Ngày</label>
-                  <input type="date" value={date} onChange={e=>setDate(e.target.value)} />
+              <div className="modal-card add-modal" onClick={e=>e.stopPropagation()}>
+                {/* Header */}
+                <div className="am-head">
+                  <div className="am-thumb-wrap">
+                    <img
+                      className="am-thumb"
+                      src={addFood?.imageUrl || "/images/food-placeholder.jpg"}
+                      alt={addFood?.name || "food"}
+                    />
+                  </div>
+                  <div className="am-hmeta">
+                    <h3 className="am-title">Thêm vào nhật ký</h3>
+                    <div className="am-sub">{addFood?.name}</div>
+                  </div>
                 </div>
-                <div className="row">
-                  <label>Giờ</label>
-                  <select value={hour} onChange={e=>setHour(+e.target.value)}>
-                    {HOUR_OPTIONS.map(h=> <option key={h} value={h}>{`${h}:00`}</option>)}
-                  </select>
+
+                {/* Ngày & Giờ */}
+                <div className="am-when">
+                  <div className="am-when-item">
+                    <i className="fa-regular fa-calendar"></i>
+                    <div className="am-field">
+                      <label>Ngày</label>
+                      <input type="date" value={date} onChange={e=>setDate(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="am-when-item">
+                    <i className="fa-regular fa-clock"></i>
+                    <div className="am-field">
+                      <label>Thời gian</label>
+                      <select value={hour} onChange={e=>setHour(+e.target.value)}>
+                        {HOUR_OPTIONS.map(h=> <option key={h} value={h}>{`${h}:00`}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div className="row">
-                  <label>Số lượng khẩu phần</label>
-                  <input type="number" min="0.1" step="0.1" value={quantity} onChange={e=>setQuantity(+e.target.value)} />
+
+                {/* Số lượng & Khẩu phần */}
+                <div className="am-qtygrid">
+                  <div className="am-qty">
+                    <label>Số lượng khẩu phần</label>
+                    <div className="am-qty-ctl">
+                      <button type="button" onClick={()=> setQuantity(q => Math.max(1, Math.round((q||1)-1)))}>–</button>
+                      <input
+                        type="number"
+                        min="1" step="1"
+                        value={quantity}
+                        onChange={e=> setQuantity(Math.max(1, Math.round(+e.target.value || 1)))}
+                      />
+                      <button type="button" onClick={()=> setQuantity(q => Math.max(1, Math.round((q||1)+1)))}>+</button>
+                    </div>
+                  </div>
+                  <div className="am-portion">
+                    <label>Khẩu phần (g)</label>
+                    <input
+                      type="text"
+                      value={addFood?.massG != null ? `${addFood.massG} g` : "-"}
+                      readOnly
+                      className="readonly"
+                    />
+                    <div className="am-note">* Khối lượng mặc định theo món, không thể chỉnh</div>
+                  </div>
                 </div>
-                <div className="row">
-                  <label>Khối lượng (g)</label>
-                  <input type="number" min="0" step="1" placeholder="mặc định theo món" value={massG} onChange={e=>setMassG(e.target.value)} />
-                </div>
-                <div className="actions">
-                  <button onClick={()=>setShowAdd(false)}>Hủy</button>
-                  <button className="primary" onClick={confirmAdd}>Thêm</button>
+
+                {/* Tính trước 4 giá trị chính theo số lượng */}
+                {(() => {
+                  const q = Number(quantity || 1);
+                  const f = addFood || {};
+                  const fmt = (v) => (v==null ? "-" : Math.round(v*q*10)/10);
+                  return (
+                    <div className="am-macros">
+                      <div className="am-macro calo">
+                        <div className="m-label">Calo</div>
+                        <div className="m-val">{fmt(f.kcal)} <span>cal</span></div>
+                      </div>
+                      <div className="am-macro protein">
+                        <div className="m-label">Đạm</div>
+                        <div className="m-val">{fmt(f.proteinG)} <span>g</span></div>
+                      </div>
+                      <div className="am-macro carb">
+                        <div className="m-label">Đường bột</div>
+                        <div className="m-val">{fmt(f.carbG)} <span>g</span></div>
+                      </div>
+                      <div className="am-macro fat">
+                        <div className="m-label">Béo</div>
+                        <div className="m-val">{fmt(f.fatG)} <span>g</span></div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Actions */}
+                <div className="am-actions">
+                  <button className="btn ghost" onClick={()=>setShowAdd(false)}>Hủy</button>
+                  <button
+                    className="btn primary"
+                    onClick={async ()=>{
+                      try{
+                        await addLog({
+                          foodId: addFood._id,
+                          date,
+                          hour,
+                          quantity,
+                          massG: null   // lock theo khẩu phần mặc định của món
+                        });
+                        setShowAdd(false);
+                        toast.success("Thêm vào nhật ký thành công");
+                      }catch(err){
+                        toast.error(err?.response?.data?.message || "Thêm vào nhật ký thất bại");
+                      }
+                    }}
+                  >
+                    Thêm
+                  </button>
                 </div>
               </div>
             </div>
@@ -180,34 +269,66 @@ export default function RecordMeal(){
           {/* Popup chi tiết món */}
           {showDetail && !!detail && (
             <div className="modal" onClick={()=>setShowDetail(false)}>
-              <div className="modal-card" onClick={e=>e.stopPropagation()}>
-                <h3>{detail.name}</h3>
-                <div className="grid2">
-                  <img className="bigimg" src={detail.imageUrl || "/images/food-placeholder.jpg"} alt={detail.name}/>
-                  <div className="kv">
-                    <div><b>Khối lượng:</b> {detail.massG ?? "-"} g ({detail.unit || "g"})</div>
-                    <div><b>Calo:</b> {detail.kcal ?? "-"} cal</div>
-                    <div><b>Đạm:</b> {detail.proteinG ?? "-"} g</div>
-                    <div><b>Carb:</b> {detail.carbG ?? "-"} g</div>
-                    <div><b>Béo:</b> {detail.fatG ?? "-"} g</div>
-                    <div><b>Muối (NaCl):</b> {detail.saltG ?? "-"} g</div>
-                    <div><b>Đường:</b> {detail.sugarG ?? "-"} g</div>
-                    <div><b>Chất xơ:</b> {detail.fiberG ?? "-"} g</div>
-                    <div><b>Nguồn:</b> {detail.sourceType || "khác"}</div>
+              <div className="modal-card food-modal" onClick={e=>e.stopPropagation()}>
+                {/* Header với ảnh + tên */}
+                <div className="fm-head">
+                  <img
+                    className="fm-thumb"
+                    src={detail.imageUrl || "/images/food-placeholder.jpg"}
+                    alt={detail.name}
+                  />
+                  <div className="fm-titlebox">
+                    <h3 className="fm-title">{detail.name}</h3>
+                    <div className="fm-sub">
+                      {(detail.portionName || "Khẩu phần tiêu chuẩn")} · {(detail.massG ?? "-")} {detail.unit || "g"} · {(detail.kcal ?? "-")} cal
+                    </div>
+
+                    {/* Macro chips nhanh */}
+                    <div className="fm-chips">
+                      <span className="chip chip-red"><i className="fa-solid fa-drumstick-bite"></i> Đạm {(detail.proteinG ?? "-")}g</span>
+                      <span className="chip chip-purple"><i className="fa-solid fa-bread-slice"></i> Carb {(detail.carbG ?? "-")}g</span>
+                      <span className="chip chip-green"><i className="fa-solid fa-bacon"></i> Béo {(detail.fatG ?? "-")}g</span>
+                    </div>
                   </div>
                 </div>
-                <div className="muted small">
-                  * Logic nguồn: <i>thực phẩm tươi</i> (khối lượng linh hoạt, thường không có đường/naCl sẵn) ·
-                  <i>đóng gói</i> (có label dinh dưỡng — nên nhập đủ macro, đường, muối) ·
-                  <i>món nấu chín</i> (macro ước lượng theo khẩu phần; massG là khối lượng sau nấu).
+
+                {/* Nội dung chi tiết dạng 2 cột key–value */}
+                <div className="fm-grid">
+                  <div className="fm-kv">
+                    <div><span>Khối lượng</span><b>{detail.massG ?? "-"} {detail.unit || "g"}</b></div>
+                    <div><span>Calo</span><b>{detail.kcal ?? "-" } cal</b></div>
+                    <div><span>Đạm</span><b>{detail.proteinG ?? "-"} g</b></div>
+                    <div><span>Đường bột</span><b>{detail.carbG ?? "-"} g</b></div>
+                  </div>
+                  <div className="fm-kv">
+                    <div><span>Chất béo</span><b>{detail.fatG ?? "-"} g</b></div>
+                    <div><span>Muối (NaCl)</span><b>{detail.saltG ?? "-"} g</b></div>
+                    <div><span>Đường</span><b>{detail.sugarG ?? "-"} g</b></div>
+                    <div><span>Chất xơ</span><b>{detail.fiberG ?? "-"} g</b></div>
+                  </div>
                 </div>
-                <div className="actions">
-                  <button onClick={()=>setShowDetail(false)}>Đóng</button>
-                  <button className="primary" onClick={()=>{ setShowDetail(false); openAdd(detail); }}>Thêm vào nhật ký</button>
+
+                {/* Nguồn & ghi chú */}
+                <div className="fm-note">
+                  <span className="badge">{detail.sourceType || "khác"}</span>
+                  <span className="muted small">
+                    • Thực phẩm tươi: khối lượng linh hoạt · Đóng gói: nên nhập đủ macro/đường/muối · Nấu chín: macro theo khẩu phần, massG là sau nấu.
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div className="fm-actions">
+                  <button className="btn ghost" onClick={()=>setShowDetail(false)}>Đóng</button>
+                  <button
+                    className="btn primary"
+                    onClick={()=>{ setShowDetail(false); openAdd(detail); }}
+                  >
+                    Thêm vào nhật ký
+                  </button>
                 </div>
               </div>
             </div>
-        )}
+          )}
       </div>
     </div>
   );

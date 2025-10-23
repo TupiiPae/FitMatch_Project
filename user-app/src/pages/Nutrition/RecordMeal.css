@@ -54,3 +54,227 @@
 .bigimg{ width:200px; height:200px; border-radius:12px; object-fit:cover; }
 .kv > div{ margin:4px 0; }
 
+/* ===== FOOD MODAL (đẹp hơn, hiện đại) ===== */
+.food-modal{
+  width: 720px; max-width: 94vw;
+  border-radius: 16px;
+  padding: 16px 16px 14px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Header */
+.fm-head{
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.fm-thumb{
+  width: 120px; height: 120px; border-radius: 12px; object-fit: cover;
+  border: 1px solid #eef2f7;
+}
+.fm-titlebox{ display:flex; flex-direction:column; gap:6px; }
+.fm-title{ margin: 0; font-size: 20px; font-weight: 800; }
+.fm-sub{ color:#6b7280; font-size:13px; }
+
+/* Chips macro */
+.fm-chips{ display:flex; flex-wrap: wrap; gap:8px; margin-top: 2px; }
+.chip{
+  display:inline-flex; align-items:center; gap:6px;
+  height:28px; padding:0 10px; border-radius:999px;
+  border:1px solid #e5e7eb; background:#fff; font-size:12px; font-weight:700; color:#334155;
+}
+.chip i{ opacity:.85; }
+.chip-red{ border-color:#f9d6d6; color:#b91c1c; }
+.chip-purple{ border-color:#e2d9ff; color:#6d28d9; }
+.chip-green{ border-color:#c9efd8; color:#15803d; }
+
+/* Grid key-value */
+.fm-grid{
+  display:grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin: 10px 0 6px;
+}
+.fm-kv{
+  border: 1px dashed #e5e7eb; border-radius:12px; padding:10px;
+  display:grid; gap:8px;
+}
+.fm-kv > div{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 4px 2px;
+}
+.fm-kv > div span{ color:#475569; font-size:13px; }
+.fm-kv > div b{ color:#0b5066; font-weight:800; }
+
+/* Note & source */
+.fm-note{
+  display:flex; align-items:center; gap:10px;
+  padding: 6px 2px; color:#6b7280;
+}
+.badge{
+  display:inline-flex; align-items:center; height:24px; padding:0 10px;
+  border-radius:999px; background:#f3f4f6; border:1px solid #e5e7eb;
+  font-size:12px; font-weight:700; color:#374151; text-transform: capitalize;
+}
+
+/* Actions */
+.fm-actions{
+  display:flex; justify-content:flex-end; gap:10px; margin-top: 8px;
+}
+.btn{
+  height:40px; padding:0 14px; border-radius:10px; cursor:pointer; font-weight:700;
+  border:1px solid #e5e7eb; background:#fff; color:#111827;
+}
+.btn.primary{ background:#1A73E8; color:#fff; border-color:#1A73E8; }
+.btn.ghost{ background:#fff; color:#374151; }
+
+/* Responsive */
+@media (max-width: 640px){
+  .fm-head{ grid-template-columns: 84px 1fr; }
+  .fm-thumb{ width:84px; height:84px; }
+  .fm-grid{ grid-template-columns: 1fr; }
+}
+
+/* ===== Add-to-log Modal (đẹp, gọn) ===== */
+.add-modal{
+  width: 720px; max-width: 94vw;
+  border-radius: 16px;
+  padding: 16px 16px 14px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Header */
+.am-head{
+  display:grid; grid-template-columns: 84px 1fr; gap:12px; align-items:center;
+  margin-bottom: 10px;
+}
+.am-thumb-wrap{ width:84px; height:84px; border-radius:12px; overflow:hidden; border:1px solid #eef2f7; }
+.am-thumb{ width:100%; height:100%; object-fit:cover; }
+.am-hmeta{ display:flex; flex-direction:column; gap:4px; }
+.am-title{ margin: 0; font-size: 20px; font-weight:800; }
+.am-sub{ color:#6b7280; }
+
+/* Ngày & Giờ */
+.am-when{
+  display:grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin: 6px 0 8px;
+}
+.am-when-item{
+  display:flex; gap:10px; align-items:center;
+  border:1px dashed #e5e7eb; border-radius:12px; padding:10px;
+}
+.am-when-item i{ font-size:18px; color:#1A73E8; }
+.am-field{ display:flex; gap:6px; align-items:center; flex:1; }
+.am-field label{ color:#475569; font-size:12px; font-weight:700; width:90px; }
+.am-field input[type=date],
+.am-field select{
+  height:38px; border:1px solid #e5e7eb; border-radius:10px; padding:0 10px; flex:1;
+  background:#fff;
+}
+
+/* Số lượng & Khẩu phần */
+.am-qtygrid{
+  display:grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin: 8px 0 6px;
+}
+.am-qty label, .am-portion label{ font-weight:700; color:#0b5066; display:block; margin-bottom:6px; }
+
+.am-qty-ctl{
+  display:flex; align-items:center; gap:10px;
+}
+.am-qty-ctl button{
+  width:42px; height:38px; border-radius:12px;
+  border:1px solid #e5e7eb; background:#fff; cursor:pointer;
+}
+.am-qty-ctl input{
+  width:120px; height:38px; border-radius:12px; text-align:center; line-height:38px;
+  border:1px solid #e5e7eb; padding:0 10px; background:#fff; font-weight:700;
+}
+
+.am-portion input.readonly{
+  height:38px; border-radius:12px; border:1px solid #e5e7eb; background:#f9fafb;
+  padding:0 10px; color:#0b5066; font-weight:700;
+}
+.am-note{ color:#6b7280; font-size:12px; margin-top:6px; }
+
+/* Macros preview */
+.am-macros{
+  display:grid; grid-template-columns: repeat(4,1fr); gap:10px;
+  margin: 8px 0 2px;
+}
+.am-macro{
+  border:1px solid #e5e7eb; border-radius:12px; padding:10px;
+  background:#fff;
+}
+.am-macro .m-label{ color:#475569; font-size:12px; font-weight:700; margin-bottom:4px; }
+.am-macro .m-val{ font-size:16px; font-weight:800; color:#0b5066; }
+.am-macro .m-val span{ font-size:12px; font-weight:700; color:#6b7280; margin-left:4px; }
+
+/* Actions */
+.am-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top: 10px; }
+.btn{
+  height:40px; padding:0 14px; border-radius:10px; cursor:pointer; font-weight:700;
+  border:1px solid #e5e7eb; background:#fff; color:#111827;
+}
+.btn.primary{ background:#1A73E8; color:#fff; border-color:#1A73E8; }
+.btn.ghost{ background:#fff; color:#374151; }
+
+/* ==== Màu đồng bộ với popup detail ==== */
+/* Calo: primary xanh */
+.am-macro.calo{
+  border-color: #cfe3f7;               /* viền nhẹ xanh */
+}
+.am-macro.calo .m-label{ color:#1A73E8; }
+.am-macro.calo .m-val{ color:#0b4e99; }
+
+/* Protein (Đạm): đỏ như chip-red */
+.am-macro.protein{
+  border-color:#f9d6d6;
+}
+.am-macro.protein .m-label{ color:#b91c1c; }
+.am-macro.protein .m-val{ color:#991b1b; }
+
+/* Carb (Đường bột): tím như chip-purple */
+.am-macro.carb{
+  border-color:#e2d9ff;
+}
+.am-macro.carb .m-label{ color:#6d28d9; }
+.am-macro.carb .m-val{ color:#5531b5; }
+
+/* Fat (Béo): xanh lá như chip-green */
+.am-macro.fat{
+  border-color:#c9efd8;
+}
+.am-macro.fat .m-label{ color:#15803d; }
+.am-macro.fat .m-val{ color:#0f5f2e; }
+
+/* Giữ layout/kiểu chung sẵn có */
+.am-macro{
+  border:1px solid #e5e7eb;            /* sẽ bị class trên ghi đè viền */
+  border-radius:12px; padding:10px; background:#fff;
+}
+.am-macro .m-label{ font-size:12px; font-weight:700; margin-bottom:4px; }
+.am-macro .m-val{ font-size:16px; font-weight:800; }
+.am-macro .m-val span{ font-size:12px; font-weight:700; color:#6b7280; margin-left:4px; }
+
+/* Màu chữ + icon, không viền, không nền */
+.nm-item .macro span { font-weight:700; }
+.nm-item .macro span i { opacity:.95; }
+
+/* Protein (Đạm): đỏ */
+.nm-item .macro .protein { color:#b91c1c; }
+
+/* Carb (Đường bột): tím */
+.nm-item .macro .carb { color:#6d28d9; }
+
+/* Fat (Béo): xanh lá */
+.nm-item .macro .fat { color:#15803d; }
+
+
+/* Responsive */
+@media (max-width: 640px){
+  .am-when{ grid-template-columns: 1fr; }
+  .am-qtygrid{ grid-template-columns: 1fr; }
+  .am-macros{ grid-template-columns: 1fr 1fr; }
+}
+
