@@ -6,15 +6,14 @@ import {
   createFoodWithImage,
   updateFood,
   updateFoodWithImage,
-  getFood
+  getFood,
+  deleteFood
 } from "../../api/foods";
 import api from "../../lib/api";
 import "./FoodForm.css";
 import { toast } from "react-toastify";
 
 const UNIT_OPTIONS = ["g", "ml"];
-
-// Chuẩn hoá URL ảnh thành tuyệt đối
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
 
@@ -24,7 +23,6 @@ export default function FoodForm() {
   const isEdit = !!id;
 
   const [loading, setLoading] = useState(!!id);
-
   const [form, setForm] = useState({
     name: "", massG: "", unit: "g", portionName: "",
     kcal: "", proteinG: "", carbG: "", fatG: "", saltG: "", sugarG: "", fiberG: "",
@@ -32,23 +30,15 @@ export default function FoodForm() {
   const up = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
   // Ảnh
-  const [file, setFile] = useState(null);          // file người dùng vừa chọn
-  const [preview, setPreview] = useState("");      // blob:... cho file mới
-  const [existingUrl, setExistingUrl] = useState(""); // URL ảnh hiện có từ server (tương đối/ tuyệt đối)
-
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState("");
+  const [existingUrl, setExistingUrl] = useState("");
   const onPickFile = (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+    const f = e.target.files?.[0]; if (!f) return;
     if (preview) URL.revokeObjectURL(preview);
-    setFile(f);
-    setPreview(URL.createObjectURL(f)); // blob:
+    setFile(f); setPreview(URL.createObjectURL(f));
   };
-  const clearThumb = () => {
-    if (preview) URL.revokeObjectURL(preview);
-    setFile(null);
-    setPreview("");
-    // vẫn giữ existingUrl để còn xem ảnh cũ, chỉ bỏ đi nếu muốn “xóa ảnh” (BE cần endpoint riêng)
-  };
+  const clearThumb = () => { if (preview) URL.revokeObjectURL(preview); setFile(null); setPreview(""); };
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
   useEffect(() => {
@@ -63,7 +53,7 @@ export default function FoodForm() {
           kcal: f.kcal ?? "", proteinG: f.proteinG ?? "", carbG: f.carbG ?? "", fatG: f.fatG ?? "",
           saltG: f.saltG ?? "", sugarG: f.sugarG ?? "", fiberG: f.fiberG ?? "",
         });
-        setExistingUrl(f.imageUrl || ""); // giữ nguyên (tương đối); render sẽ dùng toAbs()
+        setExistingUrl(f.imageUrl || "");
       } catch {
         toast.error("Không tải được dữ liệu món");
       } finally { setLoading(false); }
@@ -114,6 +104,19 @@ export default function FoodForm() {
     }
   }
 
+  // ===== XÓA MÓN: popup xác nhận =====
+  const [confirmDel, setConfirmDel] = useState(false);
+  const onConfirmDelete = async () => {
+    try {
+      await deleteFood(id);
+      toast.success("Đã xóa món");
+      setConfirmDel(false);
+      nav("/dinh-duong/ghi-lai");
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Xóa thất bại");
+    }
+  };
+
   if (loading) return <div className="cf-wrap"><div className="muted">Đang tải...</div></div>;
 
   return (
@@ -121,6 +124,11 @@ export default function FoodForm() {
       <div className="cf-header">
         <h2>{isEdit ? "Chỉnh sửa món ăn" : "Tạo món ăn mới"}</h2>
         <div className="cf-actions">
+          {isEdit && (
+            <button className="btn bad" type="button" onClick={() => setConfirmDel(true)}>
+              Xóa
+            </button>
+          )}
           <button className="btn ghost" type="button" onClick={() => nav(-1)}>Hủy</button>
           <button className="btn primary" type="button" onClick={submit}>
             {isEdit ? "Lưu" : "Tạo món ăn"}
@@ -132,9 +140,8 @@ export default function FoodForm() {
         {/* LEFT */}
         <aside className="cf-left">
           <div className="card thumb-card">
-            <div className="card-title"></div>
+            <div className="card-title">Thumbnail</div>
             <div className="thumb-box">
-              {/* Ưu tiên blob preview; nếu không có thì dùng ảnh server đã có */}
               {preview || existingUrl ? (
                 <img
                   src={preview || toAbs(existingUrl)}
@@ -152,9 +159,7 @@ export default function FoodForm() {
                 Chọn ảnh
               </label>
               {(preview || existingUrl) && (
-                <button type="button" className="btn ghost" onClick={clearThumb}>
-                  Xóa ảnh
-                </button>
+                <button type="button" className="btn ghost" onClick={clearThumb}>Xóa ảnh khỏi bản nháp</button>
               )}
             </div>
             <div className="hint">Chỉ 1 ảnh (*.png, *.jpg, *.jpeg)</div>
@@ -203,30 +208,46 @@ export default function FoodForm() {
             </div>
           </div>
 
-            <div className="card">
-              <div className="tab-title">Giá trị dinh dưỡng</div>
-              <div className="row three">
-                <div><label>Calo (cal)</label><input className="ipt" type="number" step="1" min="0" value={form.kcal} onChange={(e) => up("kcal", e.target.value)} /></div>
-                <div><label>Đạm (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.proteinG} onChange={(e) => up("proteinG", e.target.value)} /></div>
-                <div><label>Đường bột (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.carbG} onChange={(e) => up("carbG", e.target.value)} /></div>
-              </div>
-              <div className="row three">
-                <div><label>Chất béo (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.fatG} onChange={(e) => up("fatG", e.target.value)} /></div>
-                <div><label>Muối (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.saltG} onChange={(e) => up("saltG", e.target.value)} /></div>
-                <div><label>Đường (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.sugarG} onChange={(e) => up("sugarG", e.target.value)} /></div>
-              </div>
-              <div className="row two">
-                <div><label>Chất xơ (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.fiberG} onChange={(e) => up("fiberG", e.target.value)} /></div>
-              </div>
-
-              {msg && <div className="form-msg">{msg}</div>}
-              <div className="form-actions">
-                <button type="button" className="btn ghost" onClick={() => nav(-1)}>Hủy</button>
-                <button type="submit" className="btn primary">{isEdit ? "Lưu" : "Tạo món ăn"}</button>
-              </div>
+          <div className="card">
+            <div className="tab-title">Giá trị dinh dưỡng</div>
+            <div className="row three">
+              <div><label>Calo (cal)</label><input className="ipt" type="number" step="1" min="0" value={form.kcal} onChange={(e) => up("kcal", e.target.value)} /></div>
+              <div><label>Đạm (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.proteinG} onChange={(e) => up("proteinG", e.target.value)} /></div>
+              <div><label>Đường bột (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.carbG} onChange={(e) => up("carbG", e.target.value)} /></div>
             </div>
+            <div className="row three">
+              <div><label>Chất béo (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.fatG} onChange={(e) => up("fatG", e.target.value)} /></div>
+              <div><label>Muối (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.saltG} onChange={(e) => up("saltG", e.target.value)} /></div>
+              <div><label>Đường (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.sugarG} onChange={(e) => up("sugarG", e.target.value)} /></div>
+            </div>
+            <div className="row two">
+              <div><label>Chất xơ (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.fiberG} onChange={(e) => up("fiberG", e.target.value)} /></div>
+            </div>
+
+            {msg && <div className="form-msg">{msg}</div>}
+            <div className="form-actions">
+              <button type="button" className="btn ghost" onClick={() => nav(-1)}>Hủy</button>
+              <button type="submit" className="btn primary">{isEdit ? "Lưu" : "Tạo món ăn"}</button>
+            </div>
+          </div>
         </section>
       </form>
+
+      {/* ===== Popup xác nhận xóa ===== */}
+      {confirmDel && (
+        <div className="modal" onClick={() => setConfirmDel(false)}>
+          <div className="modal-card small" onClick={(e)=>e.stopPropagation()}>
+            <div className="modal-head"><h3>Xác nhận xóa món</h3></div>
+            <div className="modal-body">
+              <div className="muted">Bạn chắc chắn muốn xóa món ăn này? Thao tác không thể hoàn tác.</div>
+            </div>
+            <div className="modal-foot">
+              <button className="btn ghost" onClick={()=>setConfirmDel(false)}>Hủy</button>
+              <button className="btn bad" onClick={onConfirmDelete}>Xóa</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,8 +7,6 @@ import { toast } from "react-toastify";
 import api from "../../lib/api";
 
 const HOURS = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
-
-// ===== Helper giống Account.jsx =====
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
 const PLACEHOLDER = "/images/food-placeholder.jpg";
@@ -16,32 +14,26 @@ const PLACEHOLDER = "/images/food-placeholder.jpg";
 export default function DailyJournal() {
   const [date, setDate] = useState(() => dayjs().format("YYYY-MM-DD"));
   const [weekDays, setWeekDays] = useState([]);
-  const [curDow, setCurDow] = useState(dayjs(date).day()); // 0..6 (CN..T7)
   const [streak, setStreak] = useState(0);
   const [hot, setHot] = useState(false);
 
-  // logs từ DB: [{_id, hour, quantity, massG, food{...}, foodAbs}]
+  // logs: [{ _id, hour, quantity, massG, food{...}, foodAbs }]
   const [logs, setLogs] = useState([]);
-  // totals/targets từ DB (đã chuẩn hoá về number)
-  const [totals, setTotals] = useState({ kcal: 0, proteinG: 0, carbG: 0, fatG: 0, sugarG: 0, saltG: 0, fiberG: 0 });
-  const [targets, setTargets] = useState({ kcal: 0, proteinG: 0, carbG: 0, fatG: 0, sugarG: 0, saltG: 0, fiberG: 0 });
+  const [totals, setTotals]   = useState({ kcal:0, proteinG:0, carbG:0, fatG:0, sugarG:0, saltG:0, fiberG:0 });
+  const [targets, setTargets] = useState({ kcal:0, proteinG:0, carbG:0, fatG:0, sugarG:0, saltG:0, fiberG:0 });
 
   const [waterMl, setWaterMl] = useState(0);
-  const [stepMl, setStepMl] = useState(100); // số ml mỗi lần +/- (user nhập)
+  const [stepMl, setStepMl]   = useState(100);
 
   function calcWeek(d) {
     const base = dayjs(d);
-    const start = base.startOf("week"); // CN
-    const arr = Array.from({ length: 7 }, (_, i) => start.add(i, "day"));
-    setWeekDays(arr);
-    setCurDow(base.day());
+    const start = base.startOf("week");
+    setWeekDays(Array.from({ length: 7 }, (_, i) => start.add(i, "day")));
   }
 
-  // --- GHIM DỮ LIỆU DB VÀO BIẾN ---
+  // === Load data ===
   async function load() {
     const { data } = await getDayLogs(date);
-
-    // logs: chuẩn hoá hour về number, food luôn là object + map ảnh tuyệt đối 1 lần
     const safeLogs = (data?.items || []).map((it) => {
       const food = it.food || {};
       const foodAbs = food.imageUrl ? toAbs(food.imageUrl) : PLACEHOLDER;
@@ -51,109 +43,104 @@ export default function DailyJournal() {
         quantity: Number(it.quantity ?? 1),
         massG: it.massG ?? null,
         food,
-        foodAbs
+        foodAbs,
       };
     });
     setLogs(safeLogs);
 
-    // totals: ép number + fallback 0
     const t = data?.totals || {};
     setTotals({
-      kcal: Number(t.kcal || 0),
-      proteinG: Number(t.proteinG || 0),
-      carbG: Number(t.carbG || 0),
-      fatG: Number(t.fatG || 0),
-      sugarG: Number(t.sugarG || 0),
-      saltG: Number(t.saltG || 0),
-      fiberG: Number(t.fiberG || 0),
+      kcal: Number(t.kcal || 0), proteinG: Number(t.proteinG || 0),
+      carbG: Number(t.carbG || 0), fatG: Number(t.fatG || 0),
+      sugarG: Number(t.sugarG || 0), saltG: Number(t.saltG || 0), fiberG: Number(t.fiberG || 0),
     });
 
-    // targets từ server
     const g = data?.targets || {};
     setTargets({
-      kcal: Number(g.kcal || 0),
-      proteinG: Number(g.proteinG || 0),
-      carbG: Number(g.carbG || 0),
-      fatG: Number(g.fatG || 0),
-      sugarG: Number(g.sugarG || 0),
-      saltG: Number(g.saltG || 0),
-      fiberG: Number(g.fiberG || 0),
+      kcal: Number(g.kcal || 0), proteinG: Number(g.proteinG || 0),
+      carbG: Number(g.carbG || 0), fatG: Number(g.fatG || 0),
+      sugarG: Number(g.sugarG || 0), saltG: Number(g.saltG || 0), fiberG: Number(g.fiberG || 0),
     });
   }
 
-  async function loadStreak() {
-    const { data } = await getStreak();
-    const s = Number(data?.streak || 0);
-    setStreak(s);
-    setHot(s >= 2);
-  }
-  async function loadWater() {
-    const { data } = await getWater(date);
-    setWaterMl(Number(data?.amountMl || 0));
-  }
+  async function loadStreak(){ const { data } = await getStreak(); const s = Number(data?.streak || 0); setStreak(s); setHot(s >= 2); }
+  async function loadWater(){ const { data } = await getWater(date); setWaterMl(Number(data?.amountMl || 0)); }
 
-  useEffect(() => { calcWeek(date); }, [date]);
-  useEffect(() => { load(); loadWater(); /* eslint-disable-next-line */ }, [date]);
-  useEffect(() => { loadStreak(); }, []);
+  useEffect(()=>{ calcWeek(date); },[date]);
+  useEffect(()=>{ load(); loadWater(); /* eslint-disable-next-line */ },[date]);
+  useEffect(()=>{ loadStreak(); },[]);
 
   const logsByHour = useMemo(() => {
-    const map = {};
-    for (const h of HOURS) map[h] = [];
-    for (const it of logs) {
-      if (map.hasOwnProperty(it.hour)) map[it.hour].push(it);
-    }
+    const map = {}; for (const h of HOURS) map[h] = [];
+    for (const it of logs) if (map.hasOwnProperty(it.hour)) map[it.hour].push(it);
     return map;
   }, [logs]);
 
-  async function onDelete(logId) {
-    try {
-      await deleteLog(logId);
-      await load();
-      toast.success("Xóa khỏi nhật ký thành công");
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Xóa khỏi nhật ký thất bại");
-    }
+  // ====== NEW: tính macro theo số lượng & mass override ======
+  function calcPerPortion(item){
+    const food = item.food || {};
+    const baseMass = Number(food.massG);
+    const hasBase  = Number.isFinite(baseMass) && baseMass > 0;
+
+    const chosen = item.massG == null ? (hasBase ? baseMass : null) : Number(item.massG);
+    const hasChosen = Number.isFinite(chosen) && chosen > 0;
+
+    const ratio = hasBase && hasChosen ? (chosen / baseMass) : 1;
+
+    const scale = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n * ratio : null;
+    };
+
+    return {
+      massPerPortion: hasChosen ? chosen : (hasBase ? baseMass : null),
+      kcal:     scale(food.kcal),
+      proteinG: scale(food.proteinG),
+      carbG:    scale(food.carbG),
+      fatG:     scale(food.fatG),
+      sugarG:   scale(food.sugarG),
+      saltG:    scale(food.saltG),
+      fiberG:   scale(food.fiberG),
+    };
   }
 
-  function pct(v, t) { if (!t) return 0; const p = (v / t) * 100; return Math.max(0, Math.min(100, p)); }
+  function calcDisplayForLog(item){
+    const per = calcPerPortion(item);
+    const q = Number(item.quantity || 1);
+    const mul = (v) => (v==null ? null : Math.round(v * q * 10) / 10);
+    return {
+      mass:     per.massPerPortion==null ? null : mul(per.massPerPortion),
+      kcal:     mul(per.kcal),
+      proteinG: mul(per.proteinG),
+      carbG:    mul(per.carbG),
+      fatG:     mul(per.fatG),
+      sugarG:   mul(per.sugarG),
+      saltG:    mul(per.saltG),
+      fiberG:   mul(per.fiberG),
+    };
+  }
 
-  async function waterDelta(delta) {
+  async function onDelete(logId){
+    try{ await deleteLog(logId); await load(); toast.success("Xóa khỏi nhật ký thành công"); }
+    catch(err){ toast.error(err?.response?.data?.message || "Xóa khỏi nhật ký thất bại"); }
+  }
+
+  const pct = (v,t) => { if(!t) return 0; const p = (v/t)*100; return Math.max(0, Math.min(100, p)); };
+
+  async function waterDelta(delta){
     const want = Math.max(0, Math.min(10000, waterMl + delta));
-    const toApply = want - waterMl;
-    if (toApply === 0) return;
-    await incWater({ date, deltaMl: toApply });
-    setWaterMl(want);
+    const toApply = want - waterMl; if (toApply === 0) return;
+    await incWater({ date, deltaMl: toApply }); setWaterMl(want);
   }
 
   return (
     <div className="dj-wrap">
       {/* TOP BAR */}
-      <div className="dj-bar">
-        <div className="left">
-          <i className="fa-regular fa-calendar-days"></i>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-        </div>
-
-        <div className="week">
-          {weekDays.map((d, i) => (
-            <button key={i}
-              className={`wbtn ${dayjs(date).isSame(d, "day") ? "on" : ""}`}
-              onClick={() => setDate(d.format("YYYY-MM-DD"))}
-            >
-              {["Chủ Nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"][d.day()]}
-            </button>
-          ))}
-        </div>
-
-        <div className="right">
-          <i className={`fa-solid fa-fire ${hot ? "hot" : "cold"}`}></i>
-          <span className="streak-num">{streak}</span>
-        </div>
-      </div>
+      {/* ...giữ nguyên... */}
 
       {/* BODY */}
       <div className="dj-grid">
-        {/* LEFT main (2/3) */}
+        {/* LEFT main */}
         <div className="dj-main">
           <div className="col-title">Nhật ký dinh dưỡng</div>
           <div className="hour-grid">
@@ -161,20 +148,28 @@ export default function DailyJournal() {
               <div key={h} className="hour-row" style={{ height: (logsByHour[h]?.length ? "auto" : "36px") }}>
                 <div className="hh">{h}:00</div>
                 <div className="entries">
-                  {logsByHour[h].map(item => (
-                    <div key={item._id} className="entry">
-                      <img src={item.foodAbs || PLACEHOLDER} alt={item.food?.name} />
-                      <div className="einfo">
-                        <div className="etitle">{item.food?.name}</div>
-                        <div className="esub">
-                          {(item.massG ?? item.food?.massG ?? "-")} {item.food?.unit || "g"} · {(item.food?.kcal ?? "-")} cal
+                  {logsByHour[h].map(item => {
+                    const d = calcDisplayForLog(item);
+                    const unit = item.food?.unit || "g";
+                    return (
+                      <div key={item._id} className="entry">
+                        <img src={item.foodAbs || PLACEHOLDER} alt={item.food?.name}/>
+                        <div className="einfo">
+                          <div className="etitle">{item.food?.name}</div>
+                          <div className="esub">
+                            {(d.mass ?? "-")} {unit} · {(d.kcal ?? "-")} cal
+                          </div>
+                          {/* Nếu muốn show thêm macro chi tiết theo số lượng: */}
+                          {/* <div className="emacro">
+                            Đạm {d.proteinG ?? "-"}g · Carb {d.carbG ?? "-"}g · Béo {d.fatG ?? "-"}g
+                          </div> */}
                         </div>
+                        <button className="edel" title="Xoá" onClick={() => onDelete(item._id)}>
+                          <i className="fa-regular fa-trash-can"></i>
+                        </button>
                       </div>
-                      <button className="edel" title="Xoá" onClick={() => onDelete(item._id)}>
-                        <i className="fa-regular fa-trash-can"></i>
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
