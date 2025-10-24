@@ -1,0 +1,5 @@
+/* src/pagesFoods/Review.css */
+.fr-row{display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; background:#fff; border:1px solid #eee; padding:10px; border-radius:10px; margin-bottom:8px}
+.fr-name{font-weight:600}
+.fr-actions{display:flex; gap:8px}
+.fr-actions button{border:1px solid #ddd; border-radius:8px; padding:6px 10px}

@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import adminAuthRoutes from "./routes/admin.auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import onboardingRoutes from "./routes/onboarding.routes.js";
 import foodRoutes from "./routes/food.routes.js";
@@ -88,6 +89,7 @@ app.use("/api/user/onboarding", onboardingRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api", foodRoutes);
 app.use("/api", nutritionRoutes);
+app.use("/api/admin/auth", adminAuthRoutes);
 
 // (Tùy chọn) In danh sách routes khi khởi động
 const printRegisteredRoutes = (appInstance) => {

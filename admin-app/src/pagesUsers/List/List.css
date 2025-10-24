@@ -1,0 +1,8 @@
+/* src/pagesUsers/List.css */
+.ul-row{display:flex; gap:8px; margin:12px 0}
+.ul-row input,.ul-row button{border:1px solid #ddd; border-radius:8px; padding:8px 10px}
+.ul-table{display:grid; gap:6px}
+.ul-thead,.ul-trow{display:grid; grid-template-columns:1.2fr .6fr 1.2fr .8fr 1.2fr .6fr .8fr; gap:8px; background:#fff; padding:10px; border:1px solid #eee; border-radius:10px}
+.ul-thead{font-weight:700; background:#f7fafc}
+.ul-actions{display:flex; gap:6px; align-items:center}
+.ul-actions button{border:1px solid #ddd; border-radius:8px; padding:6px 10px}
