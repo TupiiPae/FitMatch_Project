@@ -27,6 +27,8 @@ export async function getFood(req,res){
 }
 
 export async function createFood(req,res){
+  console.log("[createFood] ctype=", req.headers["content-type"]);
+  console.log("[createFood] has file?", !!req.file, req.file?.mimetype, "body keys:", Object.keys(req.body || {}));
   const userId=req.userId; const b=req.body||{}; const name=String(b.name||"").trim(); const mass=Number(b.massG);
   if(!name||!isNum(mass)||mass<=0) return res.status(400).json({message:"name & massG required"});
   let imageUrl=b.imageUrl||null; if(req.file){ try{ ensureDir(); const fn=`${userId||"anon"}-${Date.now()}.webp`; const out=path.join(FOOD_DIR,fn);

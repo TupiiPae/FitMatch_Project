@@ -5,10 +5,9 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 export const api = axios.create({
   baseURL: API_BASE,
-  headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
-// ===== Attach token =====
 api.interceptors.request.use((cfg) => {
   const raw = localStorage.getItem("admin_auth");
   if (raw) {
@@ -18,34 +17,25 @@ api.interceptors.request.use((cfg) => {
   return cfg;
 });
 
-/** Cho phép FE đăng ký hành vi khi gặp 401 (vd: logout + nav /login) */
 let _onUnauthorized = null;
 export const setUnauthorizedHandler = (fn) => { _onUnauthorized = fn; };
 
-// ===== Global 401 handling =====
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    const status = err?.response?.status;
-    if (status === 401 && typeof _onUnauthorized === "function") {
+    if (err?.response?.status === 401 && typeof _onUnauthorized === "function") {
       try { _onUnauthorized(); } catch {}
     }
     return Promise.reject(err);
   }
 );
 
-/* --------------------- Auth (Admin) --------------------- */
-/**
- * Đăng nhập Admin CHỈ bằng username/password.
- * Ưu tiên /api/admin/auth/login; nếu 404 thì fallback /api/auth/login (trong trường hợp bạn chưa tách Admin.js).
- */
 export const adminLogin = async ({ username, password }) => {
   try {
     const r = await api.post("/api/admin/auth/login", { username, password });
-    return r.data; // { token, user:{ username, role:'admin', level:1|2, ... } }
+    return r.data;
   } catch (e) {
     if (e?.response?.status === 404) {
-      // fallback tạm (BE cũ): /api/auth/login có thể dùng identifier/password
       const r2 = await api.post("/api/auth/login", { identifier: username, password });
       return r2.data;
     }
@@ -53,10 +43,6 @@ export const adminLogin = async ({ username, password }) => {
   }
 };
 
-/**
- * Lấy thông tin admin hiện tại để verify token.
- * Ưu tiên /api/admin/auth/me, fallback /api/user/me (BE cũ).
- */
 export const adminMe = async () => {
   try {
     const r = await api.get("/api/admin/auth/me");
@@ -70,10 +56,8 @@ export const adminMe = async () => {
   }
 };
 
-/* --------------------- Stats --------------------- */
 export const getStats = () => api.get("/api/admin/stats").then((r) => r.data);
 
-/* --------------------- Admin Accounts (Cấp 1) --------------------- */
 export const listAdminAccounts = (q = "") =>
   api.get("/api/admin/admin-accounts", { params: { q } }).then((r) => r.data);
 export const createAdminAccount = (body) =>
@@ -85,17 +69,6 @@ export const deleteAdminAccount = (id) =>
 export const blockAdminAccount = (id) =>
   api.post(`/api/admin/admin-accounts/${id}/block`).then((r) => r.data);
 
-/* --------------------- Foods --------------------- */
-/**
- * Các API dưới ưu tiên route admin:
- *  - GET/POST/PATCH/DELETE: /api/admin/foods...
- * Fallback:
- *  - list: GET /api/foods (map params)
- *  - create: POST /api/foods (status mặc định 'pending')
- *  - update: PATCH /api/foods/:id
- *  - delete: DELETE /api/foods/:id
- *  - approve/reject: PATCH /api/foods/:id { status:'approved'|'rejected' }
- */
 export const listFoods = async (params) => {
   try {
     const r = await api.get("/api/admin/foods", { params });
@@ -161,9 +134,9 @@ export const approveFood = async (id) => {
   }
 };
 
-export const rejectFood = async (id) => {
+export const rejectFood = async (id, reason = "") => {
   try {
-    const r = await api.post(`/api/admin/foods/${id}/reject`);
+    const r = await api.post(`/api/admin/foods/${id}/reject`, { reason });
     return r.data;
   } catch (e) {
     if (e?.response?.status === 404) {
@@ -174,7 +147,6 @@ export const rejectFood = async (id) => {
   }
 };
 
-/* --------------------- Users --------------------- */
 export const listUsers = (params) =>
   api.get("/api/admin/users", { params }).then((r) => r.data);
 export const blockUser = (id) =>
