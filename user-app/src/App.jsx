@@ -15,7 +15,7 @@ import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy"; // index.jsx => c
 
 // Diary
 import RecordMeal from "./pages/Nutrition/RecordMeal";
-import CreateFood from "./pages/Nutrition/CreateFood";
+import FoodForm from "./pages/Nutrition/FoodForm";
 import DailyJournal from "./pages/Nutrition/DailyJournal";
 
 
@@ -90,7 +90,8 @@ export default function App() {
           <Route path="/dinh-duong" element={<Navigate to="/dinh-duong/nhat-ky" replace />} />
           <Route path="/dinh-duong/nhat-ky" element={<DailyJournal/>} />
           <Route path="/dinh-duong/ghi-lai" element={<RecordMeal />} />
-          <Route path="/dinh-duong/ghi-lai/tao-mon" element={<CreateFood/>} />
+          <Route path="/dinh-duong/ghi-lai/tao-mon" element={<FoodForm />} />  
+          <Route path="/dinh-duong/ghi-lai/sua-mon/:id" element={<FoodForm />} />       
           <Route path="/dinh-duong/ghi-lai/tinh-calo-ai" element={<TinhCaloAI />} />
           <Route path="/dinh-duong/thuc-don-goi-y" element={<ThucDonGoiY />} />
 

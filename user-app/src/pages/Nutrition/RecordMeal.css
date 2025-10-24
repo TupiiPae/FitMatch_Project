@@ -6,11 +6,17 @@
 .search input{ border:none; outline:none; width:100%; height:100%; font-size:15px; }
 
 .scan{ width:44px; height:44px; border:1px solid #e5e7eb; border-radius:12px; background:#fff; cursor:pointer; margin-left: 10px;}
-.filter{ position:relative; margin-left: 30px;}
-.filter-btn{ height:44px; padding:0 18px; border:1px solid #e5e7eb; border-radius:12px; background:#fff; cursor:pointer; }
-.filter:hover .filter-dd{ display:block; }
-.filter-dd{ display:none; position:absolute; top:48px; left:0; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px; box-shadow:0 8px 24px rgba(0,0,0,.06); }
-.filter-dd label{ display:block; white-space:nowrap; font-size:14px; padding:4px 2px; }
+.filter{position:relative}
+.filter-btn{border:1px solid #e5e7eb;background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer}
+.filter.open .filter-btn{background:#f3f4f6}
+.filter-dd{
+  position:absolute; right:0; top:calc(100% + 6px);
+  background:#fff; border:1px solid #e5e7eb; border-radius:10px;
+  box-shadow:0 10px 24px rgba(0,0,0,.08);
+  padding:10px; min-width:200px; z-index:20;
+}
+.filter-dd label{display:flex;align-items:center;gap:8px;padding:6px 4px;white-space:nowrap}
+
 
 .create-btn{ height:44px; display:flex; align-items:center; padding:0 14px; border-radius:12px; background:#1A73E8; color:#fff; text-decoration:none; margin-left: 5px;}
 
@@ -270,6 +276,22 @@
 /* Fat (Béo): xanh lá */
 .nm-item .macro .fat { color:#15803d; }
 
+/* Pill trạng thái */
+.status-pill{padding:6px 10px;border-radius:999px;font-size:12px;line-height:1;border:1px solid transparent;margin-right:8px;user-select:none}
+.status-pill.pending{background:#f3f4f6;color:#6b7280;border-color:#e5e7eb}
+.status-pill.approved{background:#ecfdf5;color:#065f46;border-color:#10b981}
+.status-pill.rejected{background:#fef2f2;color:#991b1b;border-color:#ef4444}
+
+/* Nhóm hành động bên phải mỗi item */
+.nm-item .act{display:flex;align-items:center;gap:8px}
+
+/* Menu 3 chấm */
+.more-wrap{position:relative}
+.more-btn{width:36px;height:36px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.menu{position:absolute;right:0;top:40px;min-width:140px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.08);padding:6px;z-index:10}
+.menu-item{display:block;width:100%;text-align:left;background:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer}
+.menu-item:hover{background:#f3f4f6}
+.menu-item.danger{color:#dc2626}
 
 /* Responsive */
 @media (max-width: 640px){
