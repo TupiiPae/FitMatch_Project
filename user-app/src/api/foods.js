@@ -14,10 +14,7 @@ export const createFood = (payload) => api.post("/foods", payload);
 
 // Tạo món (multipart + 1 ảnh) – dùng khi có thumbnail
 // formData gồm: image (File) + các field (name, massG, unit, kcal, ...)
-export const createFoodWithImage = (formData) =>
-  api.post("/foods", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+export const createFoodWithImage = (formData) => api.post("/foods", formData);
 
 // Cập nhật (JSON)
 export const updateFood = (id, payload) => api.patch(`/foods/${id}`, payload);

@@ -14,8 +14,10 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.join(__dirname, "..", "..");
 export const UPLOAD_ROOT = path.join(PROJECT_ROOT, "uploads");
 export const AVATAR_DIR  = path.join(UPLOAD_ROOT, "avatars");
+export const FOOD_DIR    = path.join(UPLOAD_ROOT, "foods");
 
 fs.mkdirSync(AVATAR_DIR, { recursive: true });
+fs.mkdirSync(FOOD_DIR,   { recursive: true });
 
 // Ta upload bằng memoryStorage (để controller xử lý sharp -> webp)
 export const uploadAvatarSingle = multer({
@@ -27,3 +29,13 @@ export const uploadAvatarSingle = multer({
     cb(null, true);
   },
 }).single("avatar");
+
+export const uploadFoodSingle = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB cho ảnh món
+  fileFilter(_req, file, cb) {
+    const ok = (file.mimetype || "").startsWith("image/");
+    if (!ok) return cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE", "image"));
+    cb(null, true);
+  },
+}).single("image");

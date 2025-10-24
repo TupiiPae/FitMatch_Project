@@ -29,7 +29,9 @@ const __dirname = path.dirname(__filename);
 // === Static uploads (make sure folders exist) ===
 const UPLOAD_ROOT = path.join(__dirname, "..", "uploads");
 const AVATAR_DIR = path.join(UPLOAD_ROOT, "avatars");
+const FOOD_DIR = path.join(UPLOAD_ROOT, "foods");
 fs.mkdirSync(AVATAR_DIR, { recursive: true });
+fs.mkdirSync(FOOD_DIR, { recursive: true });
 
 app.use("/uploads",
   (req,res,next)=>{res.setHeader("Cross-Origin-Resource-Policy","cross-origin"); next();},
