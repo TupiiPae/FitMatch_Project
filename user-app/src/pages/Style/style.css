@@ -22,15 +22,15 @@
 }
 .auth-root::before{
   content:"";
-  position:absolute; inset:0;
+  position:fixed; inset:0;
+  background-position: center;
   background: url("/images/bg-fitmatch.png") center/cover no-repeat;
-  filter: blur(8px);
-  transform: scale(1); /* tránh viền mờ */
+  filter: blur(8px) brightness(.92);
+  transform: scale(1.03);
 }
 .auth-root::after{
   content:"";
   position:absolute; inset:0;
-  background: linear-gradient(135deg, rgba(255,255,255,.6), rgba(201,214,255,.6));
 }
 .auth-root > *{ position: relative; z-index: 1; }
 
