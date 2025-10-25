@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import "./SidebarLayout.css";
-// Khuyến nghị import FontAwesome ở main.jsx, tạm để ở đây vẫn chạy:
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import logoFitmatch from "../../assets/logo-fitmatch.png";
 
@@ -87,6 +86,21 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme, onLogout }) 
   return (
     <header className="fm-topnav">
       <div className="fm-topnav__left">
+        {/* === Nút toggle Sidebar chuyển ra Navbar === */}
+        <button
+          className="fm-iconbtn fm-togglebtn"
+          onClick={onToggleSidebar}
+          title={collapsed ? "Hiện sidebar" : "Ẩn sidebar"}
+          aria-label="Toggle sidebar"
+        >
+          <i className={collapsed ? "fa-solid fa-angles-right" : "fa-solid fa-angles-left"} />
+        </button>
+
+        {/* (Tùy chọn) brand nhỏ ở navbar – có thể link đến trang chủ admin */}
+        {/* <a className="fm-brand-small" href="#">
+          <img src={logoFitmatch} alt="FitMatch" className="fm-brand-img" />
+          <span>FitMatch Admin</span>
+        </a> */}
       </div>
 
       <div className="fm-topnav__right">
@@ -152,21 +166,15 @@ export default function SidebarLayout(){
   return (
     <div className="fm-layout">
       <aside className={sideCls}>
-        <div className="fm-side__head">
-          {/* Logo chữ nhật + nút ngay cạnh */}
-          <div className="fm-logo">
-            {!collapsed && (
-              <img src={logoFitmatch} alt="FitMatch" className="fm-logo-rect" style={{ height: "100px" }} />
-            )}
-          </div>
-          <button
-            className="fm-pillbtn"
-            onClick={() => setCollapsed(v=>!v)}
-            aria-label={collapsed ? "Show sidebar" : "Hide sidebar"}
-            title={collapsed ? "Hiện sidebar" : "Ẩn sidebar"}
-          >
-            <i className={collapsed ? "fa-solid fa-angles-right" : "fa-solid fa-angles-left"} />
-          </button>
+        {/* === Box logo ở giữa, luôn có đường line phân cách phía dưới === */}
+        <div className="fm-side__logo">
+          <a className="fm-logo-link" href="#" aria-label="Trang chủ admin">
+            <img
+              src={logoFitmatch}
+              alt="FitMatch"
+              className="fm-logo-rect"
+            />
+          </a>
         </div>
 
         <nav className="fm-side__nav">
