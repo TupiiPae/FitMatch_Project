@@ -69,17 +69,52 @@ export const deleteAdminAccount = (id) =>
 export const blockAdminAccount = (id) =>
   api.post(`/api/admin/admin-accounts/${id}/block`).then((r) => r.data);
 
+/* ---------------------------------------------
+ * Foods: luôn trả về { items, total, limit, skip }
+ * --------------------------------------------- */
+const normalizeListPayload = (data) => {
+  // chấp nhận mọi kiểu
+  let items =
+    Array.isArray(data) ? data :
+    data?.items ?? data?.docs ?? data?.data ?? data?.results ?? data?.result ??
+    data?.foods ?? data?.rows ?? data?.list ??
+    data?.items?.docs ?? data?.items?.items ?? data?.data?.items ?? [];
+
+  if (!Array.isArray(items)) items = [];
+  const total = data?.total ?? data?.count ?? data?.totalDocs ?? data?.items?.total ?? items.length;
+  const limit = data?.limit ?? data?.pageSize ?? data?.perPage ?? data?.items?.limit;
+  const skip  = data?.skip  ?? data?.offset   ?? data?.page     ?? data?.items?.skip;
+  return { items, total, limit, skip };
+};
+
 export const listFoods = async (params) => {
-  try {
-    const r = await api.get("/api/admin/foods", { params });
-    return r.data;
-  } catch (e) {
-    if (e?.response?.status === 404) {
-      const r2 = await api.get("/api/foods", { params });
-      return r2.data;
+  // gọi cả admin & public, gộp kết quả
+  const tryFetch = async (path) => {
+    try {
+      const r = await api.get(path, { params });
+      return normalizeListPayload(r.data);
+    } catch (e) {
+      if (e?.response?.status === 404) return { items: [], total: 0 };
+      throw e;
     }
-    throw e;
-  }
+  };
+
+  const a = await tryFetch("/api/admin/foods");
+  const b = await tryFetch("/api/foods");
+
+  // gộp & loại trùng theo _id
+  const map = new Map();
+  [...a.items, ...b.items].forEach((x) => {
+    if (x && (x._id || x.id)) map.set(String(x._id || x.id), x);
+  });
+  const items = Array.from(map.values());
+
+  return {
+    items,
+    total: a.total || b.total || items.length,
+    limit: a.limit ?? b.limit,
+    skip: a.skip ?? b.skip,
+  };
 };
 
 export const createFood = async (body) => {

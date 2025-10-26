@@ -56,7 +56,7 @@ export default function FoodsReview() {
   return (
     <div className="fr-wrap">
       <div className="fr-head">
-        <h2>✅ Duyệt món người dùng</h2>
+        <h2>Duyệt món người dùng</h2>
         <button className="btn light" onClick={load} disabled={loading}>
           {loading ? "Đang tải..." : "Tải lại"}
         </button>

@@ -34,7 +34,7 @@
 
 /* ===== MODAL ===== */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:1000}
-.modal-box{width:min(900px,92vw);background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.modal-box{width:min(1000,92vw);background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .modal-box.small{width:min(520px,92vw)}
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #f3f4f6}
 .modal-body{padding:12px 14px;display:grid;grid-template-columns:340px 1fr;gap:14px}

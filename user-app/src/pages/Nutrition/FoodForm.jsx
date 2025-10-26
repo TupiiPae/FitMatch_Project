@@ -159,7 +159,7 @@ export default function FoodForm() {
                 Chọn ảnh
               </label>
               {(preview || existingUrl) && (
-                <button type="button" className="btn ghost" onClick={clearThumb}>Xóa ảnh khỏi bản nháp</button>
+                <button type="button" className="btn ghost" onClick={clearThumb}>Xóa ảnh</button>
               )}
             </div>
             <div className="hint">Chỉ 1 ảnh (*.png, *.jpg, *.jpeg)</div>
