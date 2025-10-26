@@ -15,10 +15,10 @@ export default function AuthLayout({ mode = "login", renderSignIn, renderSignUp 
   const goRegister = () => nav("/register");
 
   // Panel phải: hiển thị text khác khi ở chế độ reset
-  const rightTitle = mode === "reset" ? "Đặt lại mật khẩu" : "Xin chào!";
+  const rightTitle = mode === "reset" ? "Bạn muốn tìm lại mật khẩu?" : "Người dùng mới của FitMatch!";
   const rightDesc  = mode === "reset"
     ? "Nhập email để nhận OTP và đặt lại mật khẩu."
-    : "Đăng ký bằng thông tin cá nhân để dùng đầy đủ tính năng.";
+    : "Vui lòng nhập lại email đã đăng ký, chúng tôi sẽ gửi bạn mã OTP để cập nhật mật khẩu.";
 
   return (
     <div className="auth-root">
@@ -42,14 +42,14 @@ export default function AuthLayout({ mode = "login", renderSignIn, renderSignUp 
         <div className="auth-toggle-wrap">
           <div className="auth-toggle">
             <div className="auth-toggle-panel auth-toggle-left">
-              <h1>Chào mừng trở lại!</h1>
-              <p>Nhập thông tin cá nhân của bạn để sử dụng đầy đủ các tính năng.</p>
-              <button className="auth-ghost" onClick={goLogin}>Đăng nhập</button>
+              <h1>Bạn đã có tài khoản FitMatch!</h1>
+              <p>Nếu bạn đã có tài khoản FitMatch, hãy đăng nhập để tiếp tục sử dụng các tính năng của FitMatch.</p>
+              <button className="auth-ghost" onClick={goLogin}>Quay lại Đăng nhập</button>
             </div>
             <div className="auth-toggle-panel auth-toggle-right">
               <h1>{rightTitle}</h1>
               <p>{rightDesc}</p>
-              <button className="auth-ghost" onClick={goRegister}>Đăng ký</button>
+              <button className="auth-ghost" onClick={goRegister}>Đến Đăng ký</button>
             </div>
           </div>
         </div>
