@@ -137,7 +137,7 @@ export default function FoodsList() {
             <i className="fa-regular fa-trash-can" /> <span>Xóa</span>
           </button>
           <Link to="/foods/create" className="btn primary">
-            <i className="fa-solid fa-plus" /> <span>Tạo món ăn</span>
+            <span>Tạo món ăn</span>
           </Link>
         </div>
       </div>

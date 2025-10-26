@@ -1,15 +1,15 @@
 // src/pages/Nutrition/RecordMeal.jsx
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   searchFoods, toggleFavoriteFood, addLog, getFood, viewFood, deleteFood
 } from "../../api/foods";
-import api from "../../lib/api";                 // <-- THÊM
+import api from "../../lib/api";
 import "./RecordMeal.css";
 import { toast } from "react-toastify";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
-const toAbs = (u) => {                           // <-- THÊM
+const toAbs = (u) => {
   if (!u) return u;
   try { return new URL(u, API_ORIGIN).toString(); }
   catch { return u; }
@@ -17,6 +17,14 @@ const toAbs = (u) => {                           // <-- THÊM
 
 const HOUR_OPTIONS = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
 const statusLabel = (s) => (s === "approved" ? "Thành công" : s === "rejected" ? "Từ chối" : "Đang duyệt");
+
+// --- Helper tìm kiếm không phân biệt hoa/thường & dấu ---
+const vnNorm = (s) =>
+  String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
 export default function RecordMeal() {
   const nav = useNavigate();
@@ -67,6 +75,13 @@ export default function RecordMeal() {
 
   useEffect(() => { load(true); /* eslint-disable-next-line */ }, []);
   useEffect(() => { const t = setTimeout(() => load(true), 250); return () => clearTimeout(t); }, [q, onlyMine, favorites]);
+
+  // Danh sách đã lọc theo tên, bỏ dấu
+  const filteredItems = useMemo(() => {
+    const key = vnNorm(q);
+    if (!key) return items;
+    return items.filter(it => vnNorm(it.name).includes(key));
+  }, [items, q]);
 
   const kcalStr = (x) => (x ?? "-");
   const gStr = (x) => (x ?? "-");
@@ -139,7 +154,7 @@ export default function RecordMeal() {
         </div>
 
         <button className="scan" onClick={() => nav("/dinh-duong/ghi-lai/tinh-calo-ai")}>
-          <i class="fa-regular fa-images"></i>
+          <i className="fa-regular fa-images"></i>
         </button>
 
         {/* Filter dropdown giữ mở đến khi click ra ngoài */}
@@ -171,7 +186,7 @@ export default function RecordMeal() {
       {/* ===== LIST ===== */}
       <div className="nm-list-frame">
         <div className="nm-list">
-          {items.map(it => (
+          {filteredItems.map(it => (
             <div key={it._id} className="nm-item" onClick={() => openDetail(it)}>
               {/* DÙNG toAbs() CHO ẢNH */}
               <img src={toAbs(it.imageUrl) || "/images/food-placeholder.jpg"} alt={it.name} />

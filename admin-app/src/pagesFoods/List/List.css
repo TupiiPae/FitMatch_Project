@@ -12,9 +12,9 @@
   gap:12px;
 }
 .page-head h2{
-  font-size:22px; font-weight:800; color:#0f172a; margin:0;
+  font-size:22px; font-weight:700; color:#0f172a; margin:0;
 }
-.head-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.head-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size: 16px;}
 .btn{
   display:inline-flex; align-items:center; gap:8px;
   height:36px; padding:0 12px; border-radius:10px; border:1px solid #E5E7EB;
@@ -80,7 +80,7 @@
 .thead{
   background:#F9FAFB; font-weight:700; color:#374151; border-bottom:1px solid #E5E7EB;
 }
-.thead .cell{ font-size:13px; }
+.thead .cell{ font-size:14px; }
 .trow{
   background:#fff; border-bottom:1px solid #F3F4F6;
 }
