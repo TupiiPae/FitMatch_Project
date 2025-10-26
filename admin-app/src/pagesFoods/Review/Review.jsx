@@ -163,35 +163,69 @@ export default function FoodsReview() {
 
       {/* Popup xác nhận */}
       {confirm && (
-        <div className="modal" onClick={()=>setConfirm(null)}>
-          <div className="modal-box small" onClick={(e)=>e.stopPropagation()}>
-            <div className="modal-head">
-              <h3>{confirm.mode === "approve" ? "Xác nhận duyệt món" : "Xác nhận từ chối món"}</h3>
+      <div
+        className="cr-backdrop"
+        role="presentation"
+        onClick={() => setConfirm(null)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setConfirm(null);
+          if (e.key === "Enter") onConfirm();
+        }}
+      >
+        <div
+          className={`cr-modal ${confirm.mode === "approve" ? "is-approve" : "is-reject"}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cr-title"
+          aria-describedby="cr-desc"
+          tabIndex={-1}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="cr-head">
+            <div className="cr-icon" aria-hidden="true">
+              {confirm.mode === "approve"
+                ? <i className="fa-regular fa-circle-check"></i>
+                : <i className="fa-regular fa-circle-xmark"></i>
+              }
             </div>
-            <div className="modal-body">
-              <div className="muted">Món: <b>{confirm.item?.name}</b></div>
-              {confirm.mode === "reject" && (
-                <div className="mt">
-                  <label>Lý do từ chối (tuỳ chọn)</label>
-                  <textarea
-                    className="ipt"
-                    rows={3}
-                    value={confirm.reason}
-                    onChange={(e)=>setConfirm(s=>({...s, reason: e.target.value}))}
-                    placeholder="Ví dụ: Thông tin dinh dưỡng không rõ ràng…"
-                  />
-                </div>
-              )}
+            <h3 id="cr-title" className="cr-title">
+              {confirm.mode === "approve" ? "Xác nhận duyệt món" : "Xác nhận từ chối món"}
+            </h3>
+          </div>
+
+          <div id="cr-desc" className="cr-body">
+            <div className="cr-line">
+              Món: <b>{confirm.item?.name}</b>
             </div>
-            <div className="modal-foot">
-              <button className="btn ghost" onClick={()=>setConfirm(null)}>Hủy</button>
-              <button className={`btn ${confirm.mode==="approve"?"ok":"bad"}`} onClick={onConfirm}>
-                {confirm.mode === "approve" ? "Duyệt" : "Từ chối"}
-              </button>
-            </div>
+            {confirm.mode === "reject" && (
+              <div className="cr-reason">
+                <label className="cr-label">Lý do từ chối (tùy chọn)</label>
+                <textarea
+                  className="cr-textarea"
+                  rows={3}
+                  value={confirm.reason}
+                  onChange={(e)=>setConfirm(s=>({...s, reason: e.target.value}))}
+                  placeholder="Ví dụ: Thông tin dinh dưỡng chưa rõ ràng…"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="cr-foot">
+            <button type="button" className="btn ghost" onClick={() => setConfirm(null)}>
+              Hủy
+            </button>
+            <button
+              type="button"
+              className={`btn ${confirm.mode === "approve" ? "ok" : "bad"}`}
+              onClick={onConfirm}
+            >
+              {confirm.mode === "approve" ? "Duyệt" : "Từ chối"}
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    )}
     </div>
   );
 }
