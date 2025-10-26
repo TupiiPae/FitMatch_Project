@@ -1,7 +1,16 @@
+// admin-app/src/pagesFoods/List/List.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listFoods, deleteFood, approveFood } from "../../lib/api.js";
+import { api, listFoods, deleteFood, approveFood } from "../../lib/api.js";
 import "./List.css";
+
+// Chuẩn hoá URL ảnh giống user-app
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
+const toAbs = (u) => {
+  if (!u) return u;
+  try { return new URL(u, API_ORIGIN).toString(); }
+  catch { return u; }
+};
 
 export default function FoodsList() {
   const nav = useNavigate();
@@ -46,7 +55,7 @@ export default function FoodsList() {
         });
       }
 
-      // Tìm kiếm theo tên (includes từng ký tự nhập)
+      // Tìm kiếm theo tên (includes)
       const qq = q.trim().toLowerCase();
       if (qq) filtered = filtered.filter((x) => (x.name || "").toLowerCase().includes(qq));
 
@@ -146,7 +155,7 @@ export default function FoodsList() {
       <div className="card">
         <div className="card-head">
           <div className="search">
-            <i className="fa-regular fa-magnifying-glass" aria-hidden="true"></i>
+            <i className="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -202,7 +211,16 @@ export default function FoodsList() {
 
               <div className="cell img">
                 {it.imageUrl
-                  ? <img src={it.imageUrl} alt={it.name} />
+                  ? (
+                    <>
+                      {/* dùng toAbs để đảm bảo URL tuyệt đối */}
+                      <img
+                        src={toAbs(it.imageUrl)}
+                        alt={it.name}
+                        onError={(e) => { e.currentTarget.src = "/images/food-placeholder.jpg"; }}
+                      />
+                    </>
+                  )
                   : <div className="img-fallback"><i className="fa-regular fa-image"></i></div>}
               </div>
 
@@ -239,16 +257,40 @@ export default function FoodsList() {
 
       {/* ===== Confirm Delete Modal ===== */}
       {confirmId && (
-        <div className="modal-backdrop" onClick={() => setConfirmId(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Xóa món ăn?</h3>
-            <p>Hành động này sẽ xóa món ăn khỏi danh sách và cơ sở dữ liệu.</p>
-            <div className="modal-actions">
+        <div
+          className="cm-backdrop"
+          role="presentation"
+          onClick={() => setConfirmId(null)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setConfirmId(null);
+            if (e.key === "Enter") { (async () => { await onDeleteOne(confirmId); setConfirmId(null); })(); }
+          }}
+        >
+          <div
+            className="cm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cm-title"
+            aria-describedby="cm-desc"
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="cm-head">
+              <h1 id="cm-title" className="cm-title">Xóa món ăn?</h1>
+            </div>
+
+            <div id="cm-desc" className="cm-body">
+              Hành động này sẽ xóa món ăn khỏi danh sách và cơ sở dữ liệu. Thao tác không thể hoàn tác.
+            </div>
+
+            <div className="cm-foot">
               <button className="btn ghost" onClick={() => setConfirmId(null)}>Hủy</button>
               <button
                 className="btn danger"
                 onClick={async () => { await onDeleteOne(confirmId); setConfirmId(null); }}
-              >Xóa</button>
+              >
+                Xóa
+              </button>
             </div>
           </div>
         </div>
