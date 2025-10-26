@@ -34,28 +34,27 @@ export default function FoodsList() {
   const load = async () => {
     setLoading(true);
     try {
-      const params = { q, limit: 100, skip: 0 };
-      // Khi lọc thời gian → chỉ món đã approved
-      if (dateFrom || dateTo) {
-        params.status = "approved";
-        if (dateFrom) params.approvedFrom = dateFrom;
-        if (dateTo) params.approvedTo = dateTo;
-      }
+      // Luôn yêu cầu chỉ approved từ API
+      const params = { q, limit: 100, skip: 0, status: "approved" };
+      if (dateFrom) params.approvedFrom = dateFrom;
+      if (dateTo) params.approvedTo = dateTo;
 
       const { items: docs = [] } = await listFoods(params);
 
-      // Fallback nếu API chưa hỗ trợ approvedFrom/approvedTo
-      let filtered = docs;
+      // Fallback: luôn lọc lại chỉ approved ở client (phòng khi API không hỗ trợ)
+      let filtered = docs.filter((x) => x?.status === "approved");
+
+      // Nếu có nhập khoảng ngày thì lọc theo approvedAt
       if (dateFrom || dateTo) {
         const fromTs = dateFrom ? new Date(dateFrom + "T00:00:00Z").getTime() : -Infinity;
         const toTs = dateTo ? new Date(dateTo + "T23:59:59Z").getTime() : Infinity;
-        filtered = docs.filter((x) => {
-          const t = x.approvedAt ? new Date(x.approvedAt).getTime() : 0;
-          return x.status === "approved" && t >= fromTs && t <= toTs;
+        filtered = filtered.filter((x) => {
+          const t = x.approvedAt ? new Date(x.approvedAt).getTime() : -Infinity;
+          return t >= fromTs && t <= toTs;
         });
       }
 
-      // Tìm kiếm theo tên (includes)
+      // Tìm kiếm theo tên (không phân biệt hoa/thường)
       const qq = q.trim().toLowerCase();
       if (qq) filtered = filtered.filter((x) => (x.name || "").toLowerCase().includes(qq));
 
@@ -134,7 +133,7 @@ export default function FoodsList() {
     <div className="foods-page">
       {/* ===== Title row + actions ===== */}
       <div className="page-head">
-        <h2>Danh sách món ăn</h2>
+        <h2>Danh sách món ăn (đã duyệt)</h2>
         <div className="head-actions">
           <button className="btn ghost" type="button" onClick={() => alert("TODO: Nhập danh sách")}>
             <i className="fa-solid fa-file-import" /> <span>Nhập danh sách</span>
@@ -196,7 +195,7 @@ export default function FoodsList() {
           </div>
 
           {loading && <div className="empty">Đang tải...</div>}
-          {!loading && items.length === 0 && <div className="empty">Không có món nào.</div>}
+          {!loading && items.length === 0 && <div className="empty">Không có món đã duyệt.</div>}
 
           {!loading && items.map((it) => (
             <div key={it._id} className="trow">
@@ -212,14 +211,11 @@ export default function FoodsList() {
               <div className="cell img">
                 {it.imageUrl
                   ? (
-                    <>
-                      {/* dùng toAbs để đảm bảo URL tuyệt đối */}
-                      <img
-                        src={toAbs(it.imageUrl)}
-                        alt={it.name}
-                        onError={(e) => { e.currentTarget.src = "/images/food-placeholder.jpg"; }}
-                      />
-                    </>
+                    <img
+                      src={toAbs(it.imageUrl)}
+                      alt={it.name}
+                      onError={(e) => { e.currentTarget.src = "/images/food-placeholder.jpg"; }}
+                    />
                   )
                   : <div className="img-fallback"><i className="fa-regular fa-image"></i></div>}
               </div>
@@ -255,7 +251,7 @@ export default function FoodsList() {
         </div>
       </div>
 
-      {/* ===== Confirm Delete Modal ===== */}
+      {/* ===== Confirm Delete Modal (đẹp) ===== */}
       {confirmId && (
         <div
           className="cm-backdrop"
