@@ -139,7 +139,7 @@ export default function RecordMeal() {
         </div>
 
         <button className="scan" onClick={() => nav("/dinh-duong/ghi-lai/tinh-calo-ai")}>
-          <i className="fa-solid fa-border-all"></i>
+          <i class="fa-regular fa-images"></i>
         </button>
 
         {/* Filter dropdown giữ mở đến khi click ra ngoài */}

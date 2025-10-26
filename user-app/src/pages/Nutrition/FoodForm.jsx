@@ -1,4 +1,3 @@
-// src/pages/Nutrition/FoodForm.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -104,7 +103,7 @@ export default function FoodForm() {
     }
   }
 
-  // ===== XÓA MÓN: popup xác nhận =====
+  // Xóa món (giữ logic cũ)
   const [confirmDel, setConfirmDel] = useState(false);
   const onConfirmDelete = async () => {
     try {
@@ -117,30 +116,161 @@ export default function FoodForm() {
     }
   };
 
-  if (loading) return <div className="cf-wrap"><div className="muted">Đang tải...</div></div>;
+  if (loading) return <div className="ff-wrap"><div className="muted">Đang tải...</div></div>;
 
   return (
-    <div className="cf-wrap">
-      <div className="cf-header">
-        <h2>{isEdit ? "Chỉnh sửa món ăn" : "Tạo món ăn mới"}</h2>
-        <div className="cf-actions">
-          {isEdit && (
-            <button className="btn bad" type="button" onClick={() => setConfirmDel(true)}>
-              Xóa
-            </button>
-          )}
-          <button className="btn ghost" type="button" onClick={() => nav(-1)}>Hủy</button>
-          <button className="btn primary" type="button" onClick={submit}>
-            {isEdit ? "Lưu" : "Tạo món ăn"}
+    <div className="ff-wrap">
+      {/* ===== Toolbar ===== */}
+      <div className="ff-toolbar">
+        <div className="ff-toolbox">
+          <button type="button" className="tool-left" onClick={() => nav(-1)}>
+            <i className="fa-solid fa-chevron-left"></i> Quay lại
           </button>
+
+          <div className="tool-right">
+            {isEdit && (
+              <button type="button" className="btn ghost danger" onClick={() => setConfirmDel(true)}>
+                Xóa
+              </button>
+            )}
+            <button type="button" className="btn primary" onClick={submit}>
+              {isEdit ? "Lưu" : "Tạo món"}
+            </button>
+          </div>
         </div>
       </div>
 
-      <form className="cf-grid" onSubmit={submit}>
-        {/* LEFT */}
-        <aside className="cf-left">
+      {/* ===== 2 columns: Trái form – Phải ảnh ===== */}
+      <form className="ff-grid" onSubmit={submit}>
+        {/* LEFT: card điền thông tin */}
+        <section className="ff-left">
+          {/* Tên món ăn */}
+          <div className="card">
+            <div className="sec-title">Tên món ăn <span className="req">*</span></div>
+            <input
+              className="ipt"
+              value={form.name}
+              onChange={(e) => up("name", e.target.value)}
+              placeholder="VD: Ức gà áp chảo"
+              required
+            />
+            <div className="sep" />
+
+            {/* Thông tin chung */}
+            <div className="sec-title">Thông tin chung</div>
+            <div className="row">
+              <label>Khẩu phần (tùy chọn)</label>
+              <input
+                className="ipt"
+                value={form.portionName}
+                onChange={(e) => up("portionName", e.target.value)}
+                placeholder="VD: 1 phần / 1 lon / 1 lát..."
+              />
+            </div>
+
+            <div className="row two">
+              <div>
+                <label>Khối lượng <span className="req">*</span></label>
+                <input
+                  className="ipt"
+                  type="number" min="0" step="1"
+                  value={form.massG}
+                  onChange={(e) => up("massG", e.target.value)}
+                  placeholder="VD: 100"
+                  required
+                />
+              </div>
+              <div className="unit-select">
+                <label>Đơn vị <span className="req">*</span></label>
+                <div className="unit-toggle">
+                  {UNIT_OPTIONS.map((u) => (
+                    <button
+                      key={u}
+                      type="button"
+                      className={`unit ${form.unit === u ? "on" : ""}`}
+                      onClick={() => up("unit", u)}
+                    >
+                      {u.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="sep" />
+
+            {/* Thông tin giá trị đa lượng */}
+            <div className="sec-title">Thông tin giá trị đa lượng</div>
+
+            <div className="row">
+              <label>Năng lượng (cal) <span className="req">*</span></label>
+              <input
+                className="ipt"
+                type="number" step="1" min="0"
+                value={form.kcal}
+                onChange={(e) => up("kcal", e.target.value)}
+                placeholder="VD: 165"
+              />
+            </div>
+
+            <div className="row three">
+              <div>
+                <label>Chất đạm (g) <span className="req">*</span></label>
+                <input className="ipt" type="number" step="0.1" min="0" value={form.proteinG} onChange={(e) => up("proteinG", e.target.value)} />
+              </div>
+              <div>
+                <label>Đường bột (carb) (g) <span className="req">*</span></label>
+                <input className="ipt" type="number" step="0.1" min="0" value={form.carbG} onChange={(e) => up("carbG", e.target.value)} />
+              </div>
+              <div>
+                <label>Chất béo (fat) (g) <span className="req">*</span></label>
+                <input className="ipt" type="number" step="0.1" min="0" value={form.fatG} onChange={(e) => up("fatG", e.target.value)} />
+              </div>
+            </div>
+
+            <div className="row three">
+              <div>
+                <label>Muối (g)</label>
+                <input className="ipt" type="number" step="0.1" min="0" value={form.saltG} onChange={(e) => up("saltG", e.target.value)} />
+              </div>
+              <div>
+                <label>Đường (g)</label>
+                <input className="ipt" type="number" step="0.1" min="0" value={form.sugarG} onChange={(e) => up("sugarG", e.target.value)} />
+              </div>
+              <div>
+                <label>Chất xơ (g)</label>
+                <input className="ipt" type="number" step="0.1" min="0" value={form.fiberG} onChange={(e) => up("fiberG", e.target.value)} />
+              </div>
+            </div>
+
+            <div className="sep" />
+
+            {/* Rich Text Editor (giao diện) */}
+            <div className="sec-title">Mô tả / Ghi chú</div>
+            <div className="rte">
+              <div className="rte-toolbar">
+                <button type="button" className="ic"><i className="fa-solid fa-bold"></i></button>
+                <button type="button" className="ic"><i className="fa-solid fa-italic"></i></button>
+                <span className="vr" />
+                <button type="button" className="ic"><i className="fa-solid fa-list-ul"></i></button>
+                <button type="button" className="ic"><i className="fa-solid fa-list-ol"></i></button>
+                <span className="vr" />
+                <button type="button" className="ic"><i className="fa-solid fa-link"></i></button>
+                <button type="button" className="ic"><i className="fa-regular fa-image"></i></button>
+              </div>
+              <div className="rte-editor" contentEditable suppressContentEditableWarning data-placeholder="Viết mô tả món ăn (không bắt buộc)…">
+              </div>
+            </div>
+
+            {msg && <div className="form-msg">{msg}</div>}
+          </div>
+        </section>
+
+        {/* RIGHT: card hình ảnh */}
+        <aside className="ff-right">
           <div className="card thumb-card">
-            <div className="card-title">Thumbnail</div>
+            <div className="sec-title">Hình ảnh</div>
+
             <div className="thumb-box">
               {preview || existingUrl ? (
                 <img
@@ -153,6 +283,7 @@ export default function FoodForm() {
                 <div className="thumb-placeholder"><i className="fa-regular fa-image"></i></div>
               )}
             </div>
+
             <div className="thumb-ctl">
               <label className="btn light">
                 <input type="file" hidden accept="image/*" onChange={onPickFile} />
@@ -162,78 +293,13 @@ export default function FoodForm() {
                 <button type="button" className="btn ghost" onClick={clearThumb}>Xóa ảnh</button>
               )}
             </div>
-            <div className="hint">Chỉ 1 ảnh (*.png, *.jpg, *.jpeg)</div>
-          </div>
 
-          {!isEdit && (
-            <div className="card status-card">
-              <div className="card-title">Trạng thái duyệt</div>
-              <div className="status-dot green"></div>
-              <div className="hint">Món mới sẽ ở trạng thái <b>Đang duyệt</b>.</div>
-            </div>
-          )}
+            <div className="hint">Chỉ 1 ảnh (*.png, *.jpg, *.jpeg). Chọn ảnh lại để thay đổi.</div>
+          </div>
         </aside>
-
-        {/* RIGHT */}
-        <section className="cf-right">
-          <div className="card">
-            <div className="tab-title">Thông tin chung</div>
-            <div className="row">
-              <label>Tên món <span className="req">*</span></label>
-              <input className="ipt" value={form.name} onChange={(e) => up("name", e.target.value)} placeholder="VD: Ức gà áp chảo" required />
-            </div>
-
-            <div className="row two">
-              <div>
-                <label>Khẩu phần (tùy chọn)</label>
-                <input className="ipt" value={form.portionName} onChange={(e) => up("portionName", e.target.value)} placeholder="VD: 1 phần / 1 lon / 1 lát..." />
-              </div>
-            </div>
-
-            <div className="row two">
-              <div>
-                <label>Khối lượng <span className="req">*</span></label>
-                <input className="ipt" type="number" min="0" step="1" value={form.massG} onChange={(e) => up("massG", e.target.value)} placeholder="VD: 100" required />
-              </div>
-              <div>
-                <label>Đơn vị</label>
-                <div className="unit-toggle">
-                  {UNIT_OPTIONS.map((u) => (
-                    <button key={u} type="button" className={`unit ${form.unit === u ? "on" : ""}`} onClick={() => up("unit", u)}>
-                      {u.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="tab-title">Giá trị dinh dưỡng</div>
-            <div className="row three">
-              <div><label>Calo (cal)</label><input className="ipt" type="number" step="1" min="0" value={form.kcal} onChange={(e) => up("kcal", e.target.value)} /></div>
-              <div><label>Đạm (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.proteinG} onChange={(e) => up("proteinG", e.target.value)} /></div>
-              <div><label>Đường bột (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.carbG} onChange={(e) => up("carbG", e.target.value)} /></div>
-            </div>
-            <div className="row three">
-              <div><label>Chất béo (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.fatG} onChange={(e) => up("fatG", e.target.value)} /></div>
-              <div><label>Muối (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.saltG} onChange={(e) => up("saltG", e.target.value)} /></div>
-              <div><label>Đường (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.sugarG} onChange={(e) => up("sugarG", e.target.value)} /></div>
-            </div>
-            <div className="row two">
-              <div><label>Chất xơ (g)</label><input className="ipt" type="number" step="0.1" min="0" value={form.fiberG} onChange={(e) => up("fiberG", e.target.value)} /></div>
-            </div>
-
-            {msg && <div className="form-msg">{msg}</div>}
-            <div className="form-actions">
-              <button type="button" className="btn ghost" onClick={() => nav(-1)}>Hủy</button>
-              <button type="submit" className="btn primary">{isEdit ? "Lưu" : "Tạo món ăn"}</button>
-            </div>
-          </div>
-        </section>
       </form>
 
-      {/* ===== Popup xác nhận xóa ===== */}
+      {/* Popup xác nhận xóa */}
       {confirmDel && (
         <div className="modal" onClick={() => setConfirmDel(false)}>
           <div className="modal-card small" onClick={(e)=>e.stopPropagation()}>
