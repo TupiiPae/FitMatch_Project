@@ -122,7 +122,7 @@ export default function ResetPassword() {
       <Alert />
 
       <button className={`material-btn ${loading ? "loading" : ""}`} type="submit" disabled={loading} style={{ marginTop: 6 }}>
-        <span className="btn-text">Xác minh OTP</span>
+        <span className="btn-text">Nhập OTP</span>
         <div className="btn-loader"></div>
       </button>
 
@@ -147,7 +147,7 @@ export default function ResetPassword() {
       <Alert />
 
       <button className={`material-btn ${loading ? "loading" : ""}`} type="submit" disabled={loading} style={{ marginTop: 6 }}>
-        <span className="btn-text">Đặt mật khẩu mới</span>
+        <span className="btn-text">Xác nhận</span>
         <div className="btn-loader"></div>
       </button>
     </form>

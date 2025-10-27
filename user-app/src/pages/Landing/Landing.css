@@ -1,9 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
-
 :root {
   --fit-green: #45C39A;
   --match-indigo: #3B4DA1;
-  --coral: #F7444E;
+  --coral: #008080;
   --muted: #94A3B8;
 }
 
@@ -13,7 +11,6 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  font-family: 'Inter', sans-serif;
   background-image: url("/images/landing-bg.jpg");
   background-position: center;
   background-repeat: no-repeat;
@@ -32,23 +29,40 @@
 }
 
 .lm-logo-img {
-  height: 120px;            /* 👈 tuỳ kích thước thật của logo */
+  height: 120px;          /* 👈 tuỳ kích thước thật của logo */
   cursor: pointer;
   object-fit: contain;
   user-select: none;
 }
 
-.lm-login {
+/* --- CSS MỚI CHO NÚT ICON TRÒN --- */
+/* Thay thế cho .lm-login cũ */
+.lm-login-btn {
   background: transparent;
-  border: none;
-  color: var(--coral);
-  font-weight: 600;
+  border: 2px solid var(--coral); /* Viền tròn màu coral */
+  color: var(--coral); /* Màu của icon bên trong */
+  
+  /* Kích thước nút tròn */
+  width: 44px;
+  height: 44px;
+  border-radius: 50%; /* Bo tròn */
+  
+  /* Căn giữa icon bên trong */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s ease-in-out;
 }
-.lm-login:hover {
-  text-decoration: underline;
+
+/* Thay thế cho .lm-login:hover cũ */
+.lm-login-btn:hover {
+  background: var(--coral); /* Nền đổi màu khi hover */
+  color: #fff; /* Icon đổi thành màu trắng */
+  transform: scale(1.05); /* Hiệu ứng phóng to nhẹ */
 }
+/* --- KẾT THÚC THAY ĐỔI CSS --- */
 
 
 /* Hero — chỉ chứa nút */
@@ -72,7 +86,7 @@
   font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(247, 68, 78, 0.25);
+
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -81,7 +95,7 @@
 
 .lm-cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(247, 68, 78, 0.35);
+
 }
 
 .lm-cta-arrow {
@@ -112,5 +126,15 @@
   }
   .lm-header {
     padding: 14px 20px;
+  }
+  
+  /* Cập nhật kích thước nút icon trên mobile */
+  .lm-login-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .lm-login-btn svg {
+     width: 18px;
+     height: 18px;
   }
 }
