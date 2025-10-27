@@ -12,37 +12,42 @@ import FoodsList from "./pages/pagesFoods/List/List.jsx";
 import FoodCreate from "./pages/pagesFoods/Create/Create.jsx";
 import FoodsReview from "./pages/pagesFoods/Review/Review.jsx";
 import UsersList from "./pages/pagesUsers/List/List.jsx";
+import AdminAccountsList from "./pages/pagesAdmins/List/List.jsx";
+import AdminCreate from "./pages/pagesAdmins/Create/Create.jsx";
 
-const Placeholder = ({ title }) => <div style={{ padding:16 }}>{title} (đang phát triển)</div>;
-
-export default function App(){
+export default function App() {
   return (
     <Routes>
-      {/* ✅ Mặc định mở /login khi vào "/" */}
+      {/* Mặc định điều hướng về /login */}
       <Route index element={<Navigate to="/login" replace />} />
 
+      {/* Đăng nhập admin */}
       <Route path="/login" element={<Login />} />
 
       {/* Các route cần đăng nhập */}
-      <Route element={<ProtectedRoute><SidebarLayout /></ProtectedRoute>}>
+      <Route
+        element={
+          <ProtectedRoute>
+            <SidebarLayout />
+          </ProtectedRoute>
+        }
+      >
+        {/* Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
 
+        {/* Quản trị tài khoản admin – chỉ Admin cấp 1 */}
         <Route element={<OnlyLevel1 />}>
-          <Route path="/admins" element={<Placeholder title="Quản trị: Danh sách tài khoản" />} />
-          <Route path="/admins/create" element={<Placeholder title="Quản trị: Tạo tài khoản" />} />
+          <Route path="/admins" element={<AdminAccountsList />} />
+          <Route path="/admins/create" element={<AdminCreate />} />
         </Route>
 
+        {/* Món ăn */}
         <Route path="/foods" element={<FoodsList />} />
         <Route path="/foods/create" element={<FoodCreate />} />
         <Route path="/foods/review" element={<FoodsReview />} />
 
+        {/* Người dùng */}
         <Route path="/users" element={<UsersList />} />
-
-        <Route path="/exercises" element={<Placeholder title="Quản lý bài tập" />} />
-        <Route path="/exercises/create" element={<Placeholder title="Tạo bài tập" />} />
-        <Route path="/matching" element={<Placeholder title="Danh sách ghép cặp" />} />
-        <Route path="/reports" element={<Placeholder title="Report" />} />
-        <Route path="/profile" element={<Placeholder title="Thông tin tài khoản" />} />
       </Route>
 
       {/* Fallback */}
