@@ -173,7 +173,6 @@
 .forgot-row{
   display:flex; justify-content:center;
   margin: 6px 0 6px;
-  padding-bottom: 10px;
 }
 
 /* 2 cột form 50/50 + hiệu ứng slide */
@@ -258,15 +257,14 @@
   width: 420px;
   max-width: 100%;
   min-height: 18px;
-  margin-top: 6px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 .error-stack .error-item{
   color:#dc2626;
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1;
 }
 
 @media (max-width: 720px){
@@ -286,7 +284,7 @@
   max-width: 100%;
 }
 
-.login-head h1{ order: 1; margin: 0; font-weight: 600; font-size: 28px;}
+.login-head h1{ order: 1; margin: 0; font-weight: 700; font-size: 28px;}
 .login-head .login-logo-rect{ order: 2; height: 100px; object-fit: contain; }
 
 /* ===== Form ===== */
@@ -370,3 +368,17 @@
   .auth-form{ padding:0 28px; }
   .auth-input, .field, .material-btn, .auth-divider, .social-login, .forgot-row{ width:100%; }
 }
+
+/* === Compact fields: only show space when an error exists === */
+.auth-input{ margin-bottom:6px!important; }
+.field{ margin:0 !important; }
+
+/* Error stack: ẩn hoàn toàn khi không có lỗi, hiện ra thì chừa khoảng trống ở trên */
+.error-stack{
+  min-height: 0 !important;
+  margin-bottom: 4px !important;
+}
+.error-stack:empty{ display: none !important; }
+.error-stack:not(:empty){ margin-top: 6px !important; }
+
+/* (giữ nguyên màu & cỡ chữ lỗi như bạn đã cấu hình) */

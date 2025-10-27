@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../Style/AuthLayout";
 import "../Style/style.css";
-import { api } from "../../lib/api";
+import api from "../../lib/api";
+import { validateUsername, validateEmailGmail, validatePassword, validateConfirm } from "../../lib/validators";
 
 export default function Register() {
   const nav = useNavigate();
@@ -11,42 +12,67 @@ export default function Register() {
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [confirm,  setConfirm]  = useState("");
+
   const [showPass, setShowPass] = useState(false);
   const [showCfm,  setShowCfm]  = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState({}); // { single, global }
+  const [loading, setLoading]   = useState(false);
 
-  const validate = () => {
-    if (!username.trim() || !email.trim() || !password || !confirm) {
-      setErr({ single: "Vui lòng nhập đầy đủ các trường" });
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErr({ single: "Định dạng email không hợp lệ" });
-      return false;
-    }
-    if (password.length < 6) { setErr({ single: "Mật khẩu phải có ít nhất 6 ký tự" }); return false; }
-    if (confirm !== password) { setErr({ single: "Mật khẩu xác nhận không khớp" }); return false; }
-    setErr({}); return true;
+  const [errs, setErrs] = useState({
+    username: "", email: "", password: "", confirm: "", global: ""
+  });
+
+  const runValidateAll = () => {
+    const eUser = validateUsername(username);
+    const eMail = validateEmailGmail(email);
+    const ePass = validatePassword(password);
+    const eCfm  = validateConfirm(password, confirm);
+    const next  = { username: eUser, email: eMail, password: ePass, confirm: eCfm, global: "" };
+    setErrs(next);
+    return !Object.values(next).some(Boolean);
   };
 
   const onSubmit = async (ev) => {
     ev.preventDefault();
-    if (!validate()) return;
+    if (!runValidateAll()) return;
     setLoading(true);
+    setErrs(prev => ({ ...prev, global: "" }));
     try {
       const { data } = await api.post("/auth/register", {
-        username, email, password, confirmPassword: confirm
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        confirmPassword: confirm
       });
+
       if (data?.token) {
         localStorage.setItem("token", data.token);
         if (data.user?.role) localStorage.setItem("role", data.user.role);
       }
-      if (data?.success || data?.token) nav("/login");
-      else setErr({ global: data?.message || "Đăng ký thất bại." });
+      if (data?.success || data?.token) {
+        nav("/login");
+      } else {
+        setErrs(prev => ({ ...prev, global: data?.message || "Đăng ký thất bại." }));
+      }
     } catch (error) {
-      setErr({ global: error?.response?.data?.message || "Đăng ký thất bại." });
-    } finally { setLoading(false); }
+      const status = error?.response?.status;
+      const data   = error?.response?.data || {};
+      if (status === 422 && data.errors) {
+        const map = data.errors;
+        setErrs(prev => ({
+          username: map.username || prev.username,
+          email:    map.email    || prev.email,
+          password: map.password || prev.password,
+          confirm:  map.confirm  || prev.confirm,
+          global:   data.message || prev.global
+        }));
+      } else if (status === 409) {
+        setErrs(prev => ({ ...prev, email: data.message || "Email đã được sử dụng" }));
+      } else {
+        setErrs(prev => ({ ...prev, global: data.message || "Đăng ký thất bại." }));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   function handleSocialRipple(e) {
@@ -69,78 +95,97 @@ export default function Register() {
 
   const renderSignUp = (
     <form className="auth-form" noValidate onSubmit={onSubmit} style={{ width:"100%", maxWidth: 520 }}>
-      {/* Logo TRÊN tiêu đề */}
       <div className="login-head">
         <img src="/images/logo-fitmatch.png" alt="FitMatch" className="login-logo-rect" />
         <h1>Đăng ký</h1>
       </div>
 
+      <div className="auth-divider"><span>Nhập thông tin tài khoản</span></div>
+
       {/* Username */}
       <input
-        className="auth-input"
+        className={`auth-input ${errs.username ? "input-invalid" : ""}`}
         type="text"
         id="reg-username"
         placeholder="Tên tài khoản"
         value={username}
         onChange={(e)=>setUsername(e.target.value)}
+        onBlur={()=>setErrs(p=>({ ...p, username: validateUsername(username) }))}
         required autoComplete="username"
+        maxLength={200}
       />
+      <div className="error-stack" aria-live="polite">
+        {errs.username && <span className="error-item">{errs.username}</span>}
+      </div>
 
       {/* Email */}
       <input
-        className="auth-input"
+        className={`auth-input ${errs.email ? "input-invalid" : ""}`}
         type="email"
         id="reg-email"
-        placeholder="Email"
+        placeholder="Email (@gmail.com)"
         value={email}
         onChange={(e)=>setEmail(e.target.value)}
+        onBlur={()=>setErrs(p=>({ ...p, email: validateEmailGmail(email) }))}
         required autoComplete="email"
+        maxLength={100}
       />
+      <div className="error-stack" aria-live="polite">
+        {errs.email && <span className="error-item">{errs.email}</span>}
+      </div>
 
       {/* Password + eye */}
       <div className="field">
         <input
-          className="auth-input"
+          className={`auth-input ${errs.password ? "input-invalid" : ""}`}
           type={showPass ? "text" : "password"}
           id="reg-password"
           placeholder="Mật khẩu"
           value={password}
           onChange={(e)=>setPassword(e.target.value)}
+          onBlur={()=>setErrs(p=>({ ...p, password: validatePassword(password) }))}
           required autoComplete="new-password"
+          maxLength={200}
         />
         <button type="button" className="eye-toggle" onClick={()=>setShowPass(v=>!v)} aria-label="Hiện/ẩn mật khẩu">
           <i className={`fa-solid ${showPass ? "fa-eye-slash" : "fa-eye"}`}></i>
         </button>
       </div>
+      <div className="error-stack" aria-live="polite">
+        {errs.password && <span className="error-item">{errs.password}</span>}
+      </div>
 
       {/* Confirm + eye */}
       <div className="field">
         <input
-          className="auth-input"
+          className={`auth-input ${errs.confirm ? "input-invalid" : ""}`}
           type={showCfm ? "text" : "password"}
           id="reg-confirm"
           placeholder="Xác nhận mật khẩu"
           value={confirm}
           onChange={(e)=>setConfirm(e.target.value)}
+          onBlur={()=>setErrs(p=>({ ...p, confirm: validateConfirm(password, confirm) }))}
           required autoComplete="new-password"
+          maxLength={200}
         />
         <button type="button" className="eye-toggle" onClick={()=>setShowCfm(v=>!v)} aria-label="Hiện/ẩn mật khẩu">
           <i className={`fa-solid ${showCfm ? "fa-eye-slash" : "fa-eye"}`}></i>
         </button>
       </div>
-
       <div className="error-stack" aria-live="polite">
-        {err.single && <span className="error-item">{err.single}</span>}
-        {err.global && <span className="error-item">{err.global}</span>}
+        {errs.confirm && <span className="error-item">{errs.confirm}</span>}
       </div>
 
-      {/* Nút Đăng ký — rộng bằng ô nhập */}
+      {/* Global error (nếu có) */}
+      <div className="error-stack" aria-live="polite">
+        {errs.global && <span className="error-item">{errs.global}</span>}
+      </div>
+
       <button type="submit" className={`material-btn ${loading ? "loading" : ""}`} disabled={loading} style={{ marginTop: 6 }}>
         <span className="btn-text">Đăng ký</span>
       </button>
 
-      {/* Divider & Social */}
-      <div className="auth-divider"><span>HOẶC</span></div>
+      <div className="auth-divider" style={{ marginTop: 20 }}><span>HOẶC</span></div>
 
       <div className="social-login">
         <button type="button" className="social-btn google-material" onClick={handleSocialRipple} aria-label="Tiếp tục với Google">

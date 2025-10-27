@@ -11,6 +11,7 @@ import {
 import api from "../../lib/api";
 import "./FoodForm.css";
 import { toast } from "react-toastify";
+import { foodValidators } from "../../lib/validators";
 
 const UNIT_OPTIONS = ["g", "ml"];
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
@@ -28,10 +29,18 @@ export default function FoodForm() {
   });
   const up = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
+  const [errs, setErrs] = useState({
+    name: "", massG: "", kcal: "",
+    proteinG: "", carbG: "", fatG: "",
+    saltG: "", sugarG: "", fiberG: "",
+    global: ""
+  });
+
   // Ảnh
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [existingUrl, setExistingUrl] = useState("");
+
   const onPickFile = (e) => {
     const f = e.target.files?.[0]; if (!f) return;
     if (preview) URL.revokeObjectURL(preview);
@@ -40,6 +49,7 @@ export default function FoodForm() {
   const clearThumb = () => { if (preview) URL.revokeObjectURL(preview); setFile(null); setPreview(""); };
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
+  // Load khi sửa
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -59,29 +69,43 @@ export default function FoodForm() {
     })();
   }, [id]);
 
+  // Validate tổng
+  const runValidateAll = () => {
+    const next = foodValidators.validateAll(form);
+    setErrs(next);
+    return !Object.values(next).some(Boolean);
+  };
+
   const [msg, setMsg] = useState("");
 
   async function submit(e) {
     if (e?.preventDefault) e.preventDefault();
     setMsg("");
+    setErrs((p) => ({ ...p, global: "" }));
+
+    if (!runValidateAll()) {
+      toast.error("Vui lòng kiểm tra lại các trường bắt buộc.");
+      return;
+    }
 
     const name = String(form.name || "").trim();
     const unit = form.unit === "ml" ? "ml" : "g";
-    const massRaw = String(form.massG ?? "").trim();
-    const massNum = massRaw === "" ? NaN : Number(massRaw);
-    if (!name) return setMsg("Tên món là bắt buộc");
-    if (!Number.isFinite(massNum) || massNum <= 0) return setMsg("Khối lượng (g/ml) phải là số dương");
-
-    const numOrNull = (v, parseFn = Number) => {
+    const massNum = Number(String(form.massG ?? "").trim());
+    const numOrNull = (v) => {
       const s = String(v ?? "").trim(); if (s === "") return null;
-      const n = parseFn(s); return Number.isFinite(n) ? n : null;
+      const n = Number(s); return Number.isFinite(n) ? n : null;
     };
 
     const payload = {
       name, massG: massNum, unit,
       portionName: String(form.portionName || "").trim() || undefined,
-      kcal: numOrNull(form.kcal), proteinG: numOrNull(form.proteinG), carbG: numOrNull(form.carbG),
-      fatG: numOrNull(form.fatG), saltG: numOrNull(form.saltG), sugarG: numOrNull(form.sugarG), fiberG: numOrNull(form.fiberG),
+      kcal: numOrNull(form.kcal),
+      proteinG: numOrNull(form.proteinG),
+      carbG: numOrNull(form.carbG),
+      fatG: numOrNull(form.fatG),
+      saltG: numOrNull(form.saltG),
+      sugarG: numOrNull(form.sugarG),
+      fiberG: numOrNull(form.fiberG),
       ...(isEdit ? {} : { sourceType: "user_submitted" }),
     };
 
@@ -98,8 +122,28 @@ export default function FoodForm() {
       toast.success(isEdit ? "Đã lưu chỉnh sửa" : "Đã gửi yêu cầu. Vui lòng đợi admin duyệt.");
       nav("/dinh-duong/ghi-lai");
     } catch (err) {
-      const m = err?.response?.data?.message || (isEdit ? "Lưu thất bại" : "Gửi duyệt thất bại");
-      setMsg(m); toast.error(m);
+      const status = err?.response?.status;
+      const data = err?.response?.data || {};
+      if (status === 422 && data.errors) {
+        const map = data.errors || {};
+        setErrs((prev) => ({
+          ...prev,
+          name: map.name || prev.name,
+          massG: map.massG || prev.massG,
+          kcal: map.kcal || prev.kcal,
+          proteinG: map.proteinG || prev.proteinG,
+          carbG: map.carbG || prev.carbG,
+          fatG: map.fatG || prev.fatG,
+          saltG: map.saltG || prev.saltG,
+          sugarG: map.sugarG || prev.sugarG,
+          fiberG: map.fiberG || prev.fiberG,
+          global: data.message || prev.global
+        }));
+        toast.error("Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.");
+      } else {
+        const m = data.message || (isEdit ? "Lưu thất bại" : "Gửi duyệt thất bại");
+        setMsg(m); toast.error(m);
+      }
     }
   }
 
@@ -148,12 +192,18 @@ export default function FoodForm() {
           <div className="card">
             <div className="sec-title">Tên món ăn <span className="req">*</span></div>
             <input
-              className="ipt"
+              className={`ipt ${errs.name ? "input-invalid" : ""}`}
               value={form.name}
               onChange={(e) => up("name", e.target.value)}
+              onBlur={() => setErrs(p => ({ ...p, name: foodValidators.name(form.name) }))}
               placeholder="VD: Ức gà áp chảo"
               required
+              maxLength={50}
             />
+            <div className="error-stack" aria-live="polite">
+              {errs.name && <span className="error-item">{errs.name}</span>}
+            </div>
+
             <div className="sep" />
 
             {/* Thông tin chung */}
@@ -172,13 +222,17 @@ export default function FoodForm() {
               <div>
                 <label>Khối lượng <span className="req">*</span></label>
                 <input
-                  className="ipt"
+                  className={`ipt ${errs.massG ? "input-invalid" : ""}`}
                   type="number" min="0" step="1"
                   value={form.massG}
                   onChange={(e) => up("massG", e.target.value)}
+                  onBlur={() => setErrs(p => ({ ...p, massG: foodValidators.massG(form.massG) }))}
                   placeholder="VD: 100"
                   required
                 />
+                <div className="error-stack" aria-live="polite">
+                  {errs.massG && <span className="error-item">{errs.massG}</span>}
+                </div>
               </div>
               <div className="unit-select">
                 <label>Đơn vị <span className="req">*</span></label>
@@ -205,41 +259,100 @@ export default function FoodForm() {
             <div className="row">
               <label>Năng lượng (cal) <span className="req">*</span></label>
               <input
-                className="ipt"
+                className={`ipt ${errs.kcal ? "input-invalid" : ""}`}
                 type="number" step="1" min="0"
                 value={form.kcal}
                 onChange={(e) => up("kcal", e.target.value)}
+                onBlur={() => setErrs(p => ({ ...p, kcal: foodValidators.kcal(form.kcal) }))}
                 placeholder="VD: 165"
+                required
               />
+              <div className="error-stack" aria-live="polite">
+                {errs.kcal && <span className="error-item">{errs.kcal}</span>}
+              </div>
             </div>
 
             <div className="row three">
               <div>
-                <label>Chất đạm (g) <span className="req">*</span></label>
-                <input className="ipt" type="number" step="0.1" min="0" value={form.proteinG} onChange={(e) => up("proteinG", e.target.value)} />
+                <label>Chất đạm (g)</label>
+                <input
+                  className={`ipt ${errs.proteinG ? "input-invalid" : ""}`}
+                  type="number" step="0.1" min="0"
+                  value={form.proteinG}
+                  onChange={(e) => up("proteinG", e.target.value)}
+                  onBlur={() => setErrs(p => ({ ...p, proteinG: foodValidators.optionalNumber(form.proteinG) }))}
+                />
+                <div className="error-stack" aria-live="polite">
+                  {errs.proteinG && <span className="error-item">{errs.proteinG}</span>}
+                </div>
               </div>
               <div>
-                <label>Đường bột (carb) (g) <span className="req">*</span></label>
-                <input className="ipt" type="number" step="0.1" min="0" value={form.carbG} onChange={(e) => up("carbG", e.target.value)} />
+                <label>Đường bột (carb) (g)</label>
+                <input
+                  className={`ipt ${errs.carbG ? "input-invalid" : ""}`}
+                  type="number" step="0.1" min="0"
+                  value={form.carbG}
+                  onChange={(e) => up("carbG", e.target.value)}
+                  onBlur={() => setErrs(p => ({ ...p, carbG: foodValidators.optionalNumber(form.carbG) }))}
+                />
+                <div className="error-stack" aria-live="polite">
+                  {errs.carbG && <span className="error-item">{errs.carbG}</span>}
+                </div>
               </div>
               <div>
-                <label>Chất béo (fat) (g) <span className="req">*</span></label>
-                <input className="ipt" type="number" step="0.1" min="0" value={form.fatG} onChange={(e) => up("fatG", e.target.value)} />
+                <label>Chất béo (fat) (g)</label>
+                <input
+                  className={`ipt ${errs.fatG ? "input-invalid" : ""}`}
+                  type="number" step="0.1" min="0"
+                  value={form.fatG}
+                  onChange={(e) => up("fatG", e.target.value)}
+                  onBlur={() => setErrs(p => ({ ...p, fatG: foodValidators.optionalNumber(form.fatG) }))}
+                />
+                <div className="error-stack" aria-live="polite">
+                  {errs.fatG && <span className="error-item">{errs.fatG}</span>}
+                </div>
               </div>
             </div>
 
             <div className="row three">
               <div>
                 <label>Muối (g)</label>
-                <input className="ipt" type="number" step="0.1" min="0" value={form.saltG} onChange={(e) => up("saltG", e.target.value)} />
+                <input
+                  className={`ipt ${errs.saltG ? "input-invalid" : ""}`}
+                  type="number" step="0.1" min="0"
+                  value={form.saltG}
+                  onChange={(e) => up("saltG", e.target.value)}
+                  onBlur={() => setErrs(p => ({ ...p, saltG: foodValidators.optionalNumber(form.saltG) }))}
+                />
+                <div className="error-stack" aria-live="polite">
+                  {errs.saltG && <span className="error-item">{errs.saltG}</span>}
+                </div>
               </div>
               <div>
                 <label>Đường (g)</label>
-                <input className="ipt" type="number" step="0.1" min="0" value={form.sugarG} onChange={(e) => up("sugarG", e.target.value)} />
+                <input
+                  className={`ipt ${errs.sugarG ? "input-invalid" : ""}`}
+                  type="number" step="0.1" min="0"
+                  value={form.sugarG}
+                  onChange={(e) => up("sugarG", e.target.value)}
+                  onBlur={() => setErrs(p => ({ ...p, sugarG: foodValidators.optionalNumber(form.sugarG) }))}
+                />
+                <div className="error-stack" aria-live="polite">
+                  {errs.sugarG && <span className="error-item">{errs.sugarG}</span>}
+                </div>
               </div>
               <div>
                 <label>Chất xơ (g)</label>
-                <input className="ipt" type="number" step="0.1" min="0" value={form.fiberG} onChange={(e) => up("fiberG", e.target.value)} />
+                <input
+                  className={`ipt ${errs.fiberG ? "input-invalid" : ""}`}
+                  type="number" step="0.1" min="0"
+                  value={form.fiberG}
+                  onChange={(e) => up("fiberG", e.target.value)}
+                  onBlur={() => setErrs(p => ({ ...p, fiberG: foodValidators.optionalNumber(form.fiberG) }))}
+                />
+                <div className="error-stack" aria-live="polite">
+                  {errs.fiberG && <span className="error-item">{errs.fiberG}</span>}
+                </div>
               </div>
             </div>
 
@@ -262,6 +375,10 @@ export default function FoodForm() {
               </div>
             </div>
 
+            {/* Lỗi chung/tin nhắn */}
+            <div className="error-stack" aria-live="polite">
+              {errs.global && <span className="error-item">{errs.global}</span>}
+            </div>
             {msg && <div className="form-msg">{msg}</div>}
           </div>
         </section>

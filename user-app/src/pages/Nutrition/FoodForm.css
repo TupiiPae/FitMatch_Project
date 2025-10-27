@@ -144,3 +144,5 @@ label.btn { cursor: pointer; }
 .modal-foot{ padding:12px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:8px; }
 
 .muted{ color:#6b7280; }
+
+.ipt.input-invalid { border-color: #dc2626; }

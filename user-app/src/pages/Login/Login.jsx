@@ -7,10 +7,10 @@ import api from "../../lib/api";
 export default function Login() {
   const nav = useNavigate();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [username, setUsername]   = useState("");
+  const [password, setPassword]   = useState("");
+  const [showPass, setShowPass]   = useState(false);
+  const [loading, setLoading]     = useState(false);
 
   const [usernameErr, setUsernameErr] = useState("");
   const [passwordErr, setPasswordErr] = useState("");
@@ -28,7 +28,10 @@ export default function Login() {
 
   async function onSubmit(e) {
     e.preventDefault();
+    // clear lỗi cũ
+    setUsernameErr(""); setPasswordErr("");
     if (!validateUsername() || !validatePassword()) return;
+
     setLoading(true);
     try {
       const { data } = await api.post("/auth/login", {
@@ -46,7 +49,10 @@ export default function Login() {
         (status === 401 ? "Sai mật khẩu." :
          status === 400 ? "Tài khoản không tồn tại hoặc thông tin không hợp lệ." :
          "Đăng nhập thất bại. Vui lòng thử lại.");
-      setPasswordErr(msg);
+
+      // phân bổ lỗi theo mã
+      if (status === 400) setUsernameErr(msg);
+      else setPasswordErr(msg);
     } finally { setLoading(false); }
   }
 
@@ -69,15 +75,16 @@ export default function Login() {
 
   const renderSignIn = (
     <form className="auth-form" onSubmit={onSubmit} noValidate style={{ width: "100%", maxWidth: 520 }}>
-      {/* Logo TRÊN tiêu đề */}
       <div className="login-head">
         <img src="/images/logo-fitmatch.png" alt="FitMatch" className="login-logo-rect" />
         <h1>Đăng nhập</h1>
       </div>
+      
+      <div className="auth-divider"><span>Nhập thông tin tài khoản</span></div>
 
-      {/* Inputs */}
+      {/* Username */}
       <input
-        className="auth-input"
+        className={`auth-input ${usernameErr ? "input-invalid" : ""}`}
         type="text"
         id="username"
         name="username"
@@ -87,11 +94,16 @@ export default function Login() {
         onBlur={validateUsername}
         autoComplete="username"
         required
+        maxLength={200}
       />
+      <div className="error-stack" aria-live="polite">
+        {usernameErr && <span className="error-item">{usernameErr}</span>}
+      </div>
 
+      {/* Password */}
       <div className="field">
         <input
-          className="auth-input"
+          className={`auth-input ${passwordErr ? "input-invalid" : ""}`}
           type={showPass ? "text" : "password"}
           id="password"
           name="password"
@@ -101,25 +113,18 @@ export default function Login() {
           onBlur={validatePassword}
           autoComplete="current-password"
           required
+          maxLength={200}
         />
-        <button
-          type="button"
-          className="eye-toggle"
-          onClick={() => setShowPass(v => !v)}
-          aria-label="Hiện/ẩn mật khẩu"
-        >
+        <button type="button" className="eye-toggle" onClick={() => setShowPass(v => !v)} aria-label="Hiện/ẩn mật khẩu">
           <i className={`fa-solid ${showPass ? "fa-eye-slash" : "fa-eye"}`} />
         </button>
       </div>
-
       <div className="error-stack" aria-live="polite">
-        {[passwordErr, usernameErr].filter(Boolean).map((msg, i) => (
-          <span key={i} className="error-item">{msg}</span>
-        ))}
+        {passwordErr && <span className="error-item">{passwordErr}</span>}
       </div>
 
       {/* Nút đăng nhập — rộng bằng ô nhập */}
-      <button type="submit" className={`material-btn ${loading ? "loading" : ""}`} disabled={loading}>
+      <button type="submit" className={`material-btn ${loading ? "loading" : ""}`} disabled={loading} style={{ marginTop: 6 }}>
         <span className="btn-text">Đăng nhập</span>
       </button>
 

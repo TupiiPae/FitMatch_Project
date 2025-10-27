@@ -9,6 +9,18 @@ import { AVATAR_DIR } from "../middleware/upload.js";
 
 const tinhCalorieTarget = _tinhCalorieTarget;
 
+// ---- helper: gom lỗi validate thành map { path: message } ----
+function toValidationMap(err) {
+  if (!err || err.name !== "ValidationError") return null;
+  const out = {};
+  for (const k of Object.keys(err.errors || {})) {
+    const e = err.errors[k];
+    const path = (e && e.path) || k;
+    out[path] = e.message || "Dữ liệu không hợp lệ";
+  }
+  return out;
+}
+
 function computeDerived(profile){
   if(!profile) return {};
   const { weightKg, heightCm, sex, dob, trainingIntensity } = profile;
@@ -33,7 +45,7 @@ export const getMe = async (req,res)=>{
         await User.findByIdAndUpdate(me._id, {$set:{
           ...(derived.bmi!=null?{"profile.bmi":derived.bmi}:{}),
           ...(derived.bmr!=null?{"profile.bmr":derived.bmr}:{}),
-          ...(derived.tdee!=null?{"profile.tdee":derived.tdee}:{})
+          ...(derived.tdee!=null?{"profile.tdee":derived.tdee}:{}),
         }},{ runValidators:true });
         me.profile = { ...me.profile, ...derived };
       }
@@ -44,46 +56,58 @@ export const getMe = async (req,res)=>{
 
 /** PATCH /api/user/onboarding */
 export const patchOnboarding = async (req,res)=>{
-  const allowed = ["profile.nickname","profile.goal","profile.heightCm","profile.weightKg","profile.targetWeightKg","profile.weeklyChangeKg","profile.trainingIntensity","profile.sex","profile.dob","profile.bodyFat"];
-  const forbidden = ["profile.bmi","profile.bmr","profile.tdee","profile.calorieTarget"];
-  const $set = {};
-  for(const [k,v] of Object.entries(req.body||{})){ if(forbidden.includes(k)) continue; if(allowed.includes(k)) $set[k]=v; }
-  if(!Object.keys($set).length) return res.status(400).json({ message:"Không có trường hợp lệ" });
-
-  if($set["profile.weeklyChangeKg"]!=null){
-    const w=Number($set["profile.weeklyChangeKg"]);
-    if(Number.isFinite(w)) $set["profile.weeklyChangeKg"]=Math.abs(w); else return res.status(400).json({ message:"weeklyChangeKg phải là số" });
-  }
-  if($set["profile.bodyFat"]!=null){
-    const bf=Number($set["profile.bodyFat"]);
-    if(!Number.isFinite(bf)||bf<0||bf>70) return res.status(400).json({ message:"bodyFat phải trong khoảng 0–70 (%)" });
-  }
-
-  const current = await User.findById(req.userId).select("_id profile").lean();
-  if(!current) return res.status(404).json({ message:"Không tìm thấy người dùng" });
-
-  const mergedProfile = { ...(current.profile||{}), ...Object.keys($set).reduce((acc,k)=>{ acc[k.replace(/^profile\./,"")]=$set[k]; return acc; },{}) };
-
-  let derived={}; try{ derived=computeDerived(mergedProfile);}catch(e){ return res.status(400).json({ message:e?.message||"Dữ liệu không hợp lệ" }); }
-
-  let calorieTarget;
   try{
-    const baseTdee = typeof derived.tdee==="number" ? derived.tdee : mergedProfile.tdee;
-    const baseBmr  = typeof derived.bmr==="number" ? derived.bmr  : mergedProfile.bmr;
-    if(typeof tinhCalorieTarget==="function" && typeof baseTdee==="number" && baseTdee>0){
-      calorieTarget = tinhCalorieTarget({ tdee:baseTdee, mucTieu:mergedProfile.goal, mucTieuTuan:mergedProfile.weeklyChangeKg, bmr:baseBmr });
+    const allowed = ["profile.nickname","profile.goal","profile.heightCm","profile.weightKg","profile.targetWeightKg","profile.weeklyChangeKg","profile.trainingIntensity","profile.sex","profile.dob","profile.bodyFat"];
+    const forbidden = ["profile.bmi","profile.bmr","profile.tdee","profile.calorieTarget"];
+    const $set = {};
+    for(const [k,v] of Object.entries(req.body||{})){ if(forbidden.includes(k)) continue; if(allowed.includes(k)) $set[k]=v; }
+    if(!Object.keys($set).length) return res.status(400).json({ message:"Không có trường hợp lệ" });
+
+    if($set["profile.weeklyChangeKg"]!=null){
+      const w=Number($set["profile.weeklyChangeKg"]);
+      if(Number.isFinite(w)) $set["profile.weeklyChangeKg"]=Math.abs(w); else return res.status(400).json({ message:"weeklyChangeKg phải là số" });
     }
-  }catch{}
+    if($set["profile.bodyFat"]!=null){
+      const bf=Number($set["profile.bodyFat"]);
+      if(!Number.isFinite(bf)||bf<0||bf>70) return res.status(400).json({ message:"bodyFat phải trong khoảng 0–70 (%)" });
+    }
 
-  const finalSet = { ...$set,
-    ...(derived.bmi!=null?{"profile.bmi":derived.bmi}:{}),
-    ...(derived.bmr!=null?{"profile.bmr":derived.bmr}:{}),
-    ...(derived.tdee!=null?{"profile.tdee":derived.tdee}:{}),
-    ...(calorieTarget!=null?{"profile.calorieTarget":calorieTarget}:{})
-  };
+    const current = await User.findById(req.userId).select("_id profile").lean();
+    if(!current) return res.status(404).json({ message:"Không tìm thấy người dùng" });
 
-  const updated = await User.findByIdAndUpdate(req.userId, { $set:finalSet }, { new:true, runValidators:true }).select("_id onboarded profile");
-  res.json({ success:true, user:updated });
+    const mergedProfile = { ...(current.profile||{}), ...Object.keys($set).reduce((acc,k)=>{ acc[k.replace(/^profile\./,"")]=$set[k]; return acc; },{}) };
+
+    let derived={}; try{ derived=computeDerived(mergedProfile);}catch(e){ return res.status(400).json({ message:e?.message||"Dữ liệu không hợp lệ" }); }
+
+    let calorieTarget;
+    try{
+      const baseTdee = typeof derived.tdee==="number" ? derived.tdee : mergedProfile.tdee;
+      const baseBmr  = typeof derived.bmr==="number" ? derived.bmr  : mergedProfile.bmr;
+      if(typeof tinhCalorieTarget==="function" && typeof baseTdee==="number" && baseTdee>0){
+        calorieTarget = tinhCalorieTarget({ tdee:baseTdee, mucTieu:mergedProfile.goal, mucTieuTuan:mergedProfile.weeklyChangeKg, bmr:baseBmr });
+      }
+    }catch{}
+
+    const finalSet = { ...$set,
+      ...(derived.bmi!=null?{"profile.bmi":derived.bmi}:{}),
+      ...(derived.bmr!=null?{"profile.bmr":derived.bmr}:{}),
+      ...(derived.tdee!=null?{"profile.tdee":derived.tdee}:{}),
+      ...(calorieTarget!=null?{"profile.calorieTarget":calorieTarget}:{}),
+    };
+
+    const updated = await User.findByIdAndUpdate(
+      req.userId,
+      { $set:finalSet },
+      { new:true, runValidators:true }
+    ).select("_id onboarded profile");
+
+    return res.json({ success:true, user:updated });
+  }catch(err){
+    const map = toValidationMap(err);
+    if (map) return res.status(422).json({ message:"Dữ liệu không hợp lệ", errors:map });
+    console.error("patchOnboarding lỗi:", err?.message||err);
+    return res.status(500).json({ message:"Lỗi máy chủ" });
+  }
 };
 
 /** POST /api/user/onboarding/finalize */
@@ -100,7 +124,6 @@ export const updateAccount = async (req,res)=>{
       "profile.heightCm","profile.weightKg","profile.bodyFat","profile.avatarUrl",
       "profile.address.country","profile.address.countryCode","profile.address.city","profile.address.regionCode",
       "profile.address.district","profile.address.districtCode","profile.address.ward","profile.address.wardCode"
-      // CHÚ Ý: KHÔNG cho phép "profile.location.coordinates" trực tiếp để tránh lưu sai; ta normalize bên dưới.
     ];
     const forbidden = ["profile.bmi","profile.bmr","profile.tdee","password","role","username"];
 
@@ -127,9 +150,8 @@ export const updateAccount = async (req,res)=>{
     if(body.phone!==undefined) $set.phone = body.phone;
     if(body.email!==undefined) $set.email = body.email;
 
-    // 3) Chuẩn hoá GeoJSON location: chấp nhận nhiều kiểu input
+    // 3) Chuẩn hoá GeoJSON location
     let lng=null, lat=null;
-    // a) dạng phẳng
     if(Array.isArray(body["profile.location.coordinates"])){
       const [LNG,LAT] = body["profile.location.coordinates"].map(Number);
       if(Number.isFinite(LNG)&&Number.isFinite(LAT)){ lng=LNG; lat=LAT; }
@@ -138,7 +160,6 @@ export const updateAccount = async (req,res)=>{
       const LNG=Number(body["profile.location.lng"]), LAT=Number(body["profile.location.lat"]);
       if(Number.isFinite(LNG)&&Number.isFinite(LAT)){ lng=LNG; lat=LAT; }
     }
-    // b) dạng lồng
     if(body.profile && body.profile.location){
       const loc = body.profile.location;
       if(Array.isArray(loc.coordinates)){
@@ -149,7 +170,6 @@ export const updateAccount = async (req,res)=>{
         if(Number.isFinite(LNG)&&Number.isFinite(LAT)){ lng=LNG; lat=LAT; }
       }
     }
-    // c) áp vào $set hoặc $unset
     if(Number.isFinite(lng)&&Number.isFinite(lat)){
       $set["profile.location"] = { type:"Point", coordinates:[lng,lat] };
     }else if("profile.location.coordinates" in body || (body.profile && body.profile.location)){
@@ -158,7 +178,7 @@ export const updateAccount = async (req,res)=>{
 
     if(!Object.keys($set).length && !$unset) return res.status(400).json({ message:"Không có trường hợp lệ để cập nhật" });
 
-    // ràng buộc số
+    // ràng buộc số cơ bản
     if($set["profile.bodyFat"]!=null){
       const bf=Number($set["profile.bodyFat"]);
       if(!Number.isFinite(bf)||bf<0||bf>70) return res.status(400).json({ message:"bodyFat phải trong khoảng 0–70 (%)" });
@@ -192,16 +212,21 @@ export const updateAccount = async (req,res)=>{
     const finalSet = { ...$set,
       ...(derived.bmi!=null?{"profile.bmi":derived.bmi}:{}),
       ...(derived.bmr!=null?{"profile.bmr":derived.bmr}:{}),
-      ...(derived.tdee!=null?{"profile.tdee":derived.tdee}:{})
+      ...(derived.tdee!=null?{"profile.tdee":derived.tdee}:{}),
     };
 
     const updateDoc = $unset ? { $set:finalSet, $unset } : { $set:finalSet };
-    const updated = await User.findByIdAndUpdate(req.userId, updateDoc, { new:true, runValidators:true })
-      .select("_id username email phone role onboarded profile createdAt");
+    const updated = await User.findByIdAndUpdate(
+      req.userId,
+      updateDoc,
+      { new:true, runValidators:true }
+    ).select("_id username email phone role onboarded profile createdAt");
 
     return res.json({ success:true, user:updated });
-  }catch(e){
-    console.error("updateAccount lỗi:", e?.message||e);
+  }catch(err){
+    const map = toValidationMap(err);
+    if (map) return res.status(422).json({ message:"Dữ liệu không hợp lệ", errors:map });
+    console.error("updateAccount lỗi:", err?.message||err);
     return res.status(500).json({ message:"Lỗi máy chủ" });
   }
 };
@@ -242,11 +267,16 @@ export const uploadAvatar = async (req,res)=>{
     const baseName=`${req.userId||"guest"}-${Date.now()}`, outPath=path.join(AVATAR_DIR,`${baseName}.webp`);
     await sharp(file.buffer).rotate().resize(512,512,{fit:"cover",position:"center"}).toFormat("webp",{quality:85}).toFile(outPath);
     const avatarUrl=`/uploads/avatars/${baseName}.webp`;
-    const updatedUser=await User.findByIdAndUpdate(req.userId,{$set:{"profile.avatarUrl":avatarUrl}},{new:true,runValidators:true})
-      .select("_id username email role onboarded profile createdAt");
+    const updatedUser=await User.findByIdAndUpdate(
+      req.userId,
+      {$set:{"profile.avatarUrl":avatarUrl}},
+      {new:true,runValidators:true}
+    ).select("_id username email role onboarded profile createdAt");
     if(!updatedUser) return res.status(404).json({ success:false, message:"Không tìm thấy người dùng" });
     return res.json({ success:true, avatarUrl, user:updatedUser });
   }catch(e){
+    const map = toValidationMap(e);
+    if (map) return res.status(422).json({ success:false, message:"Dữ liệu không hợp lệ", errors:map });
     console.error("uploadAvatar lỗi:", e?.message||e);
     return res.status(500).json({ success:false, message:"Lỗi máy chủ" });
   }

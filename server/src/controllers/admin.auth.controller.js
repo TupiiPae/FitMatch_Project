@@ -1,5 +1,17 @@
 import { Admin } from "../models/Admin.js";
-import { generateToken } from "../utils/tokens.js"; // ta sẽ tái dùng, nhưng truyền role chuẩn
+import { generateToken } from "../utils/tokens.js";
+
+// Gom lỗi validate (phòng khi sau này có tạo/sửa admin trong file này)
+function toValidationMap(err) {
+  if (!err || err.name !== "ValidationError") return null;
+  const out = {};
+  for (const k of Object.keys(err.errors || {})) {
+    const e = err.errors[k];
+    const path = (e && e.path) || k;
+    out[path] = e.message || "Dữ liệu không hợp lệ";
+  }
+  return out;
+}
 
 export const adminLogin = async (req, res) => {
   try {
@@ -7,11 +19,10 @@ export const adminLogin = async (req, res) => {
     if (!identifier || !password) {
       return res.status(400).json({ message:"Thiếu thông tin đăng nhập" });
     }
-    const query = identifier.includes("@")
-      ? { email: identifier.toLowerCase() }
-      : { username: identifier.trim() };
 
-    const admin = await Admin.findOne(query).select("+password");
+    // Admin model KHÔNG còn email -> chỉ cho đăng nhập bằng username
+    const username = String(identifier || "").trim();
+    const admin = await Admin.findOne({ username }).select("+password");
     if (!admin) return res.status(400).json({ message:"Tài khoản không tồn tại" });
     if (admin.status !== "active") return res.status(403).json({ message:"Tài khoản bị khóa" });
 
@@ -23,9 +34,11 @@ export const adminLogin = async (req, res) => {
 
     return res.json({
       token,
-      user: { id: admin._id, username: admin.username, email: admin.email, role },
+      user: { id: admin._id, username: admin.username, nickname: admin.nickname, role },
     });
   } catch (e) {
+    const map = toValidationMap(e);
+    if (map) return res.status(422).json({ message:"Dữ liệu không hợp lệ", errors:map });
     console.error("[adminLogin]", e);
     return res.status(500).json({ message:"Lỗi server" });
   }
