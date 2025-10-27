@@ -98,6 +98,7 @@ const userSchema = new mongoose.Schema({
     maxlength:[200,"Mật khẩu tối đa 200 ký tự"],
     select:false
   },
+  blocked:{ type:Boolean, default:false },
   role:{type:String,enum:["user","admin"],default:"user"},
   onboarded:{type:Boolean,default:false},
   profile:profileSchema

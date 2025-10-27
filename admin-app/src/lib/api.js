@@ -8,15 +8,19 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+// ==== Request interceptor: gắn Bearer token từ localStorage (admin_auth) ====
 api.interceptors.request.use((cfg) => {
   const raw = localStorage.getItem("admin_auth");
   if (raw) {
-    const { token } = JSON.parse(raw);
-    if (token) cfg.headers.Authorization = `Bearer ${token}`;
+    try {
+      const { token } = JSON.parse(raw);
+      if (token) cfg.headers.Authorization = `Bearer ${token}`;
+    } catch {}
   }
   return cfg;
 });
 
+// ==== Response interceptor: callback khi 401 để logout/redirect nếu cần ====
 let _onUnauthorized = null;
 export const setUnauthorizedHandler = (fn) => { _onUnauthorized = fn; };
 
@@ -30,11 +34,13 @@ api.interceptors.response.use(
   }
 );
 
+// =================== AUTH (ADMIN) ===================
 export const adminLogin = async ({ username, password }) => {
   try {
     const r = await api.post("/api/admin/auth/login", { username, password });
     return r.data;
   } catch (e) {
+    // Fallback sang user login (tuỳ hệ thống của bạn)
     if (e?.response?.status === 404) {
       const r2 = await api.post("/api/auth/login", { identifier: username, password });
       return r2.data;
@@ -58,6 +64,7 @@ export const adminMe = async () => {
 
 export const getStats = () => api.get("/api/admin/stats").then((r) => r.data);
 
+// =================== ADMIN ACCOUNTS (Level 1) ===================
 export const listAdminAccounts = (q = "") =>
   api.get("/api/admin/admin-accounts", { params: { q } }).then((r) => r.data);
 export const createAdminAccount = (body) =>
@@ -69,11 +76,9 @@ export const deleteAdminAccount = (id) =>
 export const blockAdminAccount = (id) =>
   api.post(`/api/admin/admin-accounts/${id}/block`).then((r) => r.data);
 
-/* ---------------------------------------------
- * Foods: luôn trả về { items, total, limit, skip }
- * --------------------------------------------- */
+// =================== FOODS (ADMIN) ===================
+// Luôn chuẩn hoá payload về { items, total, limit, skip }
 const normalizeListPayload = (data) => {
-  // chấp nhận mọi kiểu
   let items =
     Array.isArray(data) ? data :
     data?.items ?? data?.docs ?? data?.data ?? data?.results ?? data?.result ??
@@ -182,9 +187,12 @@ export const rejectFood = async (id, reason = "") => {
   }
 };
 
+// =================== USERS (ADMIN) ===================
 export const listUsers = (params) =>
   api.get("/api/admin/users", { params }).then((r) => r.data);
+
 export const blockUser = (id) =>
   api.post(`/api/admin/users/${id}/block`).then((r) => r.data);
+
 export const unblockUser = (id) =>
   api.post(`/api/admin/users/${id}/unblock`).then((r) => r.data);
