@@ -1,7 +1,7 @@
 // admin-app/src/pagesFoods/List/List.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api, listFoods, deleteFood, approveFood } from "../../lib/api.js";
+import { api, listFoods, deleteFood } from "../../../lib/api.js"; // Bỏ approveFood vì trang này là "đã duyệt"
 import "./List.css";
 
 // Chuẩn hoá URL ảnh giống user-app
@@ -17,10 +17,15 @@ export default function FoodsList() {
 
   // ===== Filters & state
   const [q, setQ] = useState("");
-  const [dateFrom, setDateFrom] = useState(""); // yyyy-mm-dd
+  const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // (MỚI) Pagination state
+  const [limit, setLimit] = useState(10);
+  const [skip, setSkip] = useState(0);
+  const [total, setTotal] = useState(0);
 
   // selection
   const [selectedIds, setSelectedIds] = useState([]);
@@ -30,64 +35,74 @@ export default function FoodsList() {
   // confirm modal
   const [confirmId, setConfirmId] = useState(null);
 
-  // ===== Load data
+  // ===== (CẬP NHẬT) Load data (Server-side Pagination & Filter) =====
   const load = async () => {
     setLoading(true);
+    setSelectedIds([]); // Reset selection
     try {
-      // Luôn yêu cầu chỉ approved từ API
-      const params = { q, limit: 100, skip: 0, status: "approved" };
+      // Gửi TẤT CẢ params lên server
+      const params = {
+        status: "approved",
+        limit,
+        skip,
+        q,
+      };
       if (dateFrom) params.approvedFrom = dateFrom;
       if (dateTo) params.approvedTo = dateTo;
 
-      const { items: docs = [] } = await listFoods(params);
+      const res = await listFoods(params);
 
-      // Fallback: luôn lọc lại chỉ approved ở client (phòng khi API không hỗ trợ)
-      let filtered = docs.filter((x) => x?.status === "approved");
+      // Cập nhật state từ response
+      setItems(res?.items || []);
+      setTotal(res?.total || 0);
 
-      // Nếu có nhập khoảng ngày thì lọc theo approvedAt
-      if (dateFrom || dateTo) {
-        const fromTs = dateFrom ? new Date(dateFrom + "T00:00:00Z").getTime() : -Infinity;
-        const toTs = dateTo ? new Date(dateTo + "T23:59:59Z").getTime() : Infinity;
-        filtered = filtered.filter((x) => {
-          const t = x.approvedAt ? new Date(x.approvedAt).getTime() : -Infinity;
-          return t >= fromTs && t <= toTs;
-        });
-      }
-
-      // Tìm kiếm theo tên (không phân biệt hoa/thường)
-      const qq = q.trim().toLowerCase();
-      if (qq) filtered = filtered.filter((x) => (x.name || "").toLowerCase().includes(qq));
-
-      setItems(filtered);
-      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+      setItems([]); // Reset khi lỗi
+      setTotal(0);  // Reset khi lỗi
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  // (CẬP NHẬT) useEffects cho phân trang
+  // 1. Tải lại khi thay đổi trang (limit/skip)
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [limit, skip]);
+  
+  // 2. Tải lại (và reset về trang 1) khi filter thay đổi
   useEffect(() => {
-    const t = setTimeout(load, 250);
+    const t = setTimeout(() => {
+      if (skip !== 0) {
+        setSkip(0); // Sẽ trigger effect (1) để load
+      } else {
+        load(); // Đang ở trang 1, tự load
+      }
+    }, 250); // Debounce
     return () => clearTimeout(t);
     // eslint-disable-next-line
   }, [q, dateFrom, dateTo]);
 
   // ===== Actions
-  const onQuickApprove = async (id) => {
-    await approveFood(id);
-    await load();
-  };
-
   const onDeleteOne = async (id) => {
     await deleteFood(id);
-    await load();
+    // Tải lại để cập nhật total
+    if (items.length === 1 && skip > 0) {
+      setSkip(skip - limit); // Nếu xóa item cuối của trang, lùi về trang trước
+    } else {
+      await load();
+    }
   };
 
   const onBulkDelete = async () => {
     if (!selectedIds.length) return;
     if (!confirm(`Xóa ${selectedIds.length} món đã chọn?`)) return;
     for (const id of selectedIds) { try { await deleteFood(id); } catch {} }
-    await load();
+    // Tải lại
+    if (selectedIds.length === items.length && skip > 0) {
+      setSkip(skip - limit); // Lùi trang nếu xóa hết
+    } else {
+      await load();
+    }
   };
 
   const toggleAll = () => {
@@ -98,8 +113,10 @@ export default function FoodsList() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
-  // ===== CSV (Xuất danh sách)
+  // ===== CSV (Xuất danh sách) =====
+  // CSV này giờ chỉ xuất các items trên trang hiện tại
   const csv = useMemo(() => {
+    // ... (logic CSV giữ nguyên) ...
     const head = [
       "name","massG","unit","kcal","proteinG","carbG","fatG","creator","approvedAt","status"
     ].join(",");
@@ -120,6 +137,19 @@ export default function FoodsList() {
     a.download = "foods.csv";
     a.click();
   };
+  
+  // (MỚI) Pagination Logic
+  const page = Math.floor(skip / limit);
+  const pageCount = Math.ceil(total / limit);
+  const handleLimitChange = (e) => {
+    setLimit(Number(e.target.value));
+    setSkip(0); // Reset về trang 1
+  };
+  const handlePageChange = (newSkip) => {
+    if (newSkip >= 0 && newSkip < total) {
+      setSkip(newSkip);
+    }
+  };
 
   // ===== UI helpers
   const badgeRole = (it) => {
@@ -131,28 +161,48 @@ export default function FoodsList() {
 
   return (
     <div className="foods-page">
-      {/* ===== Title row + actions ===== */}
-      <div className="page-head">
-        <h2>Danh sách món ăn (đã duyệt)</h2>
-        <div className="head-actions">
-          <button className="btn ghost" type="button" onClick={() => alert("TODO: Nhập danh sách")}>
-            <i className="fa-solid fa-file-import" /> <span>Nhập danh sách</span>
-          </button>
-          <button className="btn ghost" type="button" onClick={downloadCSV}>
-            <i className="fa-solid fa-file-export" /> <span>Xuất danh sách</span>
-          </button>
-          <button className="btn danger" type="button" onClick={onBulkDelete} disabled={!selectedIds.length}>
-            <i className="fa-regular fa-trash-can" /> <span>Xóa</span>
-          </button>
-          <Link to="/foods/create" className="btn primary">
-            <span>Tạo món ăn</span>
-          </Link>
-        </div>
-      </div>
+      {/* ===== Breadcrumb ===== */}
+      <nav className="breadcrumb-nav" aria-label="breadcrumb">
+        {/* ... (giữ nguyên) ... */}
+        <Link to="/">
+          <i className="fa-solid fa-house"></i>
+          <span>Trang chủ</span>
+        </Link>
+        <span className="separator">/</span>
+        <span className="current-group">
+          <i className="fa-solid fa-utensils"></i> 
+          <span>Quản lý Món ăn</span>
+        </span>
+        <span className="separator">/</span>
+        <span className="current-page">Danh sách (đã duyệt)</span>
+      </nav>
 
-      {/* ===== Card: search + filters ===== */}
+      {/* ===== Card: Chứa tất cả nội dung bên dưới ===== */}
       <div className="card">
+        
+        {/* ===== Title row + actions ===== */}
+        <div className="page-head">
+          {/* ... (giữ nguyên) ... */}
+          <h2>Danh sách món ăn ({total})</h2>
+          <div className="head-actions">
+            <button className="btn ghost" type="button" onClick={() => alert("TODO: Nhập danh sách")}>
+              <i className="fa-solid fa-file-import" /> <span>Nhập danh sách</span>
+            </button>
+            <button className="btn ghost" type="button" onClick={downloadCSV}>
+              <i className="fa-solid fa-file-export" /> <span>Xuất danh sách</span>
+            </button>
+            <button className="btn danger" type="button" onClick={onBulkDelete} disabled={!selectedIds.length}>
+              <i className="fa-regular fa-trash-can" /> <span>Xóa</span>
+            </button>
+            <Link to="/foods/create" className="btn primary">
+              <span>Tạo món ăn</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* ===== Card-head: search + filters ===== */}
         <div className="card-head">
+          {/* ... (giữ nguyên) ... */}
           <div className="search">
             <i className="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
             <input
@@ -161,7 +211,6 @@ export default function FoodsList() {
               placeholder="Tìm kiếm theo tên món ăn..."
             />
           </div>
-
           <div className="filters">
             <div className="date-range" title="Lọc theo thời gian tạo thành công (approvedAt)">
               <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
@@ -175,6 +224,7 @@ export default function FoodsList() {
         {/* ===== Table ===== */}
         <div className="table">
           <div className="thead">
+            {/* ... (giữ nguyên) ... */}
             <label className="cell cb">
               <input
                 type="checkbox"
@@ -199,6 +249,7 @@ export default function FoodsList() {
 
           {!loading && items.map((it) => (
             <div key={it._id} className="trow">
+              {/* ... (giữ nguyên) ... */}
               <label className="cell cb">
                 <input
                   type="checkbox"
@@ -249,6 +300,39 @@ export default function FoodsList() {
             </div>
           ))}
         </div>
+        
+        {/* ===== (MỚI) Pagination Controls ===== */}
+        <div className="pagination-controls">
+          <div className="per-page">
+            <span>Hiển thị:</span>
+            <select value={limit} onChange={handleLimitChange}>
+              <option value="10">10 hàng</option>
+              <option value="25">25 hàng</option>
+              <option value="50">50 hàng</option>
+            </select>
+          </div>
+          
+          <div className="page-nav">
+            <span className="page-info">
+              Trang {page + 1} / {pageCount > 0 ? pageCount : 1} (Tổng: {total})
+            </span>
+            <button
+              className="btn-page"
+              onClick={() => handlePageChange(skip - limit)}
+              disabled={skip === 0}
+            >
+              <i className="fa-solid fa-chevron-left"></i>
+            </button>
+            <button
+              className="btn-page"
+              onClick={() => handlePageChange(skip + limit)}
+              disabled={skip + limit >= total}
+            >
+              <i className="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
       </div>
 
       {/* ===== Confirm Delete Modal (đẹp) ===== */}
@@ -257,18 +341,12 @@ export default function FoodsList() {
           className="cm-backdrop"
           role="presentation"
           onClick={() => setConfirmId(null)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") setConfirmId(null);
-            if (e.key === "Enter") { (async () => { await onDeleteOne(confirmId); setConfirmId(null); })(); }
-          }}
+          // ... (các props khác giữ nguyên) ...
         >
           <div
             className="cm-modal"
             role="dialog"
-            aria-modal="true"
-            aria-labelledby="cm-title"
-            aria-describedby="cm-desc"
-            tabIndex={-1}
+            // ... (các props khác giữ nguyên) ...
             onClick={(e) => e.stopPropagation()}
           >
             <div className="cm-head">

@@ -8,10 +8,10 @@ import Dashboard from "./pages/Dashboard/Dashboard.jsx";
 import SidebarLayout from "./components/SidebarLayout/SidebarLayout.jsx";
 import { ProtectedRoute, OnlyLevel1 } from "./components/ProtectedRoute.jsx";
 
-import FoodsList from "./pagesFoods/List/List.jsx";
-import FoodCreate from "./pagesFoods/Create/Create.jsx";
-import FoodsReview from "./pagesFoods/Review/Review.jsx";
-import UsersList from "./pagesUsers/List/List.jsx";
+import FoodsList from "./pages/pagesFoods/List/List.jsx";
+import FoodCreate from "./pages/pagesFoods/Create/Create.jsx";
+import FoodsReview from "./pages/pagesFoods/Review/Review.jsx";
+import UsersList from "./pages/pagesUsers/List/List.jsx";
 
 const Placeholder = ({ title }) => <div style={{ padding:16 }}>{title} (đang phát triển)</div>;
 
@@ -25,9 +25,6 @@ export default function App(){
 
       {/* Các route cần đăng nhập */}
       <Route element={<ProtectedRoute><SidebarLayout /></ProtectedRoute>}>
-        {/* ❌ BỎ index này đi (đang gây redirect vào dashboard) */}
-        {/* <Route index element={<Navigate to="/dashboard" replace />} /> */}
-
         <Route path="/dashboard" element={<Dashboard />} />
 
         <Route element={<OnlyLevel1 />}>

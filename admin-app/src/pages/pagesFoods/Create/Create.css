@@ -1,0 +1,262 @@
+/* ===== Layout tổng thể ===== */
+.food-create-page {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ===== (LẤY TỪ LIST.CSS) Định nghĩa các thành phần dùng chung ===== */
+.breadcrumb-nav {
+  display: flex; align-items: center; gap: 8px; font-size: 14px;
+  color: #6b7280; padding: 0 4px;
+}
+.breadcrumb-nav a {
+  color: #374151; text-decoration: none; display: flex; align-items: center; gap: 6px;
+}
+.breadcrumb-nav a:hover { text-decoration: underline; }
+.breadcrumb-nav .current-group { display: flex; align-items: center; gap: 6px; }
+.breadcrumb-nav .current-page { font-weight: 600; color: #111827; }
+.breadcrumb-nav .separator { font-size: 12px; color: #9ca3af; }
+.breadcrumb-nav i { font-size: 12px; }
+
+.card {
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 12px;
+}
+
+.page-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 4px 12px 12px; border-bottom: 1px solid #f3f4f6;
+}
+.page-head h2 {
+  font-size: 20px; font-weight: 700; color: #0f172a; margin: 0;
+}
+.head-actions { display: flex; align-items: center; gap: 8px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid #E5E7EB;
+  background: #fff; color: #111827; cursor: pointer;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: all .15s ease;
+}
+.btn:hover { background: #f9fafb; }
+.btn.primary { background: #5b6bff; border-color: #5b6bff; color: #fff; }
+.btn.primary:hover { background: #4a5aff; }
+.btn.ghost { background: #fff; }
+.btn:active { transform: translateY(1px); }
+.btn i { font-size: 14px; }
+/* ===== KẾT THÚC CSS DÙNG CHUNG ===== */
+
+
+/* ===== (MỚI) Layout Form 2 cột + Kẻ dọc ===== */
+.fc-form-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr; /* Cột 1 cố định, Cột 2 co giãn */
+  gap: 0; /* Tắt gap để border-right hoạt động như 1 đường kẻ */
+  padding: 12px;
+}
+
+.fc-image-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* (YÊU CẦU) Đường kẻ dọc */
+  border-right: 1px solid #e5e7eb;
+  padding-right: 24px;
+}
+
+.fc-fields-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 24px;
+}
+
+/* ===== (MỚI) Tiêu đề nhóm + Kẻ ngang ===== */
+.fc-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  
+  /* (YÊU CẦU) Thanh dọc màu bên trái tiêu đề (giống hình) */
+  position: relative;
+  padding-left: 14px; 
+}
+.fc-section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background-color: #F7444E; /* Màu --coral */
+  border-radius: 2px;
+}
+
+/* (YÊU CẦU) Đường kẻ ngang */
+.fc-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 8px 0; /* Tăng khoảng cách */
+}
+
+
+/* ===== (MỚI) Box xem trước ảnh (giữ nguyên) ===== */
+.fc-image-box {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  background: #f9fafb;
+  padding: 8px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.fc-image-box img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 8px;
+}
+.fc-image-box .placeholder {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; color: #9ca3af;
+}
+.fc-image-box .placeholder i { font-size: 42px; }
+.fc-image-box .placeholder span { font-size: 14px; font-weight: 500; }
+
+
+/* ===== (MỚI - YÊU CẦU 1) CSS cho Float Label Input ===== */
+.fc-field {
+  position: relative; /* Quan trọng */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Box nhập liệu (input, select, textarea) */
+.fc-field input,
+.fc-field select,
+.fc-field textarea {
+  height: 56px; /* Chiều cao cố định */
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 20px 12px 8px 12px; /* Padding (trên > dưới) để chừa chỗ cho label */
+  font-size: 14px;
+  background: #fff;
+  transition: all 0.15s ease;
+}
+.fc-textarea {
+  height: auto; /* Textarea tự động chiều cao */
+  min-height: 120px;
+}
+
+/* Label (chữ tiêu đề) */
+.fc-field label {
+  position: absolute;
+  left: 13px;
+  top: 50%; /* Căn giữa theo chiều dọc */
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #6b7280;
+  pointer-events: none;
+  transition: all 0.15s ease-out;
+  background: transparent;
+  padding: 0 2px;
+}
+
+/* TRẠNG THÁI NỔI (FLOAT) */
+/* Khi input được focus HOẶC có chữ (không rỗng placeholder) */
+.fc-field input:focus + label,
+.fc-field input:not(:placeholder-shown) + label,
+.fc-field textarea:focus + label,
+.fc-field textarea:not(:placeholder-shown) + label {
+  top: 0; /* Di chuyển lên trên */
+  transform: translateY(-50%) scale(0.8); /* Thu nhỏ */
+  color: #5b6bff; /* Đổi màu khi focus */
+  background: #fff; /* Nền trắng để che đường viền */
+  font-weight: 600;
+}
+/* Trạng thái không focus nhưng có chữ */
+.fc-field input:not(:placeholder-shown):not(:focus) + label,
+.fc-field textarea:not(:placeholder-shown):not(:focus) + label {
+  color: #374151; /* Màu chữ đậm hơn khi không focus */
+}
+
+/* Khi focus vào input */
+.fc-field input:focus,
+.fc-field select:focus,
+.fc-field textarea:focus {
+  border-color: #5b6bff;
+  box-shadow: 0 0 0 2px #c7d2fe;
+  outline: none;
+}
+
+/* Style riêng cho <select> (label luôn nổi) */
+.fc-field-select label {
+  top: 0;
+  transform: translateY(-50%) scale(0.8);
+  color: #374151;
+  background: #fff;
+  font-weight: 600;
+}
+.fc-field-select select {
+  padding-top: 14px; /* Giảm padding cho select */
+  padding-bottom: 14px;
+}
+
+
+/* ===== (MỚI - YÊU CẦU 3) Lưới layout cho các trường ===== */
+.fc-fields-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.fc-fields-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+.fc-grid-span-2 {
+  grid-column: 1 / -1;
+}
+
+/* Thông báo */
+.fc-ok {
+  margin: 0 12px 12px 12px;
+  background: #ecfdf5; border: 1px solid #a7f3d0;
+  color: #065f46; padding: 12px; border-radius: 10px;
+  font-weight: 500;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 980px) {
+  /* Chuyển về 1 cột */
+  .fc-form-layout {
+    grid-template-columns: 1fr;
+  }
+  .fc-image-col {
+    border-right: none; /* Bỏ đường kẻ dọc */
+    padding-right: 0;
+    border-bottom: 1px solid #e5e7eb; /* Thay bằng kẻ ngang */
+    padding-bottom: 24px;
+  }
+  .fc-fields-col {
+    padding-left: 0;
+    padding-top: 12px;
+  }
+}
+@media (max-width: 768px) {
+  .food-create-page { padding: 18px; }
+  .page-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .head-actions { width: 100%; justify-content: flex-end; }
+  /* Chuyển lưới về 1 cột */
+  .fc-fields-grid-2,
+  .fc-fields-grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .fc-grid-span-2 { grid-column: auto; }
+}

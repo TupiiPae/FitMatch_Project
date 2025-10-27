@@ -1,9 +1,45 @@
 /* ===== Page layout (30px padding) ===== */
 .foods-page{
-  padding: 30px;
+  padding: 10px;
   display:flex;
   flex-direction:column;
-  gap:16px;
+  gap:20px;
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #6b7280; /* Màu chữ xám */
+  padding: 0 4px; /* Căn lề nhẹ */
+}
+.breadcrumb-nav a {
+  color: #374151; /* Màu chữ đậm hơn cho link */
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.breadcrumb-nav a:hover {
+  text-decoration: underline;
+}
+.breadcrumb-nav .current-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Trang hiện tại (chữ cuối) */
+.breadcrumb-nav .current-page {
+  font-weight: 600;
+  color: #111827; /* Màu đen */
+}
+.breadcrumb-nav .separator {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.breadcrumb-nav i {
+  font-size: 12px;
 }
 
 /* ===== Title row ===== */
@@ -19,7 +55,7 @@
   display:inline-flex; align-items:center; gap:8px;
   height:36px; padding:0 12px; border-radius:10px; border:1px solid #E5E7EB;
   background:#fff; color:#111827; cursor:pointer;
-  transition: box-shadow .15s ease, transform .1s ease, background .15s ease;
+  transition: box-shadow .15s ease, transform .1s ease, background .15s ease; text-decoration: none;
 }
 .btn:hover{ background:#f9fafb; }
 .btn.primary{ background:#5b6bff; border-color:#5b6bff; color:#fff; }
@@ -63,15 +99,16 @@
 .thead, .trow{
   display:grid;
   grid-template-columns:
-    40px
-    90px
-    2fr
-    140px
-    140px
-    260px
-    140px
-    220px
-    120px;
+    40px        /* checkbox */
+    2fr         /* tên */
+    100px       /* giới tính */
+    220px       /* email */
+    140px       /* sđt */
+    120px       /* quốc gia */
+    280px       /* địa chỉ */
+    180px       /* ngày tạo */
+    120px       /* trạng thái */
+    120px;      /* thao tác */
   align-items:center;
   column-gap:12px;
   padding:10px 12px;
@@ -252,4 +289,56 @@
   .cell.macros{ grid-column: 4; grid-row:2; }
   .cell.creator, .cell.approved{ display:none; }
   .cell.act{ grid-column: 4; grid-row:1; justify-content:flex-end; }
+}
+
+/* ===== (MỚI) Pagination Controls ===== */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #F9FAFB; /* Nền giống thead */
+  border-top: 1px solid #E5E7EB;
+  /* Bo góc dưới cho khớp với card */
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.per-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+.per-page select {
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: #fff;
+}
+.page-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.page-info {
+  font-size: 14px;
+  color: #374151;
+}
+.btn-page {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid #D1D5DB;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.btn-page:hover { background: #f9fafb; }
+.btn-page:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f9fafb;
 }
