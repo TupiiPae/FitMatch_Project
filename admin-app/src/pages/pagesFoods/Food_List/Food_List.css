@@ -141,9 +141,9 @@
 .chip{
   padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; color:#fff;
 }
-.chip.p{ background:#b91c1c; }  /* Đạm */
-.chip.c{ background:#6d28d9; }  /* Đường bột */
-.chip.f{ background:#15803d; }  /* Chất béo */
+.chip.p{ background:#b91c1c; }  
+.chip.c{ background:#6C63FF; }  
+.chip.f{ background:#008080; }  
 
 /* creator badge */
 .role-badge{

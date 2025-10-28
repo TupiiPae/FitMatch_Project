@@ -2,29 +2,35 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { listFoods, approveFood, rejectFood, api } from "../../../lib/api";
-import "./Review.css"; // Đảm bảo đã import file CSS
+import "./Review.css";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
 
 export default function FoodsReview() {
-  // ... (Tất cả state và logic giữ nguyên) ...
+  // --- state ---
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [confirm, setConfirm] = useState(null);
+  const [confirm, setConfirm] = useState(null); // {mode, item|items, reason?}
   const [limit, setLimit] = useState(10);
   const [skip, setSkip] = useState(0);
   const [total, setTotal] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
-  const allChecked = items.length > 0 && selectedIds.length === items.length;
+
+  const allChecked  = items.length > 0 && selectedIds.length === items.length;
   const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
+
+  // --- load only PENDING ---
   const load = async () => {
     setLoading(true);
     setSelectedIds([]);
     try {
       const res = await listFoods({ status: "pending", limit, skip });
-      setItems(res?.items || []);
-      setTotal(res?.total || 0);
+      // Lọc an toàn để CHẮC CHẮN chỉ còn pending (phòng khi public API trả khác)
+      const onlyPending = (res?.items || []).filter((x) => x?.status === "pending");
+      setItems(onlyPending);
+      // Nếu total từ BE không đáng tin (do lọc client), có thể dùng length
+      setTotal(res?.total ?? onlyPending.length);
     } catch (e) {
       console.error(e);
       setItems([]);
@@ -34,10 +40,13 @@ export default function FoodsReview() {
     }
   };
   useEffect(() => { load(); }, [limit, skip]);
-  const onApproveAsk = (item) => setConfirm({ mode: "approve", item });
-  const onRejectAsk = (item) => setConfirm({ mode: "reject", item, reason: "" });
-  const onBulkApproveAsk = () => setConfirm({ mode: "approve-bulk", items: selectedIds });
-  const onBulkRejectAsk = () => setConfirm({ mode: "reject-bulk", items: selectedIds, reason: "" });
+
+  // --- actions ---
+  const onApproveAsk      = (item) => setConfirm({ mode: "approve", item });
+  const onRejectAsk       = (item) => setConfirm({ mode: "reject", item, reason: "" });
+  const onBulkApproveAsk  = () => setConfirm({ mode: "approve-bulk", items: selectedIds });
+  const onBulkRejectAsk   = () => setConfirm({ mode: "reject-bulk",  items: selectedIds, reason: "" });
+
   const onConfirm = async () => {
     if (!confirm) return;
     setLoading(true);
@@ -47,13 +56,9 @@ export default function FoodsReview() {
       } else if (confirm.mode === "reject") {
         await rejectFood(confirm.item._id, confirm.reason || "");
       } else if (confirm.mode === "approve-bulk") {
-        for (const id of confirm.items) {
-          try { await approveFood(id); } catch {}
-        }
+        for (const id of confirm.items) { try { await approveFood(id); } catch {} }
       } else if (confirm.mode === "reject-bulk") {
-        for (const id of confirm.items) {
-          try { await rejectFood(id, confirm.reason || ""); } catch {}
-        }
+        for (const id of confirm.items) { try { await rejectFood(id, confirm.reason || ""); } catch {} }
       }
     } catch (e) {
       console.error(e);
@@ -63,6 +68,8 @@ export default function FoodsReview() {
       await load();
     }
   };
+
+  // --- selection ---
   const toggleAll = () => {
     if (allChecked) setSelectedIds([]);
     else setSelectedIds(items.map((x) => x._id));
@@ -70,23 +77,19 @@ export default function FoodsReview() {
   const toggleOne = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
+
+  // --- paging ---
   const page = Math.floor(skip / limit);
-  const pageCount = Math.ceil(total / limit);
-  const handleLimitChange = (e) => {
-    setLimit(Number(e.target.value));
-    setSkip(0);
-  };
-  const handlePageChange = (newSkip) => {
-    if (newSkip >= 0 && newSkip < total) {
-      setSkip(newSkip);
-    }
-  };
+  const pageCount = Math.ceil((total || 0) / limit);
+  const handleLimitChange = (e) => { setLimit(Number(e.target.value)); setSkip(0); };
+  const handlePageChange  = (newSkip) => { if (newSkip >= 0 && newSkip < total) setSkip(newSkip); };
+
   const fmtTime = (iso) => (iso ? new Date(iso).toLocaleString() : "—");
+
   const confirmInfo = useMemo(() => {
     if (!confirm) return {};
-    const isBulk = confirm.mode.includes("bulk");
+    const isBulk    = confirm.mode.includes("bulk");
     const isApprove = confirm.mode.includes("approve");
-    
     return {
       title: isApprove
         ? (isBulk ? "Duyệt hàng loạt" : "Xác nhận duyệt món")
@@ -100,15 +103,10 @@ export default function FoodsReview() {
     };
   }, [confirm]);
 
-
   return (
-    // ===== THAY ĐỔI Ở ĐÂY =====
-    <div className="foods-page food-review-page"> 
-    {/* ===== KẾT THÚC THAY ĐỔI ===== */}
-
-      {/* ===== Breadcrumb ===== */}
+    <div className="foods-page food-review-page">
+      {/* Breadcrumb */}
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
-        {/* ... (Giữ nguyên) ... */}
         <Link to="/">
           <i className="fa-solid fa-house"></i>
           <span>Trang chủ</span>
@@ -122,8 +120,7 @@ export default function FoodsReview() {
         <span className="current-page">Duyệt món ăn</span>
       </nav>
 
-      {/* ===== Card Layout ===== */}
-      {/* (Phần còn lại của JSX giữ nguyên y hệt) */}
+      {/* Card */}
       <div className="card">
         <div className="page-head">
           <h2>Duyệt món ăn ({total} món chờ)</h2>
@@ -139,8 +136,9 @@ export default function FoodsReview() {
             </button>
           </div>
         </div>
+
         <div className="table">
-          <div className="thead review-thead"> {/* Class mới để custom grid */}
+          <div className="thead review-thead">
             <label className="cell cb">
               <input
                 type="checkbox"
@@ -165,7 +163,7 @@ export default function FoodsReview() {
           {!loading && items.length === 0 && <div className="empty">Không có món ăn nào chờ duyệt.</div>}
 
           {!loading && items.map((it) => (
-            <div key={it._id} className="trow review-trow"> {/* Class mới để custom grid */}
+            <div key={it._id} className="trow review-trow">
               <label className="cell cb">
                 <input
                   type="checkbox"
@@ -174,35 +172,43 @@ export default function FoodsReview() {
                   aria-label={`Chọn ${it.name}`}
                 />
               </label>
+
               <div className="cell img">
-                {it.imageUrl
-                  ? (
-                    <img
-                      src={toAbs(it.imageUrl)}
-                      alt={it.name}
-                      onError={(e) => { e.currentTarget.src = "/images/food-placeholder.jpg"; }}
-                    />
-                  )
-                  : <div className="img-fallback"><i className="fa-regular fa-image"></i></div>}
+                {it.imageUrl ? (
+                  <img
+                    src={toAbs(it.imageUrl)}
+                    alt={it.name}
+                    onError={(e) => { e.currentTarget.src = "/images/food-placeholder.jpg"; }}
+                  />
+                ) : (
+                  <div className="img-fallback"><i className="fa-regular fa-image"></i></div>
+                )}
               </div>
+
               <div className="cell name">
                 <div className="title">{it.name || "—"}</div>
                 <div className="sub">#{String(it._id).slice(-6)}</div>
               </div>
+
               <div className="cell kcal">{it.kcal ?? "—"}</div>
+
               <div className="cell macros">
                 <span className="chip p">{it.proteinG ?? 0}g</span>
                 <span className="chip c">{it.carbG ?? 0}g</span>
                 <span className="chip f">{it.fatG ?? 0}g</span>
               </div>
+
               <div className="cell creator">{it.createdBy?.profile?.nickname || it.createdBy?.username || "N/A"}</div>
               <div className="cell email">{it.createdBy?.email || "N/A"}</div>
               <div className="cell created">{fmtTime(it.createdAt)}</div>
+
               <div className="cell status">
+                {/* Chỉ pending được đưa vào table, nên badge cố định */}
                 <span className="status-badge is-pending">Chờ duyệt</span>
               </div>
+
               <div className="cell act">
-                <button className="btn-sm ok" title="Duyệt" onClick={() => onApproveAsk(it)}>
+                <button className="btn-sm ok"  title="Duyệt"   onClick={() => onApproveAsk(it)}>
                   <i className="fa-regular fa-circle-check"></i> <span>Duyệt</span>
                 </button>
                 <button className="btn-sm bad" title="Từ chối" onClick={() => onRejectAsk(it)}>
@@ -212,6 +218,7 @@ export default function FoodsReview() {
             </div>
           ))}
         </div>
+
         <div className="pagination-controls">
           <div className="per-page">
             <span>Hiển thị:</span>
@@ -221,76 +228,62 @@ export default function FoodsReview() {
               <option value="50">50 hàng</option>
             </select>
           </div>
+
           <div className="page-nav">
             <span className="page-info">
               Trang {page + 1} / {pageCount > 0 ? pageCount : 1} (Tổng: {total})
             </span>
-            <button
-              className="btn-page"
-              onClick={() => handlePageChange(skip - limit)}
-              disabled={skip === 0}
-            >
+            <button className="btn-page" onClick={() => handlePageChange(skip - limit)} disabled={skip === 0}>
               <i className="fa-solid fa-chevron-left"></i>
             </button>
-            <button
-              className="btn-page"
-              onClick={() => handlePageChange(skip + limit)}
-              disabled={skip + limit >= total}
-            >
+            <button className="btn-page" onClick={() => handlePageChange(skip + limit)} disabled={skip + limit >= total}>
               <i className="fa-solid fa-chevron-right"></i>
             </button>
           </div>
         </div>
       </div>
+
       {confirm && (
-      <div
-        className="cm-backdrop"
-        role="presentation"
-        onClick={() => setConfirm(null)}
-      >
-        <div
-          className={`cm-modal ${confirmInfo.btnClass === 'ok' ? 'is-approve' : 'is-reject'}`}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="cm-title"
-          tabIndex={-1}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="cm-head">
-             <div className="cm-icon" aria-hidden="true">
-               {confirmInfo.btnClass === "ok"
-                 ? <i className="fa-regular fa-circle-check"></i>
-                 : <i className="fa-regular fa-circle-xmark"></i>
-               }
-             </div>
-            <h1 id="cm-title" className="cm-title">{confirmInfo.title}</h1>
-          </div>
-          <div id="cm-desc" className="cm-body">
-            {confirmInfo.description}
-            {confirmInfo.showReason && (
-              <div className="cr-reason">
-                <label className="cr-label">Lý do (tùy chọn)</label>
-                <textarea
-                  className="cr-textarea"
-                  rows={3}
-                  value={confirm.reason}
-                  onChange={(e)=>setConfirm(s=>({...s, reason: e.target.value}))}
-                  placeholder="Ví dụ: Thông tin dinh dưỡng chưa rõ ràng…"
-                />
+        <div className="cm-backdrop" role="presentation" onClick={() => setConfirm(null)}>
+          <div
+            className={`cm-modal ${confirmInfo.btnClass === "ok" ? "is-approve" : "is-reject"}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cm-title"
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="cm-head">
+              <div className="cm-icon" aria-hidden="true">
+                {confirmInfo.btnClass === "ok"
+                  ? <i className="fa-regular fa-circle-check"></i>
+                  : <i className="fa-regular fa-circle-xmark"></i>}
               </div>
-            )}
-          </div>
-          <div className="cm-foot">
-            <button className="btn ghost" onClick={() => setConfirm(null)}>Hủy</button>
-            <button
-              className={`btn ${confirmInfo.btnClass}`}
-              onClick={onConfirm}
-            >
-              {confirmInfo.btnText}
-            </button>
+              <h1 id="cm-title" className="cm-title">{confirmInfo.title}</h1>
+            </div>
+            <div id="cm-desc" className="cm-body">
+              {confirmInfo.description}
+              {confirmInfo.showReason && (
+                <div className="cr-reason">
+                  <label className="cr-label">Lý do (tùy chọn)</label>
+                  <textarea
+                    className="cr-textarea"
+                    rows={3}
+                    value={confirm.reason}
+                    onChange={(e)=>setConfirm(s=>({...s, reason: e.target.value}))}
+                    placeholder="Ví dụ: Thông tin dinh dưỡng chưa rõ ràng…"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="cm-foot">
+              <button className="btn ghost" onClick={() => setConfirm(null)}>Hủy</button>
+              <button className={`btn ${confirmInfo.btnClass}`} onClick={onConfirm}>
+                {confirmInfo.btnText}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   );

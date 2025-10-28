@@ -151,10 +151,10 @@ export default function AdminAccountsList(){
                 <div className="cell created">{fmtDate(it.createdAt)}</div>
                 <div className="cell act">
                   <button className="iconbtn" title={isLv1 ? "Không thể chỉnh sửa admin cấp 1" : "Xem chi tiết/Chỉnh sửa"} disabled={isLv1}>
-                    <i className={`fa-regular ${isLv1 ? "fa-lock" : "fa-pen-to-square"}`}></i> {/* Sửa icon thành edit */}
+                    <i className={`fa-solid ${isLv1 ? "fa-lock" : "fa-pen-to-square"}`}></i> {/* Sửa icon thành edit */}
                   </button>
                   <button className="iconbtn danger" title={isLv1 ? "Không thể xóa admin cấp 1" : "Xóa"} disabled={isLv1}>
-                    <i className={`fa-regular ${isLv1 ? "fa-lock" : "fa-trash-can"}`}></i>
+                    <i className={`fa-solid ${isLv1 ? "fa-lock" : "fa-trash-can"}`}></i>
                   </button>
                 </div>
               </div>
