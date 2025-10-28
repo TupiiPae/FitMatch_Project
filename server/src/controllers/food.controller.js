@@ -14,6 +14,7 @@ const toNumOrNull = (v) =>
     : Number.isFinite(Number(v))
     ? Number(v)
     : null;
+
 const ensureDir = () => {
   try {
     fs.mkdirSync(FOOD_DIR, { recursive: true });
@@ -32,9 +33,21 @@ function toValidationMap(err) {
   return out;
 }
 
+// ---- helper: nhận diện admin (lv1/lv2/legacy) ----
+function isAdminRole(req) {
+  const role = String(req.userRole || "");
+  const level = Number(req.userLevel || 0);
+  return (
+    role === "admin" ||
+    role.startsWith("admin_") || // "admin_lv1" | "admin_lv2"
+    level >= 1
+  );
+}
+
 export async function listFoods(req, res) {
   const userId = req.userId;
-  const isAdmin = req.userRole === "admin";
+  const isAdmin = isAdminRole(req);
+
   const {
     q,
     status,
@@ -94,6 +107,7 @@ export async function listFoods(req, res) {
     approvedBy: 1,
     updatedAt: 1,
     createdAt: 1,
+    ...(q ? { score: { $meta: "textScore" } } : {}),
   };
 
   const sort = q ? { score: { $meta: "textScore" } } : { updatedAt: -1 };
@@ -122,8 +136,9 @@ export async function getFood(req, res) {
 export async function createFood(req, res) {
   try {
     const userId = req.userId;
-    const isAdmin = req.userRole === "admin";
+    const isAdmin = isAdminRole(req);
     const b = req.body || {};
+
     const name = String(b.name || "").trim();
     const mass = Number(b.massG);
     // Kiểm tra rất cơ bản, phần còn lại giao cho Mongoose validators ở model
@@ -131,6 +146,7 @@ export async function createFood(req, res) {
       return res.status(400).json({ message: "name & massG required" });
     }
 
+    // Ảnh: chấp nhận multipart (req.file) hoặc link (b.imageUrl)
     let imageUrl = b.imageUrl || null;
     if (req.file) {
       try {
@@ -148,7 +164,8 @@ export async function createFood(req, res) {
       }
     }
 
-    const base = {
+    // Base doc chung
+    const baseDoc = {
       name,
       imageUrl,
       portionName: b.portionName || undefined,
@@ -161,21 +178,28 @@ export async function createFood(req, res) {
       saltG: toNumOrNull(b.saltG),
       sugarG: toNumOrNull(b.sugarG),
       fiberG: toNumOrNull(b.fiberG),
-      status: "pending",
-      sourceType: b.sourceType || "user_submitted",
+      sourceType: b.sourceType || (isAdmin ? "other" : "user_submitted"),
     };
 
-    // Phân biệt người tạo: user vs admin
     if (isAdmin) {
-      base.createdByAdmin = userId;
+      // Admin tạo → tự approved
+      baseDoc.createdByAdmin = userId;
+      baseDoc.status = "approved";
+      baseDoc.approvedBy = userId;
+      baseDoc.approvedAt = new Date();
     } else {
-      base.createdBy = userId;
+      // User tạo → pending
+      baseDoc.createdBy = userId;
+      baseDoc.status = "pending";
     }
 
-    const doc = await Food.create(base);
-    return res
-      .status(202)
-      .json({ message: "Submitted for approval", id: doc._id });
+    const doc = await Food.create(baseDoc);
+
+    // Trả mã phù hợp
+    if (isAdmin) {
+      return res.status(201).json({ message: "Created & approved", id: doc._id });
+    }
+    return res.status(202).json({ message: "Submitted for approval", id: doc._id });
   } catch (err) {
     const map = toValidationMap(err);
     if (map)
@@ -194,7 +218,7 @@ export async function updateFood(req, res) {
     if (!doc) return res.status(404).json({ message: "Not found" });
 
     const isOwner = String(doc.createdBy || "") === String(userId);
-    const isAdmin = req.userRole === "admin";
+    const isAdmin = isAdminRole(req);
     if (!isOwner && !isAdmin)
       return res.status(403).json({ message: "Forbidden" });
 
@@ -210,7 +234,8 @@ export async function updateFood(req, res) {
     if (b.unit !== undefined) set.unit = b.unit === "ml" ? "ml" : "g";
 
     ["name", "imageUrl", "portionName", "sourceType"].forEach((k) => {
-      if (b[k] !== undefined) set[k] = typeof b[k] === "string" ? b[k].trim() : b[k];
+      if (b[k] !== undefined)
+        set[k] = typeof b[k] === "string" ? b[k].trim() : b[k];
     });
     ["kcal", "proteinG", "carbG", "fatG", "saltG", "sugarG", "fiberG"].forEach((k) => {
       if (b[k] !== undefined) set[k] = toNumOrNull(b[k]);
@@ -232,18 +257,22 @@ export async function updateFood(req, res) {
       }
     }
 
+    // Admin có quyền đổi status
     if (isAdmin && b.status && ["pending", "approved", "rejected"].includes(b.status)) {
       set.status = b.status;
       if (b.status === "approved") {
         if (!("approvedAt" in set)) set.approvedAt = new Date();
         if (!("approvedBy" in set)) set.approvedBy = userId;
-      } else {
-        // giữ nguyên approvedAt/approvedBy; nếu muốn clear, có thể bật:
+        // set.rejectionReason = undefined; // nếu muốn clear lý do cũ
+      } else if (b.status === "rejected") {
+        if (b.rejectionReason !== undefined) {
+          set.rejectionReason = String(b.rejectionReason || "").slice(0, 500) || undefined;
+        }
+        // Không buộc xóa approvedAt/approvedBy để giữ dấu vết; cần thì uncomment:
         // set.approvedAt = null; set.approvedBy = null;
       }
     }
 
-    // Dùng findByIdAndUpdate + runValidators để trigger validators của model
     await Food.findByIdAndUpdate(doc._id, { $set: set }, { runValidators: true });
     return res.json(responseOk());
   } catch (err) {
@@ -263,7 +292,7 @@ export async function deleteFood(req, res) {
   if (!doc) return res.status(404).json({ message: "Not found" });
 
   const isOwner = String(doc.createdBy || "") === String(userId);
-  const isAdmin = req.userRole === "admin";
+  const isAdmin = isAdminRole(req);
   if (!isOwner && !isAdmin) return res.status(403).json({ message: "Forbidden" });
 
   await Food.deleteOne({ _id: doc._id });
@@ -275,7 +304,7 @@ export async function approveFood(req, res) {
   const id = req.params.id;
   const doc = await Food.findByIdAndUpdate(
     id,
-    { status: "approved", approvedAt: new Date(), approvedBy: adminId },
+    { status: "approved", approvedAt: new Date(), approvedBy: adminId, rejectionReason: undefined },
     { new: true, runValidators: true }
   ).lean();
   if (!doc) return res.status(404).json({ message: "Not found" });

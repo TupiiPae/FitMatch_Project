@@ -1,9 +1,9 @@
 /* ===== Page layout (30px padding) ===== */
 .foods-page{
-  padding: 10px;
-  display:flex;
-  flex-direction:column;
-  gap:20px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .breadcrumb-nav {
@@ -95,7 +95,7 @@
 .hint{ font-size:12px; color:#6b7280; }
 
 /* ===== Table ===== */
-.table{ width:100%; border:1px solid #E5E7EB; border-radius:12px; overflow:hidden; }
+.table{ width:100%; border:1px solid #E5E7EB; border-radius:12px; overflow:auto; }
 .thead, .trow{
   display:grid;
   grid-template-columns:

@@ -73,7 +73,7 @@
 .hint { font-size: 12px; color: #6b7280; }
 
 /* ===== Table ===== */
-.table { width: 100%; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; }
+.table { width: 100%; border: 1px solid #E5E7EB; border-radius: 12px; overflow: auto; }
 
 /* ===== Grid 7 cột cho Admin List (ĐÃ SỬA) ===== */
 .admin-list-page .thead,
@@ -115,7 +115,7 @@
   color: #111827;
   font-size: 14px;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: auto;
   text-overflow: ellipsis;
 }
 

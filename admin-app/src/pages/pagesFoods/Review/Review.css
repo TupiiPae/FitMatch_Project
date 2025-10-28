@@ -54,7 +54,7 @@
 
 
 /* ===== Table (giống List.css) ===== */
-.table { width: 100%; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; }
+.table { width: 100%; border: 1px solid #E5E7EB; border-radius: 12px; overflow: auto; }
 .thead, .trow {
   display: grid; /* Grid sẽ được định nghĩa ở class con */
   align-items: center;

@@ -46,7 +46,7 @@
 .page-head{
   display:flex; align-items:center; justify-content:space-between;
   gap:12px;
-  padding: 0 12px; /* <-- THÊM padding */
+
 }
 .page-head h2{
   font-size:22px; font-weight:700; color:#0f172a; margin:0;
@@ -77,7 +77,7 @@
 /* ===== Card header (ĐÃ SỬA LỖI THỤT LỀ) ===== */
 .card-head{
   display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-  padding: 0 12px; /* <-- THÊM padding */
+
 }
 .search{
   display:flex; align-items:center; gap:8px;
@@ -95,7 +95,7 @@
 .hint{ font-size:12px; color:#6b7280; }
 
 /* ===== Table ===== */
-.table{ width:100%; border:1px solid #E5E7EB; border-radius:12px; overflow:hidden; }
+.table{ width:100%; border:1px solid #E5E7EB; border-radius:12px; overflow:auto; }
 
 /* ===== Grid 10 cột (ĐÃ SỬA - Thêm .user-list-page) ===== */
 .user-list-page .thead,

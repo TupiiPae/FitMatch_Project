@@ -145,10 +145,12 @@ export default function FoodCreate() {
       {/* ===== Breadcrumb ===== */}
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
         <Link to="/">
+          <i className="fa-solid fa-house" aria-hidden="true"></i>
           <span>Trang chủ</span>
         </Link>
         <span className="separator">/</span>
         <span className="current-group">
+          <i className="fa-solid fa-utensils" aria-hidden="true"></i>
           <span>Quản lý Món ăn</span>
         </span>
         <span className="separator">/</span>
