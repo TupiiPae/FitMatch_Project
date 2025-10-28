@@ -2,31 +2,25 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { listFoods, approveFood, rejectFood, api } from "../../../lib/api";
-import "./Review.css"; // Sẽ dùng file CSS mới
+import "./Review.css"; // Đảm bảo đã import file CSS
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
 
 export default function FoodsReview() {
-  // ===== State =====
+  // ... (Tất cả state và logic giữ nguyên) ...
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [confirm, setConfirm] = useState(null); // {mode, item?, items?, reason?}
-
-  // Pagination state
+  const [confirm, setConfirm] = useState(null);
   const [limit, setLimit] = useState(10);
   const [skip, setSkip] = useState(0);
   const [total, setTotal] = useState(0);
-
-  // Selection state
   const [selectedIds, setSelectedIds] = useState([]);
   const allChecked = items.length > 0 && selectedIds.length === items.length;
   const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
-
-  // ===== Load Data =====
   const load = async () => {
     setLoading(true);
-    setSelectedIds([]); // Reset selection
+    setSelectedIds([]);
     try {
       const res = await listFoods({ status: "pending", limit, skip });
       setItems(res?.items || []);
@@ -39,17 +33,11 @@ export default function FoodsReview() {
       setLoading(false);
     }
   };
-
-  // Tải lại khi phân trang thay đổi
   useEffect(() => { load(); }, [limit, skip]);
-
-  // ===== Actions =====
   const onApproveAsk = (item) => setConfirm({ mode: "approve", item });
   const onRejectAsk = (item) => setConfirm({ mode: "reject", item, reason: "" });
   const onBulkApproveAsk = () => setConfirm({ mode: "approve-bulk", items: selectedIds });
   const onBulkRejectAsk = () => setConfirm({ mode: "reject-bulk", items: selectedIds, reason: "" });
-
-  // Xử lý xác nhận
   const onConfirm = async () => {
     if (!confirm) return;
     setLoading(true);
@@ -72,11 +60,9 @@ export default function FoodsReview() {
       alert(e?.response?.data?.message || "Thao tác thất bại");
     } finally {
       setConfirm(null);
-      await load(); // Tải lại danh sách
+      await load();
     }
   };
-
-  // ===== Checkbox Logic =====
   const toggleAll = () => {
     if (allChecked) setSelectedIds([]);
     else setSelectedIds(items.map((x) => x._id));
@@ -84,24 +70,18 @@ export default function FoodsReview() {
   const toggleOne = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
-
-  // ===== Pagination Logic =====
   const page = Math.floor(skip / limit);
   const pageCount = Math.ceil(total / limit);
   const handleLimitChange = (e) => {
     setLimit(Number(e.target.value));
-    setSkip(0); // Reset về trang 1
+    setSkip(0);
   };
   const handlePageChange = (newSkip) => {
     if (newSkip >= 0 && newSkip < total) {
       setSkip(newSkip);
     }
   };
-
-  // ===== UI Helpers =====
   const fmtTime = (iso) => (iso ? new Date(iso).toLocaleString() : "—");
-  
-  // Text cho modal
   const confirmInfo = useMemo(() => {
     if (!confirm) return {};
     const isBulk = confirm.mode.includes("bulk");
@@ -114,18 +94,21 @@ export default function FoodsReview() {
       description: isBulk
         ? `Bạn có chắc muốn ${isApprove ? "duyệt" : "từ chối"} ${confirm.items.length} món đã chọn?`
         : `Bạn có chắc muốn ${isApprove ? "duyệt" : "từ chối"} món: ${confirm.item.name}?`,
-      showReason: !isApprove, // Hiện lý do khi từ chối (đơn lẻ hoặc hàng loạt)
+      showReason: !isApprove,
       btnText: isApprove ? "Duyệt" : "Từ chối",
-      btnClass: isApprove ? "ok" : "bad", // Dùng class 'ok' hoặc 'bad' từ CSS
+      btnClass: isApprove ? "ok" : "bad",
     };
   }, [confirm]);
 
 
   return (
-    <div className="foods-page"> {/* Dùng class chung của List.css */}
-      
+    // ===== THAY ĐỔI Ở ĐÂY =====
+    <div className="foods-page food-review-page"> 
+    {/* ===== KẾT THÚC THAY ĐỔI ===== */}
+
       {/* ===== Breadcrumb ===== */}
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
+        {/* ... (Giữ nguyên) ... */}
         <Link to="/">
           <i className="fa-solid fa-house"></i>
           <span>Trang chủ</span>
@@ -140,9 +123,8 @@ export default function FoodsReview() {
       </nav>
 
       {/* ===== Card Layout ===== */}
+      {/* (Phần còn lại của JSX giữ nguyên y hệt) */}
       <div className="card">
-        
-        {/* ===== Page Head (bên trong card) ===== */}
         <div className="page-head">
           <h2>Duyệt món ăn ({total} món chờ)</h2>
           <div className="head-actions">
@@ -157,8 +139,6 @@ export default function FoodsReview() {
             </button>
           </div>
         </div>
-
-        {/* ===== Table (Dùng layout của List.css) ===== */}
         <div className="table">
           <div className="thead review-thead"> {/* Class mới để custom grid */}
             <label className="cell cb">
@@ -194,7 +174,6 @@ export default function FoodsReview() {
                   aria-label={`Chọn ${it.name}`}
                 />
               </label>
-
               <div className="cell img">
                 {it.imageUrl
                   ? (
@@ -206,30 +185,23 @@ export default function FoodsReview() {
                   )
                   : <div className="img-fallback"><i className="fa-regular fa-image"></i></div>}
               </div>
-
               <div className="cell name">
                 <div className="title">{it.name || "—"}</div>
                 <div className="sub">#{String(it._id).slice(-6)}</div>
               </div>
-
               <div className="cell kcal">{it.kcal ?? "—"}</div>
-
               <div className="cell macros">
                 <span className="chip p">{it.proteinG ?? 0}g</span>
                 <span className="chip c">{it.carbG ?? 0}g</span>
                 <span className="chip f">{it.fatG ?? 0}g</span>
               </div>
-
               <div className="cell creator">{it.createdBy?.profile?.nickname || it.createdBy?.username || "N/A"}</div>
               <div className="cell email">{it.createdBy?.email || "N/A"}</div>
               <div className="cell created">{fmtTime(it.createdAt)}</div>
-              
               <div className="cell status">
                 <span className="status-badge is-pending">Chờ duyệt</span>
               </div>
-
               <div className="cell act">
-                {/* Nút nhỏ, dùng class btn-sm mới */}
                 <button className="btn-sm ok" title="Duyệt" onClick={() => onApproveAsk(it)}>
                   <i className="fa-regular fa-circle-check"></i> <span>Duyệt</span>
                 </button>
@@ -240,8 +212,6 @@ export default function FoodsReview() {
             </div>
           ))}
         </div>
-
-        {/* ===== (MỚI) Pagination Controls ===== */}
         <div className="pagination-controls">
           <div className="per-page">
             <span>Hiển thị:</span>
@@ -251,7 +221,6 @@ export default function FoodsReview() {
               <option value="50">50 hàng</option>
             </select>
           </div>
-          
           <div className="page-nav">
             <span className="page-info">
               Trang {page + 1} / {pageCount > 0 ? pageCount : 1} (Tổng: {total})
@@ -272,10 +241,7 @@ export default function FoodsReview() {
             </button>
           </div>
         </div>
-
       </div>
-
-      {/* ===== (GIỮ LẠI) Confirm Modal (Dùng modal của List.css) ===== */}
       {confirm && (
       <div
         className="cm-backdrop"
@@ -299,12 +265,10 @@ export default function FoodsReview() {
              </div>
             <h1 id="cm-title" className="cm-title">{confirmInfo.title}</h1>
           </div>
-
           <div id="cm-desc" className="cm-body">
             {confirmInfo.description}
-            
             {confirmInfo.showReason && (
-              <div className="cr-reason"> {/* Dùng class cũ cr-reason cho tiện */}
+              <div className="cr-reason">
                 <label className="cr-label">Lý do (tùy chọn)</label>
                 <textarea
                   className="cr-textarea"
@@ -316,11 +280,10 @@ export default function FoodsReview() {
               </div>
             )}
           </div>
-
           <div className="cm-foot">
             <button className="btn ghost" onClick={() => setConfirm(null)}>Hủy</button>
             <button
-              className={`btn ${confirmInfo.btnClass}`} // Dùng 'ok' hoặc 'bad'
+              className={`btn ${confirmInfo.btnClass}`}
               onClick={onConfirm}
             >
               {confirmInfo.btnText}

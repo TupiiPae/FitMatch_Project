@@ -1,4 +1,10 @@
 // src/middleware/requireAdminLevel.js
+
+/**
+ * Chấp nhận CHÍNH XÁC các cấp được truyền vào.
+ * Ví dụ: requireAdminLevel(1) -> chỉ LV1
+ *        requireAdminLevel(1,2) -> LV1 hoặc LV2
+ */
 export const requireAdminLevel = (...levels) => (req, res, next) => {
   const lvl = Number(req.adminLevel);
   if (!lvl || !levels.includes(lvl)) {
@@ -7,9 +13,15 @@ export const requireAdminLevel = (...levels) => (req, res, next) => {
   next();
 };
 
-// Hoặc nếu muốn ">= cấp tối thiểu" (vd:  requireAtLeastLevel(2) cho phép lv2 & lv1):
+/**
+ * Cho phép mọi cấp <= min (vì 1 là cao nhất).
+ * Ví dụ: requireAtLeastLevel(2) -> LV1 & LV2
+ *        requireAtLeastLevel(1) -> chỉ LV1
+ */
 export const requireAtLeastLevel = (min) => (req, res, next) => {
   const lvl = Number(req.adminLevel);
-  if (!lvl || lvl < min) return res.status(403).json({ message: "Forbidden" });
+  if (!lvl || lvl > Number(min)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
   next();
 };

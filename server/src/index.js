@@ -16,6 +16,9 @@ import onboardingRoutes from "./routes/onboarding.routes.js";
 import foodRoutes from "./routes/food.routes.js";
 import nutritionRoutes from "./routes/nutrition.routes.js";
 import adminFoodsRoutes from "./routes/admin.food.routes.js";
+import adminAccountsRoutes from "./routes/admin.accounts.routes.js";
+
+import { auth } from "./middleware/auth.js";
 
 const app = express();
 
@@ -86,12 +89,32 @@ app.use((req, _res, next) => {
 // ===== Routes =====
 app.get("/", (_req, res) => res.send("FitMatch API v1"));
 
+// --- Auth route riêng ---
+app.use("/api/admin/auth", adminAuthRoutes);
 app.use("/api/auth", authRoutes);
+
+// --- Các route quản trị ---
+app.use(
+  "/api/admin/admin-accounts",
+  auth,
+  (req, _res, next) => {
+    console.log("DEBUG admin-accounts:", {
+      userId: req.userId,
+      userRole: req.userRole,
+      userLevel: req.userLevel,
+    });
+    next();
+  },
+  adminAccountsRoutes
+);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminFoodsRoutes);
-app.use("/api/admin/auth", adminAuthRoutes);
+
+// --- Routes người dùng ---
 app.use("/api/user/onboarding", onboardingRoutes);
 app.use("/api/user", userRoutes);
+
+// --- Public / common ---
 app.use("/api", foodRoutes);
 app.use("/api", nutritionRoutes);
 

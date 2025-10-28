@@ -8,7 +8,9 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// ==== Request interceptor: gắn Bearer token từ localStorage (admin_auth) ====
+/* ---------------------------
+ * Request: gắn Bearer token
+ * --------------------------- */
 api.interceptors.request.use((cfg) => {
   const raw = localStorage.getItem("admin_auth");
   if (raw) {
@@ -20,7 +22,9 @@ api.interceptors.request.use((cfg) => {
   return cfg;
 });
 
-// ==== Response interceptor: callback khi 401 để logout/redirect nếu cần ====
+/* ------------------------------------
+ * Response: callback khi bị 401 (logout)
+ * ------------------------------------ */
 let _onUnauthorized = null;
 export const setUnauthorizedHandler = (fn) => { _onUnauthorized = fn; };
 
@@ -34,13 +38,32 @@ api.interceptors.response.use(
   }
 );
 
-// =================== AUTH (ADMIN) ===================
+/* -------------------------------------------------
+ * Helper: Chuẩn hoá payload list về {items,total,...}
+ * ------------------------------------------------- */
+const normalizeListPayload = (data) => {
+  let items =
+    Array.isArray(data) ? data :
+    data?.items ?? data?.docs ?? data?.data ?? data?.results ?? data?.result ??
+    data?.rows ?? data?.list ??
+    data?.items?.docs ?? data?.items?.items ?? data?.data?.items ?? [];
+
+  if (!Array.isArray(items)) items = [];
+  const total = data?.total ?? data?.count ?? data?.totalDocs ?? data?.items?.total ?? items.length;
+  const limit = data?.limit ?? data?.pageSize ?? data?.perPage ?? data?.items?.limit ?? undefined;
+  const skip  = data?.skip  ?? data?.offset   ?? data?.page     ?? data?.items?.skip  ?? undefined;
+  return { items, total, limit, skip };
+};
+
+/* =========================
+ * AUTH (ADMIN)
+ * ========================= */
 export const adminLogin = async ({ username, password }) => {
   try {
-    const r = await api.post("/api/admin/auth/login", { username, password });
+    const r = await api.post("/api/admin/auth/login", { identifier: username, password });
     return r.data;
   } catch (e) {
-    // Fallback sang user login (tuỳ hệ thống của bạn)
+    // Fallback sang user login nếu backend không có route admin (tuỳ system)
     if (e?.response?.status === 404) {
       const r2 = await api.post("/api/auth/login", { identifier: username, password });
       return r2.data;
@@ -52,7 +75,7 @@ export const adminLogin = async ({ username, password }) => {
 export const adminMe = async () => {
   try {
     const r = await api.get("/api/admin/auth/me");
-    return r.data;
+    return r.data; // { id, username, role, level, status }
   } catch (e) {
     if (e?.response?.status === 404) {
       const r2 = await api.get("/api/user/me");
@@ -62,38 +85,77 @@ export const adminMe = async () => {
   }
 };
 
-export const getStats = () => api.get("/api/admin/stats").then((r) => r.data);
+export const getStats = () =>
+  api.get("/api/admin/stats").then((r) => r.data);
 
-// =================== ADMIN ACCOUNTS (Level 1) ===================
-export const listAdminAccounts = (q = "") =>
-  api.get("/api/admin/admin-accounts", { params: { q } }).then((r) => r.data);
-export const createAdminAccount = (body) =>
-  api.post("/api/admin/admin-accounts", body).then((r) => r.data);
-export const updateAdminAccount = (id, body) =>
-  api.patch(`/api/admin/admin-accounts/${id}`, body).then((r) => r.data);
-export const deleteAdminAccount = (id) =>
-  api.delete(`/api/admin/admin-accounts/${id}`).then((r) => r.data);
-export const blockAdminAccount = (id) =>
-  api.post(`/api/admin/admin-accounts/${id}/block`).then((r) => r.data);
-
-// =================== FOODS (ADMIN) ===================
-// Luôn chuẩn hoá payload về { items, total, limit, skip }
-const normalizeListPayload = (data) => {
-  let items =
-    Array.isArray(data) ? data :
-    data?.items ?? data?.docs ?? data?.data ?? data?.results ?? data?.result ??
-    data?.foods ?? data?.rows ?? data?.list ??
-    data?.items?.docs ?? data?.items?.items ?? data?.data?.items ?? [];
-
-  if (!Array.isArray(items)) items = [];
-  const total = data?.total ?? data?.count ?? data?.totalDocs ?? data?.items?.total ?? items.length;
-  const limit = data?.limit ?? data?.pageSize ?? data?.perPage ?? data?.items?.limit;
-  const skip  = data?.skip  ?? data?.offset   ?? data?.page     ?? data?.items?.skip;
-  return { items, total, limit, skip };
+/* =========================
+ * ADMIN ACCOUNTS (Level 1)
+ * =========================
+ * Server endpoints (đã/ sẽ có trong admin.routes.js):
+ *  GET    /api/admin/admin-accounts            -> list
+ *  POST   /api/admin/admin-accounts            -> create (mặc định pass "fitmatch@admin2" nếu FE không gửi)
+ *  PATCH  /api/admin/admin-accounts/:id        -> update { nickname | status }
+ *  DELETE /api/admin/admin-accounts/:id        -> delete (chỉ cấp 1, cấm xoá chính mình)
+ *  POST   /api/admin/admin-accounts/:id/block  -> block
+ *  POST   /api/admin/admin-accounts/:id/unblock-> unblock
+ */
+export const listAdminAccounts = async (params = {}) => {
+  try {
+    const r = await api.get("/api/admin/admin-accounts", { params });
+    const { items, total, limit, skip } = normalizeListPayload(r.data);
+    return { items, total, limit, skip };
+  } catch (e) {
+    const status = e?.response?.status;
+    // Không có quyền (lv2) hoặc route chưa có -> trả rỗng để UI không vỡ
+    if (status === 403 || status === 404) {
+      return {
+        items: [],
+        total: 0,
+        limit: params.limit ?? 0,
+        skip: params.skip ?? 0,
+        forbidden: status === 403, // để UI biết hiện thông báo “không có quyền”
+      };
+    }
+    throw e;
+  }
 };
 
+export const createAdminAccount = async ({ username, nickname, password }) => {
+  const body = {
+    username,
+    nickname,
+    password: password || "fitmatch@admin2", // theo yêu cầu
+    level: 2,
+  };
+  const r = await api.post("/api/admin/admin-accounts", body);
+  return r.data;
+};
+
+export const updateAdminAccount = async (id, body) => {
+  const r = await api.patch(`/api/admin/admin-accounts/${id}`, body);
+  return r.data;
+};
+
+export const deleteAdminAccount = async (id) => {
+  const r = await api.delete(`/api/admin/admin-accounts/${id}`);
+  return r.data;
+};
+
+export const blockAdminAccount = async (id) => {
+  const r = await api.post(`/api/admin/admin-accounts/${id}/block`);
+  return r.data;
+};
+
+export const unblockAdminAccount = async (id) => {
+  const r = await api.post(`/api/admin/admin-accounts/${id}/unblock`);
+  return r.data;
+};
+
+/* =========================
+ * FOODS (ADMIN)
+ * ========================= */
 export const listFoods = async (params) => {
-  // gọi cả admin & public, gộp kết quả
+  // gọi cả admin & public, gộp kết quả (giữ logic cũ)
   const tryFetch = async (path) => {
     try {
       const r = await api.get(path, { params });
@@ -107,7 +169,6 @@ export const listFoods = async (params) => {
   const a = await tryFetch("/api/admin/foods");
   const b = await tryFetch("/api/foods");
 
-  // gộp & loại trùng theo _id
   const map = new Map();
   [...a.items, ...b.items].forEach((x) => {
     if (x && (x._id || x.id)) map.set(String(x._id || x.id), x);
@@ -187,7 +248,9 @@ export const rejectFood = async (id, reason = "") => {
   }
 };
 
-// =================== USERS (ADMIN) ===================
+/* =========================
+ * USERS (ADMIN)
+ * ========================= */
 export const listUsers = (params) =>
   api.get("/api/admin/users", { params }).then((r) => r.data);
 

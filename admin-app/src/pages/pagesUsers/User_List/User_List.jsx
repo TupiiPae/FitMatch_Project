@@ -1,24 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { listUsers, blockUser, unblockUser } from "../../../lib/api.js";
-import "./List.css";
+import "./User_List.css"; // Đảm bảo bạn đã import file CSS của User_List
 
 export default function UsersList() {
-  // ===== Filters & state
+  // ... (Toàn bộ state và logic giữ nguyên) ...
   const [q, setQ] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Pagination
   const [limit, setLimit] = useState(10);
   const [skip, setSkip] = useState(0);
   const [total, setTotal] = useState(0);
-
-  // Selection
   const [selectedIds, setSelectedIds] = useState([]);
   const allChecked = items.length > 0 && selectedIds.length === items.length;
   const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
-
-  // Load data
   const load = async () => {
     setLoading(true);
     setSelectedIds([]);
@@ -33,11 +28,7 @@ export default function UsersList() {
       setLoading(false);
     }
   };
-
-  // Load khi đổi trang
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [limit, skip]);
-
-  // Debounce search: reset về trang 1 khi q đổi
   useEffect(() => {
     const t = setTimeout(() => {
       if (skip !== 0) setSkip(0);
@@ -46,8 +37,6 @@ export default function UsersList() {
     return () => clearTimeout(t);
     // eslint-disable-next-line
   }, [q]);
-
-  // Selection helpers
   const toggleAll = () => {
     if (allChecked) setSelectedIds([]);
     else setSelectedIds(items.map((x) => x._id));
@@ -55,8 +44,6 @@ export default function UsersList() {
   const toggleOne = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
-
-  // Actions per row
   const onBlock = async (id) => {
     await blockUser(id);
     await load();
@@ -65,14 +52,10 @@ export default function UsersList() {
     await unblockUser(id);
     await load();
   };
-
-  // Pagination helpers
   const page = Math.floor(skip / limit);
   const pageCount = Math.max(1, Math.ceil(total / limit));
   const handleLimitChange = (e) => { setLimit(Number(e.target.value)); setSkip(0); };
   const handlePageChange = (newSkip) => { if (newSkip >= 0 && newSkip < total) setSkip(newSkip); };
-
-  // UI helpers
   const fmtDate = (v) => (v ? new Date(v).toLocaleString() : "—");
   const sexLabel = (s) => (s === "male" ? "Nam" : s === "female" ? "Nữ" : "—");
   const fullAddress = (u) => {
@@ -81,15 +64,42 @@ export default function UsersList() {
   };
   const displayName = (u) => u?.profile?.nickname || u?.username || "—";
 
+
   return (
-    <div className="foods-page">
+    // ===== THAY ĐỔI Ở ĐÂY =====
+    // Thêm class "user-list-page" để CSS của chúng ta "mạnh" hơn
+    <div className="foods-page user-list-page"> 
+      {/* ===== KẾT THÚC THAY ĐỔI ===== */}
+
+      {/* ===== Breadcrumb ===== */}
+      <nav className="breadcrumb-nav" aria-label="breadcrumb">
+        {/* ... (Giữ nguyên) ... */}
+        <Link to="/">
+          <i className="fa-solid fa-house"></i>
+          <span>Trang chủ</span>
+        </Link>
+        <span className="separator">/</span>
+        <span className="current-group">
+          <i className="fa-solid fa-users"></i>
+          <span>Quản lý Người dùng</span>
+        </span>
+        <span className="separator">/</span>
+        <span className="current-page">Danh sách người dùng</span>
+      </nav>
+
       {/* ===== Card: chứa toàn bộ nội dung ===== */}
+      {/* (Phần còn lại của file JSX giữ nguyên y hệt) */}
       <div className="card">
         {/* ===== Title & actions (giống foods) ===== */}
         <div className="page-head">
           <h2>Danh sách người dùng ({total})</h2>
           <div className="head-actions">
-            {/* Để trống/để chỗ — có thể thêm Export/Import sau */}
+            <button className="btn danger" type="button" disabled={!selectedIds.length}>
+              <i className="fa-solid fa-lock" /> <span>Khóa đã chọn</span>
+            </button>
+            <button className="btn ghost" type="button" disabled={!selectedIds.length}>
+              <i className="fa-solid fa-lock-open" /> <span>Mở khóa</span>
+            </button>
           </div>
         </div>
 
@@ -111,22 +121,21 @@ export default function UsersList() {
         {/* ===== Table ===== */}
         <div className="table">
           <div className="thead">
-            {/* LƯU Ý: Bạn có thể điều chỉnh grid-template-columns trong List.css cho khớp số cột dưới đây */}
-            <label className="cell cb">
-              <input
-                type="checkbox"
-                checked={allChecked}
-                ref={(el) => { if (el) el.indeterminate = someChecked; }}
-                onChange={toggleAll}
-                aria-label="Chọn tất cả"
-              />
-            </label>
+          <label className="cell cb">
+            <input
+              type="checkbox"
+              checked={allChecked}
+              ref={(el) => { if (el) el.indeterminate = someChecked; }}
+              onChange={toggleAll}
+              aria-label="Chọn tất cả"
+            />
+          </label>
             <div className="cell name">Tên người dùng</div>
             <div className="cell sex">Giới tính</div>
             <div className="cell email">Email</div>
             <div className="cell phone">SĐT</div>
             <div className="cell country">Quốc gia</div>
-            <div className="cell address">Địa chỉ (Thành phố, Quận, Phường)</div>
+            <div className="cell address">Địa chỉ</div>
             <div className="cell created">Ngày tạo</div>
             <div className="cell status">Trạng thái</div>
             <div className="cell act">Thao tác</div>
@@ -145,25 +154,24 @@ export default function UsersList() {
                   aria-label={`Chọn ${displayName(u)}`}
                 />
               </label>
-
               <div className="cell name">
                 <div className="title">{displayName(u)}</div>
                 <div className="sub">#{String(u._id).slice(-6)}</div>
               </div>
-
               <div className="cell sex">{sexLabel(u?.profile?.sex)}</div>
               <div className="cell email">{u?.email || "—"}</div>
               <div className="cell phone">{u?.phone || "—"}</div>
-
-              <div className="cell country">🇻🇳 Việt Nam</div>
+              <div className="cell country">Việt Nam</div>
               <div className="cell address">{fullAddress(u)}</div>
               <div className="cell created">{fmtDate(u?.createdAt)}</div>
-
-              {/* Theo yêu cầu: tạm hiển thị "-" để sau này code cấm/mở hoạt động bắt cặp theo thời gian */}
-              <div className="cell status">-</div>
-
+              <div className="cell status">
+                {u?.blocked ? (
+                  <span className="status-badge is-blocked">Đã khóa</span>
+                ) : (
+                  <span className="status-badge is-active">Hoạt động</span>
+                )}
+              </div>
               <div className="cell act">
-                {/* Icon comment (xem báo cáo sau này) */}
                 <button
                   className="iconbtn"
                   type="button"
@@ -172,25 +180,23 @@ export default function UsersList() {
                 >
                   <i className="fa-regular fa-comment-dots"></i>
                 </button>
-
-                {/* Block / Unblock */}
                 {!u?.blocked ? (
                   <button
                     className="iconbtn danger"
                     type="button"
-                    title="Block người dùng"
+                    title="Khóa người dùng"
                     onClick={() => onBlock(u._id)}
                   >
-                    <i className="fa-regular fa-user-slash"></i>
+                    <i className="fa-solid fa-lock"></i>
                   </button>
                 ) : (
                   <button
                     className="iconbtn"
                     type="button"
-                    title="Mở block"
+                    title="Mở khóa"
                     onClick={() => onUnblock(u._id)}
                   >
-                    <i className="fa-regular fa-user-check"></i>
+                    <i className="fa-solid fa-lock-open"></i>
                   </button>
                 )}
               </div>
@@ -208,7 +214,6 @@ export default function UsersList() {
               <option value="50">50 hàng</option>
             </select>
           </div>
-
           <div className="page-nav">
             <span className="page-info">
               Trang {page + 1} / {pageCount} (Tổng: {total})

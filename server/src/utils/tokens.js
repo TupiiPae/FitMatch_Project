@@ -2,42 +2,70 @@
 import jwt from "jsonwebtoken";
 
 /**
- * Tạo JWT token cho người dùng
- * @param {Object} user - Thông tin người dùng hoặc payload. 
- *                        Cần có ít nhất { id } hoặc { _id }.
- * @returns {string} token
+ * Tạo JWT token từ payload bất kỳ (yêu cầu có id/_id/userId/sub).
+ * - Giữ nguyên mọi claim truyền vào (vd: role, level, username, ...).
+ * - subject (sub) = id
+ * - expiresIn mặc định 7d (có thể override qua options)
  */
-export const generateToken = (user = {}) => {
-  // 👇 Hợp nhất cả id và _id để tránh mất giá trị
-  const id = user.id || user._id;
+export const generateToken = (payload = {}, options = {}) => {
+  // Chuẩn hóa id
+  const id =
+    payload.id ||
+    payload._id ||
+    payload.userId ||
+    payload.sub;
+
   if (!id) {
-    console.error("generateToken: Thiếu id/_id trong payload =>", user);
+    console.error("generateToken: Thiếu id/_id/userId/sub trong payload =>", Object.keys(payload || {}));
     throw new Error("Thiếu id để tạo token");
   }
 
-  const payload = {
-    id: id.toString(),
-    username: user.username,
-    role: user.role || "user",
+  // Loại bỏ các key id khác để tránh trùng lặp, rồi trải các claim còn lại
+  const {
+    id: _drop1,
+    _id: _drop2,
+    userId: _drop3,
+    sub: _drop4,
+    ...rest
+  } = payload;
+
+  // Nếu caller không set role, fallback 'user'
+  const finalPayload = {
+    id: String(id),
+    role: payload.role || "user",
+    ...rest, // giữ nguyên các claim khác như username, level, ...
   };
 
-  // 👇 Thêm 'subject' (sub) để dễ tương thích JWT chuẩn
-  return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "7d", // token sống 7 ngày
-    subject: id.toString(),
-  });
+  const signOpts = {
+    expiresIn: "7d",
+    subject: String(id),
+    ...options, // cho phép override (vd: { expiresIn: "1h" })
+  };
+
+  return jwt.sign(finalPayload, process.env.JWT_SECRET, signOpts);
 };
 
 /**
  * Xác thực JWT token
- * @param {string} token - JWT token cần kiểm tra
- * @returns {Object|null} payload đã giải mã hoặc null nếu không hợp lệ
+ * @param {string} token
+ * @returns {Object|null} payload đã giải mã hoặc null
  */
 export const verifyToken = (token) => {
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
   } catch (err) {
     console.error("verifyToken lỗi:", err.message);
+    return null;
+  }
+};
+
+/**
+ * Giải mã không kiểm tra chữ ký (debug)
+ */
+export const decodeToken = (token) => {
+  try {
+    return jwt.decode(token);
+  } catch {
     return null;
   }
 };

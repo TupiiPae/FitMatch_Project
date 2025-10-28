@@ -93,7 +93,7 @@ export default function Login() {
               {err && <div className="login-error">{err}</div>}
 
               <button className="login-btn" disabled={loading}>
-                {loading ? "Đang đăng nhập..." : "Login"}
+                {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </button>
             </form>
 

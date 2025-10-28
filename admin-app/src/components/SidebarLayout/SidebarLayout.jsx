@@ -1,3 +1,4 @@
+// src/components/SidebarLayout/SidebarLayout.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext.jsx";
@@ -5,75 +6,90 @@ import "./SidebarLayout.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import logoFitmatch from "../../assets/logo-fitmatch.png";
 
-const SECTIONS = (level) => [
-  {
-    key: "stats",
-    title: "Thống kê",
-    icon: "fa-solid fa-chart-line",
-    items: [
-      { to: "/stats/users",    label: "Người dùng" },
-      { to: "/stats/journal",  label: "Nhật ký" },
-      { to: "/stats/matching", label: "Ghép cặp" },
-    ],
-  },
-  ...(level === 1 ? [{
-    key: "admins",
-    title: "Tài khoản quản trị",
-    icon: "fa-solid fa-user-shield",
-    items: [
-      { to: "/admins",        label: "Danh sách tài khoản", exact: true },
-      { to: "/admins/create", label: "Tạo tài khoản" },
-    ],
-  }] : []),
-  {
-    key: "foods",
-    title: "Các món ăn",
-    icon: "fa-solid fa-bowl-food",
-    items: [
-      { to: "/foods",        label: "Danh sách các món ăn", exact: true },
-      { to: "/foods/create", label: "Tạo món ăn" },
-      { to: "/foods/review", label: "Duyệt món người dùng" },
-    ],
-  },
-  {
-    key: "exs",
-    title: "Các bài tập",
-    icon: "fa-solid fa-dumbbell",
-    items: [
-      { to: "/exercises",           label: "Danh sách bài tập", exact: true },
-      { to: "/exercises/create",    label: "Tạo bài tập" },
-      { to: "/exercises/schedules", label: "Tạo lịch tập" },
-    ],
-  },
-  {
-    key: "matching",
-    title: "Ghép cặp",
-    icon: "fa-solid fa-people-arrows",
-    items: [
-      { to: "/matching", label: "Danh sách ghép cặp", exact: true },
-      { to: "/reports",  label: "Report" },
-    ],
-  },
-  {
-    key: "users",
-    title: "Người dùng",
-    icon: "fa-solid fa-users",
-    items: [
-      { to: "/users", label: "Danh sách người dùng", exact: true },
-    ],
-  },
-];
+// ép Number(level) ở tham số vào
+const SECTIONS = (rawLevel) => {
+  const level = Number(rawLevel);
+  return [
+    {
+      key: "stats",
+      title: "Thống kê",
+      icon: "fa-solid fa-chart-line",
+      items: [
+        { to: "/stats/users",    label: "Người dùng" },
+        { to: "/stats/journal",  label: "Nhật ký" },
+        { to: "/stats/matching", label: "Ghép cặp" },
+      ],
+    },
+    ...(level === 1
+      ? [{
+          key: "admins",
+          title: "Tài khoản quản trị",
+          icon: "fa-solid fa-user-shield",
+          items: [
+            { to: "/admins",        label: "Danh sách tài khoản", exact: true },
+            { to: "/admins/create", label: "Tạo tài khoản" },
+          ],
+        }]
+      : []),
+    {
+      key: "foods",
+      title: "Các món ăn",
+      icon: "fa-solid fa-bowl-food",
+      items: [
+        { to: "/foods",        label: "Danh sách các món ăn", exact: true },
+        { to: "/foods/create", label: "Tạo món ăn" },
+        { to: "/foods/review", label: "Duyệt món người dùng" },
+      ],
+    },
+    {
+      key: "exs",
+      title: "Các bài tập",
+      icon: "fa-solid fa-dumbbell",
+      items: [
+        { to: "/exercises",           label: "Danh sách bài tập", exact: true },
+        { to: "/exercises/create",    label: "Tạo bài tập" },
+        { to: "/exercises/schedules", label: "Tạo lịch tập" },
+      ],
+    },
+    {
+      key: "matching",
+      title: "Ghép cặp",
+      icon: "fa-solid fa-people-arrows",
+      items: [
+        { to: "/matching", label: "Danh sách ghép cặp", exact: true },
+        { to: "/reports",  label: "Report" },
+      ],
+    },
+    {
+      key: "users",
+      title: "Người dùng",
+      icon: "fa-solid fa-users",
+      items: [
+        { to: "/users", label: "Danh sách người dùng", exact: true },
+      ],
+    },
+  ];
+};
 
 const linkClass = ({ isActive }) => "fm-link" + (isActive ? " is-active" : "");
 
+// mở đúng section theo pathname (hỗ trợ exact)
 function findParentKeyByPath(pathname, sections) {
-  const found = sections.find((s) => s.items.some((it) => pathname.startsWith(it.to)));
-  return found?.key || null;
+  for (const s of sections) {
+    for (const it of s.items) {
+      if (it.exact) {
+        if (pathname === it.to) return s.key;
+      } else if (pathname.startsWith(it.to)) {
+        return s.key;
+      }
+    }
+  }
+  return null;
 }
 
 function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme, onLogout }) {
   const { auth } = useAuth();
-  const level = auth?.profile?.level;
+  const level = Number(auth?.profile?.level);
   const username = auth?.profile?.username || "admin";
   const [open, setOpen] = useState(false);
 
@@ -86,7 +102,6 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme, onLogout }) 
   return (
     <header className="fm-topnav">
       <div className="fm-topnav__left">
-        {/* === Nút toggle Sidebar chuyển ra Navbar === */}
         <button
           className="fm-iconbtn fm-togglebtn"
           onClick={onToggleSidebar}
@@ -95,12 +110,6 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme, onLogout }) 
         >
           <i className={collapsed ? "fa-solid fa-angles-right" : "fa-solid fa-angles-left"} />
         </button>
-
-        {/* (Tùy chọn) brand nhỏ ở navbar – có thể link đến trang chủ admin */}
-        {/* <a className="fm-brand-small" href="#">
-          <img src={logoFitmatch} alt="FitMatch" className="fm-brand-img" />
-          <span>FitMatch Admin</span>
-        </a> */}
       </div>
 
       <div className="fm-topnav__right">
@@ -134,7 +143,8 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme, onLogout }) 
 
 export default function SidebarLayout(){
   const { auth, logout } = useAuth();
-  const level = auth?.profile?.level || 2;
+  // ép số + fallback 2 (để lv2 vẫn dùng được menu còn lại)
+  const level = Number(auth?.profile?.level) || 2;
   const location = useLocation();
 
   const [theme, setTheme] = useState(() => localStorage.getItem("fm_theme") || "light");
@@ -166,14 +176,10 @@ export default function SidebarLayout(){
   return (
     <div className="fm-layout">
       <aside className={sideCls}>
-        {/* === Box logo ở giữa, luôn có đường line phân cách phía dưới === */}
+        {/* Logo */}
         <div className="fm-side__logo">
           <a className="fm-logo-link" href="#" aria-label="Trang chủ admin">
-            <img
-              src={logoFitmatch}
-              alt="FitMatch"
-              className="fm-logo-rect"
-            />
+            <img src={logoFitmatch} alt="FitMatch" className="fm-logo-rect" />
           </a>
         </div>
 
@@ -204,7 +210,6 @@ export default function SidebarLayout(){
               </div>
             );
           })}
-
           <div style={{ height: 72 }} />
         </nav>
 

@@ -145,75 +145,76 @@ router.post("/users/:id/unblock", adminAuth, async (req, res) => {
  */
 router.get("/admin-accounts", adminAuth, requireAdminLevel(1), async (req, res) => {
   try {
-    const qRaw = String(req.query?.q ?? "").trim();
-    const limit = Math.min(Math.max(Number(req.query?.limit ?? 10) || 10, 1), 100);
-    const skip  = Math.max(Number(req.query?.skip ?? 0) || 0, 0);
+    const { q = "", limit = 20, skip = 0 } = req.query;
+    const lim = Math.min(Math.max(Number(limit) || 20, 1), 100);
+    const sk = Math.max(Number(skip) || 0, 0);
+    const cond = {};
 
-    const cond = { level: 2 }; // chỉ quản trị tài khoản cấp 2
-    if (qRaw) {
-      const rx = new RegExp(escapeRegex(qRaw), "i");
-      cond.$or = [{ username: rx }, { nickname: rx }, { status: rx }];
+    if (q && String(q).trim()) {
+      const rx = new RegExp(escapeRegex(String(q).trim()), "i");
+      cond.$or = [
+        { username: rx },
+        { nickname: rx },
+        { status: rx },
+      ];
     }
 
+    // sort: LV1 đứng đầu, sau đó mới tới các LV2 mới nhất
     const [items, total] = await Promise.all([
       Admin.find(cond)
         .select("_id username nickname level status createdAt")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
+        .sort({ level: 1, createdAt: -1 })
+        .skip(sk)
+        .limit(lim)
         .lean(),
       Admin.countDocuments(cond),
     ]);
 
-    res.json({ items, total, limit, skip });
+    res.json({ items, total, limit: lim, skip: sk });
   } catch (e) {
     console.error("[admin.admin-accounts.list]", e);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 });
 
-/**
- * [POST] /api/admin/admin-accounts
- * Body: { username, nickname }
- * Tạo admin cấp 2; mật khẩu mặc định: "fitmatch@admin2"
+/** [POST] /api/admin/admin-accounts
+ *  → chỉ LV1 được phép tạo admin cấp 2
  */
 router.post("/admin-accounts", adminAuth, requireAdminLevel(1), async (req, res) => {
   try {
     const username = String(req.body?.username || "").trim();
     const nickname = String(req.body?.nickname || "").trim();
-
     if (!username || !nickname) {
       return res.status(400).json({ message: "Thiếu username hoặc nickname" });
     }
 
-    // Kiểm tra tồn tại
-    const existed = await Admin.findOne({ username }).select("_id");
-    if (existed) return res.status(409).json({ message: "Username đã tồn tại" });
+    const existed = await Admin.findOne({ username }).lean();
+    if (existed) {
+      return res.status(409).json({ message: "Username đã tồn tại" });
+    }
 
     const doc = await Admin.create({
       username,
       nickname,
-      level: 2,
       password: "fitmatch@admin2",
+      level: 2,
+      status: "active",
     });
 
-    res.status(201).json({
-      id: doc._id,
-      username: doc.username,
-      nickname: doc.nickname,
-      level: doc.level,
-      status: doc.status,
-      createdAt: doc.createdAt,
+    res.json({
+      success: true,
+      item: {
+        _id: doc._id,
+        username: doc.username,
+        nickname: doc.nickname,
+        level: doc.level,
+        status: doc.status,
+        createdAt: doc.createdAt,
+      },
     });
   } catch (e) {
-    console.error("[admin.admin-accounts.create]", e?.message || e);
-    // Bắt lỗi validate Mongoose
-    if (e?.name === "ValidationError") {
-      const firstKey = Object.keys(e.errors || {})[0];
-      const msg = firstKey ? e.errors[firstKey]?.message : "Dữ liệu không hợp lệ";
-      return res.status(422).json({ message: msg });
-    }
-    return res.status(500).json({ message: "Lỗi máy chủ" });
+    console.error("[admin.admin-accounts.create]", e);
+    res.status(500).json({ message: "Lỗi máy chủ" });
   }
 });
 

@@ -8,10 +8,10 @@ const MONGO = process.env.MONGO || process.env.MONGO_URI;
 async function run(){
   if (!MONGO) throw new Error("Thiếu MONGO hoặc MONGO_URI");
   await mongoose.connect(MONGO);
-  console.log("✅ Connected MongoDB");
+  console.log("Connected MongoDB");
 
   const before = await Admin.collection.indexes();
-  console.log("📋 Current indexes:", before);
+  console.log("Current indexes:", before);
 
   // Drop index email_1 nếu unique mà không sparse
   for (const idx of before) {
@@ -23,13 +23,13 @@ async function run(){
 
   // Tạo lại index theo schema
   await Admin.syncIndexes();
-  console.log("🔁 Synced indexes");
+  console.log("Synced indexes");
 
   const after = await Admin.collection.indexes();
-  console.log("✅ New indexes:", after);
+  console.log("New indexes:", after);
 
   await mongoose.disconnect();
-  console.log("🔌 Disconnected");
+  console.log("Disconnected");
 }
 
 run().catch(e => { console.error(e); process.exit(1); });

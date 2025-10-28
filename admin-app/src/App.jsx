@@ -1,4 +1,4 @@
-// App.jsx
+// src/App.jsx
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
@@ -8,23 +8,28 @@ import Dashboard from "./pages/Dashboard/Dashboard.jsx";
 import SidebarLayout from "./components/SidebarLayout/SidebarLayout.jsx";
 import { ProtectedRoute, OnlyLevel1 } from "./components/ProtectedRoute.jsx";
 
-import FoodsList from "./pages/pagesFoods/List/List.jsx";
-import FoodCreate from "./pages/pagesFoods/Create/Create.jsx";
+// ===== Foods
+import FoodsList from "./pages/pagesFoods/Food_List/Food_List.jsx";
+import FoodCreate from "./pages/pagesFoods/Food_Create/Food_Create.jsx";
 import FoodsReview from "./pages/pagesFoods/Review/Review.jsx";
-import UsersList from "./pages/pagesUsers/List/List.jsx";
-import AdminAccountsList from "./pages/pagesAdmins/List/List.jsx";
-import AdminCreate from "./pages/pagesAdmins/Create/Create.jsx";
+
+// ===== Users
+import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
+
+// ===== Admins
+import AdminAccountsList from "./pages/pagesAdmins/Admin_List/Admin_List.jsx";
+import AdminCreate from "./pages/pagesAdmins/Admin_Create/Admin_Create.jsx";
 
 export default function App() {
   return (
     <Routes>
-      {/* Mặc định điều hướng về /login */}
+      {/* Điều hướng mặc định */}
       <Route index element={<Navigate to="/login" replace />} />
 
       {/* Đăng nhập admin */}
       <Route path="/login" element={<Login />} />
 
-      {/* Các route cần đăng nhập */}
+      {/* Khu vực cần đăng nhập */}
       <Route
         element={
           <ProtectedRoute>

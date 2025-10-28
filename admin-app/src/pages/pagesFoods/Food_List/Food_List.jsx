@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, listFoods, deleteFood } from "../../../lib/api.js"; // Bỏ approveFood vì trang này là "đã duyệt"
-import "./List.css";
+import "./Food_List.css";
 
 // Chuẩn hoá URL ảnh giống user-app
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");

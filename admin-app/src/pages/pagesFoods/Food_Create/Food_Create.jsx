@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createFood } from "../../../lib/api.js";
-import "./Create.css"; // Dùng file CSS mới
+import "./Food_Create.css"; // Dùng file CSS mới
 
 // Trạng thái form ban đầu
 const initialState = {

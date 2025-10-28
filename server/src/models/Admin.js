@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9]{4,200}$/;      // chỉ chữ & số, 4..200
-const NICKNAME_PLAIN_REGEX = /^[a-zA-Z0-9\s]{1,30}$/; // không ký tự đặc biệt
+const NICKNAME_PLAIN_REGEX = /^[\p{L}\d\s]{1,30}$/u; // không ký tự đặc biệt
 
 const adminSchema = new mongoose.Schema({
   username: {
@@ -51,8 +51,8 @@ adminSchema.pre("save", async function(next){
   next();
 });
 
-adminSchema.methods.comparePassword = function(candidate){
-  return bcrypt.compare(candidate, this.password);
+adminSchema.methods.comparePassword = function (plain) {
+  return bcrypt.compare(plain, this.password);
 };
 
 export const Admin = mongoose.model("Admin", adminSchema);

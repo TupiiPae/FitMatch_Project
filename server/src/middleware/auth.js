@@ -15,7 +15,7 @@ export const auth = (req, res, next) => {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
     // CHẤP NHẬN NHIỀU TÊN CLAIM (bao gồm các object lồng)
-    req.userId =
+    const id =
       payload?.id ||
       payload?._id ||
       payload?.userId ||
@@ -24,20 +24,34 @@ export const auth = (req, res, next) => {
       (payload.data && (payload.data.id || payload.data._id)) ||
       null;
 
-    req.userRole =
+    let role =
       payload?.role ||
       (payload.user && payload.user.role) ||
       (payload.data && payload.data.role) ||
       null;
 
-    if (!req.userId) {
-      // ghi log payload (rút gọn) để debug — xóa hoặc giảm log ở production
-      console.error("JWT hợp lệ nhưng không có claim id. payload:", {
-        keys: Object.keys(payload || {}),
-        // không in toàn bộ payload để tránh lộ thông tin nhạy cảm; nếu cần in thêm, bật thủ công
-      });
+    // LẤY LEVEL (nếu có)
+    const level =
+      payload?.level ??
+      (payload.user && payload.user.level) ??
+      (payload.data && payload.data.level) ??
+      null;
+
+    if (!id) {
+      console.error("JWT hợp lệ nhưng không có claim id. payload.keys:", Object.keys(payload || {}));
       return res.status(401).json({ message: "Token thiếu thông tin người dùng (id/_id)" });
     }
+
+    // Chuẩn hoá role cho hệ thống admin (map sang admin_lv1/admin_lv2 nếu có level)
+    // Lưu cả bản raw nếu cần debug
+    req.userRoleRaw = role;
+    req.userLevel = typeof level === "number" ? level : (level ? Number(level) : undefined);
+
+    if (role === "admin" && req.userLevel === 1) role = "admin_lv1";
+    else if (role === "admin" && req.userLevel === 2) role = "admin_lv2";
+
+    req.userId = id;
+    req.userRole = role || "user";
 
     next();
   } catch (e) {
