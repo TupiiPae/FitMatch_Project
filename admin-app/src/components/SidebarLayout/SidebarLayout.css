@@ -1,6 +1,6 @@
 :root{
   --fm-border:#D9DEE7;
-  --fm-primary:#1A73E8;
+  --fm-primary:#78BCC4;
   --fm-bg:#f7f8fb;
   --fm-panel:#ffffff;
   --fm-text:#0f172a;
@@ -21,7 +21,7 @@
   --fm-shadow:none;
 }
 
-html,body,.fm-layout{
+/* html,body,.fm-layout{
   font-family:'Poppins', ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 }
@@ -157,7 +157,7 @@ body{ font-weight:500; }
   border:1px solid var(--fm-border); background:transparent; cursor:pointer;
 }
 .fm-avatar{
-  width:26px; height:26px; border-radius:50%; background:#1A73E8; color:#fff;
+  width:26px; height:26px; border-radius:50%; background:#78BCC4; color:#fff;
   display:grid; place-items:center; font-weight:800;
 }
 .fm-username{
@@ -178,15 +178,3 @@ body{ font-weight:500; }
 /* ===== MAIN ===== */
 .fm-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
 .fm-content{ padding:16px; }
-
-/* ===== Responsive ===== */
-@media (max-width:1024px){
-  .fm-side{
-    position:fixed; inset:0 auto 0 0; z-index:20;
-    transform:translateX(0); box-shadow:0 0 0 9999px rgba(0,0,0,.25);
-  }
-  .fm-side.is-sm{ transform:translateX(-110%); box-shadow:none; }
-
-  .fm-topnav{ position:sticky; top:0; }
-  .fm-brand-small{ display:none; }
-}

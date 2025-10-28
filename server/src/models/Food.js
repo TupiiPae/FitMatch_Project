@@ -1,8 +1,14 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
-// Tên món: chỉ chữ (kể cả tiếng Việt) và khoảng trắng
-const NAME_LETTERS_ONLY = /^[\p{L}\s]+$/u;
+/**
+ * Tên món cho phép:
+ * - Chữ (kể cả tiếng Việt có dấu tổ hợp \p{M})
+ * - Khoảng trắng
+ * - Các ký tự thông dụng: ( ) - , . & /
+ * - Dấu nháy thẳng ' và nháy cong ’
+ */
+const NAME_REGEX = /^[\p{L}\p{M}\s'’\-.,&()\/]+$/u;
 
 const FoodSchema = new Schema(
   {
@@ -13,18 +19,19 @@ const FoodSchema = new Schema(
       trim: true,
       maxlength: [50, "Tên món tối đa 50 ký tự"],
       validate: {
-        validator: (v) => NAME_LETTERS_ONLY.test(v),
-        message: "Tên món chỉ được chứa chữ và khoảng trắng (không số, không ký tự đặc biệt)"
-      }
+        validator: (v) => NAME_REGEX.test(v),
+        message: "Tên món chỉ gồm chữ, dấu tiếng Việt và các ký tự: ( ) - , . & /",
+      },
     },
     imageUrl: { type: String, trim: true },
     portionName: { type: String, trim: true }, // “1 chén”, “1 miếng”, ...
+
     // massG: required, [0..10000]
     massG: {
       type: Number,
       required: [true, "Vui lòng nhập khối lượng (g)"],
       min: [0, "Khối lượng không được âm"],
-      max: [10000, "Khối lượng tối đa 10000"]
+      max: [10000, "Khối lượng tối đa 10000"],
     },
     unit: { type: String, enum: ["g", "ml"], default: "g" },
 
@@ -34,15 +41,15 @@ const FoodSchema = new Schema(
       type: Number,
       required: [true, "Vui lòng nhập kcal"],
       min: [0, "Kcal không được âm"],
-      max: [10000, "Kcal tối đa 10000"]
+      max: [10000, "Kcal tối đa 10000"],
     },
     // các trường còn lại: optional, [0..10000]
-    proteinG: { type: Number, min: [0,"Không được âm"], max: [10000,"Tối đa 10000"] },
-    carbG:    { type: Number, min: [0,"Không được âm"], max: [10000,"Tối đa 10000"] },
-    fatG:     { type: Number, min: [0,"Không được âm"], max: [10000,"Tối đa 10000"] },
-    saltG:    { type: Number, min: [0,"Không được âm"], max: [10000,"Tối đa 10000"] },
-    sugarG:   { type: Number, min: [0,"Không được âm"], max: [10000,"Tối đa 10000"] },
-    fiberG:   { type: Number, min: [0,"Không được âm"], max: [10000,"Tối đa 10000"] },
+    proteinG: { type: Number, min: [0, "Không được âm"], max: [10000, "Tối đa 10000"] },
+    carbG: { type: Number, min: [0, "Không được âm"], max: [10000, "Tối đa 10000"] },
+    fatG: { type: Number, min: [0, "Không được âm"], max: [10000, "Tối đa 10000"] },
+    saltG: { type: Number, min: [0, "Không được âm"], max: [10000, "Tối đa 10000"] },
+    sugarG: { type: Number, min: [0, "Không được âm"], max: [10000, "Tối đa 10000"] },
+    fiberG: { type: Number, min: [0, "Không được âm"], max: [10000, "Tối đa 10000"] },
 
     /* Meta người tạo */
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -57,7 +64,7 @@ const FoodSchema = new Schema(
     /* Nguồn */
     sourceType: {
       type: String,
-      enum: ["fresh", "packaged", "cooked", "user_submitted", "other"],
+      enum: ["fresh", "packaged", "cooked", "user_submitted", "admin_created", "other"],
       default: "other",
     },
 

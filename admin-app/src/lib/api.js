@@ -1,7 +1,12 @@
 // src/lib/api.js
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+/* ---------------------------
+ * BASE & AXIOS INSTANCE
+ * --------------------------- */
+const rawBase = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+// Chuẩn hoá bỏ dấu "/" cuối (nếu có) để tránh "//" khi concat
+const API_BASE = String(rawBase || "").replace(/\/+$/, "");
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -12,13 +17,33 @@ export const api = axios.create({
  * Request: gắn Bearer token
  * --------------------------- */
 api.interceptors.request.use((cfg) => {
-  const raw = localStorage.getItem("admin_auth");
-  if (raw) {
-    try {
-      const { token } = JSON.parse(raw);
-      if (token) cfg.headers.Authorization = `Bearer ${token}`;
-    } catch {}
-  }
+  // Ưu tiên admin_auth (object JSON {token,...}), fallback token chuỗi
+  const getToken = () => {
+    const rawAdmin = localStorage.getItem("admin_auth");
+    if (rawAdmin) {
+      try {
+        const parsed = JSON.parse(rawAdmin);
+        if (parsed?.token) return parsed.token;
+      } catch {
+        // nếu lưu chuỗi thuần
+        return rawAdmin;
+      }
+    }
+    // Fallback: user token (giữ để không phá chỗ khác dùng chung api)
+    const rawUser = localStorage.getItem("token");
+    if (rawUser) {
+      try {
+        const parsedUser = JSON.parse(rawUser);
+        if (parsedUser?.token) return parsedUser.token;
+      } catch {
+        return rawUser;
+      }
+    }
+    return null;
+  };
+
+  const token = getToken();
+  if (token) cfg.headers.Authorization = `Bearer ${token}`;
   return cfg;
 });
 
@@ -90,15 +115,7 @@ export const getStats = () =>
 
 /* =========================
  * ADMIN ACCOUNTS (Level 1)
- * =========================
- * Server endpoints (đã/ sẽ có trong admin.routes.js):
- *  GET    /api/admin/admin-accounts            -> list
- *  POST   /api/admin/admin-accounts            -> create (mặc định pass "fitmatch@admin2" nếu FE không gửi)
- *  PATCH  /api/admin/admin-accounts/:id        -> update { nickname | status }
- *  DELETE /api/admin/admin-accounts/:id        -> delete (chỉ cấp 1, cấm xoá chính mình)
- *  POST   /api/admin/admin-accounts/:id/block  -> block
- *  POST   /api/admin/admin-accounts/:id/unblock-> unblock
- */
+ * ========================= */
 export const listAdminAccounts = async (params = {}) => {
   try {
     const r = await api.get("/api/admin/admin-accounts", { params });
@@ -113,7 +130,7 @@ export const listAdminAccounts = async (params = {}) => {
         total: 0,
         limit: params.limit ?? 0,
         skip: params.skip ?? 0,
-        forbidden: status === 403, // để UI biết hiện thông báo “không có quyền”
+        forbidden: status === 403,
       };
     }
     throw e;
@@ -152,10 +169,10 @@ export const unblockAdminAccount = async (id) => {
 };
 
 /* =========================
- * FOODS (ADMIN)
+ * FOODS (ADMIN + PUBLIC)
  * ========================= */
 export const listFoods = async (params) => {
-  // gọi cả admin & public, gộp kết quả (giữ logic cũ)
+  // Gọi cả admin & public, gộp kết quả (giữ logic cũ)
   const tryFetch = async (path) => {
     try {
       const r = await api.get(path, { params });
@@ -183,6 +200,7 @@ export const listFoods = async (params) => {
   };
 };
 
+// Tạo món (JSON) – dùng khi có imageUrl hoặc không có ảnh
 export const createFood = async (body) => {
   try {
     const r = await api.post("/api/admin/foods", body);
@@ -190,6 +208,41 @@ export const createFood = async (body) => {
   } catch (e) {
     if (e?.response?.status === 404) {
       const r2 = await api.post("/api/foods", body);
+      return r2.data;
+    }
+    throw e;
+  }
+};
+
+export const createFoodFile = async (formData) => {
+  try {
+    const r = await api.post("/api/admin/foods", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return r.data;
+  } catch (e) {
+    if (e?.response?.status === 404) {
+      const r2 = await api.post("/api/foods", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return r2.data;
+    }
+    throw e;
+  }
+};
+
+// ---- THÊM: cập nhật món bằng multipart (file ảnh) ----
+export const updateFoodWithImage = async (id, formData) => {
+  try {
+    const r = await api.patch(`/api/admin/foods/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return r.data;
+  } catch (e) {
+    if (e?.response?.status === 404) {
+      const r2 = await api.patch(`/api/foods/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return r2.data;
     }
     throw e;

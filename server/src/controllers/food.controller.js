@@ -9,8 +9,16 @@ import { FOOD_DIR } from "../middleware/upload.js";
 
 const isNum = (v) => Number.isFinite(v);
 const toNumOrNull = (v) =>
-  v === undefined || v === null || v === "" ? null : (Number.isFinite(Number(v)) ? Number(v) : null);
-const ensureDir = () => { try { fs.mkdirSync(FOOD_DIR, { recursive: true }); } catch (_) {} };
+  v === undefined || v === null || v === ""
+    ? null
+    : Number.isFinite(Number(v))
+    ? Number(v)
+    : null;
+const ensureDir = () => {
+  try {
+    fs.mkdirSync(FOOD_DIR, { recursive: true });
+  } catch (_) {}
+};
 
 // ---- helper: map lỗi validate ----
 function toValidationMap(err) {
@@ -55,17 +63,37 @@ export async function listFoods(req, res) {
     and.push({ status: "approved" });
     const range = {};
     if (approvedFrom) range.$gte = new Date(approvedFrom);
-    if (approvedTo) { const t = new Date(approvedTo); t.setDate(t.getDate() + 1); range.$lt = t; }
+    if (approvedTo) {
+      const t = new Date(approvedTo);
+      t.setDate(t.getDate() + 1);
+      range.$lt = t;
+    }
     and.push({ approvedAt: range });
   }
 
   if (and.length) match.$and = and;
 
   const proj = {
-    name: 1, imageUrl: 1, portionName: 1, massG: 1, unit: 1,
-    kcal: 1, proteinG: 1, carbG: 1, fatG: 1, saltG: 1, sugarG: 1, fiberG: 1,
-    likedBy: 1, status: 1, createdBy: 1, createdByAdmin: 1,
-    approvedAt: 1, approvedBy: 1, updatedAt: 1, createdAt: 1,
+    name: 1,
+    imageUrl: 1,
+    portionName: 1,
+    massG: 1,
+    unit: 1,
+    kcal: 1,
+    proteinG: 1,
+    carbG: 1,
+    fatG: 1,
+    saltG: 1,
+    sugarG: 1,
+    fiberG: 1,
+    likedBy: 1,
+    status: 1,
+    createdBy: 1,
+    createdByAdmin: 1,
+    approvedAt: 1,
+    approvedBy: 1,
+    updatedAt: 1,
+    createdAt: 1,
   };
 
   const sort = q ? { score: { $meta: "textScore" } } : { updatedAt: -1 };
@@ -85,13 +113,16 @@ export async function listFoods(req, res) {
 export async function getFood(req, res) {
   const d = await Food.findById(req.params.id).lean();
   if (!d) return res.status(404).json({ message: "Not found" });
-  const isFavorite = req.userId ? d.likedBy?.some((x) => String(x) === String(req.userId)) : false;
+  const isFavorite = req.userId
+    ? d.likedBy?.some((x) => String(x) === String(req.userId))
+    : false;
   res.json({ ...d, isFavorite });
 }
 
 export async function createFood(req, res) {
-  try{
+  try {
     const userId = req.userId;
+    const isAdmin = req.userRole === "admin";
     const b = req.body || {};
     const name = String(b.name || "").trim();
     const mass = Number(b.massG);
@@ -106,13 +137,18 @@ export async function createFood(req, res) {
         ensureDir();
         const fn = `${userId || "anon"}-${Date.now()}.webp`;
         const out = path.join(FOOD_DIR, fn);
-        await sharp(req.file.buffer).rotate().resize(800, 800, { fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 82 }).toFile(out);
+        await sharp(req.file.buffer)
+          .rotate()
+          .resize(800, 800, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 82 })
+          .toFile(out);
         imageUrl = `/uploads/foods/${fn}`;
-      } catch (e) { console.error("[food.upload]", e?.message || e); }
+      } catch (e) {
+        console.error("[food.upload]", e?.message || e);
+      }
     }
 
-    const doc = await Food.create({
+    const base = {
       name,
       imageUrl,
       portionName: b.portionName || undefined,
@@ -125,36 +161,50 @@ export async function createFood(req, res) {
       saltG: toNumOrNull(b.saltG),
       sugarG: toNumOrNull(b.sugarG),
       fiberG: toNumOrNull(b.fiberG),
-      createdBy: userId,
       status: "pending",
       sourceType: b.sourceType || "user_submitted",
-    });
+    };
 
-    return res.status(202).json({ message: "Submitted for approval", id: doc._id });
-  }catch(err){
+    // Phân biệt người tạo: user vs admin
+    if (isAdmin) {
+      base.createdByAdmin = userId;
+    } else {
+      base.createdBy = userId;
+    }
+
+    const doc = await Food.create(base);
+    return res
+      .status(202)
+      .json({ message: "Submitted for approval", id: doc._id });
+  } catch (err) {
     const map = toValidationMap(err);
-    if (map) return res.status(422).json({ message: "Dữ liệu không hợp lệ", errors: map });
+    if (map)
+      return res
+        .status(422)
+        .json({ message: "Dữ liệu không hợp lệ", errors: map });
     console.error("[createFood]", err?.message || err);
     return res.status(500).json({ message: "Lỗi máy chủ" });
   }
 }
 
 export async function updateFood(req, res) {
-  try{
+  try {
     const userId = req.userId;
     const doc = await Food.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: "Not found" });
 
     const isOwner = String(doc.createdBy || "") === String(userId);
     const isAdmin = req.userRole === "admin";
-    if (!isOwner && !isAdmin) return res.status(403).json({ message: "Forbidden" });
+    if (!isOwner && !isAdmin)
+      return res.status(403).json({ message: "Forbidden" });
 
     const b = req.body || {};
     const set = {};
 
     if (b.massG !== undefined) {
       const m = Number(b.massG);
-      if (!isNum(m) || m <= 0) return res.status(400).json({ message: "massG must be > 0" });
+      if (!isNum(m) || m <= 0)
+        return res.status(400).json({ message: "massG must be > 0" });
       set.massG = m;
     }
     if (b.unit !== undefined) set.unit = b.unit === "ml" ? "ml" : "g";
@@ -171,10 +221,15 @@ export async function updateFood(req, res) {
         ensureDir();
         const fn = `${userId || "anon"}-${Date.now()}.webp`;
         const out = path.join(FOOD_DIR, fn);
-        await sharp(req.file.buffer).rotate().resize(800, 800, { fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 82 }).toFile(out);
+        await sharp(req.file.buffer)
+          .rotate()
+          .resize(800, 800, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 82 })
+          .toFile(out);
         set.imageUrl = `/uploads/foods/${fn}`;
-      } catch (e) { console.error("[food.upload][update]", e?.message || e); }
+      } catch (e) {
+        console.error("[food.upload][update]", e?.message || e);
+      }
     }
 
     if (isAdmin && b.status && ["pending", "approved", "rejected"].includes(b.status)) {
@@ -183,7 +238,7 @@ export async function updateFood(req, res) {
         if (!("approvedAt" in set)) set.approvedAt = new Date();
         if (!("approvedBy" in set)) set.approvedBy = userId;
       } else {
-        // giữ nguyên approvedAt/approvedBy; nếu muốn clear thì uncomment:
+        // giữ nguyên approvedAt/approvedBy; nếu muốn clear, có thể bật:
         // set.approvedAt = null; set.approvedBy = null;
       }
     }
@@ -191,9 +246,12 @@ export async function updateFood(req, res) {
     // Dùng findByIdAndUpdate + runValidators để trigger validators của model
     await Food.findByIdAndUpdate(doc._id, { $set: set }, { runValidators: true });
     return res.json(responseOk());
-  }catch(err){
+  } catch (err) {
     const map = toValidationMap(err);
-    if (map) return res.status(422).json({ message: "Dữ liệu không hợp lệ", errors: map });
+    if (map)
+      return res
+        .status(422)
+        .json({ message: "Dữ liệu không hợp lệ", errors: map });
     console.error("[updateFood]", err?.message || err);
     return res.status(500).json({ message: "Lỗi máy chủ" });
   }
@@ -241,7 +299,9 @@ export async function toggleFavorite(req, res) {
   const f = await Food.findById(req.params.id);
   if (!f) return res.status(404).json({ message: "Not found" });
   const has = f.likedBy.some((x) => String(x) === String(userId));
-  f.likedBy = has ? f.likedBy.filter((x) => String(x) !== String(userId)) : [...f.likedBy, userId];
+  f.likedBy = has
+    ? f.likedBy.filter((x) => String(x) !== String(userId))
+    : [...f.likedBy, userId];
   await f.save();
   res.json({ isFavorite: !has });
 }
@@ -252,8 +312,12 @@ export async function recordView(req, res) {
   if (!f) return res.status(404).json({ message: "Not found" });
   f.views += 1;
   const i = f.viewedBy.findIndex((v) => String(v.user) === String(userId));
-  if (i >= 0) { f.viewedBy[i].lastViewedAt = new Date(); f.viewedBy[i].count += 1; }
-  else { f.viewedBy.push({ user: userId, lastViewedAt: new Date(), count: 1 }); }
+  if (i >= 0) {
+    f.viewedBy[i].lastViewedAt = new Date();
+    f.viewedBy[i].count += 1;
+  } else {
+    f.viewedBy.push({ user: userId, lastViewedAt: new Date(), count: 1 });
+  }
   await f.save();
   res.json(responseOk());
 }
@@ -261,7 +325,15 @@ export async function recordView(req, res) {
 export async function createLog(req, res) {
   const userId = req.userId;
   const { foodId, date, hour, quantity = 1, massG } = req.body || {};
-  if (!foodId || !date || hour == null) return res.status(400).json({ message: "foodId, date, hour required" });
-  await NutritionLog.create({ user: userId, food: foodId, date, hour, quantity, massG: massG ?? undefined });
+  if (!foodId || !date || hour == null)
+    return res.status(400).json({ message: "foodId, date, hour required" });
+  await NutritionLog.create({
+    user: userId,
+    food: foodId,
+    date,
+    hour,
+    quantity,
+    massG: massG ?? undefined,
+  });
   res.json(responseOk());
 }
