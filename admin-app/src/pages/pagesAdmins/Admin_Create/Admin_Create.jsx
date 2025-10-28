@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createAdminAccount } from "../../../lib/api.js";
-
+import "./Admin_Create.css"; // Import CSS mới
 
 // Regex khớp backend
 const USERNAME_REGEX = /^[a-zA-Z0-9]{4,200}$/;
@@ -43,9 +43,11 @@ export default function AdminCreate(){
   };
 
   return (
-    <div className="foods-page">
+    // Thêm class admin-create-page để CSS riêng nếu cần
+    <div className="foods-page admin-create-page"> 
       {/* Breadcrumb */}
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
+        {/* ... (Giữ nguyên) ... */}
         <Link to="/"><i className="fa-solid fa-house"></i><span>Trang chủ</span></Link>
         <span className="separator">/</span>
         <Link to="/admins" className="current-group"><i className="fa-solid fa-user-gear"></i><span>Quản lý Admin</span></Link>
@@ -53,50 +55,64 @@ export default function AdminCreate(){
         <span className="current-page">Tạo tài khoản</span>
       </nav>
 
-      <div className="card" style={{ maxWidth: 680, marginInline: "auto" }}>
+      {/* Card: Căn giữa và giới hạn chiều rộng */}
+      <div className="card" style={{ maxWidth: 520, marginInline: "auto" }}>
+        {/* Page Head */}
         <div className="page-head">
           <h2>Tạo tài khoản quản trị (cấp 2)</h2>
-          <div className="head-actions">
-            <Link to="/admins" className="btn ghost"><span>Quay lại</span></Link>
-          </div>
+          {/* Bỏ nút Quay lại ở đây vì đã có nút Hủy dưới form */}
         </div>
 
-        <form onSubmit={onSubmit} className="fc-grid" style={{ display:"grid", gap:12 }}>
-          <label>
-            <div>Tên đăng nhập (username) <span className="req">*</span></div>
+        {/* Form: Dùng grid đơn giản */}
+        <form onSubmit={onSubmit} className="admin-create-form">
+          {/* Trường Username - Dùng Float Label */}
+          <div className={`fc-field ${errs.username ? "has-error" : ""}`}>
             <input
-              className={`ipt ${errs.username ? "input-invalid" : ""}`}
+              id="admin-username"
+              className={` ${errs.username ? "input-invalid" : ""}`} // Giữ lại input-invalid nếu cần style riêng
               value={username}
               onChange={e=>setUsername(e.target.value)}
-              placeholder="vd: adminviet"
+              placeholder=" " // Quan trọng cho float label
               maxLength={200}
               required
             />
-            {errs.username && <div className="error-item" style={{marginTop:6}}>{errs.username}</div>}
-          </label>
+            <label htmlFor="admin-username">
+              Tên đăng nhập (username) <span className="req">*</span>
+            </label>
+            {errs.username && <div className="error-item">{errs.username}</div>}
+          </div>
 
-          <label>
-            <div>Tên hiển thị (nickname) <span className="req">*</span></div>
+          {/* Trường Nickname - Dùng Float Label */}
+          <div className={`fc-field ${errs.nickname ? "has-error" : ""}`}>
             <input
-              className={`ipt ${errs.nickname ? "input-invalid" : ""}`}
+              id="admin-nickname"
+              className={` ${errs.nickname ? "input-invalid" : ""}`}
               value={nickname}
               onChange={e=>setNickname(e.target.value)}
-              placeholder="vd: Việt Admin"
+              placeholder=" " // Quan trọng cho float label
               maxLength={30}
               required
             />
-            {errs.nickname && <div className="error-item" style={{marginTop:6}}>{errs.nickname}</div>}
-          </label>
-
-          <div className="hint" style={{marginTop:4}}>
-            Mật khẩu mặc định: <b>fitmatch@admin2</b> (có thể đổi sau).
+            <label htmlFor="admin-nickname">
+              Tên hiển thị (nickname) <span className="req">*</span>
+            </label>
+            {errs.nickname && <div className="error-item">{errs.nickname}</div>}
           </div>
 
-          {errs.global && <div className="empty" style={{ color:"#b91c1c" }}>{errs.global}</div>}
+          {/* Hint mật khẩu */}
+          <div className="hint">
+            Mật khẩu mặc định: <b>fitmatch@admin2</b> (Admin có thể tự đổi sau khi đăng nhập).
+          </div>
 
-          <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:8 }}>
+          {/* Lỗi Global */}
+          {errs.global && <div className="error-global">{errs.global}</div>}
+
+          {/* Nút bấm */}
+          <div className="form-actions">
             <Link to="/admins" className="btn ghost">Hủy</Link>
-            <button className="btn primary" disabled={loading}>{loading ? "Đang tạo..." : "Tạo tài khoản"}</button>
+            <button className="btn primary" type="submit" disabled={loading}>
+              {loading ? "Đang tạo..." : "Tạo tài khoản"}
+            </button>
           </div>
         </form>
       </div>

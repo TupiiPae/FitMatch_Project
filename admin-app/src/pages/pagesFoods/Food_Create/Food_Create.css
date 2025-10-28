@@ -44,8 +44,8 @@
   transition: all .15s ease;
 }
 .btn:hover { background: #f9fafb; }
-.btn.primary { background: #5b6bff; border-color: #5b6bff; color: #fff; }
-.btn.primary:hover { background: #4a5aff; }
+.btn.primary { background: #008080; border-color: #008080; color: #fff; }
+.btn.primary:hover { background: #008080; }
 .btn.ghost { background: #fff; }
 .btn:active { transform: translateY(1px); }
 .btn i { font-size: 14px; }
@@ -176,7 +176,7 @@
 .fc-field textarea:not(:placeholder-shown) + label {
   top: 0; /* Di chuyển lên trên */
   transform: translateY(-50%) scale(0.8); /* Thu nhỏ */
-  color: #5b6bff; /* Đổi màu khi focus */
+  color: #008080; /* Đổi màu khi focus */
   background: #fff; /* Nền trắng để che đường viền */
   font-weight: 600;
 }
@@ -190,7 +190,7 @@
 .fc-field input:focus,
 .fc-field select:focus,
 .fc-field textarea:focus {
-  border-color: #5b6bff;
+  border-color: #008080;
   box-shadow: 0 0 0 2px #c7d2fe;
   outline: none;
 }

@@ -60,7 +60,7 @@
 }
 .btn:hover{ background:#f9fafb; }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn.primary{ background:#5b6bff; border-color:#5b6bff; color:#fff; }
+.btn.primary{ background:#008080; border-color:#008080; color:#fff; }
 .btn.danger{ color:#b91c1c; border-color:#FECACA; background:#fff; }
 .btn.danger:hover{ background:#fef2f2; }
 .btn.ghost{ background:#fff; }
@@ -82,7 +82,7 @@
 .search{
   display:flex; align-items:center; gap:8px;
   border:1px solid #E5E7EB; border-radius:10px; padding:0 10px; height:38px;
-  width: 100%; /* <-- SỬA width */
+  width:60%; /* <-- SỬA width */
   background:#fff;
 }
 .search i{ color:#6b7280; font-size:14px; }

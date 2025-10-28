@@ -29,8 +29,8 @@ export default function Login() {
       style={{
         "--login-hero": `url(${heroImg})`,
         "--login-bg": `url(${bgImg})`,
-        "--brand": "#1A73E8",
-        "--brand-2": "#3657F0",
+        "--brand": "#008080",
+        "--brand-2": "#78BCC4",
         "--radius-card": "24px",
         "--radius-panel": "18px",
         "--panel-w": "minmax(340px, 36%)", // ~1/3 card

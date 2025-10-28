@@ -58,7 +58,7 @@
   transition: box-shadow .15s ease, transform .1s ease, background .15s ease; text-decoration: none;
 }
 .btn:hover{ background:#f9fafb; }
-.btn.primary{ background:#5b6bff; border-color:#5b6bff; color:#fff; }
+.btn.primary{ background:#008080; border-color:#008080; color:#fff; }
 .btn.danger{ color:#b91c1c; border-color:#FECACA; background:#fff; }
 .btn.ghost{ background:#fff; }
 .btn:active{ transform: translateY(1px); }
