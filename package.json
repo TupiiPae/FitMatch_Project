@@ -1,0 +1,14 @@
+{
+  "name": "fitmatch",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:admin\" \"npm run dev:user\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:admin": "cd admin-app && npm start",
+    "dev:user": "cd user-app && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

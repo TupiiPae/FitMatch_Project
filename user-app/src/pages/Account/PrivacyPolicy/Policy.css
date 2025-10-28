@@ -1,0 +1,23 @@
+.acc-page .pf-content .pp-title {
+  font-size: 28px;
+  text-align: center;
+  margin-bottom: 60px; /* giữ nhịp với pf-desc bên dưới */
+}
+
+.acc-page .pf-content .pf-h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.acc-page .pf-content .pf-p {
+  color:#6b7280;
+  font-size:14px;
+  margin:6px 0 14px;
+  text-align: justify;
+  text-justify: inter-word; 
+  line-height: 1.7;
+  overflow-wrap: anywhere;         /* hoặc: word-break: break-word; */
+  /* hyphenation (tùy trình duyệt, ít hiệu quả với tiếng Việt) */
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}

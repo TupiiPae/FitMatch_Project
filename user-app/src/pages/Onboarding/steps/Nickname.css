@@ -1,0 +1,201 @@
+.nk-wrap {
+  min-height: 100vh;
+  background: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* top bar with logo */
+.nk-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 150px;
+  background: #ffffffaa;
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid #eceff4;
+}
+.nk-logo { height: 150px; }
+/* center area */
+.nk-main {
+  flex: 1;
+  display: grid;
+  justify-items: center;  
+  align-content: start;    
+  padding-top: 20px;    
+}
+
+.nk-card {
+  width: 100%;
+  max-width: 720px; /* tăng để đủ 2 cột */
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 24px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  text-align: center;
+  border: 1px solid #eef1f5;
+}
+
+.nk-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 6px;
+}
+
+.nk-desc {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 60px;
+}
+
+.nk-field { margin-top: 8px; }
+
+/* Input chung */
+.nk-input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+  background: #fff;
+}
+.nk-input-large {
+  height: 52px;
+  font-size: 16px;
+}
+.nk-input::placeholder { color: #9ca3af; }
+.nk-input:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25,118,210,0.12);
+}
+
+.nk-input-wrap { text-align: left; }
+
+.nk-error {
+  margin-top: 8px;
+  color: #d32f2f;
+  font-size: 12px;
+}
+.nk-hint {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* Hai cột: giới tính (trái) - ngày sinh (phải) */
+.nk-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 14px;
+  text-align: left;
+}
+.nk-col { display: flex; flex-direction: column; }
+
+.nk-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+/* Radio card Giới tính */
+.nk-sex-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.sex-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  color: #111827;
+  transition: border-color .2s, box-shadow .2s, background .2s, transform .05s;
+}
+.sex-card:active { transform: translateY(1px); }
+.sex-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.sex-icon { display: inline-flex; color: #6b7280; }
+.sex-text { font-weight: 500; }
+
+.sex-card:hover { border-color: #c7d2fe; }
+.sex-card.active {
+  border-color: #1a73e8;
+  background: #f3f8ff;
+  box-shadow: 0 6px 14px rgba(26,115,232,.12);
+  color: #0f172a;
+}
+.sex-card.active .sex-icon { color: #1a73e8; }
+
+/* Ngày sinh đẹp hơn (icon + padding trái) */
+.dob-input {
+  position: relative;
+}
+.calendar-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
+}
+.nk-input-date {
+  padding-left: 40px; /* chừa chỗ cho icon */
+}
+
+/* actions (under card) */
+.nk-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.btn {
+  min-width: 120px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform .05s, box-shadow .2s, background .2s, border-color .2s;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-outline {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #111827;
+}
+.btn-outline:hover { border-color: #9ca3af; box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+
+.btn-primary {
+  background: #1a73e8;
+  border: none;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(26,115,232,.25);
+}
+.btn-primary:hover { background: #1866d6; box-shadow: 0 8px 18px rgba(26,115,232,.32); }
+
+@media (max-width: 720px) {
+  .nk-two-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .nk-card { padding: 22px 16px; }
+  .nk-actions { width: 100%; justify-content: center; }
+  .btn { flex: 1; max-width: 220px; }
+}

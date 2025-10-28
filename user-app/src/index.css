@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scrollbar-gutter: stable;
+}
+
+@supports not (scrollbar-gutter: stable) {
+  body {
+    /* Luôn hiển thị gutter scrollbar để không bị nhảy layout */
+    overflow-y: scroll;
+  }
+}
+

@@ -1,0 +1,249 @@
+/* ===== Khung trang (đồng bộ với RecordMeal) ===== */
+.dj-wrap{ padding: 0 190px; }
+
+/* ===== Thanh bar trên (đồng bộ nm-head) ===== */
+.dj-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:#fff; padding:14px 10px;
+  border:1px solid #002C3E55; border-radius:10px; z-index:5;
+}
+.dj-bar .left{ display:flex; align-items:center; gap:8px;}
+.dj-bar .left input[type=date]{
+  height:44px; border:1px solid #e5e7eb; border-radius:12px; padding:0 10px;
+}
+
+.week{ display:flex; gap:20px; }
+.wbtn{
+  height:50px; min-width:100px; padding:0 20px;
+  border:1px solid #78BCC4; border-radius:10px; background:#fff; cursor:pointer;
+}
+.wbtn.on{ background:#78BCC4; }
+
+.dj-bar .right{ display:flex; align-items:center; gap:6px; font-weight:700; }
+.fa-fire.hot{ color:#ea4335; }
+.fa-fire.cold{ color:#9aa0a6; }
+
+/* ===== Lưới nội dung 2/3 : 1/3 ===== */
+.dj-grid{ display:grid; grid-template-columns: 2fr 1fr; gap:14px; margin-top:12px; }
+
+/* ===== Khung chính bên trái (card) ===== */
+.dj-main{
+  background:#fff;
+  border:1px solid #002C3E55; border-radius:10px;
+  padding:20px;
+}
+.col-title{ font-weight:600; margin-bottom:14px; text-align: center; font-size: 24px; color: #F7444E;}
+
+/* Hàng giờ */
+.hour-row{
+  display:grid; grid-template-columns: 60px 1fr;
+  border-top:1px dashed #eef2f7; padding:6px 0;
+}
+.hour-row:first-child{ border-top:none; }
+.hh{ color:#6b7280; font-size:12px; line-height:24px; }
+.entries{ display:flex; flex-direction:column; gap:6px; }
+
+/* Box món trong nhật ký (đồng bộ nm-item) */
+.entry{
+  display:grid; grid-template-columns: 40px 1fr auto; gap:8px; align-items:center;
+  border:1px solid #78BCC455; background:#fff; border-radius:10px; padding:6px 8px;
+}
+.entry img{ width:40px; height:40px; border-radius:8px; object-fit:cover; }
+.einfo .etitle{ font-weight:600; }
+.einfo .esub{ color:#6b7280; font-size:12px; }
+.edel{
+  width:34px; height:30px; border:1px solid #f5c2c2; color:#c23b3b;
+  background:#fff; border-radius:8px; cursor:pointer;
+}
+
+/* ===== Khung bên phải (card) ===== */
+.dj-side{ display:flex; flex-direction:column; gap:12px; }
+.panel{
+  border: 1px solid #002C3E55; background:#fff; border-radius:10px; padding:12px;
+}
+.pitem{ margin:8px 0; }
+.pitem .label{ font-weight:600; margin-bottom:4px; }
+.pitem .pbar{ height:8px; background:#eee; border-radius:999px; overflow:hidden; }
+.pitem .pbar span{ display:block; height:100%; background:#e66a3a; }
+.pitem .pbar.red span{ background:#ef4444; }
+.pitem .pbar.purple span{ background:#7c3aed; }
+.pitem .pbar.green span{ background:#22c55e; }
+.pitem .pbar.gray span{ background:#d1d5db; }
+.pitem .pbar.orange span{ background:#fb923c; }
+.pitem .pbar.teal span{ background:#14b8a6; }
+.pitem .pval{ color:#6b7280; font-size:12px; margin-top:2px; }
+
+/* ===================== WATER CARD – hiện đại, nổi khối ===================== */
+.panel.water{
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #002C3E55;
+  box-shadow: 0 8px 28px rgba(0,44,62,.06);
+}
+
+/* Header gọn gàng, icon lớn, số ml nổi bật */
+.panel.water .wtop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between; /* trái ↔ phải */
+  gap:12px;
+  margin-bottom:0;               /* vì control đã nằm cùng hàng */
+}
+.panel.water .wleft{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+.panel.water .wctl{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:nowrap;
+}
+
+.panel.water .wctl button,
+.panel.water .wctl input{
+  flex:0 0 auto;
+}
+
+.panel.water .wtop i{ font-size:22px; color:#1A73E8; }
+.panel.water .wlabel{ font-size: 18px;font-weight:800; letter-spacing:.2px; padding-left: 10px;}
+.panel.water .wval{
+  margin-top: 2px;
+  font-weight:600; font-size:22px;padding-left: 18px; color:#1A73E8
+}
+
+/* Nút +/- to, cảm giác mềm tay */
+.panel.water .wctl{ display:flex; align-items:center; gap:10px; }
+.panel.water .wctl button{
+  width:42px; height:38px; border-radius:12px;
+  border:1px solid #78BCC4; background:#fff; cursor:pointer;
+  box-shadow: 0 3px 10px rgba(0,44,62,.06);
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.panel.water .wctl button:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,44,62,.08);
+  background:#f6fdff;
+}
+.panel.water .wctl input{
+  width:120px; height:38px; border-radius:12px;
+  border:1px solid #78BCC4; padding:0 10px; background:#fff;
+  box-shadow: inset 0 1px 0 rgba(2,8,23,.04); font-size: 20px; font-weight: 500;  text-align: center; line-height: 38px;
+}
+
+/* Item: thẻ con theo grid để canh hàng */
+.pitem{
+  margin:12px 0; padding:8px 10px; border-radius:12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fdfefe 100%);
+  border:1px solid #eef4f8;
+  box-shadow: 0 2px 8px rgba(2,8,23,.03);
+}
+.pitem .label{
+  display:flex; align-items:center; justify-content:space-between;
+  font-weight:800; margin-bottom:6px; letter-spacing:.2px;
+}
+
+/* “Chip” hiển thị giá trị bên phải label (lấy từ .pval đưa style “chip”) */
+.pitem .pval{
+  margin-top:6px;
+  display:inline-block;
+  background:#f3f7fb;
+  border:1px solid #e5edf5;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:12px; font-weight:700;
+}
+
+/* Thanh tiến độ mới: dày hơn, có viền sáng, bo tròn đẹp */
+.pitem .pbar{
+  position:relative;
+  height:12px; background:#eef4f8; border-radius:999px; overflow:hidden;
+  box-shadow: inset 0 1px 2px rgba(2,8,23,.06);
+}
+
+/* ===== Macro panel mới ===== */
+.panel.macro{
+  border: 1px solid #002C3E55;
+  background:#fff;
+  border-radius:10px;
+  padding:20px;
+}
+
+/* --- Calorie ring --- */
+.cal-wrapper{ display:flex; justify-content:center; margin-bottom:20px; }
+.cal-ring{
+  position:relative; width:132px; height:132px;
+}
+.cal-ring svg{ display:block; }
+.cal-ring .ring-bg{
+  stroke:#eee;
+}
+.cal-ring .ring-fg{
+  stroke:#1A73E8;             /* màu primary */
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset .4s ease, stroke-dasharray .4s ease;
+  stroke-linecap: round;
+}
+.cal-center{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center;
+}
+.cal-center .cc-label{
+  font-size:14px; color:#6b7280; margin-bottom:2px;
+}
+.cal-center .cc-val{
+  font-weight:800; font-size:18px; color:#0b5066;
+}
+.cal-center .cc-unit{
+  font-weight:600; font-size:12px; color:#6b7280; margin-left:2px;
+}
+
+/* --- Grid 2 cột cho 6 chỉ số --- */
+.macro-grid{
+  display:grid; grid-template-columns: 1fr 1fr; gap:20px;
+}
+.macro-grid .col{ display:flex; flex-direction:column; gap:10px; }
+
+.mhead{
+  display:flex; align-items:center; justify-content:space-between;
+  font-weight:600; margin-bottom:14px;
+}
+.mhead .mval{
+  color:#6b7280; font-weight:700; font-size:12px;
+}
+
+/* thanh tiến độ ngang */
+.mbar{
+  height:10px; border-radius:999px; overflow:hidden; background:#eee;
+  border: 1px solid #e5e7eb;
+}
+.mbar > span{
+  display:block; height:100%; width:0%;
+  background:#e66a3a; transition: width .3s ease;
+  border-right: 1px solid rgba(0,0,0,.06);
+}
+
+/* màu theo chất (giống bảng cũ) */
+.mbar.red    > span{ background:#ef4444; }
+.mbar.purple > span{ background:#7c3aed; }
+.mbar.green  > span{ background:#22c55e; }
+.mbar.gray   > span{ background:#d1d5db; }
+.mbar.orange > span{ background:#fb923c; }
+.mbar.teal   > span{ background:#14b8a6; }
+
+/* Responsive */
+@media (max-width: 768px){
+  .cal-wrapper{ margin-bottom:10px; }
+  .macro-grid{ grid-template-columns: 1fr; }
+}
+
+/* Nhỏ màn hình vẫn đẹp */
+@media (max-width: 768px){
+  .panel.water .wtop{ gap:10px; }
+  .panel.water .wval{ font-size:18px; }
+  .panel.water .wctl input{ width:96; }
+}

@@ -1,0 +1,7 @@
+.avc-modal { position: fixed; inset: 0; z-index: 9999; display:flex; align-items:center; justify-content:center; }
+.avc-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.4); }
+.avc-card { position:relative; background:#fff; width:min(90vw, 720px); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.15); overflow:hidden; }
+.avc-head { padding:16px 20px; border-bottom:1px solid #eee; }
+.avc-title { font-weight:700; font-size:18px; }
+.avc-body { padding:12px; }
+.avc-actions { padding:12px 20px 16px; display:flex; justify-content:flex-end; }

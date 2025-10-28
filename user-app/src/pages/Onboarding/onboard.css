@@ -1,0 +1,50 @@
+.onb-wrap {
+  max-width: 860px; margin: 32px auto; padding: 0 16px; font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.onb-card {
+  background:#fff; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,.08);
+  padding:28px; position:relative;
+}
+.onb-title { font-size:1.5rem; margin-bottom:8px; color:#212121; }
+.onb-sub { color:#616161; margin-bottom:20px; }
+
+.onb-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:16px; }
+.onb-box {
+  border:1px solid #eaeaea; border-radius:10px; padding:16px; text-align:center; transition:transform .15s, box-shadow .2s;
+}
+.onb-box:hover { transform: translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,.06); }
+.onb-img { width:100%; height:120px; background:#f2f4f8; border-radius:8px; margin-bottom:12px; }
+.onb-box h4 { margin:6px 0; color:#222; }
+.onb-box p { color:#666; font-size:14px; }
+
+.onb-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap; }
+.btn {
+  min-height:44px; border:none; border-radius:8px; padding:10px 16px; font-weight:500; cursor:pointer; transition: transform .05s, box-shadow .2s;
+}
+.btn:active { transform: translateY(0.5px); }
+.btn-primary { background:#1976d2; color:#fff; }
+.btn-primary:hover { background:#1565c0; }
+.btn-secondary { background:#eef2f7; color:#1f2a37; }
+.btn-link { background:transparent; color:#1976d2; }
+
+.onb-field { margin: 12px 0 6px; }
+.onb-input {
+  width:100%; border:none; border-bottom:2px solid #e0e0e0; padding:14px 0 8px; font-size:16px; outline:none;
+}
+.onb-input:focus { border-bottom-color:#1976d2; }
+
+.goal-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:14px; }
+.goal-card {
+  border:1.5px solid #e6e9f0; border-radius:10px; padding:16px; cursor:pointer; display:flex; align-items:center; gap:12px;
+  transition:border-color .15s, box-shadow .2s, transform .05s;
+}
+.goal-card:hover { border-color:#c6d4f3; box-shadow:0 8px 20px rgba(47,128,237,.08); transform: translateY(-1px); }
+.goal-card.active { border-color:#1976d2; box-shadow:0 0 0 3px rgba(25,118,210,.15); }
+.goal-dot { width:12px; height:12px; border-radius:50%; background:#c4c4c4; }
+.goal-card.active .goal-dot { background:#1976d2; }
+
+.cheer-box {
+  background: linear-gradient(135deg, #e8f1fe 0%, #f5faff 100%);
+  border:1px solid #dbe7fd; border-radius:12px; padding:18px; color:#0f172a;
+}
+.cheer-box h3 { margin-bottom:8px; }
