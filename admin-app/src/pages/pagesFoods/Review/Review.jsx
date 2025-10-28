@@ -1,7 +1,7 @@
 // admin-app/src/pagesFoods/Review.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { listFoods, approveFood, rejectFood, api } from "../../../lib/api";
+import { listFoodsAdminOnly, approveFood, rejectFood, api } from "../../../lib/api";
 import "./Review.css";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
@@ -25,7 +25,8 @@ export default function FoodsReview() {
     setLoading(true);
     setSelectedIds([]);
     try {
-      const res = await listFoods({ status: "pending", limit, skip });
+      const res = await listFoodsAdminOnly({ status: "pending", origin: "user", limit, skip });
+      
       // Lọc an toàn để CHẮC CHẮN chỉ còn pending (phòng khi public API trả khác)
       const onlyPending = (res?.items || []).filter((x) => x?.status === "pending");
       setItems(onlyPending);
@@ -151,7 +152,7 @@ export default function FoodsReview() {
             <div className="cell img">Hình ảnh</div>
             <div className="cell name">Tên món ăn</div>
             <div className="cell kcal">Calo</div>
-            <div className="cell macros">Đạm / Đường bột / Béo</div>
+            <div className="cell macrosR">Đạm / Đường bột / Chất Béo</div>
             <div className="cell creator">Người tạo</div>
             <div className="cell email">Email</div>
             <div className="cell created">Thời gian tạo</div>

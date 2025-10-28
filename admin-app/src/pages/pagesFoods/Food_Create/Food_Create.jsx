@@ -290,7 +290,6 @@ export default function FoodCreate() {
                   <option value="g">g (gram)</option>
                   <option value="ml">ml (millilit)</option>
                 </select>
-                <label htmlFor="food-unit">Đơn vị (bắt buộc)</label>
               </div>
             </div>
 

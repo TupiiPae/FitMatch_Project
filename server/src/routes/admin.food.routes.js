@@ -1,58 +1,62 @@
 // server/src/routes/admin.food.routes.js
 import { Router } from "express";
 import { auth } from "../middleware/auth.js";
-import { requireAtLeast } from "../middleware/requireRole.js";
-import {
-  listFoods,
-  getFood,
-  createFood,
-  updateFood,
-  deleteFood,
-  approveFood,
-  rejectFood,
-} from "../controllers/food.controller.js";
-import { uploadFoodSingle } from "../middleware/upload.js";
+import { requireRole, requireAtLeast } from "../middleware/requireRole.js";
+import Food from "../models/Food.js";
+import { responseOk } from "../utils/response.js";
 
 const r = Router();
 
-// ===== TẤT CẢ CHỨC NĂNG: admin cấp 2 trở lên =====
+// Cho admin_lv2 trở lên
 r.use(auth, requireAtLeast("admin_lv2"));
 
 /**
- * GET /api/admin/foods?status=pending|approved|rejected&limit=&skip=&q=
- * (không cần upload)
+ * GET /api/admin/foods
+ * Hỗ trợ: status, q, origin(user|admin), limit, skip
  */
-r.get("/foods", listFoods);
+r.get("/foods", async (req, res) => {
+  const {
+    status,
+    q = "",
+    origin,
+    limit = 100,
+    skip = 0,
+  } = req.query;
 
-/**
- * GET /api/admin/foods/:id
- */
-r.get("/foods/:id", getFood);
+  const query = {};
 
-/**
- * POST /api/admin/foods
- * - Cho phép admin tạo món trực tiếp
- * - Hỗ trợ multipart (field "image") hoặc JSON (imageUrl)
- * - Dùng controller để resize ảnh, set createdByAdmin, map fields, v.v.
- */
-r.post("/foods", uploadFoodSingle, createFood);
+  // lọc trạng thái (tùy chọn)
+  if (["pending", "approved", "rejected"].includes(String(status))) {
+    query.status = String(status);
+  }
 
-/**
- * PATCH /api/admin/foods/:id
- * - Hỗ trợ multipart (field "image") hoặc JSON
- */
-r.patch("/foods/:id", uploadFoodSingle, updateFood);
+  // lọc nguồn tạo (nếu cần)
+  if (origin === "user") {
+    query.createdBy = { $ne: null };
+    query.$or = [{ createdByAdmin: { $exists: false } }, { createdByAdmin: null }];
+  } else if (origin === "admin") {
+    query.createdByAdmin = { $ne: null };
+  }
 
-/**
- * DELETE /api/admin/foods/:id
- */
-r.delete("/foods/:id", deleteFood);
+  // text search tối giản
+  if (q && String(q).trim()) {
+    query.name = { $regex: String(q).trim(), $options: "i" };
+  }
 
-/**
- * DUYỆT & TỪ CHỐI
- * *Theo yêu cầu mới*: cấp 2 cũng có quyền duyệt → không đặt requireRole("admin_lv1")
- */
-r.post("/foods/:id/approve", approveFood);
-r.post("/foods/:id/reject", rejectFood);
+  const items = await Food.find(query)
+    .sort({ createdAt: -1 })
+    .limit(Number(limit))
+    .skip(Number(skip))
+    // QUAN TRỌNG: populate người tạo để FE hiển thị nickname & email
+    .populate({ path: "createdBy", select: "email username profile.nickname" })
+    .lean();
+
+  res.json({
+    items,
+    total: items.length,
+    limit: Number(limit),
+    skip: Number(skip),
+  });
+});
 
 export default r;

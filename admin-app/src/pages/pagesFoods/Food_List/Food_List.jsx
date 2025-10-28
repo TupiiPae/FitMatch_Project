@@ -169,7 +169,7 @@ export default function FoodsList() {
           <span>Quản lý Món ăn</span>
         </span>
         <span className="separator">/</span>
-        <span className="current-page">Danh sách (đã duyệt)</span>
+        <span className="current-page">Danh sách món ăn</span>
       </nav>
 
       {/* ===== Card ===== */}
@@ -229,7 +229,7 @@ export default function FoodsList() {
             <div className="cell name">Tên</div>
             <div className="cell mass">Khối lượng</div>
             <div className="cell kcal">Calorie (kcal)</div>
-            <div className="cell macros">Đạm / Carb / Béo</div>
+            <div className="cell macros">Đạm / Đường bột / Chất béo</div>
             <div className="cell creator">Người tạo</div>
             <div className="cell approved">Thời gian duyệt</div>
             <div className="cell act">Thao tác</div>

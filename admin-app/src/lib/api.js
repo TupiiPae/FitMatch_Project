@@ -275,6 +275,12 @@ export const deleteFood = async (id) => {
   }
 };
 
+export const listFoodsAdminOnly = async (params = {}) => {
+  const r = await api.get("/api/admin/foods", { params });
+  // trả về nguyên vẹn (hoặc normalize nếu bạn muốn)
+  return r.data; // { items, total, limit, skip }
+};
+
 export const approveFood = async (id) => {
   try {
     const r = await api.post(`/api/admin/foods/${id}/approve`);
