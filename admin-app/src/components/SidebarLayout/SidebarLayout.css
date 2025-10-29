@@ -54,7 +54,7 @@
 
 /* Logo */
 .fm-side__logo{
-  height:110px;
+  height:80px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -64,7 +64,7 @@
 }
 .fm-logo-link{ display:inline-flex; align-items:center; justify-content:center; }
 .fm-logo-rect{
-  height:150px;
+  height:120px;
   width:auto;
   object-fit:contain;
   display:block;
