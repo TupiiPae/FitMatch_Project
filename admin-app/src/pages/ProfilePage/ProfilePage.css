@@ -1,26 +1,25 @@
-/* Thiết kế card cho trang Profile */
+/* src/pages/ProfilePage/ProfilePage.css */
 
-.fm-page-title {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: var(--fm-text);
+/* THAY ĐỔI: Thêm layout padding cho toàn trang, giống .foods-page */
+.fm-profile-page {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* Khoảng cách giữa breadcrumb và card */
 }
 
-.fm-card {
-  background: var(--fm-panel);
-  border: 1px solid var(--fm-border);
-  border-radius: var(--fm-radius);
-  box-shadow: var(--fm-shadow);
-  padding: 24px;
+/* THAY ĐỔI: Wrapper mới cho nội dung form bên trong .card */
+.profile-form-content {
+  padding: 12px; /* Padding nhẹ bên trong card, trước khi bắt đầu form */
+  max-width: 700px; /* Giới hạn chiều rộng như yêu cầu "đỡ trống" */
 }
 
-/* Giới hạn chiều rộng của card để không bị trống */
-.fm-profile-card {
-  max-width: 700px;
-}
+/* XÓA: .fm-page-title, .fm-card, .fm-profile-card
+  Chúng ta giả định .card, .page-head h2 đã được style toàn cục
+  từ FoodList.css hoặc file css chung.
+*/
 
-/* Styles cho form */
+/* GIỮ NGUYÊN: Tất cả style cho form từ lần trước */
 .fm-form-group {
   margin-bottom: 16px;
 }
@@ -55,21 +54,7 @@
   padding-top: 16px;
 }
 
-.fm-form-actions {
-  margin-top: 24px;
-  text-align: right;
-}
-
-/* Nút bấm (Bạn có thể đã có style này) */
-.fm-btn-primary {
-  background-color: var(--fm-primary);
-  color: #fff;
-  border: none;
-  padding: 10px 16px;
-  border-radius: var(--fm-radius-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
-.fm-btn-primary:hover {
-  opacity: 0.9;
-}
+/* XÓA: .fm-form-actions và .fm-btn-primary
+   Chúng ta giả định .btn.primary đã được style toàn cục 
+   từ FoodList.css
+*/

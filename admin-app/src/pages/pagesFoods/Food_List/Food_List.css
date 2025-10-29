@@ -306,7 +306,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 12px;
   color: #374151;
 }
 .per-page select {
@@ -314,7 +314,7 @@
   border-radius: 8px;
   padding: 6px 8px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   background-color: #fff;
 }
 .page-nav {

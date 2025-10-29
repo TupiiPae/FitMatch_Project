@@ -219,11 +219,11 @@
 }
 .per-page {
   display: flex; align-items: center; gap: 8px;
-  font-size: 14px; color: #374151;
+  font-size: 12px; color: #374151;
 }
 .per-page select {
   border: 1px solid #D1D5DB; border-radius: 8px; padding: 6px 8px;
-  font-size: 14px; font-weight: 600; background-color: #fff;
+  font-size: 12px; font-weight: 500; background-color: #fff;
 }
 .page-nav { display: flex; align-items: center; gap: 8px; }
 .page-info { font-size: 14px; color: #374151; }
