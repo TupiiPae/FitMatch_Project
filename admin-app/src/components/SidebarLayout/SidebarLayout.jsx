@@ -77,7 +77,9 @@ const subLinkClass = ({ isActive }) =>
 function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
   const { auth } = useAuth();
   const level = Number(auth?.profile?.level) || 2;
-  const username = auth?.profile?.username || "admin";
+  // Ưu tiên nickname, thiếu thì dùng username, cuối cùng fallback "admin"
+  const displayName = auth?.profile?.nickname || auth?.profile?.username || "admin";
+
   return (
     <header className="fm-topnav">
       <div className="fm-topnav__left">
@@ -90,6 +92,7 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
           <i className={collapsed ? "fa-solid fa-angles-right" : "fa-solid fa-angles-left"} />
         </button>
       </div>
+
       <div className="fm-topnav__right">
         <button className="fm-iconbtn" onClick={onToggleTheme} title="Chế độ sáng/tối" aria-label="Toggle theme">
           <i className={theme === "dark" ? "fa-solid fa-moon" : "fa-regular fa-sun"} />
@@ -98,16 +101,17 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
           <i className="fa-regular fa-bell" />
           <span className="fm-dot" />
         </button>
+
         <div className="fm-nav__account">
           {level === 1 ? (
             <div className="fm-account-box fm-account-box--level1">
               <i className="fa-solid fa-user" />
-              <span>Admin cấp 1&nbsp;&nbsp;|&nbsp;&nbsp;{username}</span>
+              <span>Admin cấp 1&nbsp;&nbsp;|&nbsp;&nbsp;{displayName}</span>
             </div>
           ) : (
             <div className="fm-account-box fm-account-box--level2">
               <i className="fa-solid fa-users" />
-              <span>Admin cấp 2&nbsp;&nbsp;|&nbsp;&nbsp;{username}</span>
+              <span>Admin cấp 2&nbsp;&nbsp;|&nbsp;&nbsp;{displayName}</span>
             </div>
           )}
         </div>
@@ -115,7 +119,6 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
     </header>
   );
 }
-
 export default function SidebarLayout(){
   const { auth, logout } = useAuth();
   const level = Number(auth?.profile?.level) || 2;
