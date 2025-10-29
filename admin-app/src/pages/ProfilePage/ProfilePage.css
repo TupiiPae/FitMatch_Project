@@ -1,0 +1,75 @@
+/* Thiết kế card cho trang Profile */
+
+.fm-page-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--fm-text);
+}
+
+.fm-card {
+  background: var(--fm-panel);
+  border: 1px solid var(--fm-border);
+  border-radius: var(--fm-radius);
+  box-shadow: var(--fm-shadow);
+  padding: 24px;
+}
+
+/* Giới hạn chiều rộng của card để không bị trống */
+.fm-profile-card {
+  max-width: 700px;
+}
+
+/* Styles cho form */
+.fm-form-group {
+  margin-bottom: 16px;
+}
+.fm-form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--fm-text);
+}
+.fm-input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--fm-radius-sm);
+  border: 1px solid var(--fm-border);
+  background: var(--fm-bg);
+  color: var(--fm-text);
+}
+.fm-input:focus {
+  outline: none;
+  border-color: var(--fm-primary);
+  box-shadow: 0 0 0 2px rgba(120, 188, 196, 0.5);
+}
+
+.fm-form-divider {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fm-muted);
+  margin-top: 24px;
+  margin-bottom: 16px;
+  border-top: 1px solid var(--fm-border);
+  padding-top: 16px;
+}
+
+.fm-form-actions {
+  margin-top: 24px;
+  text-align: right;
+}
+
+/* Nút bấm (Bạn có thể đã có style này) */
+.fm-btn-primary {
+  background-color: var(--fm-primary);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: var(--fm-radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.fm-btn-primary:hover {
+  opacity: 0.9;
+}

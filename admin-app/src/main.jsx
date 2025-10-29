@@ -5,6 +5,8 @@ import App from "./App.jsx";
 import { AuthProvider } from "./auth/AuthContext.jsx";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import "./index.css";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const root = document.getElementById("root");
 ReactDOM.createRoot(root).render(
@@ -12,6 +14,7 @@ ReactDOM.createRoot(root).render(
     <BrowserRouter>
       <AuthProvider>
         <App />
+        <ToastContainer position="top-right" autoClose={2200} />
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
