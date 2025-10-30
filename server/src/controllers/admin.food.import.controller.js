@@ -1,252 +1,279 @@
-import fs from "fs";
-import path from "path";
-import sharp from "sharp";
+// server/src/controllers/admin.food.import.controller.js
 import * as XLSX from "xlsx";
-import unzipper from "unzipper";
 import Food from "../models/Food.js";
-import { FOOD_DIR } from "../middleware/upload.js";
+import { responseOk } from "../utils/response.js";
 
-const NAME_REGEX = /^[\p{L}\p{M}\s'’\-.,&()\/]+$/u;
+/** --------- Helpers --------- */
+const keyMap = {
+  // VN headers
+  "Hình ảnh": "imageUrl",
+  "Tên": "name",
+  "Khẩu phần": "servingDesc",       // sẽ map -> portionName
+  "Khối lượng": "massG",
+  "Đơn vị": "unit",
+  "Calorie": "kcal",
+  "Đạm": "proteinG",
+  "Đường bột": "carbG",
+  "Chất béo": "fatG",
+  "Muối": "saltG",
+  "Đường": "sugarG",
+  "Chất xơ": "fiberG",
+  // EN keys
+  imageUrl: "imageUrl",
+  name: "name",
+  servingDesc: "servingDesc",
+  portionName: "portionName", // chấp nhận luôn
+  massG: "massG",
+  unit: "unit",
+  kcal: "kcal",
+  proteinG: "proteinG",
+  carbG: "carbG",
+  fatG: "fatG",
+  saltG: "saltG",
+  sugarG: "sugarG",
+  fiberG: "fiberG",
+  description: "description",
+};
 
-const toNum = (v) => (v === "" || v == null ? null : (Number.isFinite(Number(v)) ? Number(v) : null));
+const isNum = (v) =>
+  v !== undefined && v !== null && String(v).trim() !== "" && !Number.isNaN(Number(v));
+const toNumOrUndef = (v) => (isNum(v) ? Number(v) : undefined);
 const normUnit = (u) => (String(u || "").toLowerCase() === "ml" ? "ml" : "g");
-const ensureDir = () => { try { fs.mkdirSync(FOOD_DIR, { recursive: true }); } catch {} };
+const toStrOrUndef = (v) => {
+  if (v === undefined || v === null) return undefined;
+  const s = String(v).trim();
+  return s === "" ? undefined : s;
+};
 
-const KEYMAP = new Map([
-  ["Hình ảnh", "imageUrl"], ["Tên", "name"], ["Khẩu phần", "servingDesc"], ["Khối lượng", "massG"], ["Đơn vị", "unit"],
-  ["Calorie", "kcal"], ["Đạm", "proteinG"], ["Đường bột", "carbG"], ["Chất béo", "fatG"], ["Muối", "saltG"],
-  ["Đường", "sugarG"], ["Chất xơ", "fiberG"],
-  // EN fallbacks
-  ["imageUrl", "imageUrl"], ["name", "name"], ["servingDesc", "servingDesc"], ["massG", "massG"], ["unit", "unit"],
-  ["kcal", "kcal"], ["proteinG", "proteinG"], ["carbG", "carbG"], ["fatG", "fatG"], ["saltG", "saltG"],
-  ["sugarG", "sugarG"], ["fiberG", "fiberG"], ["imageFile", "imageFile"], ["description", "description"],
-]);
-
-function mapRowKeys(row) {
-  const out = {};
-  for (const [k, v] of Object.entries(row)) {
-    const mk = KEYMAP.get(k) || k;
-    out[mk] = typeof v === "string" ? v.trim() : v;
+/** Parse CSV text (simple) */
+function parseCSV(text) {
+  const rows = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+  if (rows.length === 0) return [];
+  const headers = rows[0].split(",").map((h) => h.trim());
+  const out = [];
+  for (let i = 1; i < rows.length; i++) {
+    const cols = rows[i].split(",");
+    const obj = {};
+    headers.forEach((h, idx) => {
+      obj[h] = (cols[idx] ?? "").trim();
+    });
+    out.push(obj);
   }
-  out.massG    = toNum(out.massG);
-  out.kcal     = toNum(out.kcal);
-  out.proteinG = toNum(out.proteinG);
-  out.carbG    = toNum(out.carbG);
-  out.fatG     = toNum(out.fatG);
-  out.saltG    = toNum(out.saltG);
-  out.sugarG   = toNum(out.sugarG);
-  out.fiberG   = toNum(out.fiberG);
-  out.unit     = normUnit(out.unit);
   return out;
 }
 
-function basicValidate(row) {
+/** Convert uploaded file (.csv / .xlsx) to array of row objects */
+function bufferToRows(file) {
+  const name = (file?.originalname || "").toLowerCase();
+  const buf = file?.buffer;
+  if (!buf) throw new Error("Thiếu file dữ liệu (file)");
+  if (name.endsWith(".csv")) {
+    const text = Buffer.from(buf).toString("utf8");
+    return parseCSV(text);
+  }
+  if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+    const wb = XLSX.read(buf, { type: "buffer" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws, { defval: "" });
+  }
+  throw new Error("Định dạng không hỗ trợ. Vui lòng dùng CSV hoặc XLSX");
+}
+
+/** Normalize one raw row */
+function normalizeRow(raw) {
+  const out = {};
+  for (const [k, v] of Object.entries(raw || {})) {
+    const mapped = keyMap[k] || k;
+    out[mapped] = v;
+  }
+  // map servingDesc -> portionName (ưu tiên portionName nếu có)
+  if (out.portionName === undefined && out.servingDesc !== undefined) {
+    out.portionName = out.servingDesc;
+  }
+
+  // chuẩn hoá kiểu dữ liệu
+  const doc = {
+    name: toStrOrUndef(out.name),
+    imageUrl: toStrOrUndef(out.imageUrl),
+    portionName: toStrOrUndef(out.portionName),
+    massG: toNumOrUndef(out.massG),
+    unit: normUnit(out.unit),
+    kcal: toNumOrUndef(out.kcal),
+    proteinG: toNumOrUndef(out.proteinG),
+    carbG: toNumOrUndef(out.carbG),
+    fatG: toNumOrUndef(out.fatG),
+    saltG: toNumOrUndef(out.saltG),
+    sugarG: toNumOrUndef(out.sugarG),
+    fiberG: toNumOrUndef(out.fiberG),
+    // optional free text
+    description: toStrOrUndef(out.description),
+  };
+
+  return doc;
+}
+
+/** Validate minimal requirements (aligned with FoodSchema) */
+function validateMinimal(doc) {
   const errs = [];
-  if (!row.name || !NAME_REGEX.test(row.name)) errs.push("name");
-  if (row.massG == null || row.massG <= 0) errs.push("massG");
-  if (!row.unit || !["g", "ml"].includes(row.unit)) errs.push("unit");
-  if (row.kcal == null || row.kcal < 0) errs.push("kcal");
+  if (!doc.name) errs.push("Thiếu tên món");
+  if (!isNum(doc.massG)) errs.push("Thiếu/không hợp lệ khối lượng (massG)");
+  if (!doc.unit || (doc.unit !== "g" && doc.unit !== "ml")) errs.push("Đơn vị chỉ 'g' hoặc 'ml'");
+  if (!isNum(doc.kcal)) errs.push("Thiếu/không hợp lệ kcal");
   return errs;
 }
 
-async function parseCSV(buf) {
-  const text = buf.toString("utf8").replace(/\r/g, "");
-  const [headLine, ...lines] = text.split("\n").filter(Boolean);
-  if (!headLine) return [];
-  const headers = headLine.split(",").map((h) => h.trim());
-  return lines.map((ln) => {
-    const cols = ln.split(",").map((c) => c.trim());
-    const o = {};
-    headers.forEach((h, i) => (o[h] = cols[i] ?? ""));
-    return o;
-  });
-}
-
-async function parseXLSX(buf) {
-  const wb = XLSX.read(buf, { type: "buffer" });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(ws, { defval: "" });
-}
-
-async function openZip(buf) {
-  const dir = await unzipper.Open.buffer(buf);
-  // Tìm file CSV/XLSX
-  let sheetEntry = dir.files.find((f) => /(^|\/)(foods\.csv)$/i.test(f.path))
-                 || dir.files.find((f) => /\.(csv|xlsx|xls)$/i.test(f.path));
-  if (!sheetEntry) throw new Error("ZIP không chứa file CSV/XLSX");
-  const sheetBuf = await sheetEntry.buffer();
-
-  // Gom images/*
-  const images = new Map();
-  for (const f of dir.files) {
-    if (/^images\//i.test(f.path) && !f.path.endsWith("/")) {
-      images.set(f.path.replace(/\\/g, "/"), await f.buffer());
-    }
+/** Build upsert filter from options (default name+massG+unit) */
+function buildUpsertFilter(doc, upsertBy) {
+  const key = (upsertBy || "name+mass+unit").toLowerCase().trim();
+  if (key === "name+mass+unit" || key === "name+massg+unit") {
+    return { name: doc.name, massG: doc.massG, unit: doc.unit };
   }
-  return { sheetBuf, sheetName: sheetEntry.path, images };
+  if (key === "name") return { name: doc.name };
+  // fallback
+  return { name: doc.name, massG: doc.massG, unit: doc.unit };
 }
 
-async function saveImageFromBuffer(userId, buf) {
-  ensureDir();
-  const fn = `${userId || "admin"}-${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
-  const out = path.join(FOOD_DIR, fn);
-  await sharp(buf)
-    .rotate()
-    .resize(1024, 1024, { fit: "inside" })
-    .webp({ quality: 85 })
-    .toFile(out);
-  return `/uploads/foods/${fn}`;
-}
+/** --------- Controllers --------- */
 
-async function maybeFetch(url) {
+/**
+ * POST /api/admin/foods/import/validate
+ * Body (multipart): file
+ * Trả về: { success, total, valid, invalid, errors[] }
+ */
+export async function validateFoods(req, res) {
   try {
-    const r = await fetch(url);
-    if (!r.ok) return null;
-    const ab = await r.arrayBuffer();
-    return Buffer.from(ab);
-  } catch {
-    return null;
+    const file = (req.files?.file && req.files.file[0]) || null;
+    if (!file) return res.status(400).json({ success: false, message: "Thiếu file" });
+
+    const rawRows = bufferToRows(file);
+    const normalized = rawRows.map(normalizeRow);
+
+    const errors = [];
+    normalized.forEach((doc, i) => {
+      const errs = validateMinimal(doc);
+      if (errs.length) errors.push({ index: i + 2, // +2 vì header (1) + 1-based
+        name: doc.name, messages: errs });
+    });
+
+    return res.json({
+      success: true,
+      total: normalized.length,
+      valid: normalized.length - errors.length,
+      invalid: errors.length,
+      errors,
+    });
+  } catch (e) {
+    console.error("[import.validate] ", e?.message || e);
+    return res.status(500).json({ success: false, message: e?.message || "Lỗi validate" });
   }
 }
 
-// ---- main: import (ghi DB) ----
+/**
+ * POST /api/admin/foods/import
+ * Body (multipart): file, options.json (stringified) | fields options.*
+ * Options: { fetchImages?:boolean, upsertBy?:string, status?: "approved"|"pending"|"rejected" }
+ * Trả về: { success, inserted, updated, errors[] }
+ */
 export async function importFoods(req, res) {
   try {
     const adminId = req.userId;
-    const file = req.files?.file?.[0];
-    const archive = req.files?.archive?.[0];
-    const options = (req.body?.options && JSON.parse(req.body.options)) || {};
-    const upsertBy = String(options.upsertBy || "name+mass+unit").toLowerCase();
-    const fetchImages = Boolean(options.fetchImages);
-    const status = ["approved", "pending", "rejected"].includes(options.status) ? options.status : "approved";
+    const file = (req.files?.file && req.files.file[0]) || null;
+    if (!file) return res.status(400).json({ success: false, message: "Thiếu file" });
 
-    if (!file && !archive) {
-      return res.status(400).json({ message: "Thiếu file CSV/XLSX hoặc ZIP" });
+    // Parse options
+    let opts = {};
+    if (req.body?.options) {
+      try { opts = JSON.parse(req.body.options); } catch {}
+    }
+    // Ngoài ra hỗ trợ options rời rạc: fetchImages, upsertBy, status
+    if (req.body.fetchImages !== undefined) {
+      opts.fetchImages = String(req.body.fetchImages).toLowerCase() === "true";
+    }
+    if (req.body.upsertBy) opts.upsertBy = String(req.body.upsertBy);
+    if (req.body.status) opts.status = String(req.body.status);
+
+    const upsertBy = opts.upsertBy || "name+mass+unit";
+    const status = ["approved","pending","rejected"].includes(opts.status) ? opts.status : "approved";
+
+    // Read + normalize
+    const rawRows = bufferToRows(file);
+    const normalized = rawRows.map(normalizeRow);
+
+    // Validate minimal
+    const rowErrors = [];
+    normalized.forEach((doc, i) => {
+      const errs = validateMinimal(doc);
+      if (errs.length) rowErrors.push({ index: i + 2, name: doc.name, messages: errs });
+    });
+
+    // Nếu có lỗi dữ liệu → không import
+    if (rowErrors.length) {
+      return res.status(422).json({
+        success: false,
+        message: "Dữ liệu không hợp lệ",
+        invalid: rowErrors.length,
+        errors: rowErrors,
+      });
     }
 
-    // Lấy rows + imagesMap (nếu ZIP)
-    let rowsRaw = [];
-    let images = new Map();
-    if (archive) {
-      const { sheetBuf, sheetName, images: imgs } = await openZip(archive.buffer);
-      images = imgs;
-      if (/\.(xlsx|xls)$/i.test(sheetName)) rowsRaw = await parseXLSX(sheetBuf);
-      else rowsRaw = await parseCSV(sheetBuf);
-    } else if (file) {
-      if (/\.(xlsx|xls)$/i.test(file.originalname)) rowsRaw = await parseXLSX(file.buffer);
-      else rowsRaw = await parseCSV(file.buffer);
-    }
-
-    const normalized = rowsRaw.map(mapRowKeys);
-    const errors = [];
-    let inserted = 0, updated = 0;
-
-    for (let i = 0; i < normalized.length; i++) {
-      const r = normalized[i];
-      const errs = basicValidate(r);
-      if (errs.length) {
-        errors.push({ index: i, fields: errs });
-        continue;
-      }
-
-      // Ảnh: ưu tiên imageFile trong ZIP, sau đó imageUrl (+fetch)
-      let imageUrl = r.imageUrl || null;
-      if (r.imageFile) {
-        const imgBuf = images.get(String(r.imageFile).replace(/\\/g, "/"));
-        if (imgBuf) {
-          imageUrl = await saveImageFromBuffer(adminId, imgBuf);
-        } else {
-          // imageFile không tồn tại trong ZIP -> giữ nguyên/null
-        }
-      } else if (r.imageUrl && fetchImages) {
-        const buf = await maybeFetch(r.imageUrl);
-        if (buf) imageUrl = await saveImageFromBuffer(adminId, buf);
-      }
-
-      // upsert key
-      const q = {};
-      if (upsertBy.includes("name")) q.name = r.name;
-      if (upsertBy.includes("mass")) q.massG = r.massG;
-      if (upsertBy.includes("unit")) q.unit = r.unit;
-
+    // Build bulk operations (upsert)
+    const ops = normalized.map((doc) => {
+      // set fields (undefined sẽ không ghi)
       const set = {
-        name: r.name,
-        portionName: r.servingDesc || undefined,
-        massG: r.massG,
-        unit: r.unit,
-        kcal: r.kcal,
-        proteinG: r.proteinG,
-        carbG: r.carbG,
-        fatG: r.fatG,
-        saltG: r.saltG,
-        sugarG: r.sugarG,
-        fiberG: r.fiberG,
-        imageUrl: imageUrl || undefined,
-        sourceType: "admin_imported",
-        createdByAdmin: adminId,
+        name: doc.name,
+        imageUrl: doc.imageUrl,
+        portionName: doc.portionName,
+        massG: doc.massG,
+        unit: doc.unit,
+        kcal: doc.kcal,
+        proteinG: doc.proteinG,
+        carbG: doc.carbG,
+        fatG: doc.fatG,
+        saltG: doc.saltG,
+        sugarG: doc.sugarG,
+        fiberG: doc.fiberG,
+        description: doc.description,
+        // giữ nguyên status hiện có nếu là update; nhưng ở $set ta không ép status.
       };
 
-      // status & approvals
-      if (status === "approved") {
-        set.status = "approved";
-        set.approvedAt = new Date();
-        set.approvedBy = adminId;
-      } else if (status === "pending") {
-        set.status = "pending";
-        set.approvedAt = undefined;
-        set.approvedBy = undefined;
-      } else {
-        set.status = "rejected";
-      }
+      // setOnInsert cho bản ghi mới
+      const setOnInsert = {
+        createdByAdmin: adminId,
+        sourceType: "admin_created",
+        // nếu import yêu cầu auto-approve
+        ...(status ? { status } : {}),
+        ...(status === "approved"
+          ? { approvedBy: adminId, approvedAt: new Date() }
+          : {}),
+      };
 
-      // Thử upsert
-      const existed = await Food.findOne(q).select("_id").lean();
-      try {
-        if (existed) {
-          await Food.findByIdAndUpdate(existed._id, { $set: set }, { runValidators: true });
-          updated += 1;
-        } else {
-          await Food.create(set);
-          inserted += 1;
-        }
-      } catch (e) {
-        errors.push({ index: i, message: e?.message || "DB error" });
-      }
-    }
+      // Filter upsert
+      const filter = buildUpsertFilter(doc, upsertBy);
 
-    return res.json({ success: true, inserted, updated, failed: errors.length, errors });
-  } catch (e) {
-    console.error("[admin.importFoods]", e);
-    return res.status(500).json({ message: "Import lỗi", error: e?.message || String(e) });
-  }
-}
-
-// ---- optional: validate-only (dry run, không ghi DB) ----
-export async function validateFoods(req, res) {
-  try {
-    const file = req.files?.file?.[0];
-    const archive = req.files?.archive?.[0];
-    if (!file && !archive) {
-      return res.status(400).json({ message: "Thiếu file CSV/XLSX hoặc ZIP" });
-    }
-    let rowsRaw = [];
-    if (archive) {
-      const { sheetBuf } = await openZip(archive.buffer);
-      if (!sheetBuf) return res.status(400).json({ message: "ZIP thiếu sheet" });
-      rowsRaw = /\.(xlsx|xls)$/i.test("x." + sheetBuf.byteLength) ? await parseXLSX(sheetBuf) : await parseCSV(sheetBuf); // fallback
-    } else {
-      if (/\.(xlsx|xls)$/i.test(file.originalname)) rowsRaw = await parseXLSX(file.buffer);
-      else rowsRaw = await parseCSV(file.buffer);
-    }
-    const normalized = rowsRaw.map(mapRowKeys);
-    const errors = [];
-    normalized.forEach((r, i) => {
-      const es = basicValidate(r);
-      if (es.length) errors.push({ index: i, fields: es });
+      return {
+        updateOne: {
+          filter,
+          update: { $set: set, $setOnInsert: setOnInsert },
+          upsert: true,
+        },
+      };
     });
-    if (errors.length) return res.json({ success: false, errors, count: normalized.length });
-    return res.json({ success: true, count: normalized.length });
+
+    const result = await Food.bulkWrite(ops, { ordered: false });
+
+    const inserted = result?.upsertedCount || 0;
+    // updatedCount không có sẵn, phải tính từ modifiedCount
+    const updated = result?.modifiedCount || 0;
+
+    return res.json({
+      success: true,
+      inserted,
+      updated,
+      totalRows: normalized.length,
+      ...(rowErrors.length ? { rowErrors } : {}),
+    });
   } catch (e) {
-    return res.status(500).json({ message: "Validate lỗi", error: e?.message || String(e) });
+    console.error("[importFoods] ", e?.message || e);
+    return res.status(500).json({ success: false, message: e?.message || "Lỗi import" });
   }
 }

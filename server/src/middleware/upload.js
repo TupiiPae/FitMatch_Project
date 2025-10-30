@@ -4,46 +4,51 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-// ESM __dirname
+// ===== ESM __dirname =====
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ====== ĐIỂM QUAN TRỌNG: Thư mục uploads nằm ở server/uploads ======
-// __dirname: server/src/middleware
-// -> PROJECT_ROOT: server
-const PROJECT_ROOT = path.join(__dirname, "..", "..");
-export const UPLOAD_ROOT = path.join(process.cwd(), "server", "uploads");
+// __dirname = .../server/src/middleware
+// PROJECT_ROOT = .../server
+const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
+
+// ===== Gốc uploads CHUẨN: .../server/uploads =====
+export const UPLOAD_ROOT = path.join(PROJECT_ROOT, "uploads");
 export const AVATAR_DIR  = path.join(UPLOAD_ROOT, "avatars");
 export const FOOD_DIR    = path.join(UPLOAD_ROOT, "foods");
 
+// Tạo thư mục cần thiết (chỉ 2 thư mục con này)
 fs.mkdirSync(AVATAR_DIR, { recursive: true });
 fs.mkdirSync(FOOD_DIR,   { recursive: true });
 
-// Ta upload bằng memoryStorage (để controller xử lý sharp -> webp)
+// ===== Multer storages =====
+// Dùng memoryStorage: controller sẽ nén/cắt & lưu .webp vào đúng thư mục
+const memory = multer.memoryStorage();
+
+// Avatar (field "avatar", ảnh <= 2MB)
 export const uploadAvatarSingle = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  storage: memory,
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter(_req, file, cb) {
-    const ok = (file.mimetype || "").startsWith("image/");
-    if (!ok) return cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE", "avatar"));
-    cb(null, true);
+    if ((file.mimetype || "").startsWith("image/")) return cb(null, true);
+    cb(new Error("Chỉ chấp nhận file ảnh cho avatar"));
   },
 }).single("avatar");
 
+// Ảnh món ăn (field "image", ảnh <= 5MB)
 export const uploadFoodSingle = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB cho ảnh món
+  storage: memory,
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter(_req, file, cb) {
-    const ok = (file.mimetype || "").startsWith("image/");
-    if (!ok) return cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE", "image"));
-    cb(null, true);
+    if ((file.mimetype || "").startsWith("image/")) return cb(null, true);
+    cb(new Error("Chỉ chấp nhận file ảnh cho món ăn"));
   },
 }).single("image");
 
-const importStorage = multer.memoryStorage();
+// Import (CSV/XLSX và ZIP) – tối đa 25MB
 export const uploadImportAny = multer({
-  storage: importStorage,
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
+  storage: memory,
+  limits: { fileSize: 25 * 1024 * 1024 },
 }).fields([
   { name: "file", maxCount: 1 },    // CSV/XLSX
   { name: "archive", maxCount: 1 }, // ZIP chứa foods.csv + images/*

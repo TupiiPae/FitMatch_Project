@@ -7,7 +7,7 @@
 
 
 .im-card{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.04); display:flex; flex-direction:column; gap:12px; padding:12px; }
-.im-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.im-head{ display:flex; align-items:center; justify-content:space-between; gap:12px;}
 .im-head h2{ margin:0; font-size:22px; font-weight:700; color:#0f172a; }
 .im-actions{ display:flex; gap:8px; flex-wrap:wrap; }
 .im-btn{ display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 12px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; color:#111827; cursor:pointer; }

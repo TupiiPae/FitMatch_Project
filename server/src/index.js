@@ -1,13 +1,12 @@
-// src/index.js
+// server/src/index.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
 
 import { connectDB } from "./config/db.js";
+
+// ===== Routes =====
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import adminAuthRoutes from "./routes/admin.auth.routes.js";
@@ -18,33 +17,30 @@ import nutritionRoutes from "./routes/nutrition.routes.js";
 import adminFoodsRoutes from "./routes/admin.food.routes.js";
 import adminAccountsRoutes from "./routes/admin.accounts.routes.js";
 
+// ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
+import { UPLOAD_ROOT } from "./middleware/upload.js";
 
 const app = express();
 
-// ===== Env & paths =====
+// ===== Env =====
 const isDev = process.env.NODE_ENV !== "production";
 const PORT = process.env.PORT || 5000;
 const MONGO = process.env.MONGO || process.env.MONGO_URI;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// === Static uploads (make sure folders exist) ===
-const UPLOAD_ROOT = path.join(__dirname, "..", "uploads");
-const AVATAR_DIR = path.join(UPLOAD_ROOT, "avatars");
-const FOOD_DIR = path.join(UPLOAD_ROOT, "foods");
-fs.mkdirSync(AVATAR_DIR, { recursive: true });
-fs.mkdirSync(FOOD_DIR, { recursive: true });
-
-app.use("/uploads",
-  (req,res,next)=>{res.setHeader("Cross-Origin-Resource-Policy","cross-origin"); next();},
+// ===== Static uploads (điểm sự thật: từ middleware/upload.js) =====
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
   express.static(UPLOAD_ROOT, { maxAge: isDev ? 0 : "7d", etag: true })
 );
 
 // ===== Parsers =====
 app.use(express.json({ limit: "1mb" }));
-// (Không cần express.urlencoded cho upload; multer sẽ xử lý multipart)
+// (Không cần express.urlencoded cho upload; multer xử lý multipart)
 
 // ===== CORS =====
 const allowlist = [
@@ -59,7 +55,7 @@ const allowlist = [
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Cho phép request không có Origin (Postman/cURL) hoặc trong allowlist
+      // Cho phép request không có Origin (Postman/cURL) hoặc nằm trong allowlist
       if (!origin || allowlist.includes(origin)) return cb(null, true);
       return cb(new Error(`CORS bị chặn cho origin: ${origin}`));
     },
@@ -86,14 +82,14 @@ app.use((req, _res, next) => {
   next();
 });
 
-// ===== Routes =====
+// ===== Health =====
 app.get("/", (_req, res) => res.send("FitMatch API v1"));
 
-// --- Auth route riêng ---
+// ===== Auth routes =====
 app.use("/api/admin/auth", adminAuthRoutes);
 app.use("/api/auth", authRoutes);
 
-// --- Các route quản trị ---
+// ===== Admin routes =====
 app.use(
   "/api/admin/admin-accounts",
   auth,
@@ -107,14 +103,16 @@ app.use(
   },
   adminAccountsRoutes
 );
-app.use("/api/admin", adminRoutes);
-app.use("/api/admin", adminFoodsRoutes);
 
-// --- Routes người dùng ---
+// Các nhóm admin khác
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin", adminFoodsRoutes); // gồm /foods, /foods/import/validate, /foods/import
+
+// ===== User routes =====
 app.use("/api/user/onboarding", onboardingRoutes);
 app.use("/api/user", userRoutes);
 
-// --- Public / common ---
+// ===== Public/Common routes =====
 app.use("/api", foodRoutes);
 app.use("/api", nutritionRoutes);
 
@@ -139,7 +137,7 @@ const printRegisteredRoutes = (appInstance) => {
 };
 if (isDev) printRegisteredRoutes(app);
 
-// 404 cho API
+// ===== 404 cho API =====
 app.use((req, res) => {
   if (req.originalUrl.startsWith("/api/")) {
     return res.status(404).json({ success: false, message: "Không tìm thấy endpoint" });
@@ -147,14 +145,14 @@ app.use((req, res) => {
   return res.status(404).send("Not found");
 });
 
-// Error handler gọn
+// ===== Error handler =====
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error("Lỗi hệ thống:", err?.message || err);
   res.status(500).json({ success: false, message: "Lỗi máy chủ" });
 });
 
-// ===== Khởi động =====
+// ===== Start =====
 connectDB(MONGO)
   .then(() => app.listen(PORT, () => console.log(`🚀 API on http://localhost:${PORT}`)))
   .catch((e) => {

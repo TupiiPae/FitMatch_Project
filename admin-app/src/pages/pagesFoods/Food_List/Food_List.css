@@ -137,7 +137,7 @@
 .cell.mass, .cell.kcal, .cell.approved, .cell.creator{ color:#111827; }
 
 /* macros chips */
-.cell.macros{ display:flex; gap:30px; flex-wrap:wrap; }
+.cell.macros{ display:flex; gap:20px; flex-wrap:wrap; }
 .chip{
   padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; color:#fff;
 }
