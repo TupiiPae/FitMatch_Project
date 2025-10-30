@@ -227,8 +227,6 @@ export default function SidebarLayout(){
               <span className="fm-sec__text">Thông tin tài khoản</span>
             </div>
           </button>
-
-          <div style={{ height: 72 }} />
         </nav>
 
         <div className="fm-logout-fixed">

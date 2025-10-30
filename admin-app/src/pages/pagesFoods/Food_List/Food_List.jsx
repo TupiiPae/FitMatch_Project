@@ -236,7 +236,7 @@ export default function FoodsList() {
           </div>
 
           {loading && <div className="empty">Đang tải...</div>}
-          {!loading && items.length === 0 && <div className="empty">Không có món đã duyệt.</div>}
+          {!loading && items.length === 0 && <div className="empty">Không có món trong danh sách.</div>}
 
           {!loading && items.map((it) => (
             <div key={it._id} className="trow">
@@ -286,7 +286,7 @@ export default function FoodsList() {
                   <i className="fa-regular fa-pen-to-square" aria-hidden="true"></i>
                 </button>
                 <button className="iconbtn danger" title="Xóa" onClick={() => setConfirmId(it._id)}>
-                  <i className="fa-regular fa-trash-can" aria-hidden="true"></i>
+                  <i className="fa-solid fa-trash-can" aria-hidden="true"></i>
                 </button>
               </div>
             </div>

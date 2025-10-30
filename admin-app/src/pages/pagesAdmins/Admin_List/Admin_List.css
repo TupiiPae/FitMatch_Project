@@ -1,12 +1,10 @@
-/* ===== Page layout (Giữ nguyên) ===== */
-.foods-page { /* Đổi thành .list-page nếu muốn dùng chung */
+.list-page {
   padding: 30px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* ===== Breadcrumb (Giữ nguyên) ===== */
 .breadcrumb-nav {
   display: flex; align-items: center; gap: 8px; font-size: 14px;
   color: #6b7280; padding: 0 4px;
@@ -20,11 +18,10 @@
 .breadcrumb-nav .separator { font-size: 12px; color: #9ca3af; }
 .breadcrumb-nav i { font-size: 12px; }
 
-/* ===== Title row (ĐÃ SỬA) ===== */
 .page-head {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px;
-  padding: 0 12px; /* <-- Thêm padding */
+  padding: 0 12px; 
 }
 .page-head h2 {
   font-size: 22px; font-weight: 700; color: #0f172a; margin: 0;
@@ -39,12 +36,12 @@
 .btn:hover { background: #f9fafb; }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn.primary { background: #008080; border-color: #008080; color: #fff; }
+.btn.primary:hover { background: #007070; }
 .btn.danger { color: #b91c1c; border-color: #FECACA; background: #fff; }
 .btn.danger:hover { background: #fef2f2; }
 .btn.ghost { background: #fff; }
 .btn:active { transform: translateY(1px); }
 
-/* ===== Card container (Giữ nguyên) ===== */
 .card {
   background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0,0,0,.04);
@@ -52,48 +49,44 @@
   padding: 12px;
 }
 
-/* ===== Card header (ĐÃ SỬA) ===== */
 .card-head {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  padding: 0 12px; /* <-- Thêm padding */
+  padding: 0 12px; 
 }
 .search {
   display: flex; align-items: center; gap: 8px;
   border: 1px solid #E5E7EB; border-radius: 10px; padding: 0 10px; height: 38px;
-  width: 60%; /* <-- Sửa width */
+  width: 60%; 
   background: #fff;
 }
 .search i { color: #6b7280; font-size: 14px; }
 .search input {
   border: none; outline: none; background: transparent;
-  width: 100%; /* <-- Sửa width */
+  width: 100%; 
   font-size: 14px; color: #111827; padding: 8px 0;
 }
 .filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .hint { font-size: 12px; color: #6b7280; }
 
-/* ===== Table ===== */
 .table { width: 100%; border: 1px solid #E5E7EB; border-radius: 12px; overflow: auto; }
 
-/* ===== Grid 7 cột cho Admin List (ĐÃ SỬA) ===== */
 .admin-list-page .thead,
 .admin-list-page .trow {
   display: grid;
-  /* cb | Username (2.5fr) | Nickname (2fr) | Cấp | Status | Ngày tạo | Action */
+  
   grid-template-columns:
-    40px   /* checkbox */
-    2.5fr  /* username */
-    2fr    /* nickname */
-    100px  /* level */
-    140px  /* status */
-    200px  /* created */
-    100px; /* act */
+    40px   
+    2.5fr  
+    2fr    
+    100px  
+    140px  
+    200px  
+    100px; 
   align-items: center;
   column-gap: 12px;
-  padding: 10px 12px; /* Thụt lề */
+  padding: 10px 12px; 
 }
 
-/* Style cơ bản (Giữ nguyên) */
 .thead {
   background: #F9FAFB; font-weight: 700; color: #374151; border-bottom: 1px solid #E5E7EB;
 }
@@ -104,14 +97,13 @@
 .trow:last-child { border-bottom: none; }
 .cell.cb { display: flex; align-items: center; justify-content: center; }
 
-/* Cell styles */
-.cell.username .title, /* <-- Sửa từ .name thành .username */
-.cell.nickname { font-weight: 700; color: #111827; } /* <-- Sửa từ .mass thành .nickname */
+.cell.username .title { font-weight: 700; color: #111827; }
+.cell.nickname { font-weight: 700; color: #111827; }
 .cell.username .sub { font-size: 12px; color: #9CA3AF; }
 
-.cell.level, /* <-- Sửa từ .kcal thành .level */
-.cell.status, /* <-- Sửa từ .creator thành .status */
-.cell.created { /* <-- Sửa từ .approved thành .created */
+.cell.level,
+.cell.status,
+.cell.created {
   color: #111827;
   font-size: 14px;
   white-space: nowrap;
@@ -119,14 +111,12 @@
   text-overflow: ellipsis;
 }
 
-/* ===== (MỚI) Style cho Admin List ===== */
-/* Hàng admin cấp 1 nổi bật */
 .trow.row-lv1 {
-  background: #fffbeb; /* Vàng nhạt hơn */
+  background: #fffbeb; 
 }
 .trow.row-lv1 .title {
   font-weight: 800;
-  display: flex; /* Để chip LV1 nằm cùng hàng */
+  display: flex; 
   align-items: center;
 }
 .lv1-chip {
@@ -143,19 +133,17 @@
   border: 1px solid #fde68a;
 }
 
-/* Badge trạng thái (ĐÃ SỬA class name) */
-.status-badge { /* Thay thế .role-badge */
+.status-badge {
   display: inline-flex; align-items: center; justify-content: center;
   padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
 }
-.status-badge.is-active { /* Tái sử dụng màu xanh lá */
+.status-badge.is-active {
   color: #065f46; background: #D1FAE5; border: 1px solid #A7F3D0;
 }
-.status-badge.is-blocked { /* Tái sử dụng màu đỏ */
+.status-badge.is-blocked {
   color: #991b1b; background: #fee2e2; border: 1px solid #fecaca;
 }
 
-/* actions (Giữ nguyên) */
 .cell.act { display: flex; gap: 6px; }
 .iconbtn {
   width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E5E7EB;
@@ -164,19 +152,17 @@
 .iconbtn:hover { background: #F9FAFB; }
 .iconbtn.danger { color: #b91c1c; border-color: #FECACA; background: #fff; }
 .iconbtn.danger:hover { background: #fef2f2; }
-.iconbtn:disabled { /* Style cho nút bị khóa */
+.iconbtn:disabled {
   opacity: .5;
   cursor: not-allowed;
   background: #f9fafb;
 }
 
-/* empty (Giữ nguyên) */
 .empty {
   padding: 24px; text-align: center; color: #6b7280; border-top: 1px dashed #e5e7eb;
 }
 
-/* Modal (Giữ nguyên) */
-.cm-backdrop{
+.fm-modal-overlay {
   position: fixed; inset: 0;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(2px);
@@ -184,34 +170,77 @@
   z-index: 1000;
   padding: 16px;
 }
-.cm-modal{
-  width: 100%; max-width: 460px;
-  background: #fff; border: 1px solid #e5e7eb;
-  border-radius: 16px; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.18);
-  animation: cm-pop .16s ease-out;
+
+.fm-modal {
+  width: 100%;
+  max-width: 460px; 
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px; 
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.18);
+  animation: fm-pop .16s ease-out;
   display: flex; flex-direction: column;
 }
-@keyframes cm-pop{
-  from{ transform: scale(.96); opacity: 0; }
-  to{ transform: scale(1); opacity: 1; }
-}
-.cm-head{
-  position: relative; display: grid; align-items: center;
-  gap: 12px; padding: 16px 16px 8px 16px;
-}
-.cm-icon{
-  width: 40px; height: 40px; border-radius: 12px;
-  display: grid; place-items: center; background: #fee2e2;
-  color: #b91c1c; border: 1px solid #fecaca; font-size: 18px;
-}
-.cm-title{ margin: 0; font-size: 18px; font-weight: 800; color: #111827; }
-.cm-body{ padding: 0 16px 12px 16px; color: #475569; line-height: 1.5; }
-.cm-foot{
-  display: flex; justify-content: flex-end; gap: 8px;
-  padding: 12px 16px 16px 16px; border-top: 1px dashed #e5e7eb;
+
+@keyframes fm-pop {
+  from { transform: scale(.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
-/* Pagination (Giữ nguyên) */
+.fm-modal__head {
+  position: relative;
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 8px 16px;
+}
+.fm-modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+}
+.fm-modal__body {
+  padding: 0 16px 12px 16px;
+  color: #475569;
+  line-height: 1.5;
+}
+.fm-modal__actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px 2px 16px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.fm-btn{
+  padding: 0 30px;
+}
+
+.fm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; 
+}
+.fm-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: -4px; 
+}
+.fm-input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px; 
+  border: 1px solid #D1D5DB; 
+  background: #F9FAFB; 
+  color: #111827;
+}
+.fm-input:disabled {
+  background: #F3F4F6;
+  color: #6B7280;
+  cursor: not-allowed;
+}
+
 .pagination-controls {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 12px; background: #F9FAFB; border-top: 1px solid #E5E7EB;
@@ -234,17 +263,16 @@
 .btn-page:hover { background: #f9fafb; }
 .btn-page:disabled { opacity: 0.5; cursor: not-allowed; background: #f9fafb; }
 
-/* ===== Responsive (ĐÃ SỬA) ===== */
 @media (max-width: 1200px) {
   .admin-list-page .thead,
   .admin-list-page .trow {
     grid-template-columns:
-      40px   /* cb */
-      2fr    /* username */
-      1.5fr  /* nickname */
-      100px  /* level */
-      140px  /* status */
-      100px; /* act */
+      40px   
+      2fr    
+      1.5fr  
+      100px  
+      140px  
+      100px; 
     column-gap: 10px;
   }
   .admin-list-page .cell.created {
@@ -256,11 +284,11 @@
   .admin-list-page .thead,
   .admin-list-page .trow {
     grid-template-columns:
-      40px   /* cb */
-      2.5fr  /* username */
-      1.5fr  /* nickname */
-      140px  /* status */
-      100px; /* act */
+      40px   
+      2.5fr  
+      1.5fr  
+      140px  
+      100px; 
   }
   .admin-list-page .cell.level,
   .admin-list-page .cell.created {
@@ -269,32 +297,19 @@
 }
 
 @media (max-width: 760px) {
-  .foods-page { padding: 18px; }
+  .list-page { padding: 18px; }
   .admin-list-page .thead { display: none; }
   .admin-list-page .trow {
-    grid-template-columns: 40px 1fr 100px; /* cb | name/nick | actions */
-    row-gap: 6px; /* Giảm gap */
+    grid-template-columns: 40px 1fr 100px; 
+    row-gap: 6px; 
   }
   .admin-list-page .cell.cb { grid-column: 1; grid-row: 1 / span 2; }
   .admin-list-page .cell.username { grid-column: 2; grid-row: 1; }
-  .admin-list-page .cell.nickname { /* Hiển thị nickname dưới username */
+  .admin-list-page .cell.nickname {
     display: block;
     grid-column: 2;
     grid-row: 2;
     font-size: 13px;
     color: #6b7280;
-    font-weight: normal; /* Bỏ đậm */
-  }
-  .admin-list-page .cell.act {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    justify-content: flex-end;
-    align-items: center;
-  }
-  /* Ẩn các cột còn lại */
-  .admin-list-page .cell.level,
-  .admin-list-page .cell.status,
-  .admin-list-page .cell.created {
-    display: none;
   }
 }
