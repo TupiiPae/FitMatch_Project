@@ -20,43 +20,51 @@ import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
 import AdminAccountsList from "./pages/pagesAdmins/Admin_List/Admin_List.jsx";
 import AdminCreate from "./pages/pagesAdmins/Admin_Create/Admin_Create.jsx";
 
+// ===== THÊM IMPORT MỚI =====
+import ProfilePage from "./pages/ProfilePage/ProfilePage.jsx";
+
+
 export default function App() {
-  return (
-    <Routes>
-      {/* Điều hướng mặc định */}
-      <Route index element={<Navigate to="/login" replace />} />
+  return (
+    <Routes>
+      {/* Điều hướng mặc định */}
+      <Route index element={<Navigate to="/login" replace />} />
 
-      {/* Đăng nhập admin */}
-      <Route path="/login" element={<Login />} />
+      {/* Đăng nhập admin */}
+      <Route path="/login" element={<Login />} />
 
-      {/* Khu vực cần đăng nhập */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <SidebarLayout />
-          </ProtectedRoute>
-        }
-      >
-        {/* Dashboard */}
-        <Route path="/dashboard" element={<Dashboard />} />
+      {/* Khu vực cần đăng nhập */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <SidebarLayout />
+          </ProtectedRoute>
+        }
+      >
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* Quản trị tài khoản admin – chỉ Admin cấp 1 */}
-        <Route element={<OnlyLevel1 />}>
-          <Route path="/admins" element={<AdminAccountsList />} />
-          <Route path="/admins/create" element={<AdminCreate />} />
-        </Route>
+        {/* ===== THÊM ROUTE MỚI ===== */}
+        {/* Trang profile (dành cho Admin cấp 2) */}
+        <Route path="/profile" element={<ProfilePage />} />
 
-        {/* Món ăn */}
-        <Route path="/foods" element={<FoodsList />} />
-        <Route path="/foods/create" element={<FoodCreate />} />
-        <Route path="/foods/review" element={<FoodsReview />} />
+        {/* Quản trị tài khoản admin – chỉ Admin cấp 1 */}
+        <Route element={<OnlyLevel1 />}>
+          <Route path="/admins" element={<AdminAccountsList />} />
+          <Route path="/admins/create" element={<AdminCreate />} />
+        </Route>
 
-        {/* Người dùng */}
-        <Route path="/users" element={<UsersList />} />
-      </Route>
+        {/* Món ăn */}
+        <Route path="/foods" element={<FoodsList />} />
+        <Route path="/foods/create" element={<FoodCreate />} />
+        <Route path="/foods/review" element={<FoodsReview />} />
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
-  );
+        {/* Người dùng */}
+        <Route path="/users" element={<UsersList />} />
+      </Route>
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
 }

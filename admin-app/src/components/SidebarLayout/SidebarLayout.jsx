@@ -1,16 +1,12 @@
-// src/components/SidebarLayout/SidebarLayout.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import "./SidebarLayout.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import logoFitmatch from "../../assets/logo-fitmatch.png";
-
-// Chỉ cần toast (Container đã ở main.jsx)
 import { toast } from "react-toastify";
 
-// SECTIONS & linkClass & findParentKeyByPath giữ nguyên
-const SECTIONS = (rawLevel) => {
+const buildManagementSections = (rawLevel) => {
   const level = Number(rawLevel);
   return [
     {
@@ -36,22 +32,23 @@ const SECTIONS = (rawLevel) => {
       : []),
     {
       key: "foods",
-      title: "Các món ăn",
-      icon: "fa-solid fa-bowl-food",
+      title: "Thực phẩm",
+      icon: "fa-solid fa-utensils",
       items: [
-        { to: "/foods",        label: "Danh sách các món ăn", exact: true },
-        { to: "/foods/create", label: "Tạo món ăn" },
-        { to: "/foods/review", label: "Duyệt món người dùng" },
+        { to: "/foods",              label: "Danh sách món ăn", exact: true },
+        { to: "/foods/create",       label: "Tạo món ăn mới" },
+        { to: "/foods/review",       label: "Duyệt món ăn người dùng" },
+        { to: "/foods/menu-suggest", label: "Tạo thực đơn gợi ý" },
       ],
     },
     {
       key: "exs",
-      title: "Các bài tập",
+      title: "Bài tập",
       icon: "fa-solid fa-dumbbell",
       items: [
-        { to: "/exercises",            label: "Danh sách bài tập", exact: true },
-        { to: "/exercises/create",     label: "Tạo bài tập" },
-        { to: "/exercises/schedules",  label: "Tạo lịch tập" },
+        { to: "/exercises",              label: "Danh sách bài tập", exact: true },
+        { to: "/exercises/create",       label: "Tạo bài tập mới" },
+        { to: "/exercises/plan-suggest", label: "Tạo lịch tập gợi ý" },
       ],
     },
     {
@@ -60,7 +57,7 @@ const SECTIONS = (rawLevel) => {
       icon: "fa-solid fa-people-arrows",
       items: [
         { to: "/matching", label: "Danh sách ghép cặp", exact: true },
-        { to: "/reports",  label: "Report" },
+        { to: "/reports",  label: "Báo cáo" },
       ],
     },
     {
@@ -74,26 +71,14 @@ const SECTIONS = (rawLevel) => {
   ];
 };
 
-const linkClass = ({ isActive }) => "fm-link" + (isActive ? " is-active" : "");
+const subLinkClass = ({ isActive }) =>
+  "fm-sublink" + (isActive ? " is-active" : "");
 
-function findParentKeyByPath(pathname, sections) {
-  for (const s of sections) {
-    for (const it of s.items) {
-      if (it.exact) {
-        if (pathname === it.to) return s.key;
-      } else if (pathname.startsWith(it.to)) {
-        return s.key;
-      }
-    }
-  }
-  return null;
-}
-
-// ---------------- TopNav (giữ nguyên logic, UI tinh chỉnh) ----------------
 function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
   const { auth } = useAuth();
   const level = Number(auth?.profile?.level) || 2;
-  const username = auth?.profile?.username || "admin";
+  // Ưu tiên nickname, thiếu thì dùng username, cuối cùng fallback "admin"
+  const displayName = auth?.profile?.nickname || auth?.profile?.username || "admin";
 
   return (
     <header className="fm-topnav">
@@ -121,12 +106,12 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
           {level === 1 ? (
             <div className="fm-account-box fm-account-box--level1">
               <i className="fa-solid fa-user" />
-              <span>Admin cấp 1&nbsp;&nbsp;|&nbsp;&nbsp;{username}</span>
+              <span>Admin cấp 1&nbsp;&nbsp;|&nbsp;&nbsp;{displayName}</span>
             </div>
           ) : (
             <div className="fm-account-box fm-account-box--level2">
               <i className="fa-solid fa-users" />
-              <span>Admin cấp 2&nbsp;&nbsp;|&nbsp;&nbsp;{username}</span>
+              <span>Admin cấp 2&nbsp;&nbsp;|&nbsp;&nbsp;{displayName}</span>
             </div>
           )}
         </div>
@@ -134,12 +119,10 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
     </header>
   );
 }
-
-// ------------------------ SidebarLayout ------------------------
 export default function SidebarLayout(){
   const { auth, logout } = useAuth();
   const level = Number(auth?.profile?.level) || 2;
-  const location = useLocation();
+  const nav = useNavigate();
 
   const [theme, setTheme] = useState(() => localStorage.getItem("fm_theme") || "light");
   useEffect(() => {
@@ -152,25 +135,24 @@ export default function SidebarLayout(){
   const [collapsed, setCollapsed] = useState(false);
   const sideCls = useMemo(() => "fm-side" + (collapsed ? " is-sm" : ""), [collapsed]);
 
-  const sections = useMemo(() => SECTIONS(level), [level]);
+  const mgmtSections = useMemo(() => buildManagementSections(level), [level]);
 
-  const parentKey = findParentKeyByPath(location.pathname, sections);
-  const [openKey, setOpenKey] = useState(parentKey);
-  useEffect(() => setOpenKey(parentKey), [parentKey]);
+  // Mặc định đóng tất cả dropdown
+  const [openKeys, setOpenKeys] = useState(() => new Set());
 
-  const isOpen = (key) => !collapsed && key === openKey;
-
-  const onClickSectionHead = (key) => {
-    if (collapsed) { setCollapsed(false); setOpenKey(key); }
-    else { setOpenKey((k) => (k === key ? null : key)); }
+  const isOpen = (key) => openKeys.has(key);
+  const toggleSection = (key) => {
+    setOpenKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
-  const onClickChild = () => { if (collapsed) setCollapsed(false); };
-  const onIconOnlyClick = (key) => { setCollapsed(false); setOpenKey(key); };
 
-  // --------- Toast đăng nhập thành công (mỗi tab 1 lần) ---------
+  // Toast login 1 lần / tab
   const shownLoginToast = useRef(false);
   useEffect(() => {
-    // Nếu đã có auth (đang đăng nhập) và chưa toast trong tab này
     if (auth?.token && !sessionStorage.getItem("fm_toasted_login") && !shownLoginToast.current) {
       shownLoginToast.current = true;
       sessionStorage.setItem("fm_toasted_login", "1");
@@ -178,20 +160,24 @@ export default function SidebarLayout(){
     }
   }, [auth?.token]);
 
-  // --------- Modal xác nhận đăng xuất ---------
+  // Modal logout
   const [showConfirm, setShowConfirm] = useState(false);
   const openConfirm = () => setShowConfirm(true);
   const closeConfirm = () => setShowConfirm(false);
   const doLogout = () => {
     closeConfirm();
-    logout();                // giữ nguyên logic gốc
+    logout();
     toast.success("Đăng xuất thành công!");
+  };
+
+  const goProfile = () => {
+    nav("/profile");
+    if (collapsed) setCollapsed(false);
   };
 
   return (
     <div className="fm-layout">
       <aside className={sideCls}>
-        {/* Logo */}
         <div className="fm-side__logo">
           <a className="fm-logo-link" href="#" aria-label="Trang chủ admin">
             <img src={logoFitmatch} alt="FitMatch" className="fm-logo-rect" />
@@ -199,48 +185,52 @@ export default function SidebarLayout(){
         </div>
 
         <nav className="fm-side__nav">
-          {sections.map((sec) => {
+          <div className="fm-cat">Quản lý</div>
+
+          {mgmtSections.map((sec) => {
             const opened = isOpen(sec.key);
             return (
               <div key={sec.key} className={"fm-sec" + (opened ? " is-open" : "")}>
-                <button className="fm-sec__head" onClick={() => onClickSectionHead(sec.key)}>
+                <button
+                  className="fm-sec__head"
+                  onClick={() => toggleSection(sec.key)}
+                  aria-expanded={opened}
+                >
                   <div className="fm-sec__title">
-                    <i
-                      className={sec.icon + " fm-sec__icon"}
-                      aria-hidden="true"
-                      onClick={(e) => { if (collapsed) { e.stopPropagation(); onIconOnlyClick(sec.key); } }}
-                    />
+                    <i className={sec.icon + " fm-sec__icon"} aria-hidden="true" />
                     <span className="fm-sec__text">{sec.title}</span>
                   </div>
-                  <i className="fa-solid fa-chevron-down fm-caret" />
+                  <i className={"fa-solid " + (opened ? "fa-minus" : "fa-plus") + " fm-expander"} />
                 </button>
 
                 <div className="fm-sec__body">
-                  {sec.items.map((it) => (
-                    <NavLink key={it.to} to={it.to} end={it.exact} className={linkClass} onClick={onClickChild}>
-                      {it.label}
+                  {(sec.items || []).map((it) => (
+                    <NavLink
+                      key={it.to}
+                      to={it.to}
+                      end={it.exact}
+                      className={subLinkClass}
+                    >
+                      <span className="fm-sublink__text">{it.label}</span>
                     </NavLink>
                   ))}
                 </div>
               </div>
             );
           })}
-          <div style={{ height: 72 }} />
+
+          <div className="fm-cat fm-cat--settings">Cài đặt</div>
+
+          <button className="fm-sec__head fm-sec__head--single" onClick={goProfile} title="Thông tin tài khoản">
+            <div className="fm-sec__title">
+              <i className="fa-solid fa-id-card fm-sec__icon" />
+              <span className="fm-sec__text">Thông tin tài khoản</span>
+            </div>
+          </button>
         </nav>
 
-        {/* Khối cố định dưới cùng: "Thông tin tài khoản" dạng menu + nút đăng xuất */}
         <div className="fm-logout-fixed">
-          {level === 2 && (
-            <NavLink
-              to="/profile"
-              className="fm-link fm-link--profile"
-              onClick={() => collapsed && setCollapsed(false)}
-            >
-              <i className="fa-regular fa-id-card fm-link__icon" />
-              <span>Thông tin tài khoản</span>
-            </NavLink>
-          )}
-          <button className="fm-btn-danger w-full" onClick={openConfirm}>
+          <button className="fm-btn-danger w-full" onClick={openConfirm} title="Đăng xuất">
             <i className="fa-solid fa-arrow-right-from-bracket" />
             <span>Đăng xuất</span>
           </button>
@@ -259,7 +249,6 @@ export default function SidebarLayout(){
         </div>
       </main>
 
-      {/* Modal xác nhận Đăng xuất */}
       {showConfirm && (
         <div className="fm-modal-overlay" onClick={closeConfirm}>
           <div className="fm-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="logout-title">

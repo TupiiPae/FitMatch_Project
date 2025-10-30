@@ -318,3 +318,58 @@ export const blockUser = (id) =>
 
 export const unblockUser = (id) =>
   api.post(`/api/admin/users/${id}/unblock`).then((r) => r.data);
+
+export const updateMyAdminProfile = async ({ nickname }) => {
+  if (!nickname || typeof nickname !== "string") {
+    throw new Error("Vui lòng nhập nickname hợp lệ");
+  }
+  try {
+    // Phương án 1: RESTful cho admin
+    const r = await api.patch("/api/admin/auth/me", { nickname });
+    return r.data;
+  } catch (e1) {
+    if (e1?.response?.status === 404) {
+      try {
+        // Phương án 2: một số BE đặt /profile
+        const r2 = await api.patch("/api/admin/auth/profile", { nickname });
+        return r2.data;
+      } catch (e2) {
+        if (e2?.response?.status === 404) {
+          // Phương án 3: dùng endpoint user chung (không đổi quyền phía BE)
+          const r3 = await api.patch("/api/user/account", { "profile.nickname": nickname });
+          return r3.data;
+        }
+        throw e2;
+      }
+    }
+    throw e1;
+  }
+};
+
+/**
+ * Đổi mật khẩu cho chính admin đang đăng nhập (lv2 mới bật UI).
+ * Body: { currentPassword, newPassword }
+ */
+export const changeMyAdminPassword = async ({ currentPassword, newPassword }) => {
+  if (!currentPassword || !newPassword) {
+    throw new Error("Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới");
+  }
+  try {
+    // Phương án 1: route admin chuyên biệt
+    const r = await api.post("/api/admin/auth/change-password", {
+      currentPassword,
+      newPassword,
+    });
+    return r.data; // { success: true } hoặc { message: ... }
+  } catch (e1) {
+    if (e1?.response?.status === 404) {
+      // Phương án 2: fallback qua user chung (đã có sẵn trong server user)
+      const r2 = await api.post("/api/user/change-password", {
+        currentPassword,
+        newPassword,
+      });
+      return r2.data;
+    }
+    throw e1;
+  }
+};
