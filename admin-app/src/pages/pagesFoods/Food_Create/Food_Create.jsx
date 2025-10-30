@@ -338,7 +338,7 @@ export default function FoodCreate() {
                   placeholder=" "
                   min="0"
                 />
-                <label htmlFor="food-c">Carb (g)</label>
+                <label htmlFor="food-c">Đường bột (g)</label>
               </div>
               <div className="fc-field">
                 <input

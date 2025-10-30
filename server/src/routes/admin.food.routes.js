@@ -3,6 +3,8 @@ import { Router } from "express";
 import { auth } from "../middleware/auth.js";
 import { requireRole, requireAtLeast } from "../middleware/requireRole.js";
 import Food from "../models/Food.js";
+import { uploadImportAny } from "../middleware/upload.js";
+import { importFoods, validateFoods } from "../controllers/admin.food.import.controller.js";
 import { responseOk } from "../utils/response.js";
 
 const r = Router();
@@ -58,5 +60,8 @@ r.get("/foods", async (req, res) => {
     skip: Number(skip),
   });
 });
+
+r.post("/admin/foods/import/validate", requireAtLeast("admin_lv2"), uploadImportAny, validateFoods);
+r.post("/admin/foods/import",          requireAtLeast("admin_lv2"), uploadImportAny, importFoods);
 
 export default r;

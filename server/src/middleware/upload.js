@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 // __dirname: server/src/middleware
 // -> PROJECT_ROOT: server
 const PROJECT_ROOT = path.join(__dirname, "..", "..");
-export const UPLOAD_ROOT = path.join(PROJECT_ROOT, "uploads");
+export const UPLOAD_ROOT = path.join(process.cwd(), "server", "uploads");
 export const AVATAR_DIR  = path.join(UPLOAD_ROOT, "avatars");
 export const FOOD_DIR    = path.join(UPLOAD_ROOT, "foods");
 
@@ -39,3 +39,12 @@ export const uploadFoodSingle = multer({
     cb(null, true);
   },
 }).single("image");
+
+const importStorage = multer.memoryStorage();
+export const uploadImportAny = multer({
+  storage: importStorage,
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
+}).fields([
+  { name: "file", maxCount: 1 },    // CSV/XLSX
+  { name: "archive", maxCount: 1 }, // ZIP chứa foods.csv + images/*
+]);

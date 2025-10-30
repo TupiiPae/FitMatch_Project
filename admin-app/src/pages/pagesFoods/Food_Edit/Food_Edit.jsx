@@ -313,7 +313,7 @@ export default function FoodEdit() {
                   value={form.carbG} onChange={(e)=>onChange("carbG", e.target.value)}
                   placeholder=" " min="0"
                 />
-                <label htmlFor="food-c">Carb (g)</label>
+                <label htmlFor="food-c">Đường bột (g)</label>
               </div>
               <div className="fc-field">
                 <input

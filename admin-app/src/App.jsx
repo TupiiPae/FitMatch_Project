@@ -13,6 +13,8 @@ import FoodsList from "./pages/pagesFoods/Food_List/Food_List.jsx";
 import FoodCreate from "./pages/pagesFoods/Food_Create/Food_Create.jsx";
 import FoodsReview from "./pages/pagesFoods/Review/Review.jsx";
 import FoodEdit from "./pages/pagesFoods/Food_Edit/Food_Edit.jsx";
+// NEW: Import List
+import ImportList from "./pages/pagesFoods/Import_List/Import_List.jsx";
 
 // ===== Users
 import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
@@ -21,52 +23,52 @@ import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
 import AdminAccountsList from "./pages/pagesAdmins/Admin_List/Admin_List.jsx";
 import AdminCreate from "./pages/pagesAdmins/Admin_Create/Admin_Create.jsx";
 
-// ===== THÊM IMPORT MỚI =====
+// ===== Profile (admin cấp 2 dùng được)
 import ProfilePage from "./pages/ProfilePage/ProfilePage.jsx";
 
-
 export default function App() {
-  return (
-    <Routes>
-      {/* Điều hướng mặc định */}
-      <Route index element={<Navigate to="/login" replace />} />
+  return (
+    <Routes>
+      {/* Điều hướng mặc định */}
+      <Route index element={<Navigate to="/login" replace />} />
 
-      {/* Đăng nhập admin */}
-      <Route path="/login" element={<Login />} />
+      {/* Đăng nhập admin */}
+      <Route path="/login" element={<Login />} />
 
-      {/* Khu vực cần đăng nhập */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <SidebarLayout />
-          </ProtectedRoute>
-        }
-      >
-        {/* Dashboard */}
-        <Route path="/dashboard" element={<Dashboard />} />
+      {/* Khu vực cần đăng nhập */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <SidebarLayout />
+          </ProtectedRoute>
+        }
+      >
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* ===== THÊM ROUTE MỚI ===== */}
         {/* Trang profile (dành cho Admin cấp 2) */}
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
 
-        {/* Quản trị tài khoản admin – chỉ Admin cấp 1 */}
-        <Route element={<OnlyLevel1 />}>
-          <Route path="/admins" element={<AdminAccountsList />} />
-          <Route path="/admins/create" element={<AdminCreate />} />
-        </Route>
+        {/* Quản trị tài khoản admin – chỉ Admin cấp 1 */}
+        <Route element={<OnlyLevel1 />}>
+          <Route path="/admins" element={<AdminAccountsList />} />
+          <Route path="/admins/create" element={<AdminCreate />} />
+        </Route>
 
-        {/* Món ăn */}
-        <Route path="/foods" element={<FoodsList />} />
-        <Route path="/foods/create" element={<FoodCreate />} />
+        {/* Món ăn */}
+        <Route path="/foods" element={<FoodsList />} />
+        <Route path="/foods/create" element={<FoodCreate />} />
         <Route path="/foods/:id/edit" element={<FoodEdit />} />
-        <Route path="/foods/review" element={<FoodsReview />} />
+        <Route path="/foods/review" element={<FoodsReview />} />
+        {/* NEW: Trang Nhập danh sách món ăn */}
+        <Route path="/foods/import-list" element={<ImportList />} />
 
-        {/* Người dùng */}
-        <Route path="/users" element={<UsersList />} />
-      </Route>
+        {/* Người dùng */}
+        <Route path="/users" element={<UsersList />} />
+      </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
-  );
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
 }

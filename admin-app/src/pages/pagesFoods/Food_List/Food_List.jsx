@@ -178,7 +178,13 @@ export default function FoodsList() {
         <div className="page-head">
           <h2>Danh sách món ăn ({total})</h2>
           <div className="head-actions">
-            <button className="btn ghost" type="button" onClick={() => alert("TODO: Nhập danh sách")}>
+            {/* ĐỔI onClick từ alert(...) -> nav('/foods/import-list') */}
+            <button
+              className="btn ghost"
+              type="button"
+              onClick={() => nav("/foods/import-list")}
+              title="Nhập danh sách món ăn từ CSV/XLSX/ZIP"
+            >
               <i className="fa-solid fa-file-import" aria-hidden="true" /> <span>Nhập danh sách</span>
             </button>
             <button className="btn ghost" type="button" onClick={downloadCSV}>

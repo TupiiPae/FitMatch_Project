@@ -321,6 +321,28 @@ export const getFood = async (id) => {
   }
 };
 
+export const importFoodsBulk = async ({ file, archive, options = {} }) => {
+  const fd = new FormData();
+  if (file) fd.append("file", file);
+  if (archive) fd.append("archive", archive);
+  fd.append("options", JSON.stringify(options));
+
+  const r = await api.post("/api/admin/foods/import", fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return r.data; // { success, inserted, updated, failed, errors }
+};
+
+export const validateFoodsBulk = async ({ file, archive }) => {
+  const fd = new FormData();
+  if (file) fd.append("file", file);
+  if (archive) fd.append("archive", archive);
+  const r = await api.post("/api/admin/foods/import/validate", fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return r.data; // { success, count, errors? }
+};
+
 /* =========================
  * USERS (ADMIN)
  * ========================= */
