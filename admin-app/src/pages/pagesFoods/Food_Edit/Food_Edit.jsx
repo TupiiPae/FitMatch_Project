@@ -1,16 +1,18 @@
-// src/pages/pagesFoods/Food_Create/Food_Create.jsx
-import React, { useRef, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { createFood, createFoodFile } from "../../../lib/api.js";
-import "./Food_Create.css";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  getFood,
+  updateFood,
+  updateFoodWithImage,
+} from "../../../lib/api.js";
+import "../Food_Create/Food_Create.css"; // tái dùng CSS của create
 import { toast } from "react-toastify";
 
-// Trạng thái form ban đầu
 const initialState = {
   name: "",
   servingDesc: "",
   massG: 100,
-  unit: "g", // Giữ nguyên 'g' để <select> hoạt động
+  unit: "g",
   imageUrl: "",
   kcal: "",
   proteinG: "",
@@ -19,22 +21,26 @@ const initialState = {
   saltG: "",
   sugarG: "",
   fiberG: "",
-  description: "", // Cho Rich Text Editor
+  description: "",
 };
 
-export default function FoodCreate() {
+export default function FoodEdit() {
+  const { id } = useParams();
   const nav = useNavigate();
+
   const [form, setForm] = useState(initialState);
   const [msg, setMsg] = useState("");
-  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Ảnh file upload
+  // ảnh
   const [file, setFile] = useState(null);
-  const fileInputRef = useRef(null);
+  const [preview, setPreview] = useState(null);
+  const fileRef = useRef(null);
 
   const onChange = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
+  // helpers number
   const toNum = (v) => {
     const s = String(v ?? "").trim();
     if (s === "") return undefined;
@@ -48,35 +54,58 @@ export default function FoodCreate() {
     return Number.isFinite(n) ? n : null;
   };
 
-  // cleanup preview blob khi unmount/đổi file
+  // cleanup blob
   useEffect(() => {
     return () => {
       if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
     };
   }, [preview]);
 
-  // Chọn file & xem trước
-  const onPickFile = (e) => {
+  // load data
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getFood(id);
+        if (!mounted) return;
+        setForm({
+          name: data?.name ?? "",
+          servingDesc: data?.portionName ?? "",
+          massG: data?.massG ?? 100,
+          unit: data?.unit ?? "g",
+          imageUrl: data?.imageUrl ?? "",
+          kcal: data?.kcal ?? "",
+          proteinG: data?.proteinG ?? "",
+          carbG: data?.carbG ?? "",
+          fatG: data?.fatG ?? "",
+          saltG: data?.saltG ?? "",
+          sugarG: data?.sugarG ?? "",
+          fiberG: data?.fiberG ?? "",
+          description: data?.description ?? "",
+        });
+        setPreview(data?.imageUrl || null);
+      } catch (e) {
+        setMsg(e?.response?.data?.message || "Không tải được dữ liệu món ăn.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [id]);
+
+  const pickFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
     if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
     setFile(f);
     setPreview(URL.createObjectURL(f));
-    // nếu nhập file → bỏ URL để tránh gửi cả đôi
     if (form.imageUrl) onChange("imageUrl", "");
   };
+  const openFile = () => fileRef.current?.click();
+  const handleImagePreview = () => { if (!file) setPreview(form.imageUrl || null); };
 
-  const openFileDialog = () => fileInputRef.current?.click();
-
-  const handleImagePreview = () => {
-    // Chỉ set preview từ URL khi KHÔNG có file
-    if (!file) setPreview(form.imageUrl || null);
-  };
-
-  // Validate cơ bản theo BE: name, massG>0, unit hợp lệ, kcal>=0 (bắt buộc)
+  // validate: KHÔNG cho sửa name → input disabled; vẫn kiểm tra mass/unit/kcal
   const validate = () => {
-    const name = String(form.name || "").trim();
-    if (!name) return "Vui lòng nhập tên món.";
     const massG = toNum(form.massG);
     if (massG === undefined || massG <= 0) return "Khối lượng phải lớn hơn 0.";
     const unit = form.unit === "ml" ? "ml" : "g";
@@ -89,123 +118,94 @@ export default function FoodCreate() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
-
-    // validate trước khi gửi
     const v = validate();
     if (v) { setMsg(v); return; }
 
     const payload = {
-      name: String(form.name || "").trim(),
-      portionName: String(form.servingDesc || "").trim() || undefined, // map đúng BE
+      // name KHÔNG cho sửa
+      portionName: String(form.servingDesc || "").trim() || undefined,
       massG: toNum(form.massG),
       unit: form.unit === "ml" ? "ml" : "g",
-      // imageUrl chỉ gửi khi KHÔNG có file
       imageUrl: file ? undefined : (String(form.imageUrl || "").trim() || undefined),
-      kcal: toNumOrNull(form.kcal),          // BE yêu cầu ≥0 (đã validate)
-      proteinG: toNumOrNull(form.proteinG),  // optional
-      carbG: toNumOrNull(form.carbG),        // optional
-      fatG: toNumOrNull(form.fatG),          // optional
-      saltG: toNumOrNull(form.saltG),        // optional
-      sugarG: toNumOrNull(form.sugarG),      // optional
-      fiberG: toNumOrNull(form.fiberG),      // optional
+      kcal: toNumOrNull(form.kcal),
+      proteinG: toNumOrNull(form.proteinG),
+      carbG: toNumOrNull(form.carbG),
+      fatG: toNumOrNull(form.fatG),
+      saltG: toNumOrNull(form.saltG),
+      sugarG: toNumOrNull(form.sugarG),
+      fiberG: toNumOrNull(form.fiberG),
       description: String(form.description || "").trim() || undefined,
-      sourceType: "admin_created",
     };
 
     try {
       if (file) {
-        // Multipart upload (field 'image')
         const fd = new FormData();
         fd.append("image", file);
         Object.entries(payload).forEach(([k, v]) => {
           if (v !== null && v !== undefined) fd.append(k, String(v));
         });
-        await createFoodFile(fd);
+        await updateFoodWithImage(id, fd);
       } else {
-        // JSON body
-        await createFood(payload);
+        await updateFood(id, payload);
       }
+       toast.success("Chỉnh sửa món ăn thành công!");
+        nav("/foods");
+    } catch (err) {
+        const message =
+        err?.response?.data?.message ||
+        (err?.response?.status === 422
+            ? "Dữ liệu không hợp lệ."
+            : "Có lỗi xảy ra, vui lòng thử lại.");
+        setMsg(message);
+        toast.error(message);
+        console.error(err);
+    } finally {
+        setSaving(false);
+    }
+    };
 
-      toast.success("Tạo món ăn thành công!");  
-          nav("/foods");                             
-        } catch (err) {
-          const message =
-            err?.response?.data?.message ||
-            (err?.response?.status === 422 ? "Dữ liệu không hợp lệ." : "Đã xảy ra lỗi. Vui lòng thử lại.");
-          setMsg(message);
-          toast.error(message);                   
-          console.error(err);
-        } finally {
-          setSaving(false);
-        }
-      };
+  if (loading) return <div className="food-create-page"><div className="card"><div className="empty">Đang tải…</div></div></div>;
 
   return (
     <div className="food-create-page">
-      {/* ===== Breadcrumb ===== */}
+      {/* Breadcrumb */}
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
-        <Link to="/">
-          <i className="fa-solid fa-house" aria-hidden="true"></i>
-          <span>Trang chủ</span>
-        </Link>
+        <Link to="/"><i className="fa-solid fa-house" /> <span>Trang chủ</span></Link>
         <span className="separator">/</span>
-        <span className="current-group">
-          <i className="fa-solid fa-utensils" aria-hidden="true"></i>
-          <span>Quản lý Món ăn</span>
-        </span>
+        <span className="current-group"><i className="fa-solid fa-utensils" /> <span>Quản lý Món ăn</span></span>
         <span className="separator">/</span>
-        <span className="current-page">Tạo món ăn mới</span>
+        <span className="current-page">Chỉnh sửa món ăn</span>
       </nav>
 
-      {/* ===== Card Layout ===== */}
       <div className="card">
-        {/* ===== Page Head ===== */}
+        {/* Head */}
         <div className="page-head">
-          <h2>Tạo món ăn mới</h2>
+          <h2>Chỉnh sửa món ăn</h2>
           <div className="head-actions">
             <button className="btn ghost" type="button" onClick={() => nav(-1)}>
               <span>Hủy</span>
             </button>
-            <button
-              className="btn primary"
-              type="submit"
-              form="create-food-form"
-            >
-              <span>{saving ? "Đang lưu..." : "Lưu"}</span>
+            <button className="btn primary" type="submit" form="edit-food-form" disabled={saving}>
+            <span>{saving ? "Đang lưu..." : "Lưu thay đổi"}</span>
             </button>
           </div>
         </div>
 
-        {/* ===== Form Layout Mới ===== */}
-        <form
-          id="create-food-form"
-          className="fc-form-layout"
-          onSubmit={onSubmit}
-        >
-          {/* --- CỘT TRÁI: HÌNH ẢNH --- */}
+        {/* Form giống create */}
+        <form id="edit-food-form" className="fc-form-layout" onSubmit={onSubmit}>
+          {/* Cột trái: ảnh */}
           <div className="fc-image-col">
             <h3 className="fc-section-title">Hình ảnh món ăn</h3>
 
-            {/* Khung ảnh: nhấp để chọn file */}
             <div
               className="fc-image-box"
               role="button"
               tabIndex={0}
-              onClick={openFileDialog}
-              onKeyDown={(e) => { if (e.key === "Enter") openFileDialog(); }}
+              onClick={openFile}
+              onKeyDown={(e) => { if (e.key === "Enter") openFile(); }}
             >
               {preview ? (
-                <img
-                  src={preview}
-                  alt="Xem trước"
-                  onError={() => setPreview(null)}
-                />
-              ) : form.imageUrl ? (
-                <img
-                  src={form.imageUrl}
-                  alt="Xem trước"
-                  onError={() => setPreview(null)}
-                />
+                <img src={preview} alt="Xem trước" onError={() => setPreview(null)} />
               ) : (
                 <div className="placeholder">
                   <span>Xem trước hình ảnh (nhấp để chọn)</span>
@@ -213,48 +213,36 @@ export default function FoodCreate() {
               )}
             </div>
 
-            {/* Input file ẩn */}
             <input
-              ref={fileInputRef}
+              ref={fileRef}
               type="file"
               accept="image/*"
               style={{ display: "none" }}
-              onChange={onPickFile}
+              onChange={pickFile}
             />
 
-            {/* Trường Input Float Label (ảnh qua URL) */}
             <div className="fc-field">
               <input
                 type="url"
                 id="food-image-url"
-                placeholder=" " // Quan trọng: phải có 1 dấu cách
+                placeholder=" "
                 value={form.imageUrl}
-                onChange={(e) => {
-                  // nếu nhập URL → bỏ file đã chọn (tránh gửi cả đôi)
-                  if (file) setFile(null);
-                  onChange("imageUrl", e.target.value);
-                }}
+                onChange={(e) => { if (file) setFile(null); onChange("imageUrl", e.target.value); }}
                 onBlur={handleImagePreview}
               />
               <label htmlFor="food-image-url">Link hình ảnh (URL)</label>
             </div>
           </div>
 
-          {/* --- CỘT PHẢI: THÔNG TIN --- */}
+          {/* Cột phải */}
           <div className="fc-fields-col">
-            {/* Nhóm thông tin chung */}
             <h3 className="fc-section-title">Thông tin chung</h3>
 
             <div className="fc-fields-grid-2">
+              {/* Tên món: KHÔNG cho sửa */}
               <div className="fc-field fc-grid-span-2">
-                <input
-                  id="food-name"
-                  value={form.name}
-                  onChange={(e) => onChange("name", e.target.value)}
-                  required
-                  placeholder=" "
-                />
-                <label htmlFor="food-name">Tên món ăn (bắt buộc)</label>
+                <input id="food-name" value={form.name} placeholder=" " disabled readOnly />
+                <label htmlFor="food-name">Tên món ăn (không thể chỉnh sửa)</label>
               </div>
 
               <div className="fc-field fc-grid-span-2">
@@ -280,7 +268,6 @@ export default function FoodCreate() {
                 <label htmlFor="food-mass">Khối lượng (bắt buộc)</label>
               </div>
 
-              {/* Select được style riêng (label luôn nổi) */}
               <div className="fc-field fc-field-select">
                 <select
                   id="food-unit"
@@ -293,13 +280,10 @@ export default function FoodCreate() {
               </div>
             </div>
 
-            {/* Đường kẻ ngang */}
             <hr className="fc-divider" />
 
-            {/* Nhóm thông tin dinh dưỡng */}
             <h3 className="fc-section-title">Thông tin dinh dưỡng</h3>
 
-            {/* Calo 1 hàng */}
             <div className="fc-field">
               <input
                 type="number"
@@ -314,93 +298,63 @@ export default function FoodCreate() {
               <label htmlFor="food-kcal">Calo (kcal)</label>
             </div>
 
-            {/* 3 trường 1 hàng */}
             <div className="fc-fields-grid-3">
               <div className="fc-field">
                 <input
-                  type="number"
-                  step="0.1"
-                  id="food-p"
-                  value={form.proteinG}
-                  onChange={(e) => onChange("proteinG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  type="number" step="0.1" id="food-p"
+                  value={form.proteinG} onChange={(e)=>onChange("proteinG", e.target.value)}
+                  placeholder=" " min="0"
                 />
                 <label htmlFor="food-p">Đạm (g)</label>
               </div>
               <div className="fc-field">
                 <input
-                  type="number"
-                  step="0.1"
-                  id="food-c"
-                  value={form.carbG}
-                  onChange={(e) => onChange("carbG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  type="number" step="0.1" id="food-c"
+                  value={form.carbG} onChange={(e)=>onChange("carbG", e.target.value)}
+                  placeholder=" " min="0"
                 />
                 <label htmlFor="food-c">Carb (g)</label>
               </div>
               <div className="fc-field">
                 <input
-                  type="number"
-                  step="0.1"
-                  id="food-f"
-                  value={form.fatG}
-                  onChange={(e) => onChange("fatG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  type="number" step="0.1" id="food-f"
+                  value={form.fatG} onChange={(e)=>onChange("fatG", e.target.value)}
+                  placeholder=" " min="0"
                 />
                 <label htmlFor="food-f">Chất béo (g)</label>
               </div>
             </div>
 
-            {/* 3 trường 1 hàng */}
             <div className="fc-fields-grid-3">
               <div className="fc-field">
                 <input
-                  type="number"
-                  step="0.1"
-                  id="food-salt"
-                  value={form.saltG}
-                  onChange={(e) => onChange("saltG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  type="number" step="0.1" id="food-salt"
+                  value={form.saltG} onChange={(e)=>onChange("saltG", e.target.value)}
+                  placeholder=" " min="0"
                 />
                 <label htmlFor="food-salt">Muối (g)</label>
               </div>
               <div className="fc-field">
                 <input
-                  type="number"
-                  step="0.1"
-                  id="food-sugar"
-                  value={form.sugarG}
-                  onChange={(e) => onChange("sugarG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  type="number" step="0.1" id="food-sugar"
+                  value={form.sugarG} onChange={(e)=>onChange("sugarG", e.target.value)}
+                  placeholder=" " min="0"
                 />
                 <label htmlFor="food-sugar">Đường (g)</label>
               </div>
               <div className="fc-field">
                 <input
-                  type="number"
-                  step="0.1"
-                  id="food-fiber"
-                  value={form.fiberG}
-                  onChange={(e) => onChange("fiberG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  type="number" step="0.1" id="food-fiber"
+                  value={form.fiberG} onChange={(e)=>onChange("fiberG", e.target.value)}
+                  placeholder=" " min="0"
                 />
                 <label htmlFor="food-fiber">Chất xơ (g)</label>
               </div>
             </div>
 
-            {/* Đường kẻ ngang */}
             <hr className="fc-divider" />
 
-            {/* Khu vực Rich Text Editor */}
             <h3 className="fc-section-title">Ghi chú / Mô tả chi tiết</h3>
-
-            {/* TODO: Thay <textarea> bằng component RTE nếu muốn */}
             <div className="fc-field">
               <textarea
                 id="food-desc"
@@ -409,7 +363,7 @@ export default function FoodCreate() {
                 onChange={(e) => onChange("description", e.target.value)}
                 placeholder=" "
                 rows="5"
-              ></textarea>
+              />
               <label htmlFor="food-desc">Mô tả</label>
             </div>
           </div>

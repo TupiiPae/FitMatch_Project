@@ -12,6 +12,7 @@ import { ProtectedRoute, OnlyLevel1 } from "./components/ProtectedRoute.jsx";
 import FoodsList from "./pages/pagesFoods/Food_List/Food_List.jsx";
 import FoodCreate from "./pages/pagesFoods/Food_Create/Food_Create.jsx";
 import FoodsReview from "./pages/pagesFoods/Review/Review.jsx";
+import FoodEdit from "./pages/pagesFoods/Food_Edit/Food_Edit.jsx";
 
 // ===== Users
 import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
@@ -57,6 +58,7 @@ export default function App() {
         {/* Món ăn */}
         <Route path="/foods" element={<FoodsList />} />
         <Route path="/foods/create" element={<FoodCreate />} />
+        <Route path="/foods/:id/edit" element={<FoodEdit />} />
         <Route path="/foods/review" element={<FoodsReview />} />
 
         {/* Người dùng */}

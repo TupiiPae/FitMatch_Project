@@ -307,6 +307,20 @@ export const rejectFood = async (id, reason = "") => {
   }
 };
 
+export const getFood = async (id) => {
+  // ưu tiên route admin, fallback public
+  try {
+    const r = await api.get(`/api/admin/foods/${id}`);
+    return r.data;
+  } catch (e) {
+    if (e?.response?.status === 404) {
+      const r2 = await api.get(`/api/foods/${id}`);
+      return r2.data;
+    }
+    throw e;
+  }
+};
+
 /* =========================
  * USERS (ADMIN)
  * ========================= */
