@@ -256,31 +256,45 @@ export default function AdminAccountsList(){
 
       {/* Modal Edit */}
       {editOpen && (
-        <div className="fm-modal-overlay" onClick={closeEdit}>
-          <div className="fm-modal" role="dialog" aria-modal="true" aria-labelledby="edit-title" onClick={(e)=>e.stopPropagation()}>
-            {/* THAY ĐỔI: Thêm Head, Body, Actions */}
-            <div className="fm-modal__head">
-              <h3 id="edit-title" className="fm-modal__title">Chỉnh sửa tài khoản</h3>
+        <div className="fm-modal-overlay" onClick={closeEdit}>
+          <div
+            className="fm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-title"
+            onClick={(e)=>e.stopPropagation()}
+          >
+            <div className="al-sec-label" role="heading" aria-level="2">
+              <span className="al-sec-title">Chỉnh sửa tài khoản</span>
+              {/* <span className="al-sec-hint">Tên hiển thị & mật khẩu</span> */} 
             </div>
-            <div className="fm-modal__body">
-              <div className="fm-form">
-                <label className="fm-label">Username</label>
-                <input className="fm-input" value={editTarget?.username || ""} disabled />
 
-                <label className="fm-label">Nickname</label>
-                <input className="fm-input" value={editNickname} onChange={(e)=>setEditNickname(e.target.value)} maxLength={30} />
+            <div className="al-form">
+              {/* các trường của bạn giữ nguyên */}
+              <div className="al-field">
+                <input id="al-username" value={editTarget?.username || ""} disabled placeholder=" " />
+                <label htmlFor="al-username">Username</label>
+              </div>
 
-                <label className="fm-label">Mật khẩu (tùy chọn)</label>
-                <input className="fm-input" type="password" value={editPassword} onChange={(e)=>setEditPassword(e.target.value)} maxLength={30} placeholder="Để trống nếu không đổi" />
-              </div>
+              <div className="al-field">
+                <input id="al-nickname" value={editNickname} onChange={(e)=>setEditNickname(e.target.value)} maxLength={30} placeholder=" " />
+                <label htmlFor="al-nickname">Nickname</label>
+              </div>
+
+              <div className="al-field">
+                <input id="al-password" type="password" value={editPassword} onChange={(e)=>setEditPassword(e.target.value)} maxLength={30} placeholder=" " />
+                <label htmlFor="al-password">Mật khẩu (tùy chọn)</label>
+              </div>
             </div>
-            <div className="fm-modal__actions">
-              <button className="fm-btn ghost" onClick={closeEdit}>Hủy</button>
-              <button className="fm-btn primary" onClick={doSaveEdit}>Lưu</button>
-            </div>
-          </div>
-        </div>
-      )}
+
+            <div className="fm-modal__actions">
+              <button className="fm-btn ghost" onClick={closeEdit}>Hủy</button>
+              {/* Nút Lưu đã được style #008080 trong CSS ở trên */}
+              <button className="fm-btn primary" onClick={doSaveEdit}>Lưu</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== MODAL DELETE (ĐÃ SỬA) ===== */}
       {deleteOpen && (

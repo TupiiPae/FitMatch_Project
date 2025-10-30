@@ -190,8 +190,8 @@ html, body { font-size: var(--fs-base); }
 .fm-account-box i{ font-size:15px; line-height:1; }
 .fm-account-box--level2{ background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
 .theme-dark .fm-account-box--level2{ background:#334155; color:#e2e8f0; border-color:#475569; }
-.fm-account-box--level1{ background:#fefce8; color:#ca8a04; border:1px solid #ca8a04; }
-.fm-account-box--level1 i{ color:#ca8a04; }
+.fm-account-box--level1{ background:#FF704320; color:#FF7043; border:1px solid #FF7043; }
+.fm-account-box--level1 i{ color:#FF7043; }
 .theme-dark .fm-account-box--level1{ background:#45330a; color:#FF7043; border-color:#713f12; }
 .theme-dark .fm-account-box--level1 i{ color:#f87171; }
 
@@ -204,7 +204,7 @@ html, body { font-size: var(--fs-base); }
 }
 @keyframes fm-pop{ from{ transform:scale(.98); opacity:0; } to{ transform:scale(1); opacity:1; } }
 .fm-modal__icon{ width:48px; height:48px; border-radius:50%; background:#fef3c7; color:#b45309; display:grid; place-items:center; margin:0 auto 8px; }
-.theme-dark .fm-modal__icon{ background:#3f2d0c; color:#facc15; }
+.theme-dark .fm-modal__icon{ background:#3f2d0c; color:#FF7043; }
 .fm-modal__icon i{ font-size:18px; }
 .fm-modal__title{ font-size:16px; margin:6px 0 6px; }
 .fm-modal__text{ color:var(--fm-muted); margin:0 6px 14px; font-size:13px; }
