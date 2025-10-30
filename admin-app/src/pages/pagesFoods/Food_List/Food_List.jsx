@@ -231,7 +231,7 @@ export default function FoodsList() {
             <div className="cell kcal">Calorie (kcal)</div>
             <div className="cell macros">Đạm / Đường bột / Chất béo</div>
             <div className="cell creator">Người tạo</div>
-            <div className="cell approved">Thời gian duyệt</div>
+            <div className="cell approved">Thời gian tạo thành công</div>
             <div className="cell act">Thao tác</div>
           </div>
 

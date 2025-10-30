@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { listFoodsAdminOnly, approveFood, rejectFood, api } from "../../../lib/api";
 import "./Review.css";
+import { toast } from "react-toastify";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
@@ -54,19 +55,25 @@ export default function FoodsReview() {
     try {
       if (confirm.mode === "approve") {
         await approveFood(confirm.item._id);
+        toast.success("Duyệt món ăn thành công");
       } else if (confirm.mode === "reject") {
         await rejectFood(confirm.item._id, confirm.reason || "");
+        toast.success("Từ chối món ăn");
       } else if (confirm.mode === "approve-bulk") {
         for (const id of confirm.items) { try { await approveFood(id); } catch {} }
+        toast.success(`Đã duyệt ${confirm.items.length} món`);
       } else if (confirm.mode === "reject-bulk") {
         for (const id of confirm.items) { try { await rejectFood(id, confirm.reason || ""); } catch {} }
+        toast.success(`Đã từ chối ${confirm.items.length} món`);
       }
     } catch (e) {
+      const msg = e?.response?.data?.message || "Thao tác thất bại";
+      toast.error(msg); // Lỗi vẫn đỏ để dễ phân biệt
       console.error(e);
-      alert(e?.response?.data?.message || "Thao tác thất bại");
     } finally {
       setConfirm(null);
       await load();
+      setLoading(false);
     }
   };
 
