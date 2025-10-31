@@ -1,5 +1,5 @@
 .onb-wrap {
-  max-width: 860px; margin: 32px auto; padding: 0 16px; font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  max-width: 860px; margin: 32px auto; padding: 0 16px;
 }
 .onb-card {
   background:#fff; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,.08);

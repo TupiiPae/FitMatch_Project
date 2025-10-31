@@ -1,148 +1,271 @@
+/* ===== Khung trang (giống .dj-wrap) ===== */
+.ff-wrap {
+  background-color: #f4f6ea; /* Nền mới */
+  min-height: 100%;
+  margin: -16px; /* Kéo nền ra */
+  /* 16px (wrap) + 8px (container) = 24px (top) */
+  /* 16px (wrap) + 12px (container) = 28px (sides) */
+  /* Phải khớp với padding của .nm-wrap để tỷ lệ bằng nhau */
+  padding: 24px 28px 16px 28px; 
+}
+
 /* ===== Toolbar ===== */
-.ff-toolbar{
-  padding: 0 190px;
+.ff-toolbar {
+  padding: 0; /* Bỏ padding cũ */
+  /* This div is a container for the sticky toolbox */
+  position: relative;
+  z-index: 5;
+  height: 88px; /* 64px toolbox + 24px margin-bottom */
 }
 
 /* Box bọc bên trong (giống .nm-head) */
-.ff-toolbox{
-  display:flex; gap:10px; align-items:center; justify-content:space-between;
+.ff-toolbox {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  
+  /* === THAY ĐỔI: Giống .nm-head === */
   position: sticky;
-  top: calc(var(--nav-size, 100px) + 8px);
+  top: 24px; /* Dính vào padding trên của .ff-wrap */
   background: #fff;
   z-index: 5;
-  padding: 14px 10px;
-  border-radius: 10px;
-  border: 1px solid #002C3E55;
+  padding: 12px 16px;
+  border-radius: 4px;
+  border: 1px solid #002C3E;
+  box-shadow: 0 4px 10px rgba(0, 44, 62, .04);
+  max-width: 1700px;
+  margin: 0 auto; /* Tự căn giữa */
+  /* margin-bottom: 24px; (đã chuyển lên height của .ff-toolbar) */
 }
 
-.tool-left{
-  display:inline-flex; align-items:center; gap:8px;
-  background:#fff; border:1px solid #e5e7eb; border-radius:10px;
-  height:40px; padding:0 12px; cursor:pointer; font-weight:700;
-}
-.tool-right{ display:flex; gap:8px; }
-.btn{ height:40px; padding:0 14px; border-radius:10px; cursor:pointer; border:1px solid #e5e7eb; background:#fff; font-weight:700; }
-.btn.primary{ background:#1A73E8; color:#fff; border-color:#1A73E8; }
-.btn.ghost{ background:#fff; color:#111827; }
-.btn.ghost.danger{ color:#b91c1c; border-color:#f4d0d0; }
-.btn.light{ background:#f8fafc; }
-
-/* ===== Grid 2 cột: trái form – phải ảnh ===== */
-.ff-grid{
-  padding: 0 190px 24px;            /* đồng bộ với toolbar */
-  display:grid; grid-template-columns: minmax(520px, 1fr) 360px;
-  gap:16px; align-items:start;
-}
-@media (max-width: 1080px){
-  .ff-toolbar{ padding: 0 16px; }
-}
-
-/* ===== Card phong cách sạch ===== */
-.card{
-  background:#fff; border:1px solid #002C3E33; border-radius:12px; padding:14px;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.02);
-  margin-top: 12px;
-}
-.sec-title{ font-weight:700; margin:10px 0 8px; font-size: 20px;}
-.sep{
-  height:1px; background: #e5e7eb; margin:30px 0;
-}
-
-/* ===== Inputs & rows ===== */
-.row{ display:grid; grid-template-columns: 1fr; gap:8px; margin:40px 0; }
-.row.two{ grid-template-columns: 1fr 1fr; gap:12px; }
-.row.three{ grid-template-columns: 1fr 1fr 1fr; gap:50px; }
-@media (max-width: 720px){ .row.two, .row.three{ grid-template-columns: 1fr; } }
-
-label{ font-weight:600; font-size: 16px;}
-.req{ color:#ef4444; }
-.ipt{
-  height:40px; border:1px solid #e5e7eb; border-radius:10px; padding:0 10px; background:#fff; width:100%;
-}
-
-/* Đơn vị toggle */
-.unit-select{ margin-left:40px; }
-.unit-toggle{ display:flex; gap:8px; align-items:center; height:40px; }
-.unit{
-  height:40px; min-width:72px; padding:0 12px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; cursor:pointer; font-weight:700;
-}
-.unit.on{ background:#cfe3f7; border-color:#b7d3ee; }
-
-/* ===== Thumb (cột phải) ===== */
-.thumb-card .sec-title{ margin-bottom:6px; }
-.thumb-box{
-  width:100%; aspect-ratio: 1/1; border-radius:12px; overflow:hidden;
-  border:1px solid #e5e7eb; background:#f8fafc; display:flex; align-items:center; justify-content:center;
-}
-.thumb-img{ width:100%; height:100%; object-fit:cover; }
-.thumb-placeholder{ color:#9aa0a6; font-size:42px; }
-.thumb-ctl{
-  display: flex;
-  justify-content: center;  
+.tool-left {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;               
-  padding: 4px 0;
-  flex-wrap: wrap;       
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #002C3E; /* Border mới */
+  border-radius: 4px; /* Radius mới */
+  height: 40px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 700;
 }
-.btn{
+.tool-left:hover {
+  background-color: #f9f9f9;
+}
+
+.tool-right { display: flex; gap: 8px; }
+
+/* === Cập nhật Buttons === */
+.btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 4px; /* Radius mới */
+  cursor: pointer;
+  border: 1px solid #002C3E; /* Border mới */
+  background: #fff;
+  font-weight: 700;
+  /* Thêm để căn icon/text */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  border: 1px solid #e5e7eb;
+}
+.btn.primary {
+  background: #78BCC4; /* Màu theme */
+  color: #fff;
+  border-color: #78BCC4;
+}
+.btn.primary:hover { background: #008080; }
+.btn.ghost { background: #fff; color: #111827; }
+.btn.ghost.danger {
+  color: #b91c1c;
+  border-color: #f4d0d0;
+}
+.btn.ghost.danger:hover {
+  background-color: #fef2f2;
+}
+.btn.light { background: #f8fafc; border-color: #002C3E; }
+.btn.light:hover { background: #f1f5f9; }
+
+/* Nút xóa trong modal (màu đỏ từ dj) */
+.btn.bad {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #f4d0d0;
+}
+.btn.bad:hover { background: #fee2e2; }
+
+
+/* ===== Grid 2 cột: trái form – phải ảnh ===== */
+.ff-grid {
+  padding: 0; /* Bỏ padding cũ */
+  display: grid;
+  grid-template-columns: minmax(520px, 1fr) 360px;
+  gap: 24px; /* Giống .dj-grid */
+  align-items: start;
+  max-width: 1700px; /* Giống .dj-container */
+  margin: 0 auto; /* Căn giữa */
+}
+@media (max-width: 1080px) {
+  /* Bỏ padding cũ */
+  .ff-grid {
+    grid-template-columns: 1fr; /* Xếp chồng 2 cột */
+  }
+}
+
+/* ===== Card phong cách sạch (Giống .dj-main) ===== */
+.card {
   background: #fff;
+  border: 1px solid #002C3E; /* Border mới */
+  border-radius: 4px; /* Radius mới */
+  padding: 20px; /* Padding mới */
+  box-shadow: 0 4px 10px rgba(0, 44, 62, .04);
+  margin-top: 0; /* Bỏ margin-top cũ */
+}
+.sec-title {
+  font-weight: 700;
+  margin: 0 0 16px 0; /* Căn lề mới */
+  font-size: 18px;
+  color: #002C3E;
+}
+.sep {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 24px 0; /* Căn lề mới */
+}
+
+/* ===== Inputs & rows (Cập nhật) ===== */
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px; /* Giảm gap giữa label và input */
+  margin: 16px 0; /* Căn lề mới */
+}
+.row.two { grid-template-columns: 1fr 1fr; gap: 16px; }
+.row.three { grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) {
+  .row.two, .row.three { grid-template-columns: 1fr; }
+}
+
+label { font-weight: 600; font-size: 14px; display: block; margin-bottom: 4px; }
+.req { color: #ef4444; }
+.ipt {
+  height: 40px;
+  border: 1px solid #002C3E; /* Border mới */
+  border-radius: 4px; /* Radius mới */
+  padding: 0 10px;
+  background: #fff;
+  width: 100%;
+}
+
+/* Đơn vị toggle */
+.unit-select { margin-left: 0; }
+.unit-toggle { display: flex; gap: 8px; align-items: center; height: 40px; }
+.unit {
+  height: 40px;
+  min-width: 72px;
+  padding: 0 12px;
+  border-radius: 4px; /* Radius mới */
+  border: 1px solid #002C3E; /* Border mới */
+  background: #fff;
+  cursor: pointer;
   font-weight: 700;
 }
-
-.thumb-ctl .btn{
-  width: 158px;
+.unit.on {
+  background: #e4f3f5; /* Theme color light */
+  border-color: #78BCC4; /* Theme color */
+  color: #008080;
 }
 
+/* ===== Thumb (cột phải) ===== */
+.ff-right {
+  position: sticky;
+  /* 24px (wrap) + 64px (toolbox) + 24px (margin-bottom) = 112px */
+  top: calc(24px + 64px + 24px); 
+}
 
-/* (tuỳ chọn) để label hoạt động như button */
+.thumb-card .sec-title { margin-bottom: 12px; }
+.thumb-box {
+  width: 100%;
+  aspect-ratio: 1/1;
+  border-radius: 4px; /* Radius mới */
+  overflow: hidden;
+  border: 1px solid #002C3E; /* Border mới */
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.thumb-img { width: 100%; height: 100%; object-fit: cover; }
+.thumb-placeholder { color: #9aa0a6; font-size: 42px; }
+.thumb-ctl {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0 4px 0;
+  flex-wrap: wrap;
+}
+.thumb-ctl .btn {
+  width: 100%;
+  max-width: 160px;
+}
 label.btn { cursor: pointer; }
-.hint{ color:#6b7280; font-size:12px; margin-top:6px; }
+.hint { color: #6b7280; font-size: 12px; margin-top: 6px; text-align: center; }
 
 /* ===== RTE giả lập ===== */
-.rte{ border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }
-.rte-toolbar{
-  height:40px; display:flex; align-items:center; gap:6px; padding:0 8px; background:#f9fafb; border-bottom:1px solid #e5e7eb;
+.rte { border: 1px solid #002C3E; border-radius: 4px; overflow: hidden; }
+.rte-toolbar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  background: #f9fafb;
+  border-bottom: 1px solid #002C3E;
 }
-.rte-toolbar .ic{
-  height:30px; min-width:30px; display:inline-flex; align-items:center; justify-content:center;
-  border:1px solid #e5e7eb; background:#fff; border-radius:8px; cursor:pointer;
+.rte-toolbar .ic {
+  height: 30px;
+  min-width: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 4px; /* Radius mới */
+  cursor: pointer;
 }
-.rte-toolbar .vr{ width:1px; height:22px; background:#e5e7eb; margin:0 4px; }
-.rte-editor:empty:before{
+.rte-toolbar .vr { width: 1px; height: 22px; background: #e5e7eb; margin: 0 4px; }
+.rte-editor:empty:before {
   content: attr(data-placeholder);
   color: #9aa0a6; /* màu placeholder */
   pointer-events: none;
 }
-
-/* Giữ format dòng mới hiển thị đúng khi người dùng gõ */
-.rte-editor{
+.rte-editor {
   height: 300px;
-  padding:10px;
-  outline:none;
-  background:#fff;
-  white-space: pre-wrap;     /* để xuống dòng tự nhiên */
+  padding: 10px;
+  outline: none;
+  background: #fff;
+  white-space: pre-wrap;
   word-break: break-word;
 }
 /* ===== Form message ===== */
-.form-msg{ color:#1A73E8; margin-top:10px; }
+.form-msg { color: #008080; margin-top: 10px; } /* Màu theme */
+
+/* ===== Lỗi validation ===== */
+.error-stack { min-height: 16px; margin-top: 4px; }
+.error-item { color: #dc2626; font-size: 12px; }
+.ipt.input-invalid { border-color: #dc2626; }
+
 
 /* ===== Modal xác nhận (giữ cũ) ===== */
-.modal{ position:fixed; inset:0; background:rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; z-index:40; }
-.modal-card{ width:min(520px, 92%); background:#fff; border-radius:12px; border:1px solid #e5e7eb; }
-.modal-card.small{ width:min(420px, 92%); }
-.modal-head{ padding:14px; border-bottom:1px solid #e5e7eb; }
-.modal-body{ padding:14px; }
-.modal-foot{ padding:12px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:8px; }
+.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); display: flex; align-items: center; justify-content: center; z-index: 40; }
+.modal-card { width: min(520px, 92%); background: #fff; border-radius: 4px; border: 1px solid #e5e7eb; }
+.modal-card.small { width: min(420px, 92%); }
+.modal-head { padding: 14px; border-bottom: 1px solid #e5e7eb; }
+.modal-body { padding: 14px; }
+.modal-foot { padding: 12px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; }
 
-.muted{ color:#6b7280; }
-
-.ipt.input-invalid { border-color: #dc2626; }
+.muted { color: #6b7280; }

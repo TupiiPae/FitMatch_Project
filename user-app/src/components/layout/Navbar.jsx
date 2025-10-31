@@ -274,7 +274,7 @@ export default function Navbar({
                   <div className="fm-megamenu-content">
                     <div className="fm-megamenu-image">
                        {/* Thay bằng ảnh của bạn */}
-                      <img src="/images/welcome1.png" alt="Tập luyện" />
+                      <img src="/images/dropd2.png" alt="Tập luyện" />
                     </div>
                     <div className="fm-megamenu-links">
                       <NavLink to="/tap-luyen/lich-cua-ban" className="fm-megamenu-link" role="menuitem">
