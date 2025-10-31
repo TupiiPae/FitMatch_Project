@@ -3,7 +3,6 @@
   max-width: var(--nav-max-width);
   margin: 0 auto;
   padding: 0 var(--nav-x-pad);
-  font-family: 'Roboto', sans-serif;
 }
 
 /* Header */

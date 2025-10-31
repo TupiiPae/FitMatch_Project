@@ -9,9 +9,9 @@ import OnboardingRoutes from "./pages/Onboarding/OnboardingRoutes";
 import Home from "./pages/Home/Home";
 
 // Account pages
-import Profile from "./pages/Account/Profile"; // index.jsx => chỉ cần tới thư mục
+import Profile from "./pages/Account/Profile"; 
 import AccountSettings from "./pages/Account/AccountSettings";
-import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy"; // index.jsx => chỉ cần tới thư mục
+import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy"; 
 
 // Diary
 import RecordMeal from "./pages/Nutrition/RecordMeal";

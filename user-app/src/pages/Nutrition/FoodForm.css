@@ -285,12 +285,6 @@
   grid-column: 1 / -1;
 }
 
-/* ===== XÓA CÁC STYLE CŨ KHÔNG CẦN THIẾT ===== */
-.card, .row, .ipt, .unit-select, .thumb-card, 
-.thumb-ctl, .hint, .rte, .rte-toolbar, .rte-editor {
-  /* Xóa hết các style này vì đã được thay bằng .ff-field */
-  display: none; 
-}
 
 /* ===== Responsive ===== */
 @media (max-width: 1080px) {
