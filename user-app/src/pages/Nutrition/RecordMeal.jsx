@@ -179,8 +179,8 @@ export default function RecordMeal() {
             </div>
           )}
         </div>
-        <Link to="/dinh-duong/tao-mon-an" className="create-btn">Tạo món ăn với AI</Link>
-        <Link to="/dinh-duong/tao-mon-an" className="create-btn">Tạo món ăn mới</Link>
+        <Link to="/dinh-duong/ghi-lai/tao-mon" className="create-btn">Tạo món ăn với AI</Link>
+        <Link to="/dinh-duong/ghi-lai/tao-mon" className="create-btn">Tạo món ăn mới</Link>
       </div>
 
       {/* ===== LIST ===== */}

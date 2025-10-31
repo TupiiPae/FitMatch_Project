@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react"; // Thêm useRef
 import { useNavigate, useParams } from "react-router-dom";
 import {
   createFood as createFoodJSON,
@@ -26,6 +26,8 @@ export default function FoodForm() {
   const [form, setForm] = useState({
     name: "", massG: "", unit: "g", portionName: "",
     kcal: "", proteinG: "", carbG: "", fatG: "", saltG: "", sugarG: "", fiberG: "",
+    // Thêm description (ghi chú) vào state
+    description: "", 
   });
   const up = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
@@ -40,14 +42,20 @@ export default function FoodForm() {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [existingUrl, setExistingUrl] = useState("");
+  const fileInputRef = useRef(null); // Thêm ref cho input file
 
   const onPickFile = (e) => {
     const f = e.target.files?.[0]; if (!f) return;
     if (preview) URL.revokeObjectURL(preview);
     setFile(f); setPreview(URL.createObjectURL(f));
+    setExistingUrl(""); // Xóa ảnh cũ/ảnh URL nếu chọn file mới
   };
-  const clearThumb = () => { if (preview) URL.revokeObjectURL(preview); setFile(null); setPreview(""); };
+  // Bỏ clearThumb vì không còn nút "Xóa ảnh"
+  // const clearThumb = () => { if (preview) URL.revokeObjectURL(preview); setFile(null); setPreview(""); };
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  // Mở hộp thoại chọn file
+  const openFileDialog = () => fileInputRef.current?.click();
 
   // Load khi sửa
   useEffect(() => {
@@ -61,6 +69,7 @@ export default function FoodForm() {
           massG: f.massG ?? "", unit: f.unit || "g",
           kcal: f.kcal ?? "", proteinG: f.proteinG ?? "", carbG: f.carbG ?? "", fatG: f.fatG ?? "",
           saltG: f.saltG ?? "", sugarG: f.sugarG ?? "", fiberG: f.fiberG ?? "",
+          description: f.description || "", // Load description
         });
         setExistingUrl(f.imageUrl || "");
       } catch {
@@ -106,6 +115,7 @@ export default function FoodForm() {
       saltG: numOrNull(form.saltG),
       sugarG: numOrNull(form.sugarG),
       fiberG: numOrNull(form.fiberG),
+      description: String(form.description || "").trim() || undefined, // Thêm description
       ...(isEdit ? {} : { sourceType: "user_submitted" }),
     };
 
@@ -116,8 +126,10 @@ export default function FoodForm() {
         if (isEdit) await updateFoodWithImage(id, fd);
         else await createFoodWithImage(fd);
       } else {
-        if (isEdit) await updateFood(id, payload);
-        else await createFoodJSON(payload);
+        // Gửi cả existingUrl (nếu không chọn file mới)
+        const payloadWithImage = { ...payload, imageUrl: existingUrl || undefined };
+        if (isEdit) await updateFood(id, payloadWithImage);
+        else await createFoodJSON(payloadWithImage);
       }
       toast.success(isEdit ? "Đã lưu chỉnh sửa" : "Đã gửi yêu cầu. Vui lòng đợi admin duyệt.");
       nav("/dinh-duong/ghi-lai");
@@ -162,15 +174,16 @@ export default function FoodForm() {
 
   if (loading) return <div className="ff-wrap"><div className="muted">Đang tải...</div></div>;
 
+  const currentImageUrl = preview || (existingUrl ? toAbs(existingUrl) : null);
+
   return (
     <div className="ff-wrap">
-      {/* ===== Toolbar ===== */}
+      {/* ===== Toolbar (Giữ nguyên) ===== */}
       <div className="ff-toolbar">
         <div className="ff-toolbox">
           <button type="button" className="tool-left" onClick={() => nav(-1)}>
             <i className="fa-solid fa-chevron-left"></i> Quay lại
           </button>
-
           <div className="tool-right">
             {isEdit && (
               <button type="button" className="btn ghost danger" onClick={() => setConfirmDel(true)}>
@@ -184,248 +197,281 @@ export default function FoodForm() {
         </div>
       </div>
 
-      {/* ===== 2 columns: Trái form – Phải ảnh ===== */}
-      <form className="ff-grid" onSubmit={submit}>
-        {/* LEFT: card điền thông tin */}
-        <section className="ff-left">
-          {/* Tên món ăn */}
-          <div className="card">
-            <div className="sec-title">Tên món ăn <span className="req">*</span></div>
+      {/* ===== (THAY ĐỔI) Layout Form Mới (Giống admin) ===== */}
+      <form className="ff-grid-card" onSubmit={submit}>
+        
+        {/* --- CỘT TRÁI: HÌNH ẢNH --- */}
+        <div className="ff-image-col">
+          <h3 className="ff-section-title">Hình ảnh món ăn</h3>
+
+          {/* Khung ảnh */}
+          <div
+            className="ff-image-box"
+            role="button"
+            tabIndex={0}
+            onClick={openFileDialog}
+            onKeyDown={(e) => { if (e.key === "Enter") openFileDialog(); }}
+          >
+            {currentImageUrl ? (
+              <img
+                src={currentImageUrl}
+                alt="Xem trước"
+                onError={(e) => { e.currentTarget.src = "/images/food-placeholder.jpg"; }}
+              />
+            ) : (
+              <div className="ff-placeholder">
+                <i className="fa-regular fa-image"></i>
+                <span>Xem trước hình ảnh (nhấp để chọn)</span>
+              </div>
+            )}
+          </div>
+
+          {/* Input file ẩn */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            hidden
+            accept="image/*"
+            onChange={onPickFile}
+          />
+          
+          {/* Input URL (Giống admin) */}
+          <div className="ff-field">
             <input
-              className={`ipt ${errs.name ? "input-invalid" : ""}`}
+              className="ff-ipt"
+              type="url"
+              id="food-image-url"
+              placeholder=" " 
+              value={existingUrl} // Dùng existingUrl
+              onChange={(e) => {
+                if (file) setFile(null); // Bỏ file nếu gõ URL
+                if (preview) URL.revokeObjectURL(preview);
+                setPreview("");
+                setExistingUrl(e.target.value);
+              }}
+            />
+            <label htmlFor="food-image-url">Hoặc dán Link hình ảnh (URL)</label>
+          </div>
+        </div>
+
+        {/* --- CỘT PHẢI: THÔNG TIN --- */}
+        <div className="ff-fields-col">
+          {/* Nhóm thông tin chung */}
+          <h3 className="ff-section-title">Thông tin chung</h3>
+
+          <div className={`ff-field ${errs.name ? "is-invalid" : ""}`}>
+            <input
+              className="ff-ipt"
+              id="food-name"
               value={form.name}
               onChange={(e) => up("name", e.target.value)}
               onBlur={() => setErrs(p => ({ ...p, name: foodValidators.name(form.name) }))}
-              placeholder="VD: Ức gà áp chảo"
+              placeholder=" "
               required
               maxLength={50}
             />
+            <label htmlFor="food-name">Tên món ăn <span className="req">*</span></label>
             <div className="error-stack" aria-live="polite">
               {errs.name && <span className="error-item">{errs.name}</span>}
             </div>
+          </div>
 
-            <div className="sep" />
+          <div className="ff-field">
+            <input
+              className="ff-ipt"
+              id="food-portion"
+              value={form.portionName}
+              onChange={(e) => up("portionName", e.target.value)}
+              placeholder=" "
+            />
+            <label htmlFor="food-portion">Mô tả khẩu phần (VD: 1 phần / 1 lon / 1 lát...)</label>
+          </div>
 
-            {/* Thông tin chung */}
-            <div className="sec-title">Thông tin chung</div>
-            <div className="row">
-              <label>Khẩu phần (tùy chọn)</label>
+          <div className="ff-fields-grid-2">
+            <div className={`ff-field ${errs.massG ? "is-invalid" : ""}`}>
               <input
-                className="ipt"
-                value={form.portionName}
-                onChange={(e) => up("portionName", e.target.value)}
-                placeholder="VD: 1 phần / 1 lon / 1 lát..."
-              />
-            </div>
-
-            <div className="row two">
-              <div>
-                <label>Khối lượng <span className="req">*</span></label>
-                <input
-                  className={`ipt ${errs.massG ? "input-invalid" : ""}`}
-                  type="number" min="0" step="1"
-                  value={form.massG}
-                  onChange={(e) => up("massG", e.target.value)}
-                  onBlur={() => setErrs(p => ({ ...p, massG: foodValidators.massG(form.massG) }))}
-                  placeholder="VD: 100"
-                  required
-                />
-                <div className="error-stack" aria-live="polite">
-                  {errs.massG && <span className="error-item">{errs.massG}</span>}
-                </div>
-              </div>
-              <div className="unit-select">
-                <label>Đơn vị <span className="req">*</span></label>
-                <div className="unit-toggle">
-                  {UNIT_OPTIONS.map((u) => (
-                    <button
-                      key={u}
-                      type="button"
-                      className={`unit ${form.unit === u ? "on" : ""}`}
-                      onClick={() => up("unit", u)}
-                    >
-                      {u.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="sep" />
-
-            {/* Thông tin giá trị đa lượng */}
-            <div className="sec-title">Thông tin giá trị đa lượng</div>
-
-            <div className="row">
-              <label>Năng lượng (cal) <span className="req">*</span></label>
-              <input
-                className={`ipt ${errs.kcal ? "input-invalid" : ""}`}
-                type="number" step="1" min="0"
-                value={form.kcal}
-                onChange={(e) => up("kcal", e.target.value)}
-                onBlur={() => setErrs(p => ({ ...p, kcal: foodValidators.kcal(form.kcal) }))}
-                placeholder="VD: 165"
+                className="ff-ipt"
+                type="number" min="0" step="1"
+                id="food-mass"
+                value={form.massG}
+                onChange={(e) => up("massG", e.target.value)}
+                onBlur={() => setErrs(p => ({ ...p, massG: foodValidators.massG(form.massG) }))}
+                placeholder=" "
                 required
               />
+              <label htmlFor="food-mass">Khối lượng <span className="req">*</span></label>
               <div className="error-stack" aria-live="polite">
-                {errs.kcal && <span className="error-item">{errs.kcal}</span>}
+                {errs.massG && <span className="error-item">{errs.massG}</span>}
               </div>
             </div>
 
-            <div className="row three">
-              <div>
-                <label>Chất đạm (g)</label>
-                <input
-                  className={`ipt ${errs.proteinG ? "input-invalid" : ""}`}
-                  type="number" step="0.1" min="0"
-                  value={form.proteinG}
-                  onChange={(e) => up("proteinG", e.target.value)}
-                  onBlur={() => setErrs(p => ({ ...p, proteinG: foodValidators.optionalNumber(form.proteinG) }))}
-                />
-                <div className="error-stack" aria-live="polite">
-                  {errs.proteinG && <span className="error-item">{errs.proteinG}</span>}
-                </div>
-              </div>
-              <div>
-                <label>Đường bột (carb) (g)</label>
-                <input
-                  className={`ipt ${errs.carbG ? "input-invalid" : ""}`}
-                  type="number" step="0.1" min="0"
-                  value={form.carbG}
-                  onChange={(e) => up("carbG", e.target.value)}
-                  onBlur={() => setErrs(p => ({ ...p, carbG: foodValidators.optionalNumber(form.carbG) }))}
-                />
-                <div className="error-stack" aria-live="polite">
-                  {errs.carbG && <span className="error-item">{errs.carbG}</span>}
-                </div>
-              </div>
-              <div>
-                <label>Chất béo (fat) (g)</label>
-                <input
-                  className={`ipt ${errs.fatG ? "input-invalid" : ""}`}
-                  type="number" step="0.1" min="0"
-                  value={form.fatG}
-                  onChange={(e) => up("fatG", e.target.value)}
-                  onBlur={() => setErrs(p => ({ ...p, fatG: foodValidators.optionalNumber(form.fatG) }))}
-                />
-                <div className="error-stack" aria-live="polite">
-                  {errs.fatG && <span className="error-item">{errs.fatG}</span>}
-                </div>
-              </div>
+            <div className="ff-field ff-field-select">
+              <label htmlFor="food-unit">Đơn vị</label>
+              <select
+                id="food-unit"
+                className="ff-ipt"
+                value={form.unit}
+                onChange={(e) => up("unit", e.target.value)}
+              >
+                {UNIT_OPTIONS.map((u) => (
+                  <option key={u} value={u}>{u.toUpperCase()}</option>
+                ))}
+              </select>
             </div>
+          </div>
 
-            <div className="row three">
-              <div>
-                <label>Muối (g)</label>
-                <input
-                  className={`ipt ${errs.saltG ? "input-invalid" : ""}`}
-                  type="number" step="0.1" min="0"
-                  value={form.saltG}
-                  onChange={(e) => up("saltG", e.target.value)}
-                  onBlur={() => setErrs(p => ({ ...p, saltG: foodValidators.optionalNumber(form.saltG) }))}
-                />
-                <div className="error-stack" aria-live="polite">
-                  {errs.saltG && <span className="error-item">{errs.saltG}</span>}
-                </div>
-              </div>
-              <div>
-                <label>Đường (g)</label>
-                <input
-                  className={`ipt ${errs.sugarG ? "input-invalid" : ""}`}
-                  type="number" step="0.1" min="0"
-                  value={form.sugarG}
-                  onChange={(e) => up("sugarG", e.target.value)}
-                  onBlur={() => setErrs(p => ({ ...p, sugarG: foodValidators.optionalNumber(form.sugarG) }))}
-                />
-                <div className="error-stack" aria-live="polite">
-                  {errs.sugarG && <span className="error-item">{errs.sugarG}</span>}
-                </div>
-              </div>
-              <div>
-                <label>Chất xơ (g)</label>
-                <input
-                  className={`ipt ${errs.fiberG ? "input-invalid" : ""}`}
-                  type="number" step="0.1" min="0"
-                  value={form.fiberG}
-                  onChange={(e) => up("fiberG", e.target.value)}
-                  onBlur={() => setErrs(p => ({ ...p, fiberG: foodValidators.optionalNumber(form.fiberG) }))}
-                />
-                <div className="error-stack" aria-live="polite">
-                  {errs.fiberG && <span className="error-item">{errs.fiberG}</span>}
-                </div>
-              </div>
-            </div>
+          <hr className="ff-divider" />
 
-            <div className="sep" />
+          {/* Nhóm thông tin dinh dưỡng */}
+          <h3 className="ff-section-title">Thông tin dinh dưỡng</h3>
 
-            {/* Rich Text Editor (giao diện) */}
-            <div className="sec-title">Mô tả / Ghi chú</div>
-            <div className="rte">
-              <div className="rte-toolbar">
-                <button type="button" className="ic"><i className="fa-solid fa-bold"></i></button>
-                <button type="button" className="ic"><i className="fa-solid fa-italic"></i></button>
-                <span className="vr" />
-                <button type="button" className="ic"><i className="fa-solid fa-list-ul"></i></button>
-                <button type="button" className="ic"><i className="fa-solid fa-list-ol"></i></button>
-                <span className="vr" />
-                <button type="button" className="ic"><i className="fa-solid fa-link"></i></button>
-                <button type="button" className="ic"><i className="fa-regular fa-image"></i></button>
-              </div>
-              <div className="rte-editor" contentEditable suppressContentEditableWarning data-placeholder="Viết mô tả món ăn (không bắt buộc)…">
-              </div>
-            </div>
-
-            {/* Lỗi chung/tin nhắn */}
+          <div className={`ff-field ${errs.kcal ? "is-invalid" : ""}`}>
+            <input
+              className="ff-ipt"
+              type="number" step="1" min="0"
+              id="food-kcal"
+              value={form.kcal}
+              onChange={(e) => up("kcal", e.target.value)}
+              onBlur={() => setErrs(p => ({ ...p, kcal: foodValidators.kcal(form.kcal) }))}
+              placeholder=" "
+              required
+            />
+            <label htmlFor="food-kcal">Năng lượng (cal) <span className="req">*</span></label>
             <div className="error-stack" aria-live="polite">
-              {errs.global && <span className="error-item">{errs.global}</span>}
+              {errs.kcal && <span className="error-item">{errs.kcal}</span>}
             </div>
-            {msg && <div className="form-msg">{msg}</div>}
           </div>
-        </section>
 
-        {/* RIGHT: card hình ảnh */}
-        <aside className="ff-right">
-          <div className="card thumb-card">
-            <div className="sec-title">Hình ảnh</div>
-
-            <div className="thumb-box">
-              {preview || existingUrl ? (
-                <img
-                  src={preview || toAbs(existingUrl)}
-                  alt="preview"
-                  className="thumb-img"
-                  onError={(e)=>{ e.currentTarget.src="/images/food-placeholder.jpg"; }}
-                />
-              ) : (
-                <div className="thumb-placeholder"><i className="fa-regular fa-image"></i></div>
-              )}
+          <div className="ff-fields-grid-3">
+            <div className={`ff-field ${errs.proteinG ? "is-invalid" : ""}`}>
+              <input
+                className="ff-ipt"
+                type="number" step="0.1" min="0"
+                id="food-protein"
+                value={form.proteinG}
+                onChange={(e) => up("proteinG", e.target.value)}
+                onBlur={() => setErrs(p => ({ ...p, proteinG: foodValidators.optionalNumber(form.proteinG) }))}
+                placeholder=" "
+              />
+              <label htmlFor="food-protein">Chất đạm (g)</label>
+              <div className="error-stack" aria-live="polite">
+                {errs.proteinG && <span className="error-item">{errs.proteinG}</span>}
+              </div>
             </div>
-
-            <div className="thumb-ctl">
-              <label className="btn light">
-                <input type="file" hidden accept="image/*" onChange={onPickFile} />
-                Chọn ảnh
-              </label>
-              {(preview || existingUrl) && (
-                <button type="button" className="btn ghost" onClick={clearThumb}>Xóa ảnh</button>
-              )}
+            <div className={`ff-field ${errs.carbG ? "is-invalid" : ""}`}>
+              <input
+                className="ff-ipt"
+                type="number" step="0.1" min="0"
+                id="food-carb"
+                value={form.carbG}
+                onChange={(e) => up("carbG", e.target.value)}
+                onBlur={() => setErrs(p => ({ ...p, carbG: foodValidators.optionalNumber(form.carbG) }))}
+                placeholder=" "
+              />
+              <label htmlFor="food-carb">Đường bột (g)</label>
+              <div className="error-stack" aria-live="polite">
+                {errs.carbG && <span className="error-item">{errs.carbG}</span>}
+              </div>
             </div>
-
-            <div className="hint">Chỉ 1 ảnh (*.png, *.jpg, *.jpeg). Chọn ảnh lại để thay đổi.</div>
+            <div className={`ff-field ${errs.fatG ? "is-invalid" : ""}`}>
+              <input
+                className="ff-ipt"
+                type="number" step="0.1" min="0"
+                id="food-fat"
+                value={form.fatG}
+                onChange={(e) => up("fatG", e.target.value)}
+                onBlur={() => setErrs(p => ({ ...p, fatG: foodValidators.optionalNumber(form.fatG) }))}
+                placeholder=" "
+              />
+              <label htmlFor="food-fat">Chất béo (g)</label>
+              <div className="error-stack" aria-live="polite">
+                {errs.fatG && <span className="error-item">{errs.fatG}</span>}
+              </div>
+            </div>
           </div>
-        </aside>
+
+          <div className="ff-fields-grid-3">
+            <div className={`ff-field ${errs.saltG ? "is-invalid" : ""}`}>
+              <input
+                className="ff-ipt"
+                type="number" step="0.1" min="0"
+                id="food-salt"
+                value={form.saltG}
+                onChange={(e) => up("saltG", e.target.value)}
+                onBlur={() => setErrs(p => ({ ...p, saltG: foodValidators.optionalNumber(form.saltG) }))}
+                placeholder=" "
+              />
+              <label htmlFor="food-salt">Muối (g)</label>
+              <div className="error-stack" aria-live="polite">
+                {errs.saltG && <span className="error-item">{errs.saltG}</span>}
+              </div>
+            </div>
+            <div className={`ff-field ${errs.sugarG ? "is-invalid" : ""}`}>
+              <input
+                className="ff-ipt"
+                type="number" step="0.1" min="0"
+                id="food-sugar"
+                value={form.sugarG}
+                onChange={(e) => up("sugarG", e.target.value)}
+                onBlur={() => setErrs(p => ({ ...p, sugarG: foodValidators.optionalNumber(form.sugarG) }))}
+                placeholder=" "
+              />
+              <label htmlFor="food-sugar">Đường (g)</label>
+              <div className="error-stack" aria-live="polite">
+                {errs.sugarG && <span className="error-item">{errs.sugarG}</span>}
+              </div>
+            </div>
+            <div className={`ff-field ${errs.fiberG ? "is-invalid" : ""}`}>
+              <input
+                className="ff-ipt"
+                type="number" step="0.1" min="0"
+                id="food-fiber"
+                value={form.fiberG}
+                onChange={(e) => up("fiberG", e.target.value)}
+                onBlur={() => setErrs(p => ({ ...p, fiberG: foodValidators.optionalNumber(form.fiberG) }))}
+                placeholder=" "
+              />
+              <label htmlFor="food-fiber">Chất xơ (g)</label>
+              <div className="error-stack" aria-live="polite">
+                {errs.fiberG && <span className="error-item">{errs.fiberG}</span>}
+              </div>
+            </div>
+          </div>
+
+          <hr className="ff-divider" />
+          
+          <h3 className="ff-section-title">Mô tả / Ghi chú</h3>
+          
+          <div className="ff-field">
+            <textarea
+              className="ff-textarea"
+              id="food-desc"
+              value={form.description}
+              onChange={(e) => up("description", e.target.value)}
+              placeholder=" "
+              rows="5"
+            ></textarea>
+            <label htmlFor="food-desc">Mô tả (không bắt buộc)</label>
+          </div>
+
+          {/* Lỗi chung/tin nhắn */}
+          <div className="error-stack" aria-live="polite">
+            {errs.global && <span className="error-item">{errs.global}</span>}
+          </div>
+          {msg && <div className="form-msg">{msg}</div>}
+        </div>
       </form>
 
-      {/* Popup xác nhận xóa */}
+      {/* Popup xác nhận xóa (Giữ nguyên) */}
       {confirmDel && (
         <div className="modal" onClick={() => setConfirmDel(false)}>
-          <div className="modal-card small" onClick={(e)=>e.stopPropagation()}>
+          <div className="modal-card small" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head"><h3>Xác nhận xóa món</h3></div>
             <div className="modal-body">
               <div className="muted">Bạn chắc chắn muốn xóa món ăn này? Thao tác không thể hoàn tác.</div>
             </div>
             <div className="modal-foot">
-              <button className="btn ghost" onClick={()=>setConfirmDel(false)}>Hủy</button>
+              <button className="btn ghost" onClick={() => setConfirmDel(false)}>Hủy</button>
               <button className="btn bad" onClick={onConfirmDelete}>Xóa</button>
             </div>
           </div>

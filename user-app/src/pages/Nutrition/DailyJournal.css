@@ -13,7 +13,7 @@
 .dj-container {
   max-width: 1700px; /* Giới hạn chiều rộng */
   margin: 0 auto;
-  padding: 8px 12px; /* THAY ĐỔI: Thêm padding top/bottom vào đây */
+  padding: 8px 0; /* THAY ĐỔI: Thêm padding top/bottom vào đây */
 }
 
 /* ===== Thanh bar trên (đồng bộ nm-head) ===== */

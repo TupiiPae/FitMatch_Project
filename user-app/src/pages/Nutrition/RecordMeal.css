@@ -394,7 +394,7 @@
 
 /* Menu 3 chấm */
 .more-wrap { position: relative; }
-.more-btn { width: 40px; height: 40px; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; border: 1px solid #eee; }
+.more-btn { width: 40px; height: 40px; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .more-btn:hover { background: #f9f9f9; }
 .menu { position: absolute; right: 0; top: 40px; min-width: 140px; background: #fff; border: 1px solid #e5e7eb; border-radius: 4px; box-shadow: 0 8px 20px rgba(0, 0, 0, .08); padding: 6px; z-index: 10 }
 .menu-item { display: block; width: 100%; text-align: left; background: #fff; border: none; padding: 8px 10px; border-radius: 4px; cursor: pointer }
