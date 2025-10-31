@@ -332,7 +332,7 @@ export default function BodyProfile() {
                   Hủy
                 </button>
                 <button
-                  className="btn-primary"
+                  className="btn-primary2"
                   onClick={onSave}
                   disabled={saving}
                 >

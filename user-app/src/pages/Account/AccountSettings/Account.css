@@ -237,17 +237,19 @@
 
 /* Nút submit */
 .acc-page .pf-content .btn-success {
-  background: #22c55e;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: #78BCC4; /* Màu theme */
   color: #fff;
-  border: 0;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-weight: 600;
-  cursor: pointer;
+  text-decoration: none;
+  margin-left: 5px;
+  font-weight: 500;
+  border: none;
 }
-.acc-page .pf-content .btn-success:hover {
-  filter: brightness(0.96);
-}
+.acc-page .pf-content .btn-success:hover { background: #008080; }
 
 /* Trạng thái tải */
 .acc-page .pf-content .acc-loading {
@@ -271,7 +273,7 @@
 /* Edit buttons on header */
 .acc-page .pf-content .acc-edit{
   display:inline-flex; align-items:center; gap:8px;
-  border:1px solid var(--fm-ring); background:#fff; color:#78BCC4;
+  border:1px solid var(--fm-ring); background:#fff; color:#002C3E;
   border-radius:30px; padding:6px 10px; cursor:pointer; font-weight:400;
 }
 .acc-page .pf-content .acc-edit:hover{ background:#f9fafb; }

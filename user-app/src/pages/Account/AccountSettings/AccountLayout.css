@@ -46,7 +46,7 @@
 
 /* Card & typography */
 .acc-page .card{
-  background:#fff; border:1px solid var(--fm-ring); border-radius:10px;
+  background:#fff; border:1px solid var(--fm-ring); border-radius:4px;
   padding:16px; box-shadow:0 4px 20px rgba(0,0,0,.03);
 }
 .acc-page .pf-title{ font-size:20px; margin:0 0 12px; }
@@ -69,7 +69,7 @@
 .acc-page .pf-unit[data-muted] input{ background:#f8fafc; }
 
 /* Table đơn giản */
-.acc-page .pf-table{ border:1px solid var(--fm-ring); border-radius:8px; overflow:hidden; }
+.acc-page .pf-table{ border:1px solid var(--fm-ring); border-radius:4px; overflow:hidden; }
 .acc-page .pf-tr{ display:grid; grid-template-columns: 1fr 1fr; }
 .acc-page .pf-tr + .pf-tr{ border-top:1px solid var(--fm-ring); }
 .acc-page .pf-tr-head{ background:#f8fafc; font-weight:600; }
@@ -80,7 +80,7 @@
 .acc-page .pf-actions{ margin-top:12px; }
 .acc-page .pf-actions-right{ text-align:right; }
 .acc-page .btn-primary{
-  background:#1f6feb; color:#fff; border:0; border-radius:8px; padding:10px 14px; cursor:pointer;
+  background:#002C3E; color:#fff; border:0; border-radius:8px; padding:10px 14px; cursor:pointer;
 }
 .acc-page .btn-primary:hover{ filter:brightness(0.95); }
 .acc-page .btn-secondary{

@@ -168,7 +168,7 @@ export default function ChangePassword() {
 
       <div className="cp-wrap">
         <div className="cp-block">
-          <div className="cp-subtitle">Quên mật khẩu</div>
+          <div className="cp-subtitle">Bạn muốn thay đổi mật khẩu?</div>
           <p className="cp-desc">
             Nhập Email để nhận mã OTP, sau đó xác minh OTP và đặt lại mật khẩu.
           </p>
@@ -230,7 +230,7 @@ export default function ChangePassword() {
                     setStep("email");
                   }}
                 >
-                  Đổi email
+                   Đổi email
                 </button>
               </div>
             </>
