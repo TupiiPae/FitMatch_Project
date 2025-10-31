@@ -27,21 +27,23 @@ const ThongKe = () => <div>Trang Thống kê</div>;
 const KetNoi = () => <div>Trang Kết nối (Teammate)</div>;
 
 // DINH DƯỠNG
-const NhatKy = () => <div>Nhật ký</div>;
-const GhiLai = () => <div>Ghi lại bữa ăn</div>;
-const TaoMon = () => <div>Tạo món ăn mới</div>;
+// const NhatKy = () => <div>Nhật ký</div>; // Đã import DailyJournal
+// const GhiLai = () => <div>Ghi lại bữa ăn</div>; // Đã import RecordMeal
+// const TaoMon = () => <div>Tạo món ăn mới</div>; // Đã import FoodForm
 const TinhCaloAI = () => <div>Tính toán Calo với AI</div>;
 const ThucDonGoiY = () => <div>Thực đơn gợi ý</div>;
+const TaoMonAI = () => <div>Tạo món ăn với AI</div>; // Placeholder mới
 
 // TẬP LUYỆN
 const LichTap = () => <div>Lịch tập của bạn</div>;
 const BaiTap = () => <div>Các bài tập</div>;
 const Cardio = () => <div>Cardio</div>;
-const Workout = () => <div>Workout</div>;
+const Workout = () => <div>Workout (Kháng lực)</div>; // Component này sẽ được dùng cho /khang-luc
 const GoiYTap = () => <div>Gợi ý tập luyện</div>;
+const TheThao = () => <div>Các môn thể thao</div>; // Placeholder mới
 
 // KHÁC
-const CongDong = () => <div>Cộng đồng (đang phát triển)</div>;
+// const CongDong = () => <div>Cộng đồng (đang phát triển)</div>; // Đã xóa
 const UngDung = () => <div>Ứng dụng di động</div>;
 
 /** Layout bảo vệ + bọc AppShell */
@@ -86,21 +88,29 @@ export default function App() {
           {/* Kết nối */}
           <Route path="/ket-noi" element={<KetNoi />} />
 
-          {/* Dinh dưỡng */}
+          {/* === DINH DƯỠNG (Đã cập nhật) === */}
           <Route path="/dinh-duong" element={<Navigate to="/dinh-duong/nhat-ky" replace />} />
           <Route path="/dinh-duong/nhat-ky" element={<DailyJournal/>} />
           <Route path="/dinh-duong/ghi-lai" element={<RecordMeal />} />
-          <Route path="/dinh-duong/ghi-lai/tao-mon" element={<FoodForm />} />  
-          <Route path="/dinh-duong/ghi-lai/sua-mon/:id" element={<FoodForm />} />       
-          <Route path="/dinh-duong/ghi-lai/tinh-calo-ai" element={<TinhCaloAI />} />
+          {/* Link "Tạo món ăn" từ navbar */}
+          <Route path="/dinh-duong/tao-mon-an" element={<FoodForm />} /> 
+          {/* Giữ lại route Sửa món ăn, đổi path cho gọn */}
+          <Route path="/dinh-duong/sua-mon/:id" element={<FoodForm />} /> 
+          {/* Link "Tạo món ăn với AI" từ navbar */}
+          <Route path="/dinh-duong/tao-mon-an-ai" element={<TaoMonAI />} />
+          {/* Link "Tính Calo AI" từ navbar */}
+          <Route path="/dinh-duong/tinh-calo-ai" element={<TinhCaloAI />} />
           <Route path="/dinh-duong/thuc-don-goi-y" element={<ThucDonGoiY />} />
 
-          {/* Tập luyện */}
+          {/* === TẬP LUYỆN (Đã cập nhật) === */}
           <Route path="/tap-luyen" element={<Navigate to="/tap-luyen/lich-cua-ban" replace />} />
           <Route path="/tap-luyen/lich-cua-ban" element={<LichTap />} />
           <Route path="/tap-luyen/bai-tap" element={<BaiTap />} />
           <Route path="/tap-luyen/bai-tap/cardio" element={<Cardio />} />
-          <Route path="/tap-luyen/bai-tap/workout" element={<Workout />} />
+          {/* Link "Kháng lực" từ navbar */}
+          <Route path="/tap-luyen/bai-tap/khang-luc" element={<Workout />} />
+          {/* Link "Các môn thể thao" từ navbar */}
+          <Route path="/tap-luyen/bai-tap/the-thao" element={<TheThao />} />
           <Route path="/tap-luyen/goi-y" element={<GoiYTap />} />
 
           {/* Tài khoản */}
@@ -109,7 +119,7 @@ export default function App() {
           <Route path="/tai-khoan/quyen-rieng-tu" element={<PrivacyPolicyPage />} />
 
           {/* Khác */}
-          <Route path="/cong-dong" element={<CongDong />} />
+          {/* <Route path="/cong-dong" element={<CongDong />} /> */} {/* Đã xóa */}
           <Route path="/ung-dung" element={<UngDung />} />
         </Route>
 
