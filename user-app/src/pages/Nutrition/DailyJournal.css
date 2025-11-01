@@ -8,7 +8,6 @@
   /* === THAY ĐỔI: Kéo nền ra fill padding của layout cha === */
   margin: -16px; /* Giả sử layout cha có padding: 16px */
   padding: 16px; /* Bù lại 16px margin cho nội dung bên trong */
-  /* === HẾT THAY ĐỔI === */
 }
 .dj-container {
   max-width: 1700px; /* Giới hạn chiều rộng */

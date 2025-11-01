@@ -1,7 +1,7 @@
 // admin-app/src/pagesFoods/Food_List/Food_List.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api, listFoods, deleteFood } from "../../../lib/api.js";
+import { api, listFoodsAdminOnly, deleteFood } from "../../../lib/api.js";
 import "./Food_List.css";
 
 // Chuẩn hoá URL ảnh giống user-app
@@ -49,9 +49,9 @@ export default function FoodsList() {
       if (dateFrom) params.approvedFrom = dateFrom;
       if (dateTo) params.approvedTo = dateTo;
 
-      const res = await listFoods(params);
+      const res = await listFoodsAdminOnly(params);
       setItems(res?.items || []);
-      setTotal(res?.total ?? (res?.items?.length || 0));
+      setTotal(typeof res?.total === "number" ? res.total : (res?.items?.length || 0));
     } catch (err) {
       console.error(err);
       setItems([]);
@@ -324,7 +324,7 @@ export default function FoodsList() {
             <button
               className="btn-page"
               onClick={() => handlePageChange(skip + limit)}
-              disabled={skip + limit >= Math.max(total, 1)}
+              disabled={skip + limit >= total}
             >
               <i className="fa-solid fa-chevron-right" aria-hidden="true"></i>
             </button>

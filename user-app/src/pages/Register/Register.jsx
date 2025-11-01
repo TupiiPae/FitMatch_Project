@@ -4,6 +4,7 @@ import AuthLayout from "../Style/AuthLayout";
 import "../Style/style.css";
 import api from "../../lib/api";
 import { validateUsername, validateEmailGmail, validatePassword, validateConfirm } from "../../lib/validators";
+import { toast } from "react-toastify";
 
 export default function Register() {
   const nav = useNavigate();
@@ -48,6 +49,7 @@ export default function Register() {
         localStorage.setItem("token", data.token);
         if (data.user?.role) localStorage.setItem("role", data.user.role);
       }
+      toast.success(`Đăng ký thành công!`);
       if (data?.success || data?.token) {
         nav("/login");
       } else {

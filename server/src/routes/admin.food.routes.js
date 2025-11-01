@@ -14,10 +14,12 @@ r.use(auth, requireAtLeast("admin_lv2"));
 
 /**
  * GET /api/admin/foods
- * Hỗ trợ: status, q, origin(user|admin), limit, skip
+ *  Hỗ trợ: status, q, origin(user|admin), approvedFrom, approvedTo, limit, skip
  */
 r.get("/foods", async (req, res) => {
-  const { status, q = "", origin, limit = 100, skip = 0 } = req.query;
+  const { status, q = "", origin, approvedFrom, approvedTo } = req.query;
+  const limit = Math.max(1, Number(req.query.limit ?? 100));
+  const skip  = Math.max(0, Number(req.query.skip  ?? 0));
 
   const query = {};
   if (["pending", "approved", "rejected"].includes(String(status))) {
@@ -32,15 +34,27 @@ r.get("/foods", async (req, res) => {
   if (q && String(q).trim()) {
     query.name = { $regex: String(q).trim(), $options: "i" };
   }
-
-  const items = await Food.find(query)
+  if (approvedFrom || approvedTo) {
+    const range = {};
+    if (approvedFrom) range.$gte = new Date(approvedFrom);
+    if (approvedTo) {
+      const t = new Date(approvedTo);
+      t.setDate(t.getDate() + 1); // inclusive tới cuối ngày
+      range.$lt = t;
+    }
+    query.approvedAt = range;
+  }
+  const [items, total] = await Promise.all([
+    Food.find(query)
     .sort({ createdAt: -1 })
-    .limit(Number(limit))
-    .skip(Number(skip))
+    .limit(limit)
+    .skip(skip)
     .populate({ path: "createdBy", select: "email username profile.nickname" })
-    .lean();
+    .lean(),
+    Food.countDocuments(query),
+  ]);
 
-  res.json({ items, total: items.length, limit: Number(limit), skip: Number(skip) });
+    res.json({ items, total, limit, skip, hasMore: skip + items.length < total });
 });
 
 // KHÔNG thêm "/admin" lần nữa ở path con!

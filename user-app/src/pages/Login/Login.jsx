@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AuthLayout from "../Style/AuthLayout";
 import "../Style/style.css";
 import api from "../../lib/api";
+import { toast } from "react-toastify";
 
 export default function Login() {
   const nav = useNavigate();
@@ -42,6 +43,7 @@ export default function Login() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.user?.role || "user");
       localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
+      toast.success(`Đăng nhập thành công!`);
       if (data.user?.onboarded) nav("/home"); else nav("/onboarding");
     } catch (err) {
       const status = err?.response?.status;
