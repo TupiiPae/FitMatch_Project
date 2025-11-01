@@ -31,7 +31,7 @@
   align-items:center; justify-content:center;
   text-align:center;
 }
-.cal-val{ font-size:22px; font-weight:800; line-height:1; }
+.cal-val{ font-size:22px; font-weight:700; line-height:1; }
 .cal-sub{ font-size:12px; color:#6b7280; margin-top:4px; }
 
 /* Macro ring */
@@ -72,9 +72,9 @@
 }
 
 /* Tone màu theo loại */
-.tone-prot .ring{ --tone:#0ea5e9; }  /* đạm */
-.tone-carb .ring{ --tone:#22c55e; }  /* carb */
-.tone-fat  .ring{ --tone:#f59e0b; }  /* béo */
+.tone-prot .ring{ --tone:#FF4602; }  /* đạm */
+.tone-carb .ring{ --tone:#6C63FF; }  /* carb */
+.tone-fat  .ring{ --tone:#A1A100; }  /* béo */
 
 /* ======= Fallback ring nếu CSS var --p không hoạt động ======= */
 /* Ghi đè bằng class phần trăm (bạn có thể rút gọn chỉ giữ 20/50/30 nếu muốn) */
@@ -99,8 +99,8 @@
   background:#fff;
 }
 .goal-facts.filled .fact-row{
-  background:#eef6ff;
-  border-bottom:1px solid #dbeafe;
+  background:#f4f6ea;
+  border-bottom:1px solid #f4f6ea;
 }
 .goal-facts.filled .fact-row + .fact-row{
   border-top:1px solid #dbeafe;

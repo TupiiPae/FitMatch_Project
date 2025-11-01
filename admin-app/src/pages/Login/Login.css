@@ -8,8 +8,8 @@ html, body, #root { height: 100%; overflow: hidden; }
   --panel-w: minmax(340px, 36%); /* ~1/3 card */
   --radius-card: 24px;
   --radius-panel: 18px;
-  --brand: #1A73E8;
-  --brand-2: #3657F0;
+  --brand: #008080;
+  --brand-2: #78BCC4;
 }
 
 /* Trang nền */

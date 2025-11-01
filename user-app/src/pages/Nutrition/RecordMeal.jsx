@@ -179,7 +179,7 @@ export default function RecordMeal() {
             </div>
           )}
         </div>
-
+        <Link to="/dinh-duong/ghi-lai/tao-mon" className="create-btn">Tạo món ăn với AI</Link>
         <Link to="/dinh-duong/ghi-lai/tao-mon" className="create-btn">Tạo món ăn mới</Link>
       </div>
 
@@ -347,7 +347,6 @@ export default function RecordMeal() {
               </div>
               <div className="fm-note">
                 <span className="badge">{detail.sourceType || "khác"}</span>
-                <span className="muted small">• Thực phẩm tươi: khối lượng linh hoạt · Đóng gói: nên nhập đủ macro/đường/muối · Nấu chín: macro theo khẩu phần, massG là sau nấu.</span>
               </div>
               <div className="fm-actions">
                 <button className="btn ghost" onClick={() => setShowDetail(false)}>Đóng</button>

@@ -6,7 +6,6 @@ export default function Home() {
     <div style={{
       textAlign: "center",
       padding: "60px 20px",
-      fontFamily: "'Roboto', sans-serif"
     }}>
       <h1>🎯 Chào mừng bạn đến với FitMatch!</h1>
       <p>Đây là trang chính của người dùng sau khi hoàn tất onboarding.</p>

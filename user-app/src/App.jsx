@@ -9,9 +9,9 @@ import OnboardingRoutes from "./pages/Onboarding/OnboardingRoutes";
 import Home from "./pages/Home/Home";
 
 // Account pages
-import Profile from "./pages/Account/Profile"; // index.jsx => chỉ cần tới thư mục
+import Profile from "./pages/Account/Profile"; 
 import AccountSettings from "./pages/Account/AccountSettings";
-import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy"; // index.jsx => chỉ cần tới thư mục
+import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy"; 
 
 // Diary
 import RecordMeal from "./pages/Nutrition/RecordMeal";
@@ -93,9 +93,9 @@ export default function App() {
           <Route path="/dinh-duong/nhat-ky" element={<DailyJournal/>} />
           <Route path="/dinh-duong/ghi-lai" element={<RecordMeal />} />
           {/* Link "Tạo món ăn" từ navbar */}
-          <Route path="/dinh-duong/tao-mon-an" element={<FoodForm />} /> 
+          <Route path="/dinh-duong/ghi-lai/tao-mon" element={<FoodForm />} /> 
           {/* Giữ lại route Sửa món ăn, đổi path cho gọn */}
-          <Route path="/dinh-duong/sua-mon/:id" element={<FoodForm />} /> 
+          <Route path="/dinh-duong/ghi-lai/sua-mon/:id" element={<FoodForm />} /> 
           {/* Link "Tạo món ăn với AI" từ navbar */}
           <Route path="/dinh-duong/tao-mon-an-ai" element={<TaoMonAI />} />
           {/* Link "Tính Calo AI" từ navbar */}

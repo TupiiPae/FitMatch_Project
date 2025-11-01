@@ -206,7 +206,7 @@ export default function Navbar({
                   <div className="fm-megamenu-content">
                     <div className="fm-megamenu-image">
                       {/* Thay bằng ảnh của bạn */}
-                      <img src="/images/welcome2.png" alt="Dinh dưỡng" />
+                      <img src="/images/dropd1.png" alt="Dinh dưỡng" />
                     </div>
                     <div className="fm-megamenu-links">
                       <NavLink to="/dinh-duong/nhat-ky" className="fm-megamenu-link" role="menuitem">
@@ -223,7 +223,7 @@ export default function Navbar({
                           <span>Thêm nhanh các bữa ăn sáng, trưa, tối</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/dinh-duong/tao-mon-an" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/dinh-duong/ghi-lai/tao-mon" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faAppleAlt} />
                         <div>
                           <strong>Tạo món ăn</strong>
@@ -274,7 +274,7 @@ export default function Navbar({
                   <div className="fm-megamenu-content">
                     <div className="fm-megamenu-image">
                        {/* Thay bằng ảnh của bạn */}
-                      <img src="/images/welcome1.png" alt="Tập luyện" />
+                      <img src="/images/dropd2.png" alt="Tập luyện" />
                     </div>
                     <div className="fm-megamenu-links">
                       <NavLink to="/tap-luyen/lich-cua-ban" className="fm-megamenu-link" role="menuitem">

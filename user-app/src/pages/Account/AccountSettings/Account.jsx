@@ -197,7 +197,7 @@ export default function AccountInfo() {
           <div className="acc-sec-head">
             <h3>Thông tin cá nhân</h3>
             {!editInfo ? (
-              <button className="acc-edit" onClick={() => setEditInfo(true)}><FontAwesomeIcon icon={faPen} /> Edit</button>
+              <button className="acc-edit" onClick={() => setEditInfo(true)}><FontAwesomeIcon icon={faPen} /></button>
             ) : (
               <div className="acc-edit-actions">
                 <button className="btn-tertiary" onClick={() => { setEditInfo(false); const p=user.profile||{}; setForm({ nickname:p.nickname||"", dob:p.dob||"", sex:p.sex||"male", email:user.email||"", phone:user.phone||"" }); }}>
@@ -244,7 +244,7 @@ export default function AccountInfo() {
           <div className="acc-sec-head">
             <h3>Địa chỉ</h3>
             {!editAddr ? (
-              <button className="acc-edit" onClick={() => setEditAddr(true)}><FontAwesomeIcon icon={faPen} /> Edit</button>
+              <button className="acc-edit" onClick={() => setEditAddr(true)}><FontAwesomeIcon icon={faPen} /></button>
             ) : (
               <div className="acc-edit-actions">
                 <button className="btn-tertiary" onClick={() => {
