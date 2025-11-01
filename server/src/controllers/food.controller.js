@@ -234,8 +234,12 @@ export async function updateFood(req, res) {
     if (b.unit !== undefined) set.unit = b.unit === "ml" ? "ml" : "g";
 
     ["name", "imageUrl", "portionName", "sourceType"].forEach((k) => {
-      if (b[k] !== undefined)
-        set[k] = typeof b[k] === "string" ? b[k].trim() : b[k];
+      if (b[k] !== undefined) {
+        const v = typeof b[k] === "string" ? b[k].trim() : b[k];
+        // Không ghi đè imageUrl nếu là chuỗi rỗng
+        if (k === "imageUrl" && v === "") return;
+        set[k] = v;
+      }
     });
     ["kcal", "proteinG", "carbG", "fatG", "saltG", "sugarG", "fiberG"].forEach((k) => {
       if (b[k] !== undefined) set[k] = toNumOrNull(b[k]);

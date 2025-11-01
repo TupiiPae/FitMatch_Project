@@ -3,8 +3,9 @@ import { Router } from "express";
 import { auth } from "../middleware/auth.js";
 import { requireAtLeast } from "../middleware/requireAdminLevel.js";
 import Food from "../models/Food.js";
-import { uploadImportAny } from "../middleware/upload.js";
+import { uploadImportAny, uploadFoodSingle } from "../middleware/upload.js";
 import { importFoods, validateFoods } from "../controllers/admin.food.import.controller.js";
+import { updateFood } from "../controllers/food.controller.js";
 
 const r = Router();
 
@@ -45,5 +46,6 @@ r.get("/foods", async (req, res) => {
 // KHÔNG thêm "/admin" lần nữa ở path con!
 r.post("/foods/import/validate", uploadImportAny, validateFoods);
 r.post("/foods/import",          uploadImportAny, importFoods);
+r.patch("/foods/:id", uploadFoodSingle, updateFood);
 
 export default r;

@@ -1,12 +1,22 @@
+// admin-app/src/pages/Food_Edit/Food_Edit.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   getFood,
   updateFood,
   updateFoodWithImage,
+  api, // để lấy baseURL
 } from "../../../lib/api.js";
-import "../Food_Create/Food_Create.css"; // tái dùng CSS của create
+import "../Food_Create/Food_Create.css";
 import { toast } from "react-toastify";
+
+/* ------- Helpers chung ------- */
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
+const toAbs = (u) => {
+  if (!u) return u;
+  try { return new URL(u, API_ORIGIN).toString(); } catch { return u; }
+};
+const withBust = (u) => (u ? `${u}${u.includes("?") ? "&" : "?"}v=${Date.now()}` : u);
 
 const initialState = {
   name: "",
@@ -40,7 +50,7 @@ export default function FoodEdit() {
 
   const onChange = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
-  // helpers number
+  // number helpers
   const toNum = (v) => {
     const s = String(v ?? "").trim();
     if (s === "") return undefined;
@@ -83,7 +93,8 @@ export default function FoodEdit() {
           fiberG: data?.fiberG ?? "",
           description: data?.description ?? "",
         });
-        setPreview(data?.imageUrl || null);
+        // Preview phải là URL tuyệt đối + cache-buster nhẹ để tránh ảnh cũ
+        setPreview(data?.imageUrl ? withBust(toAbs(data.imageUrl)) : null);
       } catch (e) {
         setMsg(e?.response?.data?.message || "Không tải được dữ liệu món ăn.");
       } finally {
@@ -99,12 +110,15 @@ export default function FoodEdit() {
     if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
     setFile(f);
     setPreview(URL.createObjectURL(f));
+    // chọn file thì bỏ URL text để BE hiểu là upload file
     if (form.imageUrl) onChange("imageUrl", "");
   };
   const openFile = () => fileRef.current?.click();
-  const handleImagePreview = () => { if (!file) setPreview(form.imageUrl || null); };
+  const handleImagePreview = () => {
+    // Chỉ khi KHÔNG có file mới apply URL text
+    if (!file) setPreview(form.imageUrl ? toAbs(form.imageUrl) : null);
+  };
 
-  // validate: KHÔNG cho sửa name → input disabled; vẫn kiểm tra mass/unit/kcal
   const validate = () => {
     const massG = toNum(form.massG);
     if (massG === undefined || massG <= 0) return "Khối lượng phải lớn hơn 0.";
@@ -117,15 +131,18 @@ export default function FoodEdit() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     setMsg("");
     const v = validate();
-    if (v) { setMsg(v); return; }
+    if (v) { setMsg(v); setSaving(false); return; }
 
+    // chuẩn payload
     const payload = {
-      // name KHÔNG cho sửa
       portionName: String(form.servingDesc || "").trim() || undefined,
       massG: toNum(form.massG),
       unit: form.unit === "ml" ? "ml" : "g",
+      // chỉ gửi imageUrl khi không có file
       imageUrl: file ? undefined : (String(form.imageUrl || "").trim() || undefined),
       kcal: toNumOrNull(form.kcal),
       proteinG: toNumOrNull(form.proteinG),
@@ -139,32 +156,45 @@ export default function FoodEdit() {
 
     try {
       if (file) {
+        // multipart
         const fd = new FormData();
-        fd.append("image", file);
+        fd.append("image", file); // field 'image' trùng middleware BE
         Object.entries(payload).forEach(([k, v]) => {
-          if (v !== null && v !== undefined) fd.append(k, String(v));
+          if (v !== null && v !== undefined && v !== "") fd.append(k, String(v));
         });
-        await updateFoodWithImage(id, fd);
+        const res = await updateFoodWithImage(id, fd);
+        // res có thể trả object món; nếu có imageUrl mới → set preview kèm cache-buster
+        const newUrl = res?.imageUrl || res?.data?.imageUrl;
+        if (newUrl) setPreview(withBust(toAbs(newUrl)));
       } else {
         await updateFood(id, payload);
+        // nếu dùng imageUrl text → cập nhật preview tuyệt đối + bust
+        if (payload.imageUrl) setPreview(withBust(toAbs(payload.imageUrl)));
       }
-       toast.success("Chỉnh sửa món ăn thành công!");
-        nav("/foods");
+      toast.success("Chỉnh sửa món ăn thành công!");
+      // Điều hướng về list, kèm query bust để list cũng refresh ảnh
+      nav("/foods?updated=" + Date.now());
     } catch (err) {
-        const message =
+      const message =
         err?.response?.data?.message ||
         (err?.response?.status === 422
-            ? "Dữ liệu không hợp lệ."
-            : "Có lỗi xảy ra, vui lòng thử lại.");
-        setMsg(message);
-        toast.error(message);
-        console.error(err);
+          ? "Dữ liệu không hợp lệ."
+          : "Có lỗi xảy ra, vui lòng thử lại.");
+      setMsg(message);
+      toast.error(message);
+      console.error(err);
     } finally {
-        setSaving(false);
+      setSaving(false);
     }
-    };
+  };
 
-  if (loading) return <div className="food-create-page"><div className="card"><div className="empty">Đang tải…</div></div></div>;
+  if (loading) {
+    return (
+      <div className="food-create-page">
+        <div className="card"><div className="empty">Đang tải…</div></div>
+      </div>
+    );
+  }
 
   return (
     <div className="food-create-page">
@@ -186,12 +216,12 @@ export default function FoodEdit() {
               <span>Hủy</span>
             </button>
             <button className="btn primary" type="submit" form="edit-food-form" disabled={saving}>
-            <span>{saving ? "Đang lưu..." : "Lưu thay đổi"}</span>
+              <span>{saving ? "Đang lưu..." : "Lưu thay đổi"}</span>
             </button>
           </div>
         </div>
 
-        {/* Form giống create */}
+        {/* Form */}
         <form id="edit-food-form" className="fc-form-layout" onSubmit={onSubmit}>
           {/* Cột trái: ảnh */}
           <div className="fc-image-col">

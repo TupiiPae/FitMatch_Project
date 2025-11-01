@@ -11,7 +11,7 @@ r.use(rateLimit({ windowMs: 30*1000, max: 120 }));
 r.get("/foods", listFoods);
 r.get("/foods/:id", getFood);
 r.post("/foods", uploadFoodSingle, createFood);
-r.patch("/foods/:id", updateFood);          // owner / admin
+r.patch("/foods/:id", uploadFoodSingle, updateFood);         // owner / admin
 r.delete("/foods/:id", deleteFood);         // owner / admin
 r.post("/foods/:id/favorite", toggleFavorite);
 r.post("/foods/:id/view", recordView);
