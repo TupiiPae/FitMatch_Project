@@ -1,8 +1,14 @@
+// user-app/src/pages/Account/DeleteAccount.jsx
 import React, { useEffect, useState } from "react";
 import "./DeleteAccount.css";
+import { deleteAccount as apiDeleteAccount } from "../../../api/account";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 export default function DeleteAccount() {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const nav = useNavigate();
 
   useEffect(() => {
     if (!open) return;
@@ -11,9 +17,32 @@ export default function DeleteAccount() {
     return () => { document.body.style.overflow = original; };
   }, [open]);
 
+  const hardLogout = () => {
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("onboarded");
+      // nếu app có các cache khác thì xóa thêm tại đây
+    } catch {}
+  };
+
   const onDelete = async () => {
-    // TODO: gọi API xóa dữ liệu/tài khoản
-    setOpen(false);
+    if (loading) return;
+    setLoading(true);
+    try {
+      await apiDeleteAccount();
+      // Xóa local session + chuyển về /login
+      hardLogout();
+      toast.success("Tài khoản đã bị xóa. Hẹn gặp lại bạn!");
+      setOpen(false);
+      nav("/login", { replace: true });
+    } catch (err) {
+      console.error(err);
+      const msg = err?.response?.data?.message || "Xóa tài khoản thất bại, vui lòng thử lại.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -24,7 +53,7 @@ export default function DeleteAccount() {
         <div className="cp-block">
           <div className="cp-subtitle">Bạn có chắc muốn xóa dữ liệu và tài khoản?</div>
           <p className="cp-desc">
-            Hành động này sẽ xóa toàn bộ dữ liệu liên quan đến tài khoản của bạn trên FitMatch và <b> không thể hoàn tác</b>. Vui lòng cân nhắc trước khi thực hiện.
+            Hành động này sẽ xóa toàn bộ dữ liệu liên quan đến tài khoản của bạn trên FitMatch và <b>không thể hoàn tác</b>. Vui lòng cân nhắc trước khi thực hiện.
           </p>
         </div>
       </div>
@@ -46,11 +75,11 @@ export default function DeleteAccount() {
             </p>
 
             <div className="del-actions">
-              <button className="btn-secondary" type="button" onClick={() => setOpen(false)}>
+              <button className="btn-secondary" type="button" onClick={() => setOpen(false)} disabled={loading}>
                 Hủy
               </button>
-              <button className="btn-danger" type="button" onClick={onDelete}>
-                Xác nhận
+              <button className="btn-danger" type="button" onClick={onDelete} disabled={loading}>
+                {loading ? "Đang xóa..." : "Xác nhận"}
               </button>
             </div>
           </div>

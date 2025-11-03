@@ -23,7 +23,7 @@
   box-shadow:0 15px 50px rgba(2,6,23,.2);
 }
 .acc-page .pf-content .del-dialog-title{
-  text-transform:uppercase; font-weight:800; font-size:20px; text-align:center; color:#111827; margin-bottom:8px;
+  text-transform:uppercase; font-weight:800; font-size:18px; text-align:center; color:#111827; margin-bottom:8px;
 }
 .acc-page .pf-content .del-dialog-desc{ text-align:center; color:#6b7280; margin:0 0 18px; }
 
