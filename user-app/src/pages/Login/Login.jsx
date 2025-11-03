@@ -4,6 +4,7 @@ import AuthLayout from "../Style/AuthLayout";
 import "../Style/style.css";
 import api from "../../lib/api";
 import { toast } from "react-toastify";
+import { useGoogleLogin } from "@react-oauth/google";
 
 export default function Login() {
   const nav = useNavigate();
@@ -29,7 +30,6 @@ export default function Login() {
 
   async function onSubmit(e) {
     e.preventDefault();
-    // clear lỗi cũ
     setUsernameErr(""); setPasswordErr("");
     if (!validateUsername() || !validatePassword()) return;
 
@@ -43,7 +43,7 @@ export default function Login() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.user?.role || "user");
       localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
-      toast.success(`Đăng nhập thành công!`);
+      toast.success("Đăng nhập thành công!");
       if (data.user?.onboarded) nav("/home"); else nav("/onboarding");
     } catch (err) {
       const status = err?.response?.status;
@@ -51,14 +51,37 @@ export default function Login() {
         (status === 401 ? "Sai mật khẩu." :
          status === 400 ? "Tài khoản không tồn tại hoặc thông tin không hợp lệ." :
          "Đăng nhập thất bại. Vui lòng thử lại.");
-
-      // phân bổ lỗi theo mã
       if (status === 400) setUsernameErr(msg);
       else setPasswordErr(msg);
     } finally { setLoading(false); }
   }
 
-  // Ripple cho nút social
+  // --- GOOGLE LOGIN (custom button, giữ nguyên thiết kế) ---
+  const startGoogleLogin = useGoogleLogin({
+    flow: "implicit",                  // dùng popup, trả access_token
+    scope: "openid email profile",
+    onSuccess: async (resp) => {
+      try {
+        const payload = {
+          access_token: resp?.access_token || null,
+          // dự phòng cho các flow khác nếu bạn dùng sau này:
+          credential: resp?.credential || null,
+          code: resp?.code || null,
+        };
+        const { data } = await api.post("/auth/google", payload);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.user?.role || "user");
+        localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
+        toast.success("Đăng nhập bằng Google thành công!");
+        if (data.user?.onboarded) nav("/home"); else nav("/onboarding");
+      } catch (e) {
+        toast.error(e?.response?.data?.message || "Đăng nhập Google thất bại.");
+      }
+    },
+    onError: () => toast.error("Google Login thất bại"),
+  });
+
+  // Ripple cho nút social (giữ nguyên)
   function handleSocialRipple(e) {
     const btn = e.currentTarget;
     const ripple = btn.querySelector(".social-ripple");
@@ -75,13 +98,19 @@ export default function Login() {
     ripple.classList.add("is-animating");
   }
 
+  // click Google = ripple + start login
+  function onClickGoogle(e) {
+    handleSocialRipple(e);
+    startGoogleLogin();
+  }
+
   const renderSignIn = (
     <form className="auth-form" onSubmit={onSubmit} noValidate style={{ width: "100%", maxWidth: 520 }}>
       <div className="login-head">
         <img src="/images/logo-fitmatch.png" alt="FitMatch" className="login-logo-rect" />
         <h1>Đăng nhập</h1>
       </div>
-      
+
       <div className="auth-divider"><span>Nhập thông tin tài khoản</span></div>
 
       {/* Username */}
@@ -125,27 +154,24 @@ export default function Login() {
         {passwordErr && <span className="error-item">{passwordErr}</span>}
       </div>
 
-      {/* Nút đăng nhập — rộng bằng ô nhập */}
       <button type="submit" className={`material-btn ${loading ? "loading" : ""}`} disabled={loading} style={{ marginTop: 6 }}>
         <span className="btn-text">Đăng nhập</span>
       </button>
 
-      {/* Quên mật khẩu */}
       <div className="forgot-row under-login">
         <button type="button" className="btn-resetpwd link-blue" onClick={() => nav("/reset-password")}>
           Quên mật khẩu
         </button>
       </div>
 
-      {/* Divider */}
       <div className="auth-divider"><span>HOẶC</span></div>
 
-      {/* SOCIAL – hàng 2 nút, cùng bề rộng với ô nhập */}
+      {/* SOCIAL – giữ nguyên UI */}
       <div className="social-login">
         <button
           type="button"
           className="social-btn google-material"
-          onClick={handleSocialRipple}
+          onClick={onClickGoogle}
           aria-label="Tiếp tục với Google"
         >
           <div className="social-icon" aria-hidden="true">
@@ -165,6 +191,8 @@ export default function Login() {
           className="social-btn facebook-material"
           onClick={handleSocialRipple}
           aria-label="Tiếp tục với Facebook"
+          disabled
+          title="Sắp ra mắt"
         >
           <div className="social-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" aria-hidden="true">

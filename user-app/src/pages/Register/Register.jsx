@@ -5,6 +5,7 @@ import "../Style/style.css";
 import api from "../../lib/api";
 import { validateUsername, validateEmailGmail, validatePassword, validateConfirm } from "../../lib/validators";
 import { toast } from "react-toastify";
+import { useGoogleLogin } from "@react-oauth/google";
 
 export default function Register() {
   const nav = useNavigate();
@@ -49,7 +50,7 @@ export default function Register() {
         localStorage.setItem("token", data.token);
         if (data.user?.role) localStorage.setItem("role", data.user.role);
       }
-      toast.success(`Đăng ký thành công!`);
+      toast.success("Đăng ký thành công!");
       if (data?.success || data?.token) {
         nav("/login");
       } else {
@@ -77,6 +78,29 @@ export default function Register() {
     }
   };
 
+  // --- GOOGLE LOGIN (custom button) ---
+  const startGoogleLogin = useGoogleLogin({
+    flow: "implicit",
+    scope: "openid email profile",
+    onSuccess: async (resp) => {
+      try {
+        const { data } = await api.post("/auth/google", {
+          access_token: resp?.access_token || null,
+          credential: resp?.credential || null,
+          code: resp?.code || null,
+        });
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.user?.role || "user");
+        localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
+        toast.success("Đăng ký/Đăng nhập bằng Google thành công!");
+        if (data.user?.onboarded) nav("/home"); else nav("/onboarding");
+      } catch (e) {
+        toast.error(e?.response?.data?.message || "Đăng nhập Google thất bại.");
+      }
+    },
+    onError: () => toast.error("Google Đăng ký/Đăng nhập thất bại"),
+  });
+
   function handleSocialRipple(e) {
     const btn = e.currentTarget;
     const ripple = btn.querySelector(".social-ripple");
@@ -91,6 +115,11 @@ export default function Register() {
     ripple.classList.remove("is-animating");
     void ripple.offsetWidth;
     ripple.classList.add("is-animating");
+  }
+
+  function onClickGoogle(e) {
+    handleSocialRipple(e);
+    startGoogleLogin();
   }
 
   const renderSignIn = <div />;
@@ -189,8 +218,14 @@ export default function Register() {
 
       <div className="auth-divider" style={{ marginTop: 20 }}><span>HOẶC</span></div>
 
+      {/* GOOGLE – giữ nguyên UI, chỉ gắn handler */}
       <div className="social-login">
-        <button type="button" className="social-btn google-material" onClick={handleSocialRipple} aria-label="Tiếp tục với Google">
+        <button
+          type="button"
+          className="social-btn google-material"
+          onClick={onClickGoogle}
+          aria-label="Tiếp tục với Google"
+        >
           <div className="social-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -203,7 +238,14 @@ export default function Register() {
           <span className="social-ripple" aria-hidden="true"></span>
         </button>
 
-        <button type="button" className="social-btn facebook-material" onClick={handleSocialRipple} aria-label="Tiếp tục với Facebook">
+        <button
+          type="button"
+          className="social-btn facebook-material"
+          onClick={(e)=>{ handleSocialRipple(e); }}
+          aria-label="Tiếp tục với Facebook"
+          disabled
+          title="Sắp ra mắt"
+        >
           <div className="social-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="12" fill="#1877F2"/>
@@ -219,5 +261,5 @@ export default function Register() {
     </form>
   );
 
-  return <AuthLayout mode="register" renderSignIn={renderSignIn} renderSignUp={renderSignUp} />;
+  return <AuthLayout mode="register" renderSignIn={<div />} renderSignUp={renderSignUp} />;
 }
