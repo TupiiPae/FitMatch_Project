@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 /* ===== Layout tổng thể ===== */
 .food-create-page {
   padding: 30px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  font-family: "Roboto", sans-serif;
 }
 
 /* ===== (LẤY TỪ LIST.CSS) Định nghĩa các thành phần dùng chung ===== */

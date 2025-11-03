@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 /* ===== Page layout (30px padding) ===== */
 .foods-page{ /* Bạn có thể đổi tên class này thành .list-page nếu muốn */
   padding: 30px;
   display:flex;
   flex-direction:column;
   gap:16px;
+  font-family: "Roboto", sans-serif;
 }
 
 /* ===== Breadcrumb (Giữ nguyên) ===== */

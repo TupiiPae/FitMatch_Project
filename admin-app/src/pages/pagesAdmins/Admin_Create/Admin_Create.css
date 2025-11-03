@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 .admin-create-form {
   display: grid;
   gap: 16px; /* Khoảng cách giữa các trường */
   padding: 12px; /* Padding bên trong form */
+  font-family: "Roboto", sans-serif;
 }
 
 .fc-field {

@@ -1,3 +1,13 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%; /* Đảm bảo html và body chiếm toàn bộ chiều cao */
+}
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 :root{
   --fm-border:#D9DEE7;
   --fm-primary:#78BCC4;
@@ -31,12 +41,13 @@ html, body { font-size: var(--fs-base); }
 .fm-layout{
   height:100vh; overflow:hidden;
   display:flex; background:var(--fm-bg); color:var(--fm-text);
+  font-family: "Roboto", sans-serif;
 }
 .fm-main{ flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; }
 .fm-content{ padding:16px; flex-grow:1; overflow-y:auto; }
 
 .fm-side{
-  position:relative; width:280px; background:var(--fm-panel);
+  position:relative; width:280px; background:#f4f6ea;
   border-right:1px solid var(--fm-border);
   display:flex; flex-direction:column; transition:width .2s ease;
 }
@@ -44,7 +55,7 @@ html, body { font-size: var(--fs-base); }
 
 .fm-side__logo{
   height:80px; display:flex; align-items:center; justify-content:center;
-  padding:10px; border-bottom:1px solid var(--fm-border); flex-shrink:0;
+  padding:10px; border-bottom:1px solid var(--fm-border); flex-shrink:0;  background-color: #fff;
 }
 .fm-logo-link{ display:inline-flex; align-items:center; justify-content:center; }
 .fm-logo-rect{ height:120px; width:auto; object-fit:contain; display:block; border-radius:10px; transition:height .18s ease; }
@@ -52,14 +63,14 @@ html, body { font-size: var(--fs-base); }
 .fm-side.is-sm .fm-logo-rect{ height:34px; }
 
 /* body có thể cuộn nhưng ẩn scrollbar */
-.fm-side__nav{ padding:10px 10px 14px; overflow:auto; flex-grow: 1}
+.fm-side__nav{ padding:10px 10px 14px; overflow:auto; flex-grow: 1;}
 .fm-side__nav::-webkit-scrollbar{ width:0; height:0; }
 .fm-side__nav{ scrollbar-width: none; }
 
 /* tiêu đề nhóm */
 .fm-cat{
   font-size:13px; font-weight:700; letter-spacing:.06em;
-  color:#000 ; text-transform:uppercase;
+  color:#002C3E ; text-transform:uppercase;
   padding:20px 12px 6px; opacity:.95;
 }
 .fm-cat--settings{ margin-top:20px; }
@@ -74,7 +85,7 @@ html, body { font-size: var(--fs-base); }
   display:flex; align-items:center; justify-content:space-between;
   padding:8px 10px;
   font-weight:var(--fw-medium);
-  color:var(--fm-text);
+  color:#002C3E;
   background:transparent; border:0; cursor:pointer; border-radius:var(--fm-radius-sm);
   transition:background .15s ease, color .15s ease, border-color .15s ease;
 }
@@ -82,14 +93,13 @@ html, body { font-size: var(--fs-base); }
 .theme-dark .fm-sec__head:hover{ background:rgba(255,255,255,.06); }
 .fm-sec__title{ display:flex; gap:10px; align-items:center; }
 .fm-sec__icon{ width:28px; min-width:28px; text-align:center; line-height:1; font-size:16px; opacity:.9; }
-.fm-sec__text{ white-space:nowrap; font-size:13.5px; }
+.fm-sec__text{ white-space:nowrap; font-size:13.5px;   font-weight: 600;}
 .fm-expander{ font-size:13px; opacity:.85; }
 
 /* menu lớn đang mở -> nổi bật màu */
 .fm-sec.is-open .fm-sec__head{
-  background: color-mix(in srgb, var(--fm-parent-active) 14%, transparent);
-  color: var(--fm-parent-active);
-  border:1px solid color-mix(in srgb, var(--fm-parent-active) 35%, transparent);
+  background: #008080;
+  color: #fff;
 }
 
 /* thân dropdown + đường dọc */
@@ -116,21 +126,20 @@ html, body { font-size: var(--fs-base); }
   display:flex; align-items:center; min-height:38px;
   padding:0 10px 0 12px;
   border-radius:999px;
-  color:var(--fm-text); text-decoration:none;
+  color:#002C3E; text-decoration:none;
   background:transparent;
   transition:background .15s ease, color .15s ease, box-shadow .15s ease;
-  font-weight:var(--fw-medium);
+  font-weight: 500;
 }
 .fm-sublink::before{
   content:""; position:absolute; left:-14px; top:50%;
   width:14px; height:2px; background:#d1d5db; transform:translateY(-50%);
 }
 .theme-dark .fm-sublink::before{ background:#475569; }
-.fm-sublink:hover{ background:#78BCC433; }
+.fm-sublink:hover{ background:#78BCC455; }
 .fm-sublink.is-active{
-  background: color-mix(in srgb, var(--fm-child-active) 24%, white);
-  color: var(--fm-child-active);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fm-child-active) 45%, transparent);
+  color: #fff;
+  background: #008080;
 }
 
 /* thu gọn: giữ state nhưng ẩn body + text */
