@@ -93,21 +93,63 @@ export async function verifyMailer() {
 export async function sendOtpEmail({ to, otp }) {
   if (!transporter) await buildTransport();
 
+  const SUPPORT = process.env.SUPPORT_EMAIL || "fitmatchservice@gmail.com";
+
   const html = `
-    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#0f172a">
-      <h2 style="margin:0 0 8px 0">${APP_NAME} - Mã OTP đổi mật khẩu</h2>
-      <p>Tài khoản: <b>${to}</b></p>
-      <p>Mã OTP (hết hạn sau 15 phút):</p>
-      <div style="font-size:24px;font-weight:800;letter-spacing:4px;margin:12px 0">${otp}</div>
-      <hr/>
-      <p style="font-size:12px;color:#64748b">Hỗ trợ: ${process.env.SUPPORT_EMAIL || to}</p>
+  <!-- Wrapper nền nhẹ giống ảnh mẫu -->
+  <div style="background:#faf5ef;padding:24px 12px;">
+    <div style="max-width:620px;margin:0 auto;background:#f4f6ea;border:1px solid #f0d9c8;border-radius:12px;">
+      <div style="padding:28px 32px;  font-family: "Roboto", sans-serif;color:#002C3E;">
+
+        <!-- Brand / Tên -->
+        <div style="text-align:center;margin-bottom:6px;">
+          <div style="font-size:34px;font-weight:900;letter-spacing:.4px;">${APP_NAME}</div>
+        </div>
+
+        <!-- Title lớn -->
+        <h1 style="margin:8px 0 2px 0;text-align:center;font-size:18px;line-height:1.35;">
+          Xác thực mã OTP
+        </h1>
+
+        <!-- Mô tả -->
+        <p style="margin:0 0 6px 0;text-align:left;color:#002C3E;font-size:14px;line-height:1.6;font-weight:500;">
+          Xử dụng mã bên dưới để xác thực OTP, sau đó sẽ tiến hành thay đổi mật khẩu mới cho tài khoản của bạn.
+        </p>
+
+        <!-- Nhãn OTP -->
+        <p style="margin:0 0 6px 0;font-weight:600;">Mã OTP của bạn:</p>
+
+        <!-- Hộp OTP -->
+        <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 18px;text-align:center;margin-bottom:6px;">
+          <div style="font-size:28px;font-weight:800;letter-spacing:12px;">${otp}</div>
+        </div>
+
+        <!-- Ghi chú thời hạn -->
+        <div style="text-align:center;margin:0 0 20px 0;color:#64748b;font-size:12px;">
+          Mã OTP sẽ có hiệu lực trong 60 giây.
+        </div>
+
+        <!-- Hỗ trợ -->
+        <h3 style="margin:10px 0 6px 0;font-size:16px;line-height:1.4;">
+          Nếu bạn có câu hỏi nào hoặc gặp rắc rối trong việc đăng nhập
+        </h3>
+        <p style="margin:0 0 18px 0;color:#334155;line-height:1.6;">
+          Hãy liên hệ với đội ngũ chúng tôi qua địa chỉ
+          <a href="mailto:${SUPPORT}" style="color:#0ea5e9;text-decoration:none;">${SUPPORT}</a>
+        </p>
+
+        <!-- Footer -->
+        <p style="margin:0 0 2px 0;">Chúc bạn sớm đạt được mục tiêu,</p>
+        <p style="margin:0;font-weight:700;">Đội ngũ ${APP_NAME}</p>
+
+      </div>
     </div>
-  `;
+  </div>`;
 
   const info = await transporter.sendMail({
-    from: FROM,         // ví dụ: "FitMatch <fitmatchservice@gmail.com>"
+    from: FROM,
     to,
-    subject: `[${APP_NAME}] Mã OTP đổi mật khẩu`,
+    subject: `[${APP_NAME}] Xác thực mã OTP`, // tiêu đề rõ ràng hơn
     html,
   });
 

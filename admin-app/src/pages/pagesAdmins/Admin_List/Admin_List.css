@@ -37,8 +37,7 @@
 }
 .btn:hover { background: #f9fafb; }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn.primary { background: #008080; border-color: #008080; color: #fff; }
-.btn.primary:hover { background: #007070; }
+.btn.primary { background: #008080; color: #fff; }
 .btn.danger { color: #b91c1c; border-color: #FECACA; background: #fff; }
 .btn.danger:hover { background: #fef2f2; }
 .btn.ghost { background: #fff; }

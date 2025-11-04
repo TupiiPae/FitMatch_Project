@@ -80,9 +80,8 @@
 /* Primary: nền #1A73E8, chữ trắng, không shadow */
 .auth-container .btn-primary,
 .auth-container .material-btn{            /* map material-btn sang primary */
-  background: var(--auth-blue);
+  background: #008080;
   color:#fff;
-  border:1px solid var(--auth-blue);
   padding: 8px 140px;
   border-radius: 4px;
 }

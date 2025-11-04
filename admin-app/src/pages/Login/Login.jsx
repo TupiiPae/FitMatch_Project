@@ -48,13 +48,21 @@ export default function Login() {
         {/* PANEL RIGHT */}
         <div className="panel-right">
           <div className="panel-wrap">
+            {/* HEADER: Logo + System Title */}
+            <div className="panel-header">
+              <img src={logoFitmatch} alt="FitMatch" className="brand-logo-big" />
+              <h2 className="sys-title">HỆ THỐNG QUẢN TRỊ DÀNH CHO</h2>
+              <h2 className="sys-title">QUẢN TRỊ VIÊN FITMATCH</h2>
+            </div>
+
+            {/* Login title */}
             <div className="login-title">
               <span>Đăng nhập</span>
               <p>với tư cách Quản Trị Viên</p>
             </div>
 
             <form className="login-form" onSubmit={submit} noValidate>
-              {/* Username với icon bên trái */}
+              {/* Username */}
               <div className="field">
                 <i className="ipt-icon fa-regular fa-user" aria-hidden="true"></i>
                 <input
@@ -68,7 +76,7 @@ export default function Login() {
                 />
               </div>
 
-              {/* Password với icon + nút mắt */}
+              {/* Password */}
               <div className="field">
                 <i className="ipt-icon fa-solid fa-lock" aria-hidden="true"></i>
                 <input

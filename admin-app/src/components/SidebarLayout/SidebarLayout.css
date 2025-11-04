@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -7,7 +8,7 @@ html, body {
   padding: 0;
   height: 100%; /* Đảm bảo html và body chiếm toàn bộ chiều cao */
 }
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
 :root{
   --fm-border:#D9DEE7;
   --fm-primary:#78BCC4;
@@ -47,7 +48,7 @@ html, body { font-size: var(--fs-base); }
 .fm-content{ padding:16px; flex-grow:1; overflow-y:auto; }
 
 .fm-side{
-  position:relative; width:280px; background:#f4f6ea;
+  position:relative; width:280px; background:#fff;
   border-right:1px solid var(--fm-border);
   display:flex; flex-direction:column; transition:width .2s ease;
 }
