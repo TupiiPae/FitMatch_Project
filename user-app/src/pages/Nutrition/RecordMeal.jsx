@@ -87,8 +87,13 @@ export default function RecordMeal() {
   const gStr = (x) => (x ?? "-");
 
   async function onFav(id) {
-    const { data } = await toggleFavoriteFood(id);
-    setItems((prev) => prev.map(it => it._id === id ? { ...it, isFavorite: data.isFavorite } : it));
+    const { data } = await toggleFavoriteFood(id); // { isFavorite: boolean }
+    setItems((prev) => {
+      const next = prev.map(it => it._id === id ? { ...it, isFavorite: data.isFavorite } : it);
+      // Nếu đang bật tab "Yêu thích" và user bỏ thích -> loại khỏi list hiện tại
+     if (favorites && !data.isFavorite) return next.filter(it => it._id !== id);
+      return next;
+    });
   }
 
   async function openAdd(it) {
@@ -128,17 +133,23 @@ export default function RecordMeal() {
   }, []);
 
   const onDeleteFood = async (id) => {
-    if (!window.confirm("Xóa món này?")) return;
+  };
+  const onEditFood = (id) => nav(`/dinh-duong/ghi-lai/sua-mon/${id}`);
+  const [confirmDel, setConfirmDel] = useState({ open: false, id: null, name: "" });
+  const openConfirmDelete = (it) => setConfirmDel({ open: true, id: it._id, name: it.name });
+  const closeConfirmDelete = () => setConfirmDel({ open: false, id: null, name: "" });
+  const confirmDeleteNow = async () => {
+    if (!confirmDel.id) return;
     try {
-      await deleteFood(id);
+      await deleteFood(confirmDel.id);
       toast.success("Đã xóa món");
       setMenuId(null);
+      closeConfirmDelete();
       load(true);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Xóa thất bại");
     }
   };
-  const onEditFood = (id) => nav(`/dinh-duong/ghi-lai/sua-mon/${id}`);
 
   return (
     <div className="nm-wrap">
@@ -207,11 +218,22 @@ export default function RecordMeal() {
                   <span className={`status-pill ${it.status || "pending"}`}>{statusLabel(it.status)}</span>
                 )}
 
-                <button className={`heart ${it.isFavorite ? "on" : ""}`} onClick={() => onFav(it._id)}>
-                  <i className="fa-solid fa-heart"></i>
+                <button
+                  className={`heart ${it.isFavorite ? "on" : ""}`}
+                  aria-pressed={!!it.isFavorite}
+                  title={it.isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+                  onClick={(e) => { e.stopPropagation(); onFav(it._id); }}
+                >
+                  <i className={`${it.isFavorite ? "fa-solid" : "fa-regular"} fa-heart`}></i>
                 </button>
 
-                <button className="add" onClick={() => openAdd(it)}>Thêm</button>
+                <button
+                  className="add add-round"
+                  title="Thêm vào nhật ký"
+                  onClick={() => openAdd(it)}
+                >
+                  <i className="fa-solid fa-plus"></i>
+                </button>
 
                 {onlyMine && (
                   <div className="more-wrap">
@@ -223,7 +245,7 @@ export default function RecordMeal() {
                     </button>
                     {menuId === it._id && (
                       <div className="menu" onClick={(e) => e.stopPropagation()}>
-                        <button className="menu-item danger" onClick={() => onDeleteFood(it._id)}>Xóa</button>
+                        <button className="menu-item danger" onClick={() => openConfirmDelete(it)}>Xóa</button>
                         <button className="menu-item" onClick={() => onEditFood(it._id)}>Chỉnh sửa</button>
                       </div>
                     )}
@@ -356,6 +378,34 @@ export default function RecordMeal() {
           </div>
         )}
       </div>
-    </div>
+
+        {/* ====== CONFIRM DELETE MODAL ====== */}
+          {confirmDel.open && (
+            <div className="modal" onClick={closeConfirmDelete}>
+              <div
+                className="modal-card confirm-modal"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="confirm-del-title"
+              >
+                <div className="cm-head">
+                  <div className="cm-icon">
+                    <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                  </div>
+                  <h3 id="confirm-del-title">Xóa món ăn?</h3>
+                </div>
+                <div className="cm-body">
+                  Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?<br />
+                  Thao tác này không thể hoàn tác.
+                </div>
+                <div className="cm-foot">
+                  <button className="btn ghost" onClick={closeConfirmDelete}>Hủy</button>
+                  <button className="btn bad" onClick={confirmDeleteNow}>Xóa</button>
+                </div>
+              </div>
+            </div>
+          )}
+     </div>
   );
 }

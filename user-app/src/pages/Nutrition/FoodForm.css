@@ -48,7 +48,7 @@
 }
 
 /* === Buttons (Giữ nguyên) === */
-.btn {
+.ff-wrap .btn {
   height: 40px;
   padding: 0 14px;
   border-radius: 4px;
@@ -61,13 +61,11 @@
   justify-content: center;
   line-height: 1;
 }
-.btn.primary {
-  background: #78BCC4;
+.ff-wrap .btn.primary {
+  background: #008080;
   color: #fff;
-  border-color: #78BCC4;
 }
-.btn.primary:hover { background: #008080; }
-.btn.ghost { background: #fff; color: #111827; }
+.btn.primary:hover { background: #78BCC4; }
 .btn.ghost.danger {
   color: #b91c1c;
   border-color: #f4d0d0;
@@ -75,7 +73,7 @@
 .btn.ghost.danger:hover { background-color: #fef2f2; }
 .btn.light { background: #f8fafc; border-color: #002C3E; }
 .btn.light:hover { background: #f1f5f9; }
-.btn.bad {
+.ff-wrap .btn.bad {
   background: #fef2f2;
   color: #b91c1c;
   border-color: #f4d0d0;
@@ -328,12 +326,55 @@
 
 
 /* ===== Modal xác nhận (Cập nhật) ===== */
-.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); display: flex; align-items: center; justify-content: center; z-index: 40; }
-.modal-card { width: min(520px, 92%); background: #fff; border-radius: 4px; border: 1px solid #e5e7eb; }
-.modal-card.small { width: min(420px, 92%); }
-.modal-head { padding: 14px; border-bottom: 1px solid #e5e7eb; }
-.modal-body { padding: 14px; }
-.modal-foot { padding: 12px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; }
+.ff-wrap .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); display: flex; align-items: center; justify-content: center; z-index: 40; }
+.ff-wrap .modal-card { width: min(520px, 92%); background: #fff; border-radius: 4px; border: 1px solid #e5e7eb; }
+.ff-wrap .modal-card.small { width: min(420px, 92%); }
+.ff-wrap .modal-head { padding: 14px; border-bottom: 1px solid #e5e7eb; }
+.ff-wrap .modal-body{ padding: 14px; }
+.ff-wrap .modal-foot { padding: 12px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; }
 
-.muted { color: #6b7280; }
+.ff-wrap .muted { color: #6b7280; }
 
+/* ===== Confirm Delete Modal (match RecordMeal) ===== */
+.confirm-modal{
+  width: min(440px, 92vw);
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cm-head{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.cm-icon{
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.cm-head h3{
+  margin: 0; font-size: 18px; font-weight: 800; color: #111827;
+}
+.cm-body{
+  padding: 14px 16px;
+  color: #374151;
+}
+.cm-foot{
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+
+/* Nút “Xóa” tông đỏ (dùng chung nếu chưa có) */
+.btn.bad{
+  background:#fef2f2;
+  color:#b91c1c;
+  border:1px solid #f4d0d0;
+}
+.btn.bad:hover{ background:#fee2e2; }

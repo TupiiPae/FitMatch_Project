@@ -159,18 +159,20 @@ export default function FoodForm() {
     }
   }
 
-  // Xóa món (giữ logic cũ)
-  const [confirmDel, setConfirmDel] = useState(false);
-  const onConfirmDelete = async () => {
-    try {
-      await deleteFood(id);
-      toast.success("Đã xóa món");
-      setConfirmDel(false);
-      nav("/dinh-duong/ghi-lai");
-    } catch (e) {
-      toast.error(e?.response?.data?.message || "Xóa thất bại");
-    }
-  };
+  // ===== XÓA MÓN: popup xác nhận (giống RecordMeal) =====
+    const [confirmDel, setConfirmDel] = useState({ open: false, name: "" });
+    const openConfirmDelete = () => setConfirmDel({ open: true, name: form.name || "" });
+    const closeConfirmDelete = () => setConfirmDel({ open: false, name: "" });
+    const confirmDeleteNow = async () => {
+      try {
+        await deleteFood(id);
+        toast.success("Đã xóa món");
+        closeConfirmDelete();
+        nav("/dinh-duong/ghi-lai");
+      } catch (e) {
+        toast.error(e?.response?.data?.message || "Xóa thất bại");
+      }
+    };
 
   if (loading) return <div className="ff-wrap"><div className="muted">Đang tải...</div></div>;
 
@@ -186,7 +188,7 @@ export default function FoodForm() {
           </button>
           <div className="tool-right">
             {isEdit && (
-              <button type="button" className="btn ghost danger" onClick={() => setConfirmDel(true)}>
+              <button type="button" className="btn ghost danger" onClick={openConfirmDelete}>
                 Xóa
               </button>
             )}
@@ -463,16 +465,29 @@ export default function FoodForm() {
       </form>
 
       {/* Popup xác nhận xóa (Giữ nguyên) */}
-      {confirmDel && (
-        <div className="modal" onClick={() => setConfirmDel(false)}>
-          <div className="modal-card small" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head"><h3>Xác nhận xóa món</h3></div>
-            <div className="modal-body">
-              <div className="muted">Bạn chắc chắn muốn xóa món ăn này? Thao tác không thể hoàn tác.</div>
+      {/* ===== Confirm Delete (giống RecordMeal) ===== */}
+      {confirmDel.open && (
+        <div className="modal" onClick={closeConfirmDelete}>
+          <div
+            className="modal-card confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ff-confirm-del-title"
+          >
+            <div className="cm-head">
+              <div className="cm-icon">
+                <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+              </div>
+              <h3 id="ff-confirm-del-title">Xóa món ăn?</h3>
             </div>
-            <div className="modal-foot">
-              <button className="btn ghost" onClick={() => setConfirmDel(false)}>Hủy</button>
-              <button className="btn bad" onClick={onConfirmDelete}>Xóa</button>
+            <div className="cm-body">
+              Bạn chắc chắn muốn xóa <b>{confirmDel.name || "món này"}</b>?<br />
+              Thao tác này không thể hoàn tác.
+            </div>
+            <div className="cm-foot">
+              <button className="btn ghost" onClick={closeConfirmDelete}>Hủy</button>
+              <button className="btn bad" onClick={confirmDeleteNow}>Xóa</button>
             </div>
           </div>
         </div>
