@@ -2,10 +2,9 @@ import nodemailer from "nodemailer";
 
 const MODE = (process.env.MAIL_MODE || "smtp").toLowerCase();
 const APP_NAME = process.env.APP_NAME || "FitMatch";
-
-// Ưu tiên MAIL_FROM nếu có, nodemailer chấp nhận string "Name <email@...>"
-const FROM = process.env.MAIL_FROM
-  || `${process.env.FROM_NAME || APP_NAME} <${process.env.FROM_EMAIL || process.env.GMAIL_USER || "no-reply@fitmatch.local"}>`;
+const FROM =
+  process.env.MAIL_FROM ||
+  `${process.env.FROM_NAME || APP_NAME} <${process.env.FROM_EMAIL || process.env.GMAIL_USER || "no-reply@fitmatch.local"}>`;
 
 let transporter;
 let modeInfo = "";
@@ -15,33 +14,27 @@ async function buildTransport() {
     case "gmail": {
       const user = process.env.GMAIL_USER;
       const pass = process.env.GMAIL_APP_PASS;
-      if (!user || !pass) {
-        throw new Error("[mailer] MAIL_MODE=gmail nhưng thiếu GMAIL_USER hoặc GMAIL_APP_PASS");
-      }
+      if (!user || !pass) throw new Error("[mailer] MAIL_MODE=gmail nhưng thiếu GMAIL_USER hoặc GMAIL_APP_PASS");
       transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: 465,
-        secure: true,            // Gmail SSL
+        secure: true,
         auth: { user, pass },
       });
       modeInfo = `GMAIL smtp.gmail.com:465 (user=${user})`;
       break;
     }
-
     case "smtp": {
       const host = process.env.SMTP_HOST;
       const port = Number(process.env.SMTP_PORT || 0);
       const secure = String(process.env.SMTP_SECURE || "").toLowerCase() === "true";
       const user = process.env.SMTP_USER;
       const pass = process.env.SMTP_PASS;
-      if (!host || !port || !user || !pass) {
-        throw new Error("[mailer] Missing SMTP_* envs");
-      }
+      if (!host || !port || !user || !pass) throw new Error("[mailer] Missing SMTP_* envs");
       transporter = nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
       modeInfo = `SMTP ${host}:${port} secure=${secure}`;
       break;
     }
-
     case "mailtrap": {
       transporter = nodemailer.createTransport({
         host: process.env.MAILTRAP_HOST,
@@ -52,7 +45,6 @@ async function buildTransport() {
       modeInfo = "MAILTRAP";
       break;
     }
-
     case "ethereal": {
       const acc = await nodemailer.createTestAccount();
       transporter = nodemailer.createTransport({
@@ -64,13 +56,11 @@ async function buildTransport() {
       modeInfo = `ETHEREAL user=${acc.user}`;
       break;
     }
-
     case "log": {
       transporter = nodemailer.createTransport({ jsonTransport: true });
       modeInfo = "LOG (jsonTransport)";
       break;
     }
-
     default:
       throw new Error(`[mailer] Unsupported MAIL_MODE=${MODE}`);
   }
@@ -79,7 +69,6 @@ async function buildTransport() {
 export async function verifyMailer() {
   if (!transporter) await buildTransport();
   try {
-    // jsonTransport/ethereal verify có thể throw — cho qua log mode
     await transporter.verify().catch((e) => {
       if (MODE !== "log") throw e;
     });
@@ -90,69 +79,71 @@ export async function verifyMailer() {
   }
 }
 
+function renderOtpEmail({ otp, ttlMinutes = 2 }) {
+  const year = new Date().getFullYear();
+  return `
+  <div style="margin:0;padding:0;background:#f3f4f6">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f6ea;padding:24px 0">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:600px;font-family:Arial,Helvetica,sans-serif;color:#0f172a">
+            <tr>
+              <td align="center">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="width:560px;background:#ffffff;border-radius:8px;border:1px solid #78BCC4;box-shadow:0 2px 10px rgba(15,23,42,0.08);overflow:hidden">
+                  <tr>
+                    <td height="64" style="height:64px;background:#f4f6ea;text-align:center;vertical-align:middle">
+                      <div style="display:inline-block;font-size:18px;line-height:24px;font-weight:700;letter-spacing:0.2px;color:#002C3E">
+                        Mã OTP Đặt Lại Mật Khẩu
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:24px 28px">
+                      <div style="font-size:14px;line-height:1.6;margin:0 0 8px 0;color:#0f172a">Chào bạn,</div>
+                      <div style="font-size:14px;line-height:1.6;margin:0 0 16px 0;color:#0f172a">
+                        Sử dụng mã OTP bên dưới để tiến hành đặt lại mật khẩu cho tài khoản của bạn:
+                      </div>
+                      <div style="background:#f1f5f9;border-radius:8px;padding:14px 18px;text-align:center;margin:6px 0 18px 0">
+                        <div style="font-size:34px;font-weight:800;letter-spacing:4px;color:#008080;line-height:1">${otp}</div>
+                      </div>
+                      <div style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 12px 0">
+                        Mã có hiệu lực trong <b>${ttlMinutes} phút</b>. Vui lòng không chia sẻ mã này với bất kỳ ai.
+                      </div>
+                      <div style="font-size:12px;line-height:1.6;color:#64748b;margin-top:6px">
+                        Nếu bạn không yêu cầu thao tác này, vui lòng bỏ qua email.
+                      </div>
+                      <div style="font-size:12px;line-height:1.6;color:#64748b;margin-top:6px">
+                        Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td height="48" style="height:48px;background:#f8fafc;border-top:1px solid #eef2f7;padding:0 20px;text-align:center">
+                      <div style="font-size:12px;color:#94a3b8;line-height:48px">
+                        © ${year} ${APP_NAME}. All rights reserved.
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>`;
+}
+
 export async function sendOtpEmail({ to, otp }) {
   if (!transporter) await buildTransport();
-
-  const SUPPORT = process.env.SUPPORT_EMAIL || "fitmatchservice@gmail.com";
-
-  const html = `
-  <!-- Wrapper nền nhẹ giống ảnh mẫu -->
-  <div style="background:#faf5ef;padding:24px 12px;">
-    <div style="max-width:620px;margin:0 auto;background:#f4f6ea;border:1px solid #f0d9c8;border-radius:12px;">
-      <div style="padding:28px 32px;  font-family: "Roboto", sans-serif;color:#002C3E;">
-
-        <!-- Brand / Tên -->
-        <div style="text-align:center;margin-bottom:6px;">
-          <div style="font-size:34px;font-weight:900;letter-spacing:.4px;">${APP_NAME}</div>
-        </div>
-
-        <!-- Title lớn -->
-        <h1 style="margin:8px 0 2px 0;text-align:center;font-size:18px;line-height:1.35;">
-          Xác thực mã OTP
-        </h1>
-
-        <!-- Mô tả -->
-        <p style="margin:0 0 6px 0;text-align:left;color:#002C3E;font-size:14px;line-height:1.6;font-weight:500;">
-          Xử dụng mã bên dưới để xác thực OTP, sau đó sẽ tiến hành thay đổi mật khẩu mới cho tài khoản của bạn.
-        </p>
-
-        <!-- Nhãn OTP -->
-        <p style="margin:0 0 6px 0;font-weight:600;">Mã OTP của bạn:</p>
-
-        <!-- Hộp OTP -->
-        <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 18px;text-align:center;margin-bottom:6px;">
-          <div style="font-size:28px;font-weight:800;letter-spacing:12px;">${otp}</div>
-        </div>
-
-        <!-- Ghi chú thời hạn -->
-        <div style="text-align:center;margin:0 0 20px 0;color:#64748b;font-size:12px;">
-          Mã OTP sẽ có hiệu lực trong 60 giây.
-        </div>
-
-        <!-- Hỗ trợ -->
-        <h3 style="margin:10px 0 6px 0;font-size:16px;line-height:1.4;">
-          Nếu bạn có câu hỏi nào hoặc gặp rắc rối trong việc đăng nhập
-        </h3>
-        <p style="margin:0 0 18px 0;color:#334155;line-height:1.6;">
-          Hãy liên hệ với đội ngũ chúng tôi qua địa chỉ
-          <a href="mailto:${SUPPORT}" style="color:#0ea5e9;text-decoration:none;">${SUPPORT}</a>
-        </p>
-
-        <!-- Footer -->
-        <p style="margin:0 0 2px 0;">Chúc bạn sớm đạt được mục tiêu,</p>
-        <p style="margin:0;font-weight:700;">Đội ngũ ${APP_NAME}</p>
-
-      </div>
-    </div>
-  </div>`;
-
+  const ttl = Number(process.env.OTP_TTL_MINUTES || 2);
+  const html = renderOtpEmail({ otp, ttlMinutes: ttl });
   const info = await transporter.sendMail({
     from: FROM,
     to,
-    subject: `[${APP_NAME}] Xác thực mã OTP`, // tiêu đề rõ ràng hơn
+    subject: `[${APP_NAME}] Mã OTP xác minh`,
     html,
   });
-
   if (MODE === "ethereal" && nodemailer.getTestMessageUrl) {
     console.log("[mailer][ethereal] Preview:", nodemailer.getTestMessageUrl(info));
   }

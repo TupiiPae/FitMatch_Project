@@ -8,6 +8,12 @@ import api from "../../lib/api";
 import "./RecordMeal.css";
 import { toast } from "react-toastify";
 
+// === THÊM MỚI: Imports cho MUI Date Picker ===
+import dayjs from 'dayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => {
   if (!u) return u;
@@ -91,7 +97,7 @@ export default function RecordMeal() {
     setItems((prev) => {
       const next = prev.map(it => it._id === id ? { ...it, isFavorite: data.isFavorite } : it);
       // Nếu đang bật tab "Yêu thích" và user bỏ thích -> loại khỏi list hiện tại
-     if (favorites && !data.isFavorite) return next.filter(it => it._id !== id);
+      if (favorites && !data.isFavorite) return next.filter(it => it._id !== id);
       return next;
     });
   }
@@ -283,8 +289,29 @@ export default function RecordMeal() {
                   <i className="fa-regular fa-calendar"></i>
                   <div className="am-field">
                     <label>Ngày</label>
-                    <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        format="DD/MM/YYYY"
+                        // Chuyển string YYYY-MM-DD (từ state 'date') sang object dayjs
+                        value={date ? dayjs(date) : null}
+                        
+                        // Khi thay đổi, chuyển lại sang string YYYY-MM-DD và gọi setDate
+                        onChange={(newValue) => {
+                          const newDateString = newValue ? newValue.format('YYYY-MM-DD') : '';
+                          setDate(newDateString); // Gọi logic gốc
+                        }}
+                        
+                        slotProps={{
+                          textField: {
+                            placeholder: "DD/MM/YYYY",
+                            style: { width: 170 },
+                            size: "small" 
+                          }
+                        }}
+                      />
+                    </LocalizationProvider>
                   </div>
+
                 </div>
                 <div className="am-when-item">
                   <i className="fa-regular fa-clock"></i>
@@ -379,33 +406,33 @@ export default function RecordMeal() {
         )}
       </div>
 
-        {/* ====== CONFIRM DELETE MODAL ====== */}
-          {confirmDel.open && (
-            <div className="modal" onClick={closeConfirmDelete}>
-              <div
-                className="modal-card confirm-modal"
-                onClick={(e) => e.stopPropagation()}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="confirm-del-title"
-              >
-                <div className="cm-head">
-                  <div className="cm-icon">
-                    <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-                  </div>
-                  <h3 id="confirm-del-title">Xóa món ăn?</h3>
-                </div>
-                <div className="cm-body">
-                  Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?<br />
-                  Thao tác này không thể hoàn tác.
-                </div>
-                <div className="cm-foot">
-                  <button className="btn ghost" onClick={closeConfirmDelete}>Hủy</button>
-                  <button className="btn bad" onClick={confirmDeleteNow}>Xóa</button>
-                </div>
+      {/* ====== CONFIRM DELETE MODAL ====== */}
+      {confirmDel.open && (
+        <div className="modal" onClick={closeConfirmDelete}>
+          <div
+            className="modal-card confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-del-title"
+          >
+            <div className="cm-head">
+              <div className="cm-icon">
+                <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
               </div>
+              <h3 id="confirm-del-title">Xóa món ăn?</h3>
             </div>
-          )}
-     </div>
+            <div className="cm-body">
+              Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?<br />
+              Thao tác này không thể hoàn tác.
+            </div>
+            <div className="cm-foot">
+              <button className="btn ghost" onClick={closeConfirmDelete}>Hủy</button>
+              <button className="btn bad" onClick={confirmDeleteNow}>Xóa</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

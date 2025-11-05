@@ -24,7 +24,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f6f7fb;
+  background: #f4f6ea;
   color: var(--fm-text);
 }
 

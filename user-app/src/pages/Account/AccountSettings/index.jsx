@@ -25,8 +25,8 @@ const fmtDate = (iso) => {
 };
 
 export default function AccountSettings() {
-  const [tab, setTab] = useState("account"); // 'account' | 'password' | 'delete'
-  const [user, setUser] = useState(null);     // ⬅️ bỏ fallback cứng
+  const [tab, setTab] = useState("account"); 
+  const [user, setUser] = useState(null);    
   const [openLogout, setOpenLogout] = useState(false);
 
   // tải user 1 lần

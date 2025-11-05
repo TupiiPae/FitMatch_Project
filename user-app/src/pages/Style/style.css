@@ -380,3 +380,10 @@
 .error-stack:not(:empty){ margin-top: 6px !important; }
 
 /* (giữ nguyên màu & cỡ chữ lỗi như bạn đã cấu hình) */
+.auth-container .btn.btn-text.btn-resetpwd { 
+  color: #002C3E !important; 
+}
+.auth-container .btn.btn-text.btn-resetpwd:disabled {
+  color: rgba(0, 44, 62, 0.55) !important;
+  cursor: not-allowed;
+}

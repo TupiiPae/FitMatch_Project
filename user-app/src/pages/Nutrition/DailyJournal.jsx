@@ -6,6 +6,12 @@ import "./DailyJournal.css";
 import { toast } from "react-toastify";
 import api from "../../lib/api";
 
+// === THÊM MỚI: Imports cho MUI Date Picker ===
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+// ===========================================
+
 // Import logic tìm kiếm và thêm món ăn
 import { searchFoods, addLog } from "../../api/foods";
 
@@ -19,7 +25,7 @@ const round1 = (v) => Math.round(v * 10) / 10;
 const toNum = (v, def = 0) => (v == null || v === "" || isNaN(+v) ? def : +v);
 
 // Chuẩn hóa/định dạng ngày
-const toISO = (d) => dayjs(d).format("YYYY-MM-DD");
+// const toISO = (d) => dayjs(d).format("YYYY-MM-DD"); // Đã có trong hàm parseDisplayToISO
 const fmtDisplay = (iso) => (iso ? dayjs(iso).format("DD/MM/YYYY") : "");
 const parseDisplayToISO = (str) => {
   // Cho phép nhập dd/mm/yyyy
@@ -57,22 +63,14 @@ export default function DailyJournal() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [selectedHour, setSelectedHour] = useState(null);
 
-  // ==== Hidden date input refs (top bar) ====
-  const topDateHiddenRef = useRef(null);
-  const onOpenTopDatePicker = () => {
-    const el = topDateHiddenRef.current;
-    if (!el) return;
-    if (el.showPicker) el.showPicker();
-    else el.click();
-  };
+  // ==== Logic cho Date input (top bar) ====
+  // XÓA BỎ: topDateHiddenRef, onOpenTopDatePicker, onTopDateDisplayChange
+  // GIỮ LẠI hàm xử lý state chính:
   const onTopDateHiddenChange = (e) => {
     const iso = e.target.value; // YYYY-MM-DD
     if (iso) setDate(iso);
   };
-  const onTopDateDisplayChange = (e) => {
-    const iso = parseDisplayToISO(e.target.value);
-    if (iso) setDate(iso);
-  };
+  // ========================================
 
   function calcWeek(dISO) {
     const base = dayjs(dISO);
@@ -198,31 +196,29 @@ export default function DailyJournal() {
   return (
     <div className="dj-wrap">
       <div className="dj-container">
-        {/* TOP BAR */}
         <div className="dj-bar">
           <div className="left">
-            <i className="fa-regular fa-calendar-days" />
-            {/* Input hiển thị DD/MM/YYYY */}
-            <input
-              type="text"
-              value={fmtDisplay(date)}
-              onChange={onTopDateDisplayChange}
-              onFocus={onOpenTopDatePicker}
-              onClick={onOpenTopDatePicker}
-              placeholder="DD/MM/YYYY"
-              style={{ width: 130 }}
-            />
-            {/* Input date ẩn để gọi native picker */}
-            <input
-              ref={topDateHiddenRef}
-              type="date"
-              value={date}
-              onChange={onTopDateHiddenChange}
-              style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
-              tabIndex={-1}
-            />
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                format="DD/MM/YYYY"
+                // Chuyển string YYYY-MM-DD (từ state 'date') sang object dayjs
+                value={date ? dayjs(date) : null}
+                onChange={(newValue) => {
+                  // Chuyển object dayjs (từ MUI) về string YYYY-MM-DD
+                  const newDateString = newValue ? newValue.format('YYYY-MM-DD') : '';
+                  // Tạo event giả để gọi hàm logic gốc của bạn
+                  onTopDateHiddenChange({ target: { value: newDateString } });
+                }}
+                slotProps={{
+                  textField: {
+                    placeholder: "DD/MM/YYYY",
+                    style: { width: 150 },
+                    size: "small" // Thêm size small cho gọn
+                  }
+                }}
+              />
+            </LocalizationProvider>
           </div>
-
           <div className="week">
             {weekDays.map((d, i) => (
               <button
@@ -429,13 +425,17 @@ export default function DailyJournal() {
                 </div>
 
                 <div className="wctl">
-                  <button type="button" onClick={() => waterDelta(-stepMl)}>–</button>
-                  <input
-                    type="number"
-                    min="50" max="10000" step="50"
-                    value={stepMl}
-                    onChange={(e) => setStepMl(Math.max(50, Math.min(10000, +e.target.value || 100)))}
-                  />
+                  <button type="button" onClick={() => waterDelta(-stepMl)}>–</button>                 
+                  <div className="input-unit-wrapper">
+                    <input
+                      type="number"
+                      min="50" max="10000" step="50"
+                      value={stepMl}
+                      onChange={(e) => setStepMl(Math.max(50, Math.min(10000, +e.target.value || 100)))}
+                      className="input-with-unit" 
+                    />
+                    <span className="input-unit">ml</span> 
+                  </div>
                   <button type="button" onClick={() => waterDelta(+stepMl)}>+</button>
                 </div>
               </div>
@@ -486,6 +486,7 @@ export default function DailyJournal() {
                 <i className="fa-regular fa-calendar" />
                 <div className="am-field">
                   <label>Ngày</label>
+                  {/* Dùng input text readOnly vì ngày này không cho đổi ở popup này */}
                   <input type="text" value={fmtDisplay(date)} readOnly />
                 </div>
               </div>
@@ -594,9 +595,7 @@ export default function DailyJournal() {
   );
 }
 
-// ####################################################################
-// #####          COMPONENT MODAL TÌM KIẾM & THÊM MÓN ĂN          #####
-// ####################################################################
+// #####     COMPONENT MODAL TÌM KIẾM & THÊM MÓN ĂN               #####
 
 const HOUR_OPTIONS_MODAL = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
 
@@ -617,22 +616,14 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
   const [dateISO, setDateISO] = useState(initialISO); // ISO
   const [hour, setHour] = useState(initialHour);
 
-  // Hidden date for modal Add
-  const addHiddenDateRef = useRef(null);
-  const openAddDatePicker = () => {
-    const el = addHiddenDateRef.current;
-    if (!el) return;
-    if (el.showPicker) el.showPicker();
-    else el.click();
-  };
+  // === Logic cho Date input (trong modal) ===
+  // XÓA BỎ: addHiddenDateRef, openAddDatePicker, onAddDisplayDateChange
+  // GIỮ LẠI hàm xử lý state chính:
   const onAddHiddenDateChange = (e) => {
     const iso = e.target.value;
     if (iso) setDateISO(iso);
   };
-  const onAddDisplayDateChange = (e) => {
-    const iso = parseDisplayToISO(e.target.value);
-    if (iso) setDateISO(iso);
-  };
+  // ========================================
 
   // --- Logic Tìm kiếm ---
   async function load(reset = false) {
@@ -729,7 +720,7 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
             <div className="modal-nm-list">
               {filteredItems.map((it) => (
                 <div key={it._id} className="modal-nm-item" onClick={() => openDetail(it)}>
-                <img src={toAbs(it.imageUrl) || PLACEHOLDER} alt={it.name} />
+                  <img src={toAbs(it.imageUrl) || PLACEHOLDER} alt={it.name} />
                   <div className="info">
                     <div className="title">{it.name}</div>
                     <div className="sub">
@@ -742,7 +733,9 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
                     </div>
                   </div>
                   <div className="act" onClick={(e) => e.stopPropagation()}>
-                    <button className="add" onClick={() => openAdd(it)}>Thêm</button>
+                    <button className="add add-round" title="Thêm vào nhật ký"  onClick={() => openAdd(it)}>
+                      <i className="fa-solid fa-plus"></i>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -759,52 +752,52 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
 
         {/* Modal Chi tiết món trong Tìm kiếm (class mới, tránh xung đột) */}
         {showDetail && detail && !showAdd && (
-        <div className="djd-detail-backdrop" onClick={closeDetail}>
-          <div className="djd-detail-card djd--small" onClick={(e) => e.stopPropagation()}>
-            <button className="djd-detail-close" onClick={closeDetail} aria-label="Đóng">×</button>
+          <div className="djd-detail-backdrop" onClick={closeDetail}>
+            <div className="djd-detail-card djd--small" onClick={(e) => e.stopPropagation()}>
+              <button className="djd-detail-close" onClick={closeDetail} aria-label="Đóng">×</button>
 
-            <div className="djd-detail-head">
-              <img
-                className="djd-detail-thumb"
-                src={toAbs(detail.imageUrl) || PLACEHOLDER}
-                alt={detail.name}
-              />
-              <div className="djd-detail-titlebox">
-                <h3 className="djd-detail-title">{detail.name}</h3>
-                <div className="djd-detail-sub">
-                  {(detail.portionName || "Khẩu phần tiêu chuẩn")} · {(detail.massG ?? "-")} {detail.unit || "g"} · {(detail.kcal ?? "-")} cal
+              <div className="djd-detail-head">
+                <img
+                  className="djd-detail-thumb"
+                  src={toAbs(detail.imageUrl) || PLACEHOLDER}
+                  alt={detail.name}
+                />
+                <div className="djd-detail-titlebox">
+                  <h3 className="djd-detail-title">{detail.name}</h3>
+                  <div className="djd-detail-sub">
+                    {(detail.portionName || "Khẩu phần tiêu chuẩn")} · {(detail.massG ?? "-")} {detail.unit || "g"} · {(detail.kcal ?? "-")} cal
+                  </div>
+                  <div className="djd-detail-chips">
+                    <span className="djd-chip red"><i className="fa-solid fa-drumstick-bite"></i> Đạm {(detail.proteinG ?? "-")}g</span>
+                    <span className="djd-chip purple"><i className="fa-solid fa-bread-slice"></i> Carb {(detail.carbG ?? "-")}g</span>
+                    <span className="djd-chip green"><i className="fa-solid fa-bacon"></i> Béo {(detail.fatG ?? "-")}g</span>
+                  </div>
                 </div>
-                <div className="djd-detail-chips">
-                  <span className="djd-chip red"><i className="fa-solid fa-drumstick-bite"></i> Đạm {(detail.proteinG ?? "-")}g</span>
-                  <span className="djd-chip purple"><i className="fa-solid fa-bread-slice"></i> Carb {(detail.carbG ?? "-")}g</span>
-                  <span className="djd-chip green"><i className="fa-solid fa-bacon"></i> Béo {(detail.fatG ?? "-")}g</span>
+              </div>
+
+              <div className="djd-detail-grid">
+                <div className="djd-detail-kv">
+                  <div><span>Khối lượng</span><b>{detail.massG ?? "-"} {detail.unit || "g"}</b></div>
+                  <div><span>Calo</span><b>{detail.kcal ?? "-"} cal</b></div>
+                  <div><span>Đạm</span><b>{detail.proteinG ?? "-"} g</b></div>
+                  <div><span>Đường bột</span><b>{detail.carbG ?? "-"} g</b></div>
+                </div>
+                <div className="djd-detail-kv">
+                  <div><span>Chất béo</span><b>{detail.fatG ?? "-"} g</b></div>
+                  <div><span>Muối (NaCl)</span><b>{detail.saltG ?? "-"} g</b></div>
+                  <div><span>Đường</span><b>{detail.sugarG ?? "-"} g</b></div>
+                  <div><span>Chất xơ</span><b>{detail.fiberG ?? "-"} g</b></div>
                 </div>
               </div>
-            </div>
 
-            <div className="djd-detail-grid">
-              <div className="djd-detail-kv">
-                <div><span>Khối lượng</span><b>{detail.massG ?? "-"} {detail.unit || "g"}</b></div>
-                <div><span>Calo</span><b>{detail.kcal ?? "-"} cal</b></div>
-                <div><span>Đạm</span><b>{detail.proteinG ?? "-"} g</b></div>
-                <div><span>Đường bột</span><b>{detail.carbG ?? "-"} g</b></div>
-              </div>
-              <div className="djd-detail-kv">
-                <div><span>Chất béo</span><b>{detail.fatG ?? "-"} g</b></div>
-                <div><span>Muối (NaCl)</span><b>{detail.saltG ?? "-"} g</b></div>
-                <div><span>Đường</span><b>{detail.sugarG ?? "-"} g</b></div>
-                <div><span>Chất xơ</span><b>{detail.fiberG ?? "-"} g</b></div>
-              </div>
+              {detail.sourceType && (
+                <div className="djd-detail-note">
+                  <span className="badge">{detail.sourceType}</span>
+                </div>
+              )}
             </div>
-
-            {detail.sourceType && (
-              <div className="djd-detail-note">
-                <span className="badge">{detail.sourceType}</span>
-              </div>
-            )}
           </div>
-        </div>
-      )}
+        )}
 
         {/* Bước 2: Xác nhận thêm */}
         {showAdd && addFood && (
@@ -825,24 +818,27 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
             <div className="am-when">
               <div className="am-when-item">
                 <i className="fa-regular fa-calendar" />
+                
+                {/* === THAY THẾ: Sử dụng MUI DatePicker cho Modal Add === */}
                 <div className="am-field">
                   <label>Ngày</label>
-                  <input
-                    type="text"
-                    value={fmtDisplay(dateISO)}
-                    onChange={onAddDisplayDateChange}
-                    onFocus={openAddDatePicker}
-                    onClick={openAddDatePicker}
-                    placeholder="DD/MM/YYYY"
-                  />
-                  <input
-                    ref={addHiddenDateRef}
-                    type="date"
-                    value={dateISO}
-                    onChange={onAddHiddenDateChange}
-                    style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
-                    tabIndex={-1}
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      format="DD/MM/YYYY"
+                      value={dateISO ? dayjs(dateISO) : null}
+                      onChange={(newValue) => {
+                        const newDateString = newValue ? newValue.format('YYYY-MM-DD') : '';
+                        onAddHiddenDateChange({ target: { value: newDateString } });
+                      }}
+                      slotProps={{
+                        textField: {
+                          placeholder: "DD/MM/YYYY",
+                          style: { width: 170 },
+                          size: "small" // Đồng bộ style
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
               </div>
               <div className="am-when-item">

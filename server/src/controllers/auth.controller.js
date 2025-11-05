@@ -7,6 +7,11 @@ import { User } from "../models/User.js";
 import PasswordReset from "../models/PasswordReset.js";
 import { sendOtpEmail } from "../utils/mailer.js";
 
+/* --------------------------- Config (có thể chỉnh qua ENV) --------------------------- */
+const OTP_TTL_MINUTES = Number(process.env.OTP_TTL_MINUTES || 2); // TTL OTP (phút) – mặc định 2 để đồng bộ UI
+const RESEND_COOLDOWN_SEC = Number(process.env.OTP_RESEND_COOLDOWN_SEC || 60); // cooldown gửi lại (giây)
+const MAX_OTP_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5); // số lần nhập sai tối đa
+
 /* --------------------------- Helpers --------------------------- */
 const norm = (v) => (typeof v === "string" ? v.trim() : "");
 const normLower = (v) => (typeof v === "string" ? v.trim().toLowerCase() : "");
@@ -18,9 +23,6 @@ const signToken = (user) =>
   });
 
 /* =========================== AUTH CORE =========================== */
-/**
- * [POST] /api/auth/register
- */
 export const register = async (req, res) => {
   try {
     const username = norm(req.body.username);
@@ -35,17 +37,15 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Mật khẩu xác nhận không khớp." });
     }
 
-    // Kiểm tra trùng username hoặc email
     const exists = await User.findOne({ $or: [{ username }, { email }] }).lean();
     if (exists) {
       return res.status(400).json({ message: "Tên tài khoản hoặc email đã tồn tại." });
     }
 
-    // ❗ Không hash tay; để pre('save') của User.js tự hash và lưu vào field `password`
     const newUser = await User.create({
       username,
       email,
-      password, // plain → model hook sẽ hash trước khi ghi DB
+      password,
     });
 
     const token = signToken(newUser);
@@ -63,7 +63,6 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
-    // Bắt lỗi trùng key đẹp hơn
     if (error?.code === 11000) {
       const field = Object.keys(error.keyPattern || {})[0] || "Trường";
       return res.status(400).json({ message: `${field} đã tồn tại.` });
@@ -73,10 +72,6 @@ export const register = async (req, res) => {
   }
 };
 
-/**
- * [POST] /api/auth/login
- * Body có thể là: { identifier, password } hoặc { email, password } hoặc { username, password }
- */
 export const login = async (req, res) => {
   try {
     const identifier = norm(req.body.identifier);
@@ -91,7 +86,6 @@ export const login = async (req, res) => {
         .json({ message: "Thiếu thông tin đăng nhập (identifier & password)." });
     }
 
-    // Nếu có '@' → coi là email (lowercase), ngược lại → username
     const isEmail = idField.includes("@");
     const query = isEmail ? { email: normLower(idField) } : { username: norm(idField) };
 
@@ -129,19 +123,12 @@ export const login = async (req, res) => {
 };
 
 /* ===================== FORGOT PASSWORD (OTP) ===================== */
-/**
- * [POST] /api/auth/password/forgot
- * Body: { email }
- * Luồng: tạo OTP -> băm -> lưu PasswordReset (TTL 15') -> gửi email
- * Luôn trả thông báo chung để không lộ danh tính email.
- */
 export const passwordForgot = async (req, res) => {
   try {
     const email = normLower(req.body.email);
     if (!email) return res.status(400).json({ message: "Email là bắt buộc." });
 
     const user = await User.findOne({ email }).select("_id");
-    // Xóa yêu cầu cũ để tránh spam (tùy chọn)
     await PasswordReset.deleteMany({ email, used: false });
 
     if (!user) {
@@ -156,7 +143,7 @@ export const passwordForgot = async (req, res) => {
       otpHash,
       attempts: 0,
       used: false,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 phút
+      expiresAt: new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000),
     });
 
     await sendOtpEmail({ to: email, otp });
@@ -168,11 +155,6 @@ export const passwordForgot = async (req, res) => {
   }
 };
 
-/**
- * [POST] /api/auth/password/verify
- * Body: { email, otp }
- * → Trả resetToken (hạn 15') để dùng ở bước reset password
- */
 export const passwordVerify = async (req, res) => {
   try {
     const email = normLower(req.body.email);
@@ -181,7 +163,12 @@ export const passwordVerify = async (req, res) => {
     const pr = await PasswordReset.findOne({ email, used: false }).sort({ createdAt: -1 });
     if (!pr) return res.status(400).json({ message: "OTP không hợp lệ hoặc đã hết hạn." });
 
-    if (pr.attempts >= 5) {
+    // CHẶN HẾT HẠN (bổ sung)
+    if (pr.expiresAt && new Date() > new Date(pr.expiresAt)) {
+      return res.status(400).json({ message: "OTP đã hết hạn." });
+    }
+
+    if (pr.attempts >= MAX_OTP_ATTEMPTS) {
       return res.status(429).json({ message: "Bạn đã nhập sai quá số lần cho phép." });
     }
 
@@ -194,7 +181,7 @@ export const passwordVerify = async (req, res) => {
 
     const resetToken = crypto.randomBytes(32).toString("hex");
     pr.resetToken = resetToken;
-    pr.resetTokenExp = new Date(Date.now() + 15 * 60 * 1000); // 15 phút
+    pr.resetTokenExp = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
     await pr.save();
 
     return res.json({ success: true, resetToken, message: "Xác minh OTP thành công." });
@@ -204,11 +191,6 @@ export const passwordVerify = async (req, res) => {
   }
 };
 
-/**
- * [POST] /api/auth/password/reset
- * Body: { email, resetToken, newPassword }
- * → Ghi đè password mới (pre('save') sẽ hash); đánh dấu used.
- */
 export const passwordReset = async (req, res) => {
   try {
     const email = normLower(req.body.email);
@@ -230,10 +212,9 @@ export const passwordReset = async (req, res) => {
     const user = await User.findOne({ email }).select("+password");
     if (!user) return res.status(404).json({ message: "Không tìm thấy user." });
 
-    // ❗ Ghi đè password cũ bằng mật khẩu mới (plain) → model sẽ hash khi save
     user.password = newPassword;
     user.markModified("password");
-    await user.save(); // -> lưu thẳng vào collection 'users', field 'password'
+    await user.save();
 
     pr.used = true;
     await pr.save();
@@ -245,18 +226,14 @@ export const passwordReset = async (req, res) => {
   }
 };
 
-/**
- * (Tuỳ chọn) [POST] /api/auth/password/resend
- * Body: { email } – tạo OTP mới (có cooldown 60s)
- */
 export const passwordResend = async (req, res) => {
   try {
     const email = normLower(req.body.email);
     if (!email) return res.status(400).json({ message: "Email là bắt buộc." });
 
     const latest = await PasswordReset.findOne({ email, used: false }).sort({ createdAt: -1 });
-    if (latest && Date.now() - latest.createdAt.getTime() < 60 * 1000) {
-      return res.status(429).json({ message: "Vui lòng đợi 60 giây trước khi gửi lại OTP." });
+    if (latest && Date.now() - latest.createdAt.getTime() < RESEND_COOLDOWN_SEC * 1000) {
+      return res.status(429).json({ message: `Vui lòng đợi ${RESEND_COOLDOWN_SEC} giây trước khi gửi lại OTP.` });
     }
 
     await PasswordReset.deleteMany({ email, used: false });
@@ -274,7 +251,7 @@ export const passwordResend = async (req, res) => {
       otpHash,
       attempts: 0,
       used: false,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      expiresAt: new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000),
     });
 
     await sendOtpEmail({ to: email, otp });

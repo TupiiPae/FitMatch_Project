@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
-import api from "../../../lib/api"; // đảm bảo đúng path
+import api from "../../../lib/api";
 import "./ChangePassword.css";
+
+const OTP_TTL_SEC = Number(import.meta.env.VITE_OTP_TTL_SEC || 120);
+
+function fmtMMSS(s) {
+  const mm = Math.floor(Math.max(0, s) / 60);
+  const ss = Math.max(0, s) % 60;
+  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+}
 
 export default function ChangePassword() {
   const [step, setStep] = useState("email"); // email | otp | reset | done
@@ -15,6 +23,7 @@ export default function ChangePassword() {
   // ui states
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ type: "", text: "" });
+  const clearMsg = () => setMsg({ type: "", text: "" });
 
   // resend cooldown
   const [cooldown, setCooldown] = useState(0);
@@ -24,7 +33,13 @@ export default function ChangePassword() {
     return () => clearInterval(t);
   }, [cooldown]);
 
-  const clearMsg = () => setMsg({ type: "", text: "" });
+  // otp time left (đồng hồ hiệu lực OTP)
+  const [otpLeft, setOtpLeft] = useState(0);
+  useEffect(() => {
+    if (otpLeft <= 0) return;
+    const t = setInterval(() => setOtpLeft((s) => s - 1), 1000);
+    return () => clearInterval(t);
+  }, [otpLeft]);
 
   const Alert = ({ type, children }) =>
     children ? (
@@ -38,10 +53,8 @@ export default function ChangePassword() {
     e.preventDefault();
     clearMsg();
     const v = email.trim().toLowerCase();
-    if (!v) {
-      setMsg({ type: "error", text: "Vui lòng nhập email." });
-      return;
-    }
+    if (!v) return setMsg({ type: "error", text: "Vui lòng nhập email." });
+
     try {
       setLoading(true);
       const res = await api.post("/auth/password/forgot", { email: v });
@@ -50,6 +63,7 @@ export default function ChangePassword() {
         text: res?.data?.message || "Nếu email hợp lệ, OTP đã được gửi.",
       });
       setCooldown(60);
+      setOtpLeft(OTP_TTL_SEC);
       setStep("otp");
     } catch (err) {
       const m =
@@ -65,11 +79,9 @@ export default function ChangePassword() {
   const handleResendOtp = async () => {
     clearMsg();
     const v = email.trim().toLowerCase();
-    if (!v) {
-      setMsg({ type: "error", text: "Vui lòng nhập email trước khi gửi lại OTP." });
-      return;
-    }
+    if (!v) return setMsg({ type: "error", text: "Vui lòng nhập email trước khi gửi lại OTP." });
     if (cooldown > 0) return;
+
     try {
       setLoading(true);
       const res = await api.post("/auth/password/resend", { email: v });
@@ -78,6 +90,7 @@ export default function ChangePassword() {
         text: res?.data?.message || "OTP đã được gửi (nếu email hợp lệ).",
       });
       setCooldown(60);
+      setOtpLeft(OTP_TTL_SEC); // reset đồng hồ hiệu lực
     } catch (err) {
       const m =
         err?.response?.data?.message ||
@@ -92,18 +105,22 @@ export default function ChangePassword() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     clearMsg();
+
+    // Chặn xác minh khi OTP đã hết hạn (UI)
+    if (otpLeft <= 0) {
+      return setMsg({
+        type: "error",
+        text: "OTP đã hết hạn. Vui lòng bấm 'Gửi lại OTP'.",
+      });
+    }
+
     const vEmail = email.trim().toLowerCase();
     const vOtp = otp.trim();
-    if (!vOtp) {
-      setMsg({ type: "error", text: "Vui lòng nhập mã OTP." });
-      return;
-    }
+    if (!vOtp) return setMsg({ type: "error", text: "Vui lòng nhập mã OTP." });
+
     try {
       setLoading(true);
-      const res = await api.post("/auth/password/verify", {
-        email: vEmail,
-        otp: vOtp,
-      });
+      const res = await api.post("/auth/password/verify", { email: vEmail, otp: vOtp });
       const token = res?.data?.resetToken;
       if (!token) throw new Error("Không nhận được resetToken.");
       setResetToken(token);
@@ -124,17 +141,15 @@ export default function ChangePassword() {
     e.preventDefault();
     clearMsg();
     if (!newPassword || !confirmPassword) {
-      setMsg({ type: "error", text: "Vui lòng nhập đủ mật khẩu mới và xác nhận." });
-      return;
+      return setMsg({ type: "error", text: "Vui lòng nhập đủ mật khẩu mới và xác nhận." });
     }
     if (newPassword.length < 6) {
-      setMsg({ type: "error", text: "Mật khẩu mới phải từ 6 ký tự." });
-      return;
+      return setMsg({ type: "error", text: "Mật khẩu mới phải từ 6 ký tự." });
     }
     if (newPassword !== confirmPassword) {
-      setMsg({ type: "error", text: "Xác nhận mật khẩu mới không khớp." });
-      return;
+      return setMsg({ type: "error", text: "Xác nhận mật khẩu mới không khớp." });
     }
+
     try {
       setLoading(true);
       const res = await api.post("/auth/password/reset", {
@@ -142,10 +157,7 @@ export default function ChangePassword() {
         resetToken,
         newPassword,
       });
-      setMsg({
-        type: "success",
-        text: res?.data?.message || "Đặt lại mật khẩu thành công.",
-      });
+      setMsg({ type: "success", text: res?.data?.message || "Đặt lại mật khẩu thành công." });
       setOtp("");
       setNewPassword("");
       setConfirmPassword("");
@@ -162,7 +174,6 @@ export default function ChangePassword() {
   };
 
   return (
-    // Không bọc .acc-page ở đây; scope đã ở layout (.pf-content.acc-page)
     <div className="acc-card card">
       <h2 className="pf-title">Thay đổi mật khẩu</h2>
 
@@ -208,20 +219,29 @@ export default function ChangePassword() {
                   onFocus={clearMsg}
                   required
                 />
-                <button className="btn-success cp-send" type="submit" disabled={loading}>
-                  {loading ? "Đang xác minh..." : "Xác minh OTP"}
+                <button className="btn-success cp-send" type="submit" disabled={loading || otpLeft <= 0}>
+                  {loading ? "Đang xác minh..." : otpLeft > 0 ? "Xác minh OTP" : "OTP đã hết hạn"}
                 </button>
               </form>
 
-              <div className="cp-resend-row">
+              {/* Hàng meta: trái = đếm ngược, phải = gửi lại OTP */}
+              <div className="cp-meta-row">
+                <div className={`cp-timer ${otpLeft <= 0 ? "expired" : ""}`}>
+                  {otpLeft > 0 ? `Mã hết hạn sau: ${fmtMMSS(otpLeft)}` : "OTP đã hết hạn"}
+                </div>
                 <button
-                  className="btn-ghost"
+                  className="btn-ghost cp-resend"
                   type="button"
                   onClick={handleResendOtp}
                   disabled={loading || cooldown > 0}
+                  title="Gửi lại OTP"
                 >
                   {cooldown > 0 ? `Gửi lại OTP (${cooldown}s)` : "Gửi lại OTP"}
                 </button>
+              </div>
+
+              {/* Link đổi email */}
+              <div className="cp-resend-row">
                 <button
                   className="btn-ghost"
                   type="button"
@@ -230,7 +250,7 @@ export default function ChangePassword() {
                     setStep("email");
                   }}
                 >
-                   Đổi email
+                  Đổi email
                 </button>
               </div>
             </>
@@ -258,7 +278,7 @@ export default function ChangePassword() {
                 required
               />
               <button className="btn-success cp-send" type="submit" disabled={loading}>
-                {loading ? "Đang đặt lại..." : "Đặt mật khẩu mới"}
+                {loading ? "Đang đặt lại..." : "Đặt mật khẩu"}
               </button>
 
               <div className="cp-resend-row">
@@ -281,15 +301,13 @@ export default function ChangePassword() {
             <div className="cp-done">
               <div className="cp-subtitle">Hoàn tất</div>
               <p className="cp-desc">
-                Bạn đã đặt lại mật khẩu thành công. Vui lòng dùng mật khẩu mới cho lần đăng
-                nhập tiếp theo.
+                Bạn đã đặt lại mật khẩu thành công. Vui lòng dùng mật khẩu mới cho lần đăng nhập tiếp theo.
               </p>
               <div className="cp-resend-row">
                 <button
                   className="btn-success"
                   type="button"
                   onClick={() => {
-                    // reset form nếu muốn bắt đầu lại
                     setEmail("");
                     setOtp("");
                     setResetToken("");

@@ -11,6 +11,25 @@ import countries from "../../../data/locations/countries.json";
 import regionsVN from "../../../data/locations/vn/regions.json";
 import regionCenters from "../../../data/locations/vn/region-centers.json";
 
+import {
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
+
+// >>>>> THÊM: import validators
+import {
+  validateNickname,
+  validateEmailGmail,
+  validatePhone,
+} from "../../../lib/validators";
+
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
 const formatDobDMY = (dob, fallback = "") => { if (typeof dob !== "string") return fallback; if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) return fallback; const [y, mo, d] = dob.split("-"); return `${d}/${mo}/${y}`; };
@@ -25,6 +44,9 @@ export default function AccountInfo() {
   const [savingAddr, setSavingAddr] = useState(false);
 
   const [form, setForm] = useState({ nickname: "", dob: "", sex: "male", email: "", phone: "" });
+
+  // >>>>> THÊM: state lỗi theo field
+  const [errs, setErrs] = useState({ nickname: "", email: "", phone: "" });
 
   // Address + code
   const [addr, setAddr] = useState({
@@ -67,14 +89,28 @@ export default function AccountInfo() {
       ward: a.ward || "", wardCode: a.wardCode || ""
     });
     setAvatarPreview(p.avatarUrl ? toAbs(p.avatarUrl) : "/images/avatar.png");
-    // preset geo theo city
     setGeo(a.regionCode && regionCenters[a.regionCode] ? regionCenters[a.regionCode] : null);
     setEditInfo(false); setEditAddr(false);
+
+    // >>>>> THÊM: reset lỗi khi load user
+    setErrs({ nickname: "", email: "", phone: "" });
   }, [user]);
 
-  const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  // >>>>> THÊM: validate theo từng field khi change
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
 
-  // Avatar handlers
+    setErrs((prev) => {
+      const next = { ...prev };
+      if (name === "nickname") next.nickname = validateNickname(value, { required: true });
+      if (name === "email") next.email = validateEmailGmail(value);
+      if (name === "phone") next.phone = validatePhone(value);
+      return next;
+    });
+  };
+
+  // Avatar handlers (giữ nguyên)
   const pickAvatar = () => fileRef.current?.click();
   const onFile = (e) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -98,7 +134,7 @@ export default function AccountInfo() {
 
   // Khi đổi City → nạp Districts + reset Ward + set geo center
   useEffect(() => {
-    setAddr((a) => ({ ...a, district:"", districtCode:"", ward:"", wardCode:"" }));
+    setAddr((a) => ({ ...a, district: "", districtCode: "", ward: "", wardCode: "" }));
     setWards([]);
     if (addr.regionCode === "HN") {
       import("../../../data/locations/vn/districts-HN.json").then((m) => setDistricts(m.default || []));
@@ -111,26 +147,43 @@ export default function AccountInfo() {
 
   // Khi đổi District → nạp Wards tương ứng
   useEffect(() => {
-    setAddr((a) => ({ ...a, ward:"", wardCode:"" }));
+    setAddr((a) => ({ ...a, ward: "", wardCode: "" }));
     setWards([]);
     if (!addr.regionCode || !addr.districtCode) return;
     if (addr.regionCode === "HN") {
       import("../../../data/locations/vn/wards-HN.json").then((m) => {
         const map = m.default || {};
         const list = Array.isArray(map[addr.districtCode]) ? map[addr.districtCode] : [];
-        setWards(list.map((name, i) => ({ code: String(i+1).padStart(2,"0"), name })));
+        setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
       });
     } else if (addr.regionCode === "HCM") {
       import("../../../data/locations/vn/wards-HCM.json").then((m) => {
         const map = m.default || {};
         const list = Array.isArray(map[addr.districtCode]) ? map[addr.districtCode] : [];
-        setWards(list.map((name, i) => ({ code: String(i+1).padStart(2,"0"), name })));
+        setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
       });
     }
   }, [addr.regionCode, addr.districtCode]);
 
+  // >>>>> THÊM: hàm validate tổng trước khi lưu Box 2
+  const validateInfoAll = () => {
+    const eNick = validateNickname(form.nickname, { required: true });
+    const eEmail = validateEmailGmail(form.email);
+    const ePhone = validatePhone(form.phone);
+    const next = { nickname: eNick, email: eEmail, phone: ePhone };
+    setErrs(next);
+    const hasErr = Object.values(next).some((x) => x);
+    return !hasErr;
+  };
+
   // Save Box 2
   const saveInfo = async () => {
+    // >>>>> THÊM: chặn lưu nếu còn lỗi
+    if (!validateInfoAll()) {
+      toast.error("Thông tin chưa hợp lệ. Vui lòng chỉnh sửa.");
+      return;
+    }
+
     setSavingInfo(true);
     try {
       const payload = {
@@ -144,7 +197,7 @@ export default function AccountInfo() {
     finally { setSavingInfo(false); }
   };
 
-  // Save Box 3
+  // Save Box 3 (địa chỉ) — giữ nguyên
   const saveAddr = async () => {
     setSavingAddr(true);
     try {
@@ -200,8 +253,13 @@ export default function AccountInfo() {
               <button className="acc-edit" onClick={() => setEditInfo(true)}><FontAwesomeIcon icon={faPen} /></button>
             ) : (
               <div className="acc-edit-actions">
-                <button className="btn-tertiary" onClick={() => { setEditInfo(false); const p=user.profile||{}; setForm({ nickname:p.nickname||"", dob:p.dob||"", sex:p.sex||"male", email:user.email||"", phone:user.phone||"" }); }}>
-                  <FontAwesomeIcon icon={faXmark} /> Hủy
+                <button className="btn-tertiary" onClick={() => { 
+                  setEditInfo(false); 
+                  const p = user.profile || {}; 
+                  setForm({ nickname: p.nickname || "", dob: p.dob || "", sex: p.sex || "male", email: user.email || "", phone: user.phone || "" });
+                  setErrs({ nickname: "", email: "", phone: "" });
+                }}>
+                 Hủy
                 </button>
                 <button className="btn-success" onClick={saveInfo} disabled={savingInfo}>{savingInfo ? "Đang lưu..." : "Lưu"}</button>
               </div>
@@ -220,21 +278,96 @@ export default function AccountInfo() {
 
           {editInfo && (
             <div className="acc-form">
-              <div className="acc-two">
-                <div className="acc-form-col"><label>Nickname</label><input name="nickname" value={form.nickname} onChange={onChange} /></div>
-                <div className="acc-form-col"><label>Ngày sinh</label><input type="date" name="dob" value={form.dob || ""} onChange={onChange} /></div>
+              {/* Hàng 1: Nickname (MUI) */}
+              <div className="acc-one">
+                <div className="acc-form-col">
+                  <TextField
+                    label="Nickname"
+                    name="nickname"
+                    value={form.nickname}
+                    onChange={onChange}
+                    onBlur={(e)=> setErrs((p)=>({ ...p, nickname: validateNickname(e.target.value, { required: true }) }))}
+                    error={Boolean(errs.nickname)}
+                    helperText={errs.nickname || ""}
+                    fullWidth
+                    size="small"
+                  />
+                </div>
               </div>
+
               <div className="acc-two">
                 <div className="acc-form-col">
-                  <label>Giới tính</label>
-                  <div className="seg-group">
-                    <label className="seg-option"><input type="radio" name="sex" value="male" checked={form.sex === "male"} onChange={onChange} /><span className="seg-btn">Nam</span></label>
-                    <label className="seg-option"><input type="radio" name="sex" value="female" checked={form.sex === "female"} onChange={onChange} /><span className="seg-btn">Nữ</span></label>
-                  </div>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="gender-select-label">Giới tính</InputLabel>
+                    <Select
+                      labelId="gender-select-label"
+                      label="Giới tính"
+                      name="sex"
+                      value={form.sex}
+                      onChange={onChange}
+                      MenuProps={{ disableScrollLock: true }}
+                    >
+                      <MenuItem value="male">Nam</MenuItem>
+                      <MenuItem value="female">Nữ</MenuItem>
+                    </Select>
+                  </FormControl>
                 </div>
-                <div className="acc-form-col"><label>Email</label><input type="email" name="email" value={form.email} onChange={onChange} /></div>
+                
+                <div className="acc-form-col">
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      label="Ngày sinh"
+                      format="DD/MM/YYYY"
+                      value={form.dob ? dayjs(form.dob) : null}
+                      onChange={(newValue) => {
+                        onChange({
+                          target: {
+                            name: 'dob',
+                            value: newValue ? newValue.format('YYYY-MM-DD') : ''
+                          }
+                        });
+                      }}
+                      slotProps={{
+                        textField: {
+                          size: 'small',
+                          fullWidth: true
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
+                </div>
               </div>
-              <div className="acc-one"><label>Số điện thoại</label><input name="phone" value={form.phone} onChange={onChange} /></div>
+
+              {/* Hàng 3: Email (MUI) + SĐT (MUI) */}
+              <div className="acc-two">
+                <div className="acc-form-col">
+                  <TextField
+                    label="Email"
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={onChange}
+                    onBlur={(e)=> setErrs((p)=>({ ...p, email: validateEmailGmail(e.target.value) }))}
+                    error={Boolean(errs.email)}
+                    helperText={errs.email || ""}
+                    fullWidth
+                    size="small"
+                  />
+                </div>
+                <div className="acc-form-col">
+                  <TextField
+                    label="Số điện thoại"
+                    name="phone"
+                    value={form.phone}
+                    onChange={onChange}
+                    onBlur={(e)=> setErrs((p)=>({ ...p, phone: validatePhone(e.target.value) }))}
+                    error={Boolean(errs.phone)}
+                    helperText={errs.phone || ""}
+                    fullWidth
+                    size="small"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </section>
@@ -251,15 +384,15 @@ export default function AccountInfo() {
                   setEditAddr(false);
                   const a = user.profile?.address || {};
                   setAddr({
-                    country:a.country||"", countryCode:a.countryCode||"",
-                    city:a.city||"", regionCode:a.regionCode||"",
-                    district:a.district||"", districtCode:a.districtCode||"",
-                    ward:a.ward||"", wardCode:a.wardCode||""
+                    country: a.country || "", countryCode: a.countryCode || "",
+                    city: a.city || "", regionCode: a.regionCode || "",
+                    district: a.district || "", districtCode: a.districtCode || "",
+                    ward: a.ward || "", wardCode: a.wardCode || ""
                   });
                   setGeo(a.regionCode && regionCenters[a.regionCode] ? regionCenters[a.regionCode] : null);
                   setDistricts([]); setWards([]);
                 }}>
-                  <FontAwesomeIcon icon={faXmark} /> Hủy
+                 Hủy
                 </button>
                 <button className="btn-success" onClick={saveAddr} disabled={savingAddr}>{savingAddr ? "Đang lưu..." : "Lưu"}</button>
               </div>
@@ -279,104 +412,124 @@ export default function AccountInfo() {
             <div className="acc-form">
               {/* Country */}
               <div className="acc-one">
-                <label>Quốc Gia</label>
-                <select
-                  value={addr.countryCode || ""}
-                  onChange={(e) => {
-                    const code = e.target.value;
-                    const item = countries.find((x) => x.code === code) || null;
-                    setAddr((a) => ({
-                      ...a,
-                      countryCode: item?.code || "", country: item?.name || "",
-                      regionCode:"", city:"", districtCode:"", district:"", wardCode:"", ward:""
-                    }));
-                    setGeo(null); setDistricts([]); setWards([]);
-                  }}
-                >
-                  <option value="">-- Chọn Quốc Gia --</option>
-                  {countries.map((c) => (<option key={c.code} value={c.code}>{c.name}</option>))}
-                </select>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="country-select-label">Quốc Gia</InputLabel>
+                  <Select
+                    labelId="country-select-label"
+                    label="Quốc Gia"
+                    value={addr.countryCode || ""}
+                    MenuProps={{ disableScrollLock: true }}
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      const item = countries.find((x) => x.code === code) || null;
+                      setAddr((a) => ({
+                        ...a,
+                        countryCode: item?.code || "", country: item?.name || "",
+                        regionCode: "", city: "", districtCode: "", district: "", wardCode: "", ward: ""
+                      }));
+                      setGeo(null); setDistricts([]); setWards([]);
+                    }}
+                  >
+                    <MenuItem value="">-- Chọn Quốc Gia --</MenuItem>
+                    {countries.map((c) => (<MenuItem key={c.code} value={c.code}>{c.name}</MenuItem>))}
+                  </Select>
+                </FormControl>
               </div>
 
               {/* City / Region */}
               <div className="acc-one">
-                <label>Thành Phố</label>
-                <select
-                  disabled={addr.countryCode !== "VN"}
-                  value={addr.regionCode || ""}
-                  onChange={(e) => {
-                    const code = e.target.value;
-                    const item = regionsVN.find((x) => x.code === code) || null;
-                    const center = regionCenters[code];
-                    setAddr((a) => ({
-                      ...a,
-                      regionCode: item?.code || "", city: item?.name || "",
-                      districtCode:"", district:"", wardCode:"", ward:""
-                    }));
-                    setGeo(Array.isArray(center) ? center : null);
-                  }}
-                >
-                  <option value="">-- Chọn Thành Phố --</option>
-                  {regionsVN.map((r) => (<option key={r.code} value={r.code}>{r.name}</option>))}
-                </select>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="city-select-label">Thành Phố</InputLabel>
+                  <Select
+                    labelId="city-select-label"
+                    label="Thành Phố"
+                    disabled={addr.countryCode !== "VN"}
+                    value={addr.regionCode || ""}
+                    MenuProps={{ disableScrollLock: true }}
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      const item = regionsVN.find((x) => x.code === code) || null;
+                      const center = regionCenters[code];
+                      setAddr((a) => ({
+                        ...a,
+                        regionCode: item?.code || "", city: item?.name || "",
+                        districtCode: "", district: "", wardCode: "", ward: ""
+                      }));
+                      setGeo(Array.isArray(center) ? center : null);
+                    }}
+                  >
+                    <MenuItem value="">-- Chọn Thành Phố --</MenuItem>
+                    {regionsVN.map((r) => (<MenuItem key={r.code} value={r.code}>{r.name}</MenuItem>))}
+                  </Select>
+                </FormControl>
               </div>
 
               {/* District */}
               <div className="acc-one">
-                <label>Quận</label>
-                <select
-                  disabled={!addr.regionCode}
-                  value={addr.districtCode || ""}
-                  onChange={(e) => {
-                    const code = e.target.value;
-                    let display = "", list = [];
-                    if (addr.regionCode === "HN") {
-                      import("../../../data/locations/vn/districts-HN.json").then((m) => {
-                        const arr = m.default || [];
-                        const item = arr.find((x) => x.code === code) || null;
-                        display = item?.name || "";
-                        setAddr((a) => ({ ...a, districtCode: code, district: display, wardCode:"", ward:"" }));
-                      });
-                      import("../../../data/locations/vn/wards-HN.json").then((m) => {
-                        const map = m.default || {};
-                        list = Array.isArray(map[code]) ? map[code] : [];
-                        setWards(list.map((name, i) => ({ code: String(i+1).padStart(2,"0"), name })));
-                      });
-                    } else if (addr.regionCode === "HCM") {
-                      import("../../../data/locations/vn/districts-HCM.json").then((m) => {
-                        const arr = m.default || [];
-                        const item = arr.find((x) => x.code === code) || null;
-                        display = item?.name || "";
-                        setAddr((a) => ({ ...a, districtCode: code, district: display, wardCode:"", ward:"" }));
-                      });
-                      import("../../../data/locations/vn/wards-HCM.json").then((m) => {
-                        const map = m.default || {};
-                        list = Array.isArray(map[code]) ? map[code] : [];
-                        setWards(list.map((name, i) => ({ code: String(i+1).padStart(2,"0"), name })));
-                      });
-                    }
-                  }}
-                >
-                  <option value="">-- Chọn Quận --</option>
-                  {districts.map((d) => (<option key={d.code} value={d.code}>{d.name}</option>))}
-                </select>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="district-select-label">Quận</InputLabel>
+                  <Select
+                    labelId="district-select-label"
+                    label="Quận"
+                    disabled={!addr.regionCode}
+                    value={addr.districtCode || ""}
+                    MenuProps={{ disableScrollLock: true }}
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      let display = "", list = [];
+                      if (addr.regionCode === "HN") {
+                        import("../../../data/locations/vn/districts-HN.json").then((m) => {
+                          const arr = m.default || [];
+                          const item = arr.find((x) => x.code === code) || null;
+                          display = item?.name || "";
+                          setAddr((a) => ({ ...a, districtCode: code, district: display, wardCode: "", ward: "" }));
+                        });
+                        import("../../../data/locations/vn/wards-HN.json").then((m) => {
+                          const map = m.default || {};
+                          list = Array.isArray(map[code]) ? map[code] : [];
+                          setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
+                        });
+                      } else if (addr.regionCode === "HCM") {
+                        import("../../../data/locations/vn/districts-HCM.json").then((m) => {
+                          const arr = m.default || [];
+                          const item = arr.find((x) => x.code === code) || null;
+                          display = item?.name || "";
+                          setAddr((a) => ({ ...a, districtCode: code, district: display, wardCode: "", ward: "" }));
+                        });
+                        import("../../../data/locations/vn/wards-HCM.json").then((m) => {
+                          const map = m.default || {};
+                          list = Array.isArray(map[code]) ? map[code] : [];
+                          setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
+                        });
+                      }
+                    }}
+                  >
+                    <MenuItem value="">-- Chọn Quận --</MenuItem>
+                    {districts.map((d) => (<MenuItem key={d.code} value={d.code}>{d.name}</MenuItem>))}
+                  </Select>
+                </FormControl>
               </div>
 
               {/* Ward */}
               <div className="acc-one">
-                <label>Phường</label>
-                <select
-                  disabled={!addr.districtCode || wards.length===0}
-                  value={addr.wardCode || ""}
-                  onChange={(e) => {
-                    const code = e.target.value;
-                    const item = wards.find((w) => w.code === code) || null;
-                    setAddr((a) => ({ ...a, wardCode: item?.code || "", ward: item?.name || "" }));
-                  }}
-                >
-                  <option value="">{wards.length ? "-- Chọn Phường --" : "Không có dữ liệu Phường"}</option>
-                  {wards.map((w) => (<option key={w.code} value={w.code}>{w.name}</option>))}
-                </select>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="ward-select-label">Phường</InputLabel>
+                  <Select
+                    labelId="ward-select-label"
+                    label="Phường"
+                    disabled={!addr.districtCode || wards.length === 0}
+                    value={addr.wardCode || ""}
+                    MenuProps={{ disableScrollLock: true }}
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      const item = wards.find((w) => w.code === code) || null;
+                      setAddr((a) => ({ ...a, wardCode: item?.code || "", ward: item?.name || "" }));
+                    }}
+                  >
+                    <MenuItem value="">{wards.length ? "-- Chọn Phường --" : "Không có dữ liệu Phường"}</MenuItem>
+                    {wards.map((w) => (<MenuItem key={w.code} value={w.code}>{w.name}</MenuItem>))}
+                  </Select>
+                </FormControl>
               </div>
             </div>
           )}

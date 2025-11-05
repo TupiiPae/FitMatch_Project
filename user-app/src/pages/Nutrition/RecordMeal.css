@@ -167,7 +167,7 @@
   padding: 0; /* bỏ padding chữ */
 }
 .nm-item .act .add.add-round:hover {
-  background: #78BCC4;
+  background: #008080;
   transform: scale(1.08);
 }
 

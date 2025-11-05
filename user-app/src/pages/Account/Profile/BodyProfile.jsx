@@ -178,12 +178,10 @@ export default function BodyProfile() {
   return (
     <div className="card">
       <h2 className="pf-title">Hồ sơ thể chất</h2>
-      <h3 className="pf-subtitle">Thông tin cơ bản</h3>
-
       <div className="pf-grid-2">
-        {/* Cột trái */}
         <div>
           <div className="pf-form-row">
+            <h3 className="pf-subtitle">Thông tin cơ bản</h3>
             <label>Giới tính</label>
             <select value={p.sex || ""} disabled>
               <option value="" disabled>—</option>
@@ -252,8 +250,7 @@ export default function BodyProfile() {
           </div>
 
           <h3 className="pf-subtitle">Mục tiêu cân nặng</h3>
-          <p className="pf-desc">
-            Mục tiêu và ước tính dựa trên dữ liệu hiện có.
+          <p className="pf-desc">Mục tiêu và ước tính dựa trên dữ liệu hiện có.
           </p>
 
           <div className="pf-table">

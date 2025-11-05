@@ -1,11 +1,9 @@
 /* Card tổng */
 .acc-page .pf-content .acc-card {
   padding-top: 16px;
+  border: 1px solid #002C3E;
 }
 
-/* ============ AVATAR GIỮA + BUTTON RIÊNG (kiểu navbar) ============ */
-
-/* Khung hero: relative + chừa chỗ cho avatar */
 .acc-page .pf-content .acc-hero {
   position: relative;
   width: 100%;
@@ -79,195 +77,35 @@
   display: none;
 }
 
-/* Ghi chú: nằm dưới avatar (vì khung .acc-hero đã padding-top) và căn giữa */
-.acc-page .pf-content .acc-note {
-  position: relative;
-  text-align: center;
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 6px;
-  margin-bottom: 2px;
-}
-
-/* ============ (Tuỳ chọn) Nút dài “Thay đổi hình ảnh” dưới avatar ============ */
-.acc-page .pf-content .acc-change-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--fm-ring);
-  background: #fff;
-  cursor: pointer;
-}
-.acc-page .pf-content .acc-change-btn:hover {
-  background: #f9fafb;
-}
-
-/* ============ Khung dữ liệu & Form (đồng bộ + full width) ============ */
-
-/* Title (đồng bộ Hồ sơ, căn lề với frame) */
 .acc-page .pf-content .pf-title {
   margin: 0 0 10px;
-  padding: 0 12px;          /* căn đều với acc-frame */
+  padding: 0 12px; /* căn đều với acc-frame */
   font-size: 20px;
   font-weight: 700;
   color: #111827;
 }
 
-/* Khung dữ liệu: full bề rộng card */
-.acc-page .pf-content .acc-frame {
-  max-width: none;          /* bỏ giới hạn 820px để căn theo card */
-  width: 100%;
-  margin: 0;
-  padding: 0 12px;          /* đệm trong cho đẹp, khớp pf-title */
-}
-
-/* Form blocks */
-.acc-page .pf-content .pf-form-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.acc-page .pf-content .pf-form-cell {
-  display: grid;
-  gap: 6px;
-}
-
-.acc-page .pf-content .pf-form-row {
-  display: grid;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-/* Nhãn */
-.acc-page .pf-content .pf-form-row label,
-.acc-page .pf-content .pf-form-cell label {
-  font-weight: 600;
-  font-size: 14px;
-  color: #111827;
-}
-
-/* Input/select: full width + cao 40px cho đồng bộ */
-.acc-page .pf-content .pf-form-row input,
-.acc-page .pf-content .pf-form-row select,
-.acc-page .pf-content .pf-form-cell input,
-.acc-page .pf-content .pf-form-cell select {
-  width: 100%;
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid var(--fm-ring);
-  border-radius: 10px;
-  background: #fff;
-  font: inherit;
-  color: inherit;
-}
-
-/* Date input – viền rõ & đồng bộ chiều cao */
-.acc-page .pf-content input[type="date"] {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: #fff;
-  border: 1px solid var(--fm-ring);
-  border-radius: 10px;
-  padding: 0 12px;
-  width: 100%;
-  height: 40px;
-  line-height: 40px;
-}
-.acc-page .pf-content input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-}
-
-/* Readonly (không cho sửa) – giống input nhưng fill xám + cursor */
-.acc-page .pf-content .pf-form-row[data-readonly] input {
-  background: #f3f4f6;
-  color: #6b7280;
-  cursor: not-allowed;
-}
-
-/* ============ Segmented control cho Giới tính – FULL WIDTH ============ */
-.acc-page .pf-content .seg-group {
-  display: grid;                    /* full width + 2 cột đều nhau */
-  grid-template-columns: 1fr 1fr;
-  height: 40px;
-  width: 100%;
-  border: 1px solid var(--fm-ring);
-  border-radius: 10px;
-  overflow: hidden;
-  background: #fff;
-}
-.acc-page .pf-content .seg-option {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-.acc-page .pf-content .seg-option + .seg-option {
-  border-left: 1px solid var(--fm-ring);
-}
-
-.acc-page .pf-content .seg-option input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-.acc-page .pf-content .seg-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 40px;
-  font-weight: 600;
-  color: #111827;
-  background: #fff;
-  user-select: none;
-}
-.acc-page .pf-content .seg-option input:checked + .seg-btn {
-  background: #002C3E;
-  color: #fff;
-}
-.acc-page .pf-content .seg-option input:focus-visible + .seg-btn {
-  outline: 2px solid #2563eb;
-  outline-offset: -2px;
-}
-
 /* Nút submit */
 .acc-page .pf-content .btn-success {
-  height: 40px;
+  height: 37px;
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  padding: 0 30px;
   border-radius: 8px;
-  background: #78BCC4; /* Màu theme */
+  background: #008080; /* Màu theme */
   color: #fff;
   text-decoration: none;
   margin-left: 5px;
   font-weight: 500;
   border: none;
 }
-.acc-page .pf-content .btn-success:hover { background: #008080; }
+.acc-page .pf-content .btn-success:hover { background: #78BCC4; }
 
 /* Trạng thái tải */
 .acc-page .pf-content .acc-loading {
   padding: 8px;
   color: #6b7280;
   font-size: 13px;
-}
-
-/* ===== Layout 3 box giống hình ===== */
-.acc-page .pf-content .acc-box { margin-bottom: 16px; }
-
-/* Box header */
-.acc-page .pf-content .acc-box .acc-box-head{
-  display:flex; align-items:center; justify-content:space-between;
-  padding: 10px 12px 0;
-}
-.acc-page .pf-content .acc-box .acc-box-head h3{
-  margin:0; font-size:16px; font-weight:700; color:#111827;
 }
 
 /* Edit buttons on header */
@@ -277,13 +115,13 @@
   border-radius:30px; padding:6px 10px; cursor:pointer; font-weight:400;
 }
 .acc-page .pf-content .acc-edit:hover{ background:#f9fafb; }
-.acc-page .pf-content .acc-edit-actions{ display:flex; gap:8px; }
+.acc-page .pf-content .acc-edit-actions{ display:flex; gap:2px; }
 .acc-page .pf-content .btn-tertiary{
-  border:1px solid var(--fm-ring); background:#fff; border-radius:10px; padding:6px 10px; font-weight:600; cursor:pointer;
+  border:1px solid var(--fm-ring); background:#fff; border-radius:8px; padding:6px 10px; font-weight:600; cursor:pointer;
 }
 .acc-page .pf-content .btn-tertiary:hover{ background:#f9fafb; }
 
-/* Box 1 profile row */
+/* Box 1 profile row (ĐANG SỬ DỤNG) */
 .acc-page .pf-content .acc-profile-row{
   display:flex; align-items:center; gap:16px; padding: 12px;
 }
@@ -321,7 +159,12 @@
 .acc-page .pf-content .acc-profile-main .acc-sub{ display:flex; flex-wrap:wrap; gap:8px; color:#6b7280; font-size:13px; }
 .acc-page .pf-content .acc-profile-main .acc-sub .dot{ opacity:.6; }
 
-/* Grid nhãn:giá trị (read view) */
+/* Input file ẩn */
+.acc-page .pf-content .acc-file {
+  display: none;
+}
+
+/* Grid nhãn:giá trị (read view - ĐANG SỬ DỤNG) */
 .acc-page .pf-content .acc-grid{
   display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; padding: 12px;
 }
@@ -329,26 +172,17 @@
 .acc-page .pf-content .acc-field .label{ color:#6b7280; font-size:13px; }
 .acc-page .pf-content .acc-field .value{ color:#111827; font-weight:450; }
 
-/* Edit form (ẩn/hiện theo state) */
-.acc-page .pf-content .acc-form{ padding: 12px; display:grid; gap:12px; }
+/* Edit form grid (ĐANG SỬ DỤNG cho layout MUI) */
+.acc-page .pf-content .acc-form{ padding: 12px; display:grid; gap:25px; }
 .acc-page .pf-content .acc-two{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .acc-page .pf-content .acc-one{ display:grid; gap:6px; }
 .acc-page .pf-content .acc-form-col{ display:grid; gap:6px; }
-.acc-page .pf-content .acc-form input, 
-.acc-page .pf-content .acc-form select{
-  width:100%; height:40px; border:1px solid var(--fm-ring); border-radius:10px; padding:0 12px; background:#fff;
-  font:inherit; color:inherit;
-}
 
-/* Segmented control reuse */
-.acc-page .pf-content .seg-group{ display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--fm-ring); border-radius:10px; overflow:hidden; height:40px; }
-.acc-page .pf-content .seg-option{ position:relative; }
-.acc-page .pf-content .seg-option + .seg-option{ border-left:1px solid var(--fm-ring); }
-.acc-page .pf-content .seg-option input{ position:absolute; inset:0; opacity:0; }
-.acc-page .pf-content .seg-btn{ display:flex; align-items:center; justify-content:center; width:100%; height:40px; font-weight:600; }
-.acc-page .pf-content .seg-option input:checked + .seg-btn{ background:#002C3E; color:#fff; }
+/* CSS cho input/select native (ĐÃ BỊ XÓA) */
 
-/* ===== Sections nằm trong card lớn ===== */
+/* CSS cho Segmented control (ĐÃ BỊ XÓA) */
+
+/* ===== Sections nằm trong card lớn (ĐANG SỬ DỤNG) ===== */
 .acc-page .pf-content .acc-card .acc-sec{
   padding: 12px;
   border-top: 1px solid var(--fm-ring);
@@ -358,7 +192,7 @@
   padding-top: 6px;
 }
 
-/* Header nhỏ mỗi section */
+/* Header nhỏ mỗi section (ĐANG SỬ DỤNG) */
 .acc-page .pf-content .acc-card .acc-sec-head{
   display:flex; align-items:center; justify-content:space-between;
   margin-bottom: 8px;
@@ -367,21 +201,12 @@
   margin:0; font-size:15px; font-weight:700; color:#111827;
 }
 
-.acc-page .pf-content .acc-combo{ display:grid; grid-template-columns: 1fr; gap:6px; }
-.acc-page .pf-content .acc-search{ width:100%; height:36px; border:1px solid var(--fm-ring); border-radius:10px; padding:0 10px; background:#fff; }
-.acc-page .pf-content select{ width:100%; height:40px; border:1px solid var(--fm-ring); border-radius:10px; padding:0 10px; background:#fff; }
+/* CSS cho .acc-combo, .acc-search, select (ĐÃ BỊ XÓA) */
 
-
-
-/* Responsive */
+/* Responsive (ĐANG SỬ DỤNG) */
 @media (max-width: 900px){
   .acc-page .pf-content .acc-grid{ grid-template-columns: 1fr; }
   .acc-page .pf-content .acc-two{ grid-template-columns: 1fr; }
 }
 
-/* Responsive */
-@media (max-width: 980px) {
-  .acc-page .pf-content .pf-form-2 {
-    grid-template-columns: 1fr;
-  }
-}
+/* Responsive (ĐÃ BỊ XÓA VÌ .pf-form-2 không dùng nữa) */
