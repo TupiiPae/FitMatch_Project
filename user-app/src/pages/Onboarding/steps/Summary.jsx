@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { api } from "../../../lib/api";
 import "./Summary.css";
 import "./step-progress.css";
+import { toast } from "react-toastify";
 
 const STEPS = [
   { slug: "ten-goi",            label: "B1" },
@@ -18,7 +19,7 @@ const STEPS = [
 function StepProgress({ currentSlug }) {
   const currentIndex = Math.max(0, STEPS.findIndex(s => s.slug === currentSlug));
   const totalSegs = Math.max(1, STEPS.length - 1);
-  const doneRatio = currentIndex / totalSegs; // 0..1: tô line đến trước circle hiện tại
+  const doneRatio = currentIndex / totalSegs;
 
   return (
     <div className="sp">
@@ -107,7 +108,6 @@ export default function Summary() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // BMI hiện tại & mục tiêu
   const bmi = useMemo(() => Number((weight / Math.pow(height / 100, 2)).toFixed(1)), [height, weight]);
   const bmiTarget = useMemo(() => Number((target / Math.pow(height / 100, 2)).toFixed(1)), [height, target]);
 
@@ -152,6 +152,8 @@ export default function Summary() {
     }
     try {
       await api.post("/api/user/onboarding/upsert", payload);
+      // ✅ Thông báo thành công
+      toast.success("Thiết lập mục tiêu thành công");
       nav("/home");
     } catch (err) {
       alert("Gửi dữ liệu thất bại.\n" + (err?.response?.data?.message || "Xem console để biết chi tiết."));
@@ -172,7 +174,6 @@ export default function Summary() {
         <div className="sm-card">
           <h3 className="sm-title">FitMatch tổng hợp lại thông tin giúp bạn nhé !</h3>
 
-          {/* Box tổng hợp mục tiêu & thông số */}
           <div className="sm-box">
             <div className="sm-row">
               <span>Mục tiêu</span>
@@ -194,7 +195,6 @@ export default function Summary() {
             )}
           </div>
 
-          {/* === Thanh BMI nằm GIỮA hai box === */}
           <div className="sm-bmi">
             <div className="sm-bar">
               <div className="sm-bar-inner" style={{ width: `${percent}%` }} />
@@ -210,7 +210,6 @@ export default function Summary() {
             </div>
           </div>
 
-          {/* Box chỉ số BMI (hiện tại vs mục tiêu) – căn giữa & cân bằng 2 bên */}
           <div className="sm-bmi-box">
             <div className="sm-midline" />
             <div className="sm-bmi-item">

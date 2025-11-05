@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./Nickname.css";
-import './step-progress.css'
+import "./step-progress.css";
+
+import { TextField } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
+
+
+import { toast } from "react-toastify";
+import { validateNickname } from "../../../lib/validators";
 
 const STEPS = [
   { slug: "ten-goi",            label: "B1" },
@@ -15,7 +25,7 @@ const STEPS = [
 ];
 
 function StepProgress({ currentSlug }) {
-  const currentIndex = Math.max(0, STEPS.findIndex(s => s.slug === currentSlug));
+  const currentIndex = Math.max(0, STEPS.findIndex((s) => s.slug === currentSlug));
   return (
     <div className="sp">
       <ol className="sp-progress">
@@ -28,9 +38,18 @@ function StepProgress({ currentSlug }) {
               <span className="sp-dot">
                 {completed ? (
                   <svg viewBox="0 0 24 24" className="sp-check" aria-hidden="true">
-                    <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path
+                      d="M20 6L9 17l-5-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
-                ) : <span className="sp-num">{idx + 1}</span>}
+                ) : (
+                  <span className="sp-num">{idx + 1}</span>
+                )}
               </span>
               <span className="sp-label">{s.label}</span>
             </li>
@@ -40,7 +59,6 @@ function StepProgress({ currentSlug }) {
     </div>
   );
 }
-/* ===== /Progress ===== */
 
 function tinhTuoi(ngaySinh) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ngaySinh)) return null;
@@ -56,7 +74,7 @@ function tinhTuoi(ngaySinh) {
 export default function Nickname() {
   const nav = useNavigate();
 
-  // ── Khởi tạo từ localStorage (nếu user quay lại bước này)
+  // load lại từ localStorage
   const [tenGoi, setTenGoi] = useState(localStorage.getItem("nickname") || "");
   const [gioiTinh, setGioiTinh] = useState(localStorage.getItem("sex") || "");
   const [ngaySinh, setNgaySinh] = useState(localStorage.getItem("dob") || "");
@@ -76,15 +94,36 @@ export default function Nickname() {
 
   const handleNext = async () => {
     const v = tenGoi.trim();
-    let ok = true;
 
-    if (!v) { setErrTen("Vui lòng nhập tên của bạn"); ok = false; }
-    if (!gioiTinh) { setErrGT("Vui lòng chọn giới tính"); ok = false; }
-    if (!ngaySinh) { setErrDOB("Vui lòng chọn ngày sinh"); ok = false; }
-    else if (tuoi === null) { setErrDOB("Ngày sinh không đúng định dạng YYYY-MM-DD"); ok = false; }
-    else if (tuoi < 10 || tuoi > 100) { setErrDOB("Tuổi phải trong khoảng 10–100"); ok = false; }
+    // ✅ Validate nickname bằng validators.js
+    const nickErr = validateNickname(v, { required: true });
+    if (nickErr) {
+      setErrTen(nickErr);
+      toast.error(nickErr);
+      return;
+    }
 
-    if (!ok) return;
+    // các validate còn lại
+    if (!gioiTinh) {
+      setErrGT("Vui lòng chọn giới tính");
+      toast.error("Vui lòng chọn giới tính");
+      return;
+    }
+    if (!ngaySinh) {
+      setErrDOB("Vui lòng chọn ngày sinh");
+      toast.error("Vui lòng chọn ngày sinh");
+      return;
+    }
+    if (tuoi === null) {
+      setErrDOB("Ngày sinh không đúng định dạng YYYY-MM-DD");
+      toast.error("Ngày sinh không đúng định dạng YYYY-MM-DD");
+      return;
+    }
+    if (tuoi < 10 || tuoi > 100) {
+      setErrDOB("Tuổi phải trong khoảng 10–100");
+      toast.error("Tuổi phải trong khoảng 10–100");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -106,33 +145,32 @@ export default function Nickname() {
       </header>
 
       <main className="nk-main">
-        {/* Progress nằm ngay dưới navbar, trên card */}
         <StepProgress currentSlug="ten-goi" />
 
         <div className="nk-card">
           <h3 className="nk-title">Cho chúng tôi biết về bạn nhé!</h3>
-          <p className="nk-desc">Chúng tôi rất vui khi được chào đón bạn. Hãy bắt đầu bằng vài thông tin cơ bản.</p>
+          <p className="nk-desc">
+            Chúng tôi rất vui khi được chào đón bạn. Hãy bắt đầu bằng vài thông tin cơ bản.
+          </p>
 
-          {/* Nickname */}
           <div className="nk-field">
-            <div className="nk-input-wrap">
-              <input
-                className="nk-input nk-input-large"
-                placeholder="Nhập nickname của bạn"
-                value={tenGoi}
-                onChange={(e) => setTenGoi(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleNext()}
-                autoFocus
-                disabled={loading}
-                aria-label="Nickname"
-              />
-            </div>
-            {errTen && <div className="nk-error">{errTen}</div>}
+            <TextField
+              label="Nickname của bạn"
+              variant="outlined"
+              fullWidth
+              className="nk-input-large"
+              value={tenGoi}
+              onChange={(e) => setTenGoi(e.target.value)}
+              onBlur={(e) => setErrTen(validateNickname(e.target.value, { required: true }))}
+              onKeyDown={(e) => e.key === "Enter" && handleNext()}
+              autoFocus
+              disabled={loading}
+              error={!!errTen}
+              helperText={errTen || ""} 
+            />
           </div>
 
-          {/* Hai cột */}
           <div className="nk-two-col">
-            {/* Giới tính */}
             <div className="nk-col nk-sex">
               <div className="nk-group-title">Giới tính</div>
               <div className="nk-sex-grid">
@@ -151,8 +189,8 @@ export default function Nickname() {
                   />
                   <span className="sex-icon" aria-hidden="true">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                      <path d="M14 5h7m0 0v7m0-7l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                      <circle cx="9" cy="15" r="5" stroke="currentColor" strokeWidth="1.6"/>
+                      <path d="M14 5h7m0 0v7m0-7l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="9" cy="15" r="5" stroke="currentColor" strokeWidth="1.6" />
                     </svg>
                   </span>
                   <span className="sex-text">Nam</span>
@@ -173,8 +211,8 @@ export default function Nickname() {
                   />
                   <span className="sex-icon" aria-hidden="true">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="8" r="5" stroke="currentColor" strokeWidth="1.6"/>
-                      <path d="M12 13v8M9 18h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                      <circle cx="12" cy="8" r="5" stroke="currentColor" strokeWidth="1.6" />
+                      <path d="M12 13v8M9 18h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                     </svg>
                   </span>
                   <span className="sex-text">Nữ</span>
@@ -183,30 +221,31 @@ export default function Nickname() {
               {errGT && <div className="nk-error">{errGT}</div>}
             </div>
 
-            {/* Ngày sinh */}
             <div className="nk-col nk-dob">
               <div className="nk-group-title">Ngày sinh</div>
-              <div className="dob-input">
-                <span className="calendar-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6"/>
-                    <path d="M16 3v4M8 3v4M3 9h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-                  </svg>
-                </span>
-                <input
-                  className="nk-input nk-input-date"
-                  type="date"
-                  value={ngaySinh}
-                  onChange={(e) => setNgaySinh(e.target.value)}
-                  max={new Date().toISOString().slice(0, 10)}
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  format="DD/MM/YYYY"
+                  value={ngaySinh ? dayjs(ngaySinh) : null}
+                  onChange={(newValue) => {
+                    setNgaySinh(newValue ? newValue.format("YYYY-MM-DD") : "");
+                  }}
+                  maxDate={dayjs(new Date())}
                   disabled={loading}
-                  aria-label="Ngày sinh"
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      className: "nk-input-large",
+                      error: !!errDOB,
+                      helperText: errDOB || "", // không chừa khoảng trống
+                    },
+                  }}
                 />
-              </div>
-
-              {errDOB && <div className="nk-error">{errDOB}</div>}
+              </LocalizationProvider>
               {tuoi !== null && !errDOB && (
-                <div className="nk-hint">Tuổi của bạn: <b>{tuoi}</b></div>
+                <div className="nk-hint">
+                  Tuổi của bạn: <b>{tuoi}</b>
+                </div>
               )}
             </div>
           </div>

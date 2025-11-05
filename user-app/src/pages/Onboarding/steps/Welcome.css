@@ -1,6 +1,6 @@
 .wl-wrap {
   min-height: 100vh;
-  background: #f3f4f6;
+  background: #f4f6ea;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -14,6 +14,7 @@
   margin-bottom: 30px;
 }
 .wl-title {
+  font-weight: 800px;
   font-size: 40px;
   color: #222;
 }
@@ -26,7 +27,7 @@
 }
 .logo-link img{ display: block; } 
 .logo-link:focus-visible{
-  outline: 2px solid #1a73e8;  
+  outline: 2px solid #008080;  
   outline-offset: 3px;
 }
 
@@ -82,7 +83,7 @@
 
 /* Button */
 .wl-start {
-  background: #f7444e;
+  background: #008080;
   color: white;
   border: none;
   border-radius: 10px;
@@ -90,11 +91,11 @@
   font-size: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(247, 68, 78, 0.25);
+  box-shadow: 0 4px 12px rgba(52, 207, 135, 0.32);
 }
 .wl-start:hover {
-  background: #e83a45;
-  box-shadow: 0 6px 16px rgba(247, 68, 78, 0.32);
+  background: #007070;
+  box-shadow: 0 6px 16px rgba(52, 207, 135, 0.32);
 }
 .wl-start:active {
   transform: translateY(1px);
