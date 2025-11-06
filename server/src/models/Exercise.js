@@ -31,7 +31,6 @@ const ExerciseSchema = new mongoose.Schema(
           "Tên chỉ cho phép chữ (có dấu), số, khoảng trắng và các ký tự: ( ) - , . & / ’ '",
       },
       trim: true,
-      index: "text",
     },
 
     type: {
@@ -71,6 +70,7 @@ const ExerciseSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+ExerciseSchema.index({ name: "text" });
 
 // Tìm kiếm theo tên (đã set index text trên name)
 const Exercise = mongoose.model("Exercise", ExerciseSchema);

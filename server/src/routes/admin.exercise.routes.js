@@ -1,7 +1,10 @@
 // server/src/routes/admin.exercise.routes.js
 import express from "express";
 import { adminAuth } from "../middleware/adminAuth.js";
-import { uploadExerciseAny } from "../middleware/upload.js"; // fields: image, video
+import {
+  uploadExerciseImageSingle, // .single("image")
+  uploadExerciseVideoSingle, // .single("video")
+} from "../middleware/upload.js";
 import {
   listExercises,
   getExercise,
@@ -9,20 +12,25 @@ import {
   updateExercise,
   deleteExercise,
   meta,
+  uploadExerciseVideo, // controller để set videoUrl riêng
 } from "../controllers/exercise.controller.js";
 
 const router = express.Router();
 
+// Yêu cầu admin đăng nhập (không ràng buộc level theo yêu cầu)
 router.use(adminAuth);
 
-// Meta + CRUD Exercises (không ràng buộc level — theo yêu cầu)
+/* -------- Meta + CRUD -------- */
 router.get("/exercises/meta", meta);
 router.get("/exercises", listExercises);
 router.get("/exercises/:id", getExercise);
 
-// Nhận cả ảnh & video (multipart) qua fields: image, video
-router.post("/exercises", uploadExerciseAny, createExercise);
-router.patch("/exercises/:id", uploadExerciseAny, updateExercise);
+// Tạo / Sửa: chỉ nhận ảnh qua field "image"
+router.post("/exercises", uploadExerciseImageSingle, createExercise);
+router.patch("/exercises/:id", uploadExerciseImageSingle, updateExercise);
+
+// Upload video riêng: nhận file qua field "video"
+router.post("/exercises/:id/video", uploadExerciseVideoSingle, uploadExerciseVideo);
 
 router.delete("/exercises/:id", deleteExercise);
 

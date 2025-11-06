@@ -1,9 +1,7 @@
 // server/src/controllers/exercise.controller.js
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 import sharp from "sharp";
-
 import Exercise, {
   EXERCISE_TYPES,
   MUSCLE_GROUPS,
@@ -11,98 +9,83 @@ import Exercise, {
   LEVELS,
 } from "../models/Exercise.js";
 import { responseOk } from "../utils/response.js";
+import {
+  EXERCISE_IMG_DIR as EX_DIR,
+  EXERCISE_VID_DIR as EX_VID_DIR,
+} from "../middleware/upload.js";
 
-/* ====== Local paths for saving uploaded images (memoryStorage) ====== */
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-// PROJECT_ROOT: .../server
-const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
-const UPLOAD_ROOT = path.join(PROJECT_ROOT, "uploads");
-const EXERCISE_DIR = path.join(UPLOAD_ROOT, "exercises");
-fs.mkdirSync(EXERCISE_DIR, { recursive: true });
-
-/* ====== Helpers ====== */
+/* ========= Helpers ========= */
 const toNum = (v) => (v === "" || v == null ? null : Number(v));
 const isJsonArray = (s) => typeof s === "string" && /^\s*\[/.test(s);
+const ensureDir = (d) => { try { fs.mkdirSync(d, { recursive: true }); } catch {} };
 
-/** Lưu ảnh từ memoryStorage -> .webp vào /uploads/exercises */
+/** Lưu ảnh memoryStorage -> .webp vào /uploads/exercises, trả tên file */
 async function saveImageFromBuffer(file) {
   if (!file?.buffer) return null;
-
-  // Đặt tên file .webp an toàn
+  ensureDir(EX_DIR);
   const base = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
   const filename = `${base}.webp`;
-  const absPath = path.join(EXERCISE_DIR, filename);
-
-  // Dùng sharp để convert/nén
+  const absPath = path.join(EX_DIR, filename);
   await sharp(file.buffer)
-    .rotate() // auto-orient
+    .rotate()
+    .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
     .webp({ quality: 85 })
     .toFile(absPath);
-
   return filename;
 }
 
-/** Tạo URL tuyệt đối từ host + đường dẫn con */
-function absoluteUrl(req, relativePath) {
-  const host = `${req.protocol}://${req.get("host")}`;
-  // relativePath kiểu '/uploads/exercises/xxx.webp'
-  return `${host}${relativePath}`;
+/** Lưu video memoryStorage -> file gốc (đuôi từ mimetype/original), trả tên file */
+function pickVideoExt(mt, original = "") {
+  const low = (mt || "").toLowerCase();
+  const nameLow = (original || "").toLowerCase();
+  if (low.includes("webm") || nameLow.endsWith(".webm")) return ".webm";
+  if (low.includes("ogg") || nameLow.endsWith(".ogv") || nameLow.endsWith(".ogg")) return ".ogv";
+  if (nameLow.endsWith(".mov")) return ".mov";
+  if (nameLow.endsWith(".mkv")) return ".mkv";
+  return ".mp4";
+}
+async function saveVideoFromBuffer(file) {
+  if (!file?.buffer) return null;
+  ensureDir(EX_VID_DIR);
+  const base = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+  const ext = pickVideoExt(file.mimetype, file.originalname);
+  const filename = `${base}${ext}`;
+  const absPath = path.join(EX_VID_DIR, filename);
+  await fs.promises.writeFile(absPath, file.buffer);
+  return filename;
 }
 
-/** Chuẩn hoá: xoá chuỗi rỗng, parse mảng, ép số, gắn imageUrl nếu có file */
-function normalizeBody(body, fileOrFiles, req) {
+/** Chuẩn hoá body: parse mảng, ép số, loại bỏ chuỗi rỗng */
+function normalizeBody(body) {
   const b = { ...(body || {}) };
 
-  // parse mảng (primary/secondary từ FormData stringify hoặc chuỗi "A, B")
   ["primaryMuscles", "secondaryMuscles"].forEach((k) => {
     const val = b[k];
-    if (Array.isArray(val)) return;
+    if (Array.isArray(val)) return; // đã là mảng
     if (isJsonArray(val)) {
-      try {
-        b[k] = JSON.parse(val);
-      } catch {
-        b[k] = [];
-      }
+      try { b[k] = JSON.parse(val); } catch { b[k] = []; }
     } else if (typeof val === "string" && val.trim()) {
-      b[k] = val
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean);
+      b[k] = val.split(",").map((x) => x.trim()).filter(Boolean);
     } else {
       b[k] = [];
     }
   });
 
-  // ép số
   if ("caloriePerRep" in b) b.caloriePerRep = toNum(b.caloriePerRep);
 
-  // Ưu tiên file upload (nếu có) -> imageUrl
-  // Hỗ trợ cả req.file (single) và req.files?.image?.[0] (fields)
-  const imgFile = fileOrFiles?.image?.[0] || fileOrFiles || null;
-
-  // Nếu diskStorage: file.path + file.filename sẽ tồn tại
-  if (imgFile?.path && imgFile?.filename) {
-    b.imageUrl = absoluteUrl(req, `/uploads/exercises/${imgFile.filename}`);
-  }
-
-  // Nếu memoryStorage: không có path/filename -> sẽ được xử lý ở create/update
-  // (Ở đây chưa set gì, để hàm create/update sau khi save buffer mới gán imageUrl)
-
-  // xoá key rỗng để tránh override
+  // xoá key rỗng để tránh overwrite
   Object.keys(b).forEach((k) => {
     const v = b[k];
     if (v === undefined || v === null) delete b[k];
     else if (typeof v === "string" && v.trim() === "") delete b[k];
-    else if (Array.isArray(v) && v.length === 0) delete b[k];
   });
 
   return b;
 }
 
-/* =========================
- * Controllers
- * ========================= */
+/* ========= Controllers ========= */
+
+// GET /api/admin/exercises
 export async function listExercises(req, res, next) {
   try {
     const {
@@ -110,71 +93,74 @@ export async function listExercises(req, res, next) {
       type,
       equipment,
       level,
-      primary, // filter theo 1 nhóm cơ chính
-      secondary, // filter theo 1 nhóm cơ phụ
+      primary,
+      secondary,
+      status,
       limit = 10,
       skip = 0,
-      status,
     } = req.query;
 
-    const $and = [];
-    if (q) $and.push({ $text: { $search: q } });
-    if (type) $and.push({ type });
-    if (equipment) $and.push({ equipment });
-    if (level) $and.push({ level });
-    if (status) $and.push({ status });
-    if (primary) $and.push({ primaryMuscles: primary });
-    if (secondary) $and.push({ secondaryMuscles: secondary });
+    const and = [];
+    const qTrim = (q || "").trim();
+    if (qTrim) and.push({ $text: { $search: qTrim } });
+    if (type) and.push({ type });
+    if (equipment) and.push({ equipment });
+    if (level) and.push({ level });
+    if (status) and.push({ status });
+    if (primary) and.push({ primaryMuscles: primary });
+    if (secondary) and.push({ secondaryMuscles: secondary });
 
-    const filter = $and.length ? { $and } : {};
-    const total = await Exercise.countDocuments(filter);
-    const items = await Exercise.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(Number(skip))
-      .limit(Number(limit))
-      .lean();
+    const filter = and.length ? { $and: and } : {};
+    const lim = Math.max(1, Number(limit));
+    const skp = Math.max(0, Number(skip));
 
-    return responseOk(res, { items, total });
+    const [total, items] = await Promise.all([
+      Exercise.countDocuments(filter),
+      Exercise.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skp)
+        .limit(lim)
+        .lean(),
+    ]);
+
+    const hasMore = skp + items.length < total;
+    return res.json({ items, total, limit: lim, skip: skp, hasMore });
   } catch (err) {
     return next(err);
   }
 }
 
+// GET /api/admin/exercises/:id
 export async function getExercise(req, res, next) {
   try {
-    const { id } = req.params;
-    const it = await Exercise.findById(id).lean();
-    return responseOk(res, it);
+    const it = await Exercise.findById(req.params.id).lean();
+    if (!it) return res.status(404).json({ message: "Not found" });
+    return res.json(it);
   } catch (err) {
     return next(err);
   }
 }
 
+// POST /api/admin/exercises  (ảnh gửi field "image"; video KHÔNG gửi ở đây)
 export async function createExercise(req, res, next) {
   try {
-    // Hỗ trợ cả single("image") -> req.file và fields -> req.files.image[0]
     const imgFile = (req.files?.image && req.files.image[0]) || req.file || null;
+    const b = normalizeBody(req.body);
 
-    // Chuẩn hoá body trước
-    const b = normalizeBody(req.body, req.files || req.file, req);
-
-    // Nếu dùng memoryStorage và có ảnh -> lưu ra /uploads/exercises/*.webp
-    if (imgFile && imgFile.buffer && !b.imageUrl) {
-      const filename = await saveImageFromBuffer(imgFile);
-      if (filename) {
-        b.imageUrl = absoluteUrl(req, `/uploads/exercises/${filename}`);
-      }
-    }
-
-    // Bổ sung các field mặc định
+    // default & meta
     if (!b.type) b.type = "Strength";
     if (req.admin?._id) b.createdByAdmin = req.admin._id;
+    b.status = b.status || "active";
 
-    // Lưu DB (mô hình đang required imageUrl – giữ nguyên validate ở model)
+    // ảnh: ưu tiên file -> lưu và set path tương đối
+    if (imgFile?.buffer && !b.imageUrl) {
+      const filename = await saveImageFromBuffer(imgFile);
+      if (filename) b.imageUrl = `/uploads/exercises/${filename}`;
+    }
+
     const doc = await Exercise.create(b);
-    return responseOk(res, doc, 201);
+    return res.status(201).json(doc);
   } catch (err) {
-    // Trả 422 nếu lỗi validate, tránh làm server "ngắt"
     if (err?.name === "ValidationError") {
       return res.status(422).json({ success: false, message: err.message, errors: err.errors });
     }
@@ -182,19 +168,17 @@ export async function createExercise(req, res, next) {
   }
 }
 
+// PATCH /api/admin/exercises/:id  (ảnh mới gửi field "image"; có thể sửa videoUrl dạng link)
 export async function updateExercise(req, res, next) {
   try {
     const { id } = req.params;
     const imgFile = (req.files?.image && req.files.image[0]) || req.file || null;
 
-    const upd = normalizeBody(req.body, req.files || req.file, req);
+    const upd = normalizeBody(req.body);
 
-    // Nếu memoryStorage có ảnh mới -> lưu file và set imageUrl
-    if (imgFile && imgFile.buffer && !upd.imageUrl) {
+    if (imgFile?.buffer && !upd.imageUrl) {
       const filename = await saveImageFromBuffer(imgFile);
-      if (filename) {
-        upd.imageUrl = absoluteUrl(req, `/uploads/exercises/${filename}`);
-      }
+      if (filename) upd.imageUrl = `/uploads/exercises/${filename}`;
     }
 
     const it = await Exercise.findByIdAndUpdate(id, upd, {
@@ -202,7 +186,8 @@ export async function updateExercise(req, res, next) {
       runValidators: true,
     }).lean();
 
-    return responseOk(res, it);
+    if (!it) return res.status(404).json({ message: "Not found" });
+    return res.json(it);
   } catch (err) {
     if (err?.name === "ValidationError") {
       return res.status(422).json({ success: false, message: err.message, errors: err.errors });
@@ -211,16 +196,37 @@ export async function updateExercise(req, res, next) {
   }
 }
 
-export async function deleteExercise(req, res, next) {
+// POST /api/admin/exercises/:id/video  (video gửi field "video")
+export async function uploadExerciseVideo(req, res, next) {
   try {
     const { id } = req.params;
-    await Exercise.findByIdAndDelete(id);
-    return responseOk(res, { ok: true });
+    const vidFile = (req.files?.video && req.files.video[0]) || req.file || null;
+    if (!vidFile?.buffer) return res.status(400).json({ message: "Không có file video" });
+
+    const vname = await saveVideoFromBuffer(vidFile);
+    const videoUrl = `/uploads/exercises_videos/${vname}`;
+
+    await Exercise.findByIdAndUpdate(id, { $set: { videoUrl } }, { runValidators: true });
+    return res.json({ ok: true, videoUrl });
   } catch (err) {
     return next(err);
   }
 }
 
-export function meta(_req, res) {
-  return responseOk(res, { EXERCISE_TYPES, MUSCLE_GROUPS, EQUIPMENTS, LEVELS });
+// DELETE /api/admin/exercises/:id
+export async function deleteExercise(req, res, next) {
+  try {
+    const { id } = req.params;
+    await Exercise.findByIdAndDelete(id);
+    return res.json(responseOk());
+  } catch (err) {
+    return next(err);
+  }
 }
+
+// GET /api/admin/exercises/meta
+export function meta(_req, res) {
+  return res.json({ EXERCISE_TYPES, MUSCLE_GROUPS, EQUIPMENTS, LEVELS });
+}
+// alias cho FE (nếu đang gọi getExerciseMeta)
+export const getExerciseMeta = meta;

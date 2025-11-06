@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { api, listExercisesAdminOnly, deleteExercise, getExerciseMeta, getExercise } from "../../../lib/api";
+import { api, listExercisesAdminOnly, deleteExercise, getExerciseMeta } from "../../../lib/api";
 import { toast } from "react-toastify";
 import "./Strength_List.css";
 
@@ -36,14 +36,16 @@ export default function Strength_List() {
   const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
 
   const [confirmId, setConfirmId] = useState(null);
-  const [flashId, setFlashId] = useState(null); // để highlight hàng mới tạo
+  const [flashId, setFlashId] = useState(null); // highlight hàng mới tạo
 
   useEffect(() => {
     (async () => {
-      const meta = await getExerciseMeta();
-      setMUSCLES(meta?.MUSCLE_GROUPS || []);
-      setEQUIPMENTS(meta?.EQUIPMENTS || []);
-      setLEVELS(meta?.LEVELS || []);
+      try {
+        const meta = await getExerciseMeta();
+        setMUSCLES(meta?.MUSCLE_GROUPS || []);
+        setEQUIPMENTS(meta?.EQUIPMENTS || []);
+        setLEVELS(meta?.LEVELS || []);
+      } catch {}
     })();
   }, []);
 
@@ -51,15 +53,18 @@ export default function Strength_List() {
     setLoading(true);
     setSelectedIds([]);
     try {
-      const params = { type: "Strength", limit, skip, q };
+      const params = { type: "Strength", limit, skip };
+      const qTrim = (q || "").trim();
+      if (qTrim) params.q = qTrim;
       if (muscle) params.primary = muscle;
       if (muscle2) params.secondary = muscle2;
       if (equipment) params.equipment = equipment;
       if (level) params.level = level;
 
-      const res = await listExercisesAdminOnly(params);
-      setItems(res?.items || []);
-      setTotal(typeof res?.total === "number" ? res.total : (res?.items?.length || 0));
+      const res = await listExercisesAdminOnly(params); // -> { items, total, limit?, skip? }
+      const arr = Array.isArray(res?.items) ? res.items : [];
+      setItems(arr);
+      setTotal(typeof res?.total === "number" ? res.total : arr.length);
     } catch (e) {
       console.error(e);
       setItems([]);
@@ -69,10 +74,13 @@ export default function Strength_List() {
     }
   };
 
-  useEffect(() => { load(); }, [limit, skip]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [limit, skip]);
+
+  // thay đổi filter -> debounce 250ms
   useEffect(() => {
     const t = setTimeout(() => { if (skip !== 0) setSkip(0); else load(); }, 250);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, muscle, muscle2, equipment, level]);
 
   // đón state từ trang Create để toast & flash
@@ -80,11 +88,9 @@ export default function Strength_List() {
     const s = location.state;
     if (s?.justCreated) {
       toast.success("Tạo bài tập thành công!");
-      // Sau khi load xong, thử flash item mới tạo
       const doFlash = async () => {
         try {
           if (s.createdId) {
-            // optional: đảm bảo có trong danh sách (nếu phân trang không thấy, cứ reload về trang đầu)
             if (skip !== 0) setSkip(0);
             await load();
             setFlashId(s.createdId);
@@ -95,7 +101,7 @@ export default function Strength_List() {
         } catch {}
       };
       doFlash();
-      // xoá state để tránh toast lại khi refresh
+      // xoá state để tránh toast lại
       nav(location.pathname, { replace: true, state: {} });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -107,15 +113,22 @@ export default function Strength_List() {
   const toggleOne = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const onDeleteOne = async (id) => {
-    await deleteExercise(id);
-    if (items.length === 1 && skip > 0) setSkip(Math.max(0, skip - limit));
-    else await load();
+    try {
+      await deleteExercise(id);
+      toast.success("Đã xóa bài tập");
+      if (items.length === 1 && skip > 0) setSkip(Math.max(0, skip - limit));
+      else await load();
+    } catch (e) {
+      console.error(e);
+      toast.error("Xóa thất bại");
+    }
   };
 
   const onBulkDelete = async () => {
     if (!selectedIds.length) return;
     if (!confirm(`Xóa ${selectedIds.length} bài tập đã chọn?`)) return;
     for (const id of selectedIds) { try { await deleteExercise(id); } catch {} }
+    toast.success("Đã xóa các bài tập đã chọn");
     if (selectedIds.length === items.length && skip > 0) setSkip(Math.max(0, skip - limit));
     else await load();
   };

@@ -9,7 +9,6 @@ import {
 import "./Strength_Create.css";
 import { toast } from "react-toastify";
 
-// MUI (không dùng Grid/Grid2 để tránh lỗi import)
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -23,20 +22,15 @@ import Checkbox from "@mui/material/Checkbox";
 import ListItemText from "@mui/material/ListItemText";
 import FormHelperText from "@mui/material/FormHelperText";
 
-/* ===== Fallback options ===== */
 const TYPES = ["Strength", "Cardio", "Sport"];
 const EQUIPMENTS_FALLBACK = [
-  "Không có","Tạ đòn","Tạ đơn","Máy","Banh","Dây kháng lực","Tạ ấm (Kettlebell)",
-  "Thanh tạ EZ","Xà đơn","Cáp ròng rọc","Bóng Bosu","Ghế phẳng/ghế dốc",
+  "Không có","Tạ đòn","Tạ đơn","Máy","Banh","Dây kháng lực","Kettlebell","BOSU","TRX"
 ];
 const MUSCLES_FALLBACK = [
-  "Ngực","Lưng","Vai","Tay trước (Biceps)","Tay sau (Triceps)",
-  "Cẳng tay","Bụng (Core)","Mông","Đùi trước (Quadriceps)",
-  "Đùi sau (Hamstrings)","Bắp chân (Calves)","Cổ","Xô (Lats)",
+  "Ngực","Lưng","Vai","Bụng","Hông","Đùi trước","Đùi sau","Mông","Bắp chân","Tay trước","Tay sau","Cẳng tay","Cổ","Toàn thân","Core"
 ];
 const LEVELS = ["Cơ bản", "Trung bình", "Nâng cao"];
 
-/* ===== Initial form ===== */
 const init = {
   imageUrl: "",
   videoUrl: "",
@@ -47,23 +41,20 @@ const init = {
   equipment: "",
   level: "",
   caloriePerRep: "",
-  guide: "",
-  description: "",
+  guideHtml: "",
+  descriptionHtml: "",
 };
 
 export default function StrengthCreate() {
   const nav = useNavigate();
 
-  // options
   const [muscleOptions, setMuscleOptions] = useState(MUSCLES_FALLBACK);
   const [equipmentOptions, setEquipmentOptions] = useState(EQUIPMENTS_FALLBACK);
 
-  // form
   const [f, setF] = useState(init);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // refs (chỉ gán cho TextField hoặc element muốn scroll/focus)
   const refName = useRef(null);
   const refImageBox = useRef(null);
   const refCal = useRef(null);
@@ -72,14 +63,12 @@ export default function StrengthCreate() {
   const refImgUrl = useRef(null);
   const refVidUrl = useRef(null);
 
-  // files + preview
   const imgInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const [imgFile, setImgFile] = useState(null);
   const [imgPreview, setImgPreview] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
 
-  // load options (nếu BE có endpoint)
   useEffect(() => {
     (async () => {
       try {
@@ -93,7 +82,6 @@ export default function StrengthCreate() {
     })();
   }, []);
 
-  // cleanup preview
   useEffect(() => {
     return () => {
       if (imgPreview && imgPreview.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
@@ -124,7 +112,6 @@ export default function StrengthCreate() {
     if (!imgFile) setImgPreview(f.imageUrl || null);
   };
 
-  /* ===== validate & helpers ===== */
   const scrollToFirstError = (errs) => {
     const order = [
       ["name", refName],
@@ -132,8 +119,8 @@ export default function StrengthCreate() {
       ["caloriePerRep", refCal],
       ["imageUrl", refImgUrl],
       ["videoUrl", refVidUrl],
-      ["guide", refGuide],
-      ["description", refDesc],
+      ["guideHtml", refGuide],
+      ["descriptionHtml", refDesc],
     ];
     const first = order.find(([k]) => errs[k]);
     if (first && first[1]?.current) {
@@ -149,7 +136,7 @@ export default function StrengthCreate() {
     const name = String(f.name || "").trim();
     if (!name) errs.name = "Vui lòng nhập tên bài tập";
     else if (name.length > 100) errs.name = "Tên tối đa 100 ký tự";
-    else if (!/^[\p{L}\p{M}\s0-9'’\-.,()/]+$/u.test(name)) {
+    else if (!/^[\p{L}\p{M}\s0-9'’\-.,()\/]+$/u.test(name)) {
       errs.name = "Tên chỉ gồm chữ, số, khoảng trắng và ' - . , ( ) /";
     }
 
@@ -170,7 +157,6 @@ export default function StrengthCreate() {
     return errs;
   };
 
-  /* ===== submit ===== */
   const onSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
@@ -189,8 +175,8 @@ export default function StrengthCreate() {
       equipment: f.equipment,
       level: f.level,
       caloriePerRep: Number(f.caloriePerRep),
-      guide: String(f.guide || "").trim() || undefined,
-      description: String(f.description || "").trim() || undefined,
+      guideHtml: String(f.guideHtml || "").trim() || undefined,
+      descriptionHtml: String(f.descriptionHtml || "").trim() || undefined,
       imageUrl: imgFile ? undefined : (f.imageUrl?.trim() || undefined),
       videoUrl: videoFile ? undefined : (f.videoUrl?.trim() || undefined),
       sourceType: "admin_created",
@@ -215,7 +201,6 @@ export default function StrengthCreate() {
 
       const createdId = created?._id || created?.id;
       toast.success("Tạo bài tập thành công!");
-      // Điều hướng về danh sách + truyền state để flash & toast
       nav("/exercises/strength", { state: { justCreated: true, createdId } });
     } catch (err) {
       const msg =
@@ -228,14 +213,12 @@ export default function StrengthCreate() {
     }
   };
 
-  // Menu dropdown cố định & có scroll
   const menuProps = {
     disableScrollLock: true,
     PaperProps: { sx: { maxHeight: 280, "& ul": { maxHeight: 280 } } },
     MenuListProps: { dense: true },
   };
 
-  // Helpers layout grid
   const rowGrid2 = {
     display: "grid",
     gap: 16,
@@ -530,8 +513,8 @@ export default function StrengthCreate() {
               <div className="sc-field-title">Hướng dẫn tập luyện</div>
               <TextField
                 label="Hướng dẫn tập luyện"
-                value={f.guide}
-                onChange={(e) => onChange("guide", e.target.value)}
+                value={f.guideHtml}
+                onChange={(e) => onChange("guideHtml", e.target.value)}
                 multiline
                 minRows={5}
                 fullWidth
@@ -541,8 +524,8 @@ export default function StrengthCreate() {
               <div className="sc-field-title">Mô tả bài tập</div>
               <TextField
                 label="Mô tả bài tập"
-                value={f.description}
-                onChange={(e) => onChange("description", e.target.value)}
+                value={f.descriptionHtml}
+                onChange={(e) => onChange("descriptionHtml", e.target.value)}
                 multiline
                 minRows={5}
                 fullWidth
