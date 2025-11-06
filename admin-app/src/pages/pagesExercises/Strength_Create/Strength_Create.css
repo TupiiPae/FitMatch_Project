@@ -1,0 +1,212 @@
+/* src/pages/pagesExercises/Strength_Create/Strength_Create.css */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* ===== Layout tổng thể ===== */
+.strength-create-page {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: "Roboto", sans-serif;
+}
+
+/* ===== (LẤY TỪ FOOD) Định nghĩa các thành phần dùng chung ===== */
+/* (Giữ nguyên .breadcrumb-nav, .card, .page-head, .head-actions, .btn từ CSS cũ của bạn nếu có) */
+/* Dưới đây là các style tối thiểu để layout hoạt động nếu bạn chưa có CSS chung */
+
+.breadcrumb-nav {
+  display: flex; align-items: center; gap: 8px; font-size: 14px;
+  color: #6b7280; padding: 0 4px;
+}
+.breadcrumb-nav a {
+  color: #374151; text-decoration: none; display: flex;
+  align-items: center; gap: 6px;
+}
+.breadcrumb-nav a:hover { text-decoration: underline; }
+.breadcrumb-nav .current-group { display: flex; align-items: center; gap: 6px; }
+.breadcrumb-nav .current-page { font-weight: 600; color: #111827; }
+.breadcrumb-nav .separator { font-size: 12px; color: #9ca3af; }
+.breadcrumb-nav i { font-size: 12px; }
+
+.card {
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 12px;
+}
+
+/* (MỚI) Header: Title và Nút trên cùng 1 hàng */
+.page-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 4px 12px 12px; border-bottom: 1px solid #f3f4f6;
+}
+.page-head h2 {
+  font-size: 20px; font-weight: 700; color: #0f172a; margin: 0;
+}
+.head-actions { display: flex; align-items: center; gap: 8px; }
+
+/* (MỚI) Style nút chung (giống Food_Create) */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid #E5E7EB;
+  background: #fff; color: #111827; cursor: pointer;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: all .15s ease;
+  text-transform: none; /* Ghi đè default-uppercase của MUI nếu cần */
+}
+.btn:hover { background: #f9fafb; }
+.btn.primary { background: #008080; border-color: #008080; color: #fff; }
+.btn.primary:hover { background: #007070; } /* Đậm hơn khi hover */
+.btn.ghost { background: #fff; }
+.btn:active { transform: translateY(1px); }
+/* ===== KẾT THÚC CSS DÙNG CHUNG ===== */
+
+
+/* ===== (MỚI) Layout Form 2 cột + Kẻ dọc (giống Food_Create) ===== */
+.sc-form-layout {
+  display: grid;
+  /* Cột 1 cố định 300px, Cột 2 co giãn */
+  /* Bạn có thể đổi 300px thành 350px hoặc 400px nếu thấy cột trái hẹp */
+  grid-template-columns: 300px 1fr; 
+  gap: 0; /* Tắt gap để border-right hoạt động như 1 đường kẻ */
+  padding: 12px;
+}
+
+.sc-layout-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* (YÊU CẦU) Đường kẻ dọc */
+  border-right: 1px solid #e5e7eb;
+  padding-right: 24px;
+}
+
+.sc-layout-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* Khoảng cách giữa các hàng Grid */
+  padding-left: 24px;
+}
+
+/* ===== (MỚI) Tiêu đề nhóm + Kẻ ngang (giống Food_Create) ===== */
+.sc-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  
+  /* (YÊU CẦU) Thanh dọc màu bên trái tiêu đề */
+  position: relative;
+  padding-left: 14px; 
+}
+.sc-section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background-color: #F7444E; /* Màu cam/đỏ */
+  border-radius: 2px;
+}
+
+/* (YÊU CẦU) Đường kẻ ngang */
+.sc-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 8px 0;
+}
+
+
+/* ===== (MỚI) Box xem trước ảnh (style giống Food_Create) ===== */
+.sc-image-box {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f9fafb;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .2s ease, background .2s ease;
+}
+.sc-image-box:hover { border-color: #94a3b8; background: #f8fafc; }
+.sc-image-box img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+}
+.sc-placeholder { 
+  color: #94a3b8; 
+  display: grid; 
+  place-items: center; 
+  gap: 6px; 
+  text-align: center; 
+  padding: 12px; 
+}
+.sc-placeholder i { font-size: 32px; }
+
+/* CSS này không cần thiết vì MUI đã xử lý lỗi */
+/* .sc-err { color: #dc2626; font-size: 12px; margin-top: 6px; } */
+
+
+/* ===== Responsive (giống Food_Create) ===== */
+@media (max-width: 980px) {
+  /* Chuyển về 1 cột */
+  .sc-form-layout {
+    grid-template-columns: 1fr;
+  }
+  .sc-layout-left {
+    border-right: none; /* Bỏ đường kẻ dọc */
+    padding-right: 0;
+    border-bottom: 1px solid #e5e7eb; /* Thay bằng kẻ ngang */
+    padding-bottom: 24px;
+  }
+  .sc-layout-right {
+    padding-left: 0;
+    padding-top: 12px;
+  }
+}
+@media (max-width: 768px) {
+  .strength-create-page { padding: 18px; }
+  .page-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .head-actions { width: 100%; justify-content: flex-end; }
+}
+
+.sc-form-layout .MuiFormControl-root,
+.sc-form-layout .MuiTextField-root,
+.sc-form-layout .MuiSelect-root,
+.sc-form-layout .MuiOutlinedInput-root {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Bảo vệ Grid container không bị CSS global set display khác */
+.sc-form-layout .MuiGrid-container {
+  display: flex;           /* MUI set flex; đảm bảo không bị override */
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Rows & columns (giữ kiểu cũ) */
+.sc-row { display: grid; gap: 16px;}
+.sc-cols-2 { grid-template-columns: 1fr 1fr; }
+.sc-cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.sc-col.span-2 { grid-column: span 2; }
+
+/* Tiêu đề nhỏ trên field */
+.sc-field-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 14px;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .sc-cols-2, .sc-cols-3 { grid-template-columns: 1fr; }
+  .sc-col.span-2 { grid-column: auto; }
+}

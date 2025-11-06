@@ -1,4 +1,3 @@
-// server/src/index.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -16,6 +15,7 @@ import foodRoutes from "./routes/food.routes.js";
 import nutritionRoutes from "./routes/nutrition.routes.js";
 import adminFoodsRoutes from "./routes/admin.food.routes.js";
 import adminAccountsRoutes from "./routes/admin.accounts.routes.js";
+import adminExercisesRoutes from "./routes/admin.exercise.routes.js"; // <-- NEW
 
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
@@ -28,7 +28,7 @@ const isDev = process.env.NODE_ENV !== "production";
 const PORT = process.env.PORT || 5000;
 const MONGO = process.env.MONGO || process.env.MONGO_URI;
 
-// ===== Static uploads (điểm sự thật: từ middleware/upload.js) =====
+// ===== Static uploads =====
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -40,7 +40,6 @@ app.use(
 
 // ===== Parsers =====
 app.use(express.json({ limit: "1mb" }));
-// (Không cần express.urlencoded cho upload; multer xử lý multipart)
 
 // ===== CORS =====
 const allowlist = [
@@ -55,7 +54,6 @@ const allowlist = [
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Cho phép request không có Origin (Postman/cURL) hoặc nằm trong allowlist
       if (!origin || allowlist.includes(origin)) return cb(null, true);
       return cb(new Error(`CORS bị chặn cho origin: ${origin}`));
     },
@@ -69,10 +67,9 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Bật debug query cho DEV
 if (isDev) mongoose.set("debug", true);
 
-// Normalise duplicated /api prefix (fix requests like /api/api/...)
+// Fix duplicated /api prefix
 app.use((req, _res, next) => {
   if (/^\/api\/api(\/|$)/.test(req.url)) {
     req.url = req.url.replace(/^\/api\/api/, "/api");
@@ -104,9 +101,12 @@ app.use(
   adminAccountsRoutes
 );
 
-// Các nhóm admin khác
+// Nhóm admin khác (giữ nguyên)
 app.use("/api/admin", adminRoutes);
-app.use("/api/admin", adminFoodsRoutes); // gồm /foods, /foods/import/validate, /foods/import
+app.use("/api/admin", adminFoodsRoutes);
+
+// ===== NEW: Admin Exercises =====
+app.use("/api/admin", adminExercisesRoutes);
 
 // ===== User routes =====
 app.use("/api/user/onboarding", onboardingRoutes);
@@ -116,14 +116,14 @@ app.use("/api/user", userRoutes);
 app.use("/api", foodRoutes);
 app.use("/api", nutritionRoutes);
 
-// (Tùy chọn) In danh sách routes khi khởi động
+// In danh sách routes khi DEV
 const printRegisteredRoutes = (appInstance) => {
   const out = [];
-  appInstance._router.stack.forEach((layer) => {
+  appInstance._router?.stack?.forEach((layer) => {
     if (layer.route) {
       const methods = Object.keys(layer.route.methods).join(",").toUpperCase();
       out.push(`${methods} ${layer.route.path}`);
-    } else if (layer.name === "router" && layer.handle && layer.handle.stack) {
+    } else if (layer.name === "router" && layer.handle?.stack) {
       const mountPath = layer.regexp?.toString() || "<router>";
       layer.handle.stack.forEach((handler) => {
         if (handler.route) {
@@ -137,7 +137,7 @@ const printRegisteredRoutes = (appInstance) => {
 };
 if (isDev) printRegisteredRoutes(app);
 
-// ===== 404 cho API =====
+// ===== 404 for API =====
 app.use((req, res) => {
   if (req.originalUrl.startsWith("/api/")) {
     return res.status(404).json({ success: false, message: "Không tìm thấy endpoint" });

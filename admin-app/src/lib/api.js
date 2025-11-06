@@ -1,4 +1,4 @@
-// src/lib/api.js
+// admin-app/src/lib/api.js
 import axios from "axios";
 
 /* ---------------------------
@@ -341,6 +341,111 @@ export const validateFoodsBulk = async ({ file, archive }) => {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return r.data; // { success, count, errors? }
+};
+
+/* =========================
+ * EXERCISES (ADMIN)
+ * ========================= */
+
+// Meta cho dropdown (type, muscles, equipments, levels)
+export const getExerciseMeta = async () => {
+  const r = await api.get("/api/admin/exercises/meta");
+  // BE dùng responseOk -> { ok:true, data:{...} }
+  return r.data?.data ?? r.data;
+};
+
+// Danh sách bài tập (server-side filter + paging)
+export const listExercisesAdminOnly = async (params = {}) => {
+  const r = await api.get("/api/admin/exercises", { params });
+  // BE trả { ok:true, data:{ items, total, limit, skip } }
+  return r.data?.data ?? r.data;
+};
+
+// Lấy chi tiết 1 bài tập
+export const getExercise = async (id) => {
+  const r = await api.get(`/api/admin/exercises/${id}`);
+  return r.data?.data ?? r.data;
+};
+
+// Tạo bài tập
+// - formDataOrJson: FormData (nếu có file ảnh) hoặc object JSON
+// - isMultipart: true nếu là FormData
+export const createExercise = async (formDataOrJson, isMultipart = false) => {
+  if (isMultipart) {
+    const r = await api.post("/api/admin/exercises", formDataOrJson, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return r.data?.data ?? r.data;
+  } else {
+    const r = await api.post("/api/admin/exercises", formDataOrJson);
+    return r.data?.data ?? r.data;
+  }
+};
+
+// Cập nhật bài tập
+export const updateExercise = async (id, formDataOrJson, isMultipart = false) => {
+  if (isMultipart) {
+    const r = await api.patch(`/api/admin/exercises/${id}`, formDataOrJson, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return r.data?.data ?? r.data;
+  } else {
+    const r = await api.patch(`/api/admin/exercises/${id}`, formDataOrJson);
+    return r.data?.data ?? r.data;
+  }
+};
+
+// Xoá bài tập
+export const deleteExercise = async (id) => {
+  const r = await api.delete(`/api/admin/exercises/${id}`);
+  return r.data?.data ?? r.data; // { ok: true }
+};
+
+// 1) createExerciseFile: gọi createExercise ở chế độ multipart
+export const createExerciseFile = async (formData) => {
+  return createExercise(formData, true);
+};
+
+// 2) listMuscleGroups: ưu tiên /meta; fallback /options/muscles; cuối cùng trả []
+export const listMuscleGroups = async () => {
+  try {
+    const meta = await getExerciseMeta(); // BE: { EXERCISE_TYPES, MUSCLE_GROUPS, EQUIPMENTS, LEVELS }
+    const arr =
+      meta?.MUSCLE_GROUPS || meta?.muscles || meta?.muscleOptions || meta?.data?.muscles || [];
+    if (Array.isArray(arr) && arr.length) return arr;
+  } catch {}
+  try {
+    const r = await api.get("/api/admin/exercises/options/muscles");
+    return r.data?.items || r.data || [];
+  } catch {
+    try {
+      const r2 = await api.get("/api/exercises/options/muscles");
+      return r2.data?.items || r2.data || [];
+    } catch {
+      return [];
+    }
+  }
+};
+
+// 3) listEquipments: tương tự
+export const listEquipments = async () => {
+  try {
+    const meta = await getExerciseMeta(); // BE: { EXERCISE_TYPES, MUSCLE_GROUPS, EQUIPMENTS, LEVELS }
+    const arr =
+      meta?.EQUIPMENTS || meta?.equipments || meta?.equipmentOptions || meta?.data?.equipments || [];
+    if (Array.isArray(arr) && arr.length) return arr;
+  } catch {}
+  try {
+    const r = await api.get("/api/admin/exercises/options/equipments");
+    return r.data?.items || r.data || [];
+  } catch {
+    try {
+      const r2 = await api.get("/api/exercises/options/equipments");
+      return r2.data?.items || r2.data || [];
+    } catch {
+      return [];
+    }
+  }
 };
 
 /* =========================

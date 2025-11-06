@@ -1,0 +1,310 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { api, listExercisesAdminOnly, deleteExercise, getExerciseMeta, getExercise } from "../../../lib/api";
+import { toast } from "react-toastify";
+import "./Strength_List.css";
+
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
+const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
+
+export default function Strength_List() {
+  const nav = useNavigate();
+  const location = useLocation();
+
+  // Filters
+  const [q, setQ] = useState("");
+  const [muscle, setMuscle] = useState("");
+  const [muscle2, setMuscle2] = useState("");
+  const [equipment, setEquipment] = useState("");
+  const [level, setLevel] = useState("");
+
+  // Meta
+  const [MUSCLES, setMUSCLES] = useState([]);
+  const [EQUIPMENTS, setEQUIPMENTS] = useState([]);
+  const [LEVELS, setLEVELS] = useState([]);
+
+  // Data
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(10);
+  const [skip, setSkip] = useState(0);
+
+  // selection
+  const [selectedIds, setSelectedIds] = useState([]);
+  const allChecked = items.length > 0 && selectedIds.length === items.length;
+  const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
+
+  const [confirmId, setConfirmId] = useState(null);
+  const [flashId, setFlashId] = useState(null); // để highlight hàng mới tạo
+
+  useEffect(() => {
+    (async () => {
+      const meta = await getExerciseMeta();
+      setMUSCLES(meta?.MUSCLE_GROUPS || []);
+      setEQUIPMENTS(meta?.EQUIPMENTS || []);
+      setLEVELS(meta?.LEVELS || []);
+    })();
+  }, []);
+
+  const load = async () => {
+    setLoading(true);
+    setSelectedIds([]);
+    try {
+      const params = { type: "Strength", limit, skip, q };
+      if (muscle) params.primary = muscle;
+      if (muscle2) params.secondary = muscle2;
+      if (equipment) params.equipment = equipment;
+      if (level) params.level = level;
+
+      const res = await listExercisesAdminOnly(params);
+      setItems(res?.items || []);
+      setTotal(typeof res?.total === "number" ? res.total : (res?.items?.length || 0));
+    } catch (e) {
+      console.error(e);
+      setItems([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [limit, skip]);
+  useEffect(() => {
+    const t = setTimeout(() => { if (skip !== 0) setSkip(0); else load(); }, 250);
+    return () => clearTimeout(t);
+  }, [q, muscle, muscle2, equipment, level]);
+
+  // đón state từ trang Create để toast & flash
+  useEffect(() => {
+    const s = location.state;
+    if (s?.justCreated) {
+      toast.success("Tạo bài tập thành công!");
+      // Sau khi load xong, thử flash item mới tạo
+      const doFlash = async () => {
+        try {
+          if (s.createdId) {
+            // optional: đảm bảo có trong danh sách (nếu phân trang không thấy, cứ reload về trang đầu)
+            if (skip !== 0) setSkip(0);
+            await load();
+            setFlashId(s.createdId);
+            setTimeout(() => setFlashId(null), 2500);
+          } else {
+            await load();
+          }
+        } catch {}
+      };
+      doFlash();
+      // xoá state để tránh toast lại khi refresh
+      nav(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fmtDate = (v) => (v ? new Date(v).toLocaleString() : "—");
+
+  const toggleAll = () => { setSelectedIds(allChecked ? [] : items.map(x => x._id)); };
+  const toggleOne = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const onDeleteOne = async (id) => {
+    await deleteExercise(id);
+    if (items.length === 1 && skip > 0) setSkip(Math.max(0, skip - limit));
+    else await load();
+  };
+
+  const onBulkDelete = async () => {
+    if (!selectedIds.length) return;
+    if (!confirm(`Xóa ${selectedIds.length} bài tập đã chọn?`)) return;
+    for (const id of selectedIds) { try { await deleteExercise(id); } catch {} }
+    if (selectedIds.length === items.length && skip > 0) setSkip(Math.max(0, skip - limit));
+    else await load();
+  };
+
+  // CSV (trang hiện tại)
+  const csv = useMemo(() => {
+    const head = [
+      "name","type","primaryMuscles","secondaryMuscles","equipment","level","caloriePerRep","createdAt"
+    ].join(",");
+    const rows = items.map(x => ([
+      x.name, x.type, (x.primaryMuscles||[]).join("|"), (x.secondaryMuscles||[]).join("|"),
+      x.equipment, x.level, x.caloriePerRep ?? "", x.createdAt || ""
+    ].map(v => v ?? "").join(",")));
+    return [head, ...rows].join("\n");
+  }, [items]);
+
+  const downloadCSV = () => {
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "exercises_strength.csv";
+    a.click();
+  };
+
+  // pagination
+  const page = Math.floor(skip / limit);
+  const pageCount = Math.max(1, Math.ceil((total || 0) / limit));
+  const handleLimitChange = (e) => { setLimit(Number(e.target.value)); setSkip(0); };
+  const handlePageChange = (newSkip) => { if (newSkip >= 0 && newSkip < Math.max(total, 1)) setSkip(newSkip); };
+
+  return (
+    <div className="ex-page">
+      {/* breadcrumb */}
+      <nav className="ex-breadcrumb" aria-label="breadcrumb">
+        <Link to="/"><i className="fa-solid fa-house" /> <span>Trang chủ</span></Link>
+        <span className="sep">/</span>
+        <span className="grp"><i className="fa-solid fa-dumbbell" /> <span>Quản lý Bài tập</span></span>
+        <span className="sep">/</span>
+        <span className="cur">Danh sách bài tập - Strength</span>
+      </nav>
+
+      <div className="ex-card">
+        <div className="ex-head">
+          <h2>Danh sách bài tập - Strength ({total})</h2>
+          <div className="ex-actions">
+            <button className="btn ghost" type="button" onClick={() => alert("Tính năng nhập danh sách sẽ thêm sau")}>
+              <i className="fa-solid fa-file-import" /> <span>Nhập danh sách</span>
+            </button>
+            <button className="btn ghost" type="button" onClick={downloadCSV}>
+              <i className="fa-solid fa-file-export" /> <span>Xuất danh sách</span>
+            </button>
+            <button className="btn danger" type="button" disabled={!selectedIds.length} onClick={onBulkDelete}>
+              <i className="fa-regular fa-trash-can" /> <span>Xóa</span>
+            </button>
+            <Link className="btn primary" to="/exercises/strength/create">
+              <span>Tạo bài tập</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Search + filters */}
+        <div className="ex-filters">
+          <div className="ex-search">
+            <i className="fa-solid fa-magnifying-glass" />
+            <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Tìm theo tên bài tập..." />
+          </div>
+          <div className="ex-filter-row">
+            <select value={muscle} onChange={(e)=>setMuscle(e.target.value)}>
+              <option value="">Phân loại cơ chính</option>
+              {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select value={muscle2} onChange={(e)=>setMuscle2(e.target.value)}>
+              <option value="">Nhóm cơ phụ</option>
+              {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select value={equipment} onChange={(e)=>setEquipment(e.target.value)}>
+              <option value="">Dụng cụ</option>
+              {EQUIPMENTS.map(eq => <option key={eq} value={eq}>{eq}</option>)}
+            </select>
+            <select value={level} onChange={(e)=>setLevel(e.target.value)}>
+              <option value="">Mức độ</option>
+              {LEVELS.map(lv => <option key={lv} value={lv}>{lv}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="ex-table">
+          <div className="ex-thead">
+            <label className="cell cb">
+              <input
+                type="checkbox"
+                checked={allChecked}
+                ref={(el) => { if (el) el.indeterminate = someChecked; }}
+                onChange={toggleAll}
+              />
+            </label>
+            <div className="cell img">Hình ảnh</div>
+            <div className="cell name">Tên bài tập</div>
+            <div className="cell type">Phân loại</div>
+            <div className="cell pmus">Nhóm cơ chính</div>
+            <div className="cell smus">Nhóm cơ phụ</div>
+            <div className="cell equip">Dụng cụ</div>
+            <div className="cell lvl">Mức độ</div>
+            <div className="cell cal">Calorie/rep</div>
+            <div className="cell created">Thời gian tạo</div>
+            <div className="cell act">Thao tác</div>
+          </div>
+
+          {loading && <div className="ex-empty">Đang tải...</div>}
+          {!loading && items.length === 0 && <div className="ex-empty">Chưa có bài tập.</div>}
+
+          {!loading && items.map(it => (
+            <div
+              key={it._id}
+              className={`ex-trow ${flashId === it._id ? "ex-row--flash" : ""}`}
+            >
+              <label className="cell cb">
+                <input type="checkbox" checked={selectedIds.includes(it._id)} onChange={()=>toggleOne(it._id)} />
+              </label>
+
+              <div className="cell img">
+                {it.imageUrl
+                  ? <img src={toAbs(it.imageUrl)} alt={it.name} onError={(e)=>{e.currentTarget.src="/images/food-placeholder.jpg"}} />
+                  : <div className="img-fallback"><i className="fa-regular fa-image" /></div>}
+              </div>
+
+              <div className="cell name">
+                <div className="ex-title">{it.name || "—"}</div>
+                <div className="ex-sub">#{String(it._id).slice(-6)}</div>
+              </div>
+
+              <div className="cell type">{it.type || "—"}</div>
+              <div className="cell pmus">{(it.primaryMuscles||[]).join(", ") || "—"}</div>
+              <div className="cell smus">{(it.secondaryMuscles||[]).join(", ") || "—"}</div>
+              <div className="cell equip">{it.equipment || "—"}</div>
+              <div className="cell lvl">{it.level || "—"}</div>
+              <div className="cell cal">{it.caloriePerRep ?? "—"}</div>
+              <div className="cell created">{fmtDate(it.createdAt)}</div>
+
+              <div className="cell act">
+                <button className="iconbtn" title="Chỉnh sửa" onClick={()=>nav(`/exercises/strength/create?id=${it._id}`)}>
+                  <i className="fa-regular fa-pen-to-square" />
+                </button>
+                <button className="iconbtn danger" title="Xóa" onClick={()=>setConfirmId(it._id)}>
+                  <i className="fa-solid fa-trash-can" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pagination */}
+        <div className="ex-pagination">
+          <div className="per-page">
+            <span>Hiển thị:</span>
+            <select value={limit} onChange={handleLimitChange}>
+              <option value="10">10 hàng</option>
+              <option value="25">25 hàng</option>
+              <option value="50">50 hàng</option>
+            </select>
+          </div>
+          <div className="page-nav">
+            <span className="page-info">Trang {page + 1} / {Math.max(pageCount,1)} (Tổng: {total})</span>
+            <button className="btn-page" onClick={()=>handlePageChange(skip - limit)} disabled={skip===0}>
+              <i className="fa-solid fa-chevron-left" />
+            </button>
+            <button className="btn-page" onClick={()=>handlePageChange(skip + limit)} disabled={skip + limit >= total}>
+              <i className="fa-solid fa-chevron-right" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Confirm Delete */}
+      {confirmId && (
+        <div className="cm-backdrop" onClick={()=>setConfirmId(null)}>
+          <div className="cm-modal" onClick={(e)=>e.stopPropagation()}>
+            <div className="cm-head">
+              <h1 className="cm-title">Xóa bài tập?</h1>
+            </div>
+            <div className="cm-body">Thao tác không thể hoàn tác.</div>
+            <div className="cm-foot">
+              <button className="btn ghost" onClick={()=>setConfirmId(null)}>Hủy</button>
+              <button className="btn danger" onClick={async ()=>{await onDeleteOne(confirmId); setConfirmId(null);}}>Xóa</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

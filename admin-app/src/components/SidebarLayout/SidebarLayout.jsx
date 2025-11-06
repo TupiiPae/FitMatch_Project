@@ -46,8 +46,10 @@ const buildManagementSections = (rawLevel) => {
       title: "Bài tập",
       icon: "fa-solid fa-dumbbell",
       items: [
-        { to: "/exercises",              label: "Danh sách bài tập", exact: true },
-        { to: "/exercises/create",       label: "Tạo bài tập mới" },
+        { to: "/exercises/strength", label: "Danh sách bài tập - Strength", exact: true },
+        { to: "/exercises/cardio", label: "Danh sách bài tập - Cardio" },
+        { to: "/exercises/sport", label: "Danh sách bài tập - Sport" },
+        { to: "/exercises/create", label: "Tạo bài tập mới" },
         { to: "/exercises/plan-suggest", label: "Tạo lịch tập gợi ý" },
       ],
     },
