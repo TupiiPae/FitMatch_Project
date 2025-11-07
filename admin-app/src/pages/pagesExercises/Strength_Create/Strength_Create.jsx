@@ -1,3 +1,4 @@
+// src/pages/pagesExercises/Strength_Create/Strength_Create.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -5,6 +6,7 @@ import {
   createExerciseFile,
   listMuscleGroups,
   listEquipments,
+  uploadExerciseVideoApi, // dùng sau khi tạo xong -> upload video theo id
 } from "../../../lib/api";
 import "./Strength_Create.css";
 import { toast } from "react-toastify";
@@ -108,6 +110,16 @@ export default function StrengthCreate() {
     if (f.videoUrl) onChange("videoUrl", "");
   };
 
+  // >>> NÚT GỠ VIDEO: xoá file đã chọn & xoá link đã nhập
+  const handleRemoveVideoLocal = () => {
+    try {
+      if (videoInputRef.current) videoInputRef.current.value = "";
+    } catch {}
+    setVideoFile(null);
+    setF((s) => ({ ...s, videoUrl: "" }));
+    toast.info("Đã gỡ video.");
+  };
+
   const showImgFromUrl = () => {
     if (!imgFile) setImgPreview(f.imageUrl || null);
   };
@@ -178,16 +190,18 @@ export default function StrengthCreate() {
       guideHtml: String(f.guideHtml || "").trim() || undefined,
       descriptionHtml: String(f.descriptionHtml || "").trim() || undefined,
       imageUrl: imgFile ? undefined : (f.imageUrl?.trim() || undefined),
+      // Nếu đã "gỡ", cả videoFile lẫn f.videoUrl sẽ rỗng -> không upload gì
       videoUrl: videoFile ? undefined : (f.videoUrl?.trim() || undefined),
       sourceType: "admin_created",
     };
 
     try {
       let created = null;
-      if (imgFile || videoFile) {
+
+      // B1) Tạo bài tập (ảnh + text) — KHÔNG append 'video' ở đây
+      if (imgFile) {
         const fd = new FormData();
-        if (imgFile) fd.append("image", imgFile);
-        if (videoFile) fd.append("video", videoFile);
+        fd.append("image", imgFile);
         Object.entries(payload).forEach(([k, v]) => {
           if (v !== undefined && v !== null) {
             if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
@@ -200,16 +214,27 @@ export default function StrengthCreate() {
       }
 
       const createdId = created?._id || created?.id;
+
+      // B2) Nếu có file video -> gọi endpoint riêng
+      if (videoFile && createdId) {
+        try {
+          await uploadExerciseVideoApi(createdId, videoFile);
+        } catch (e) {
+          console.error("Upload video fail:", e);
+          toast.warning("Tạo thành công, nhưng upload video thất bại. Bạn có thể thêm video sau.");
+        }
+      }
+
       toast.success("Tạo bài tập thành công!");
       nav("/exercises/strength", { state: { justCreated: true, createdId } });
     } catch (err) {
-        let msg = err?.response?.data?.message;
-          if (!msg) {
-            if (err?.response?.status === 413) msg = "File video quá lớn. Giới hạn hiện tại ~150MB.";
-            else if (err?.response?.status === 422) msg = "Không thể lưu file video hoặc dữ liệu không hợp lệ.";
-            else msg = "Lỗi máy chủ, thử lại sau.";
-          }
-          toast.error(msg);
+      let msg = err?.response?.data?.message;
+      if (!msg) {
+        if (err?.response?.status === 413) msg = "File quá lớn.";
+        else if (err?.response?.status === 422) msg = "Dữ liệu không hợp lệ.";
+        else msg = "Lỗi máy chủ, thử lại sau.";
+      }
+      toast.error(msg);
       console.error(err);
     } finally {
       setSaving(false);
@@ -260,7 +285,7 @@ export default function StrengthCreate() {
               Hủy
             </button>
             <button type="submit" form="strength-create-form" className="btn primary" disabled={saving}>
-              {saving ? "Đang lưu..." : "Tạo bài tập"}
+              {saving ? "Đang lưu..." : "Lưu"}
             </button>
           </div>
         </div>
@@ -325,7 +350,7 @@ export default function StrengthCreate() {
             <hr className="sc-divider" />
 
             <h3 className="sc-section-title">Video hướng dẫn</h3>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <Button variant="outlined" onClick={pickVideo} component="label" fullWidth>
                 {videoFile ? `Đã chọn: ${videoFile.name}` : "Tải lên file video (Tối đa 50mb)"}
                 <input
@@ -350,6 +375,23 @@ export default function StrengthCreate() {
                 fullWidth
                 size="medium"
               />
+
+              {/* Nút Gỡ video (chỉ xoá trong form, chưa đụng server) */}
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={handleRemoveVideoLocal}
+                  disabled={!videoFile && !f.videoUrl}
+                >
+                  Gỡ video
+                </Button>
+                {(videoFile || f.videoUrl) && (
+                  <span style={{ opacity: 0.75 }}>
+                    Gỡ Video.
+                  </span>
+                )}
+              </Box>
             </Box>
           </div>
 
@@ -367,7 +409,7 @@ export default function StrengthCreate() {
                   value={f.name}
                   onChange={(e) => onChange("name", e.target.value)}
                   error={!!errors.name}
-                  helperText={errors.name} 
+                  helperText={errors.name}
                   fullWidth
                 />
               </Box>
@@ -387,14 +429,13 @@ export default function StrengthCreate() {
                       <MenuItem key={t} value={t}>{t}</MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.type}</FormHelperText> {/* SỬA 2 */}
+                  <FormHelperText>{errors.type}</FormHelperText>
                 </FormControl>
               </Box>
             </Box>
 
             {/* Hàng 2: Nhóm cơ chính & Nhóm cơ phụ */}
-            {/* BỎ mt: 2 Ở DÒNG DƯỚI */}
-            <Box sx={rowGrid2}> 
+            <Box sx={rowGrid2}>
               <Box>
                 <div className="sc-field-title">Nhóm cơ chính *</div>
                 <FormControl fullWidth error={!!errors.primaryMuscles}>
@@ -421,7 +462,7 @@ export default function StrengthCreate() {
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.primaryMuscles}</FormHelperText> {/* SỬA 3 */}
+                  <FormHelperText>{errors.primaryMuscles}</FormHelperText>
                 </FormControl>
               </Box>
 
@@ -451,14 +492,11 @@ export default function StrengthCreate() {
                       </MenuItem>
                     ))}
                   </Select>
-                  {/* SỬA 4 (Không cần helper text ở đây nếu không có lỗi) */}
-                  {/* <FormHelperText>{" "}</FormHelperText> */} 
                 </FormControl>
               </Box>
             </Box>
 
             {/* Hàng 3: Dụng cụ – Mức độ – Calorie/rep */}
-            {/* BỎ mt: 2 Ở DÒNG DƯỚI */}
             <Box sx={rowGrid3}>
               <Box>
                 <div className="sc-field-title">Dụng cụ *</div>
@@ -475,7 +513,7 @@ export default function StrengthCreate() {
                       <MenuItem key={eq} value={eq}>{eq}</MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.equipment}</FormHelperText> {/* SỬA 5 */}
+                  <FormHelperText>{errors.equipment}</FormHelperText>
                 </FormControl>
               </Box>
 
@@ -494,7 +532,7 @@ export default function StrengthCreate() {
                       <MenuItem key={lv} value={lv}>{lv}</MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.level}</FormHelperText> {/* SỬA 6 */}
+                  <FormHelperText>{errors.level}</FormHelperText>
                 </FormControl>
               </Box>
 

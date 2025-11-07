@@ -459,8 +459,11 @@ export const uploadExerciseVideoApi = async (id, file) => {
   const r = await api.post(`/api/admin/exercises/${id}/video`, fd, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  // BE trả { ok:true, videoUrl } hoặc responseOk
-  return r.data;
+  return r.data?.videoUrl || r.data;
+};
+export const removeExerciseVideoApi = async (id) => {
+  const r = await api.patch(`/api/admin/exercises/${id}`, { __removeVideo: true });
+  return r.data?.data ?? r.data;
 };
 
 /* =========================

@@ -1,4 +1,3 @@
-// admin-app/src/pages/pagesExercises/Strength_Edit/Strength_Edit.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -6,6 +5,8 @@ import {
   updateExercise,
   listMuscleGroups,
   listEquipments,
+  uploadExerciseVideoApi,     // <-- dùng để upload video mới
+  removeExerciseVideoApi,     // <-- dùng để gỡ video đã có
   api,
 } from "../../../lib/api";
 import "../Strength_Create/Strength_Create.css"; // reuse same CSS
@@ -74,6 +75,7 @@ export default function StrengthEdit() {
   const [imgFile, setImgFile] = useState(null);
   const [imgPreview, setImgPreview] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
+  const [removingVideo, setRemovingVideo] = useState(false); // user nhấn gỡ video?
 
   const onChange = (k, v) => setF((s) => ({ ...s, [k]: v }));
 
@@ -136,6 +138,7 @@ export default function StrengthEdit() {
     const file = e.target.files?.[0];
     if (!file) return;
     setVideoFile(file);
+    setRemovingVideo(false);
     if (f.videoUrl) onChange("videoUrl", "");
   };
 
@@ -143,7 +146,7 @@ export default function StrengthEdit() {
     if (!imgFile) setImgPreview(toAbs(f.imageUrl || null));
   };
 
-  // validation (same as Create, except name disabled, still validate others)
+  // validation (giống Create, trừ name disable)
   const validate = () => {
     const errs = {};
     if (!imgFile && !f.imageUrl) errs.image = "Vui lòng chọn ảnh hoặc nhập link ảnh";
@@ -163,17 +166,30 @@ export default function StrengthEdit() {
     return errs;
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) {
-      toast.error("Vui lòng kiểm tra lại các dữ liệu nhập.");
-      return;
+  // Gỡ video: gọi API riêng để xoá videoUrl trên server
+    const handleRemoveVideo = async () => {
+    try {
+        await removeExerciseVideoApi(id);
+        setF((s) => ({ ...s, videoUrl: "" }));
+        toast.success("Đã gỡ video khỏi bài tập");
+    } catch (err) {
+        const msg = err?.response?.data?.message || "Không gỡ được video";
+        toast.error(msg);
+        console.error(err);
     }
+    };
+
+    const onSubmit = async (e) => {
+        e.preventDefault();
+        const errs = validate();
+        if (Object.keys(errs).length) {
+        toast.error("Vui lòng kiểm tra lại các dữ liệu nhập.");
+        return;
+        }
 
     setSaving(true);
     const payload = {
-      // name: giữ nguyên; không cho sửa nên không gửi để tránh đụng unique/validate
+      // name không cho sửa
       type: f.type || "Strength",
       primaryMuscles: f.primaryMuscles,
       secondaryMuscles: f.secondaryMuscles || [],
@@ -183,15 +199,16 @@ export default function StrengthEdit() {
       guideHtml: String(f.guideHtml || "").trim() || undefined,
       descriptionHtml: String(f.descriptionHtml || "").trim() || undefined,
       imageUrl: imgFile ? undefined : (f.imageUrl?.trim() || undefined),
+      // KHÔNG gửi video file trong PATCH chính
       videoUrl: videoFile ? undefined : (f.videoUrl?.trim() || undefined),
     };
 
     try {
+      // 1) Cập nhật thông tin + ảnh
       let updated = null;
-      if (imgFile || videoFile) {
+      if (imgFile) {
         const fd = new FormData();
-        if (imgFile) fd.append("image", imgFile);
-        if (videoFile) fd.append("video", videoFile);
+        fd.append("image", imgFile);
         Object.entries(payload).forEach(([k, v]) => {
           if (v !== undefined && v !== null) {
             if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
@@ -203,16 +220,27 @@ export default function StrengthEdit() {
         updated = await updateExercise(id, payload, false);
       }
 
+      // 2) Nếu có file video mới -> upload qua endpoint riêng
+      if (videoFile) {
+        try {
+          const newUrl = await uploadExerciseVideoApi(id, videoFile);
+          setF((s) => ({ ...s, videoUrl: newUrl || s.videoUrl }));
+        } catch (e) {
+          console.error("Upload video fail:", e);
+          toast.warning("Đã lưu thông tin, nhưng upload video thất bại. Bạn có thể thử lại sau.");
+        }
+      }
+
       toast.success("Cập nhật bài tập thành công!");
       nav("/exercises/strength");
     } catch (err) {
-        let msg = err?.response?.data?.message;
-          if (!msg) {
-            if (err?.response?.status === 413) msg = "File video quá lớn. Giới hạn hiện tại ~150MB.";
-            else if (err?.response?.status === 422) msg = "Không thể lưu file video hoặc dữ liệu không hợp lệ.";
-            else msg = "Lỗi máy chủ, thử lại sau.";
-          }
-          toast.error(msg);
+      let msg = err?.response?.data?.message;
+      if (!msg) {
+        if (err?.response?.status === 413) msg = "File quá lớn.";
+        else if (err?.response?.status === 422) msg = "Dữ liệu không hợp lệ.";
+        else msg = "Lỗi máy chủ, thử lại sau.";
+      }
+      toast.error(msg);
       console.error(err);
     } finally {
       setSaving(false);
@@ -253,9 +281,17 @@ export default function StrengthEdit() {
           <div className="sc-layout-left">
             <h3 className="sc-section-title">Hình ảnh</h3>
 
-            <div className="sc-image-box" role="button" tabIndex={0} onClick={() => imgInputRef.current?.click()} ref={refImageBox}>
+            <div
+              className="sc-image-box"
+              role="button"
+              tabIndex={0}
+              onClick={pickImage}
+              ref={refImageBox}
+            >
               {imgPreview ? (
                 <img src={toAbs(imgPreview)} alt="Xem trước" />
+              ) : f.imageUrl ? (
+                <img src={toAbs(f.imageUrl)} alt="Xem trước" />
               ) : (
                 <div className="sc-placeholder">
                   <i className="fa-regular fa-image" />
@@ -267,7 +303,7 @@ export default function StrengthEdit() {
 
             <input ref={imgInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onPickImage} />
 
-            <div className="sc-field-title">Link hình ảnh (URL)</div>
+            <div className="sc-field-title-upl">Link hình ảnh (URL)</div>
             <TextField
               inputRef={refImgUrl}
               label="Hoặc dán link hình ảnh (URL)"
@@ -280,9 +316,9 @@ export default function StrengthEdit() {
             />
 
             <hr className="sc-divider" />
-            <h3 className="sc-section-title-upl">Video hướng dẫn</h3>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <Button variant="outlined" onClick={() => videoInputRef.current?.click()} component="label" fullWidth>
+            <h3 className="sc-section-title">Video hướng dẫn</h3>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <Button variant="outlined" onClick={pickVideo} component="label" fullWidth>
                 {videoFile ? `Đã chọn: ${videoFile.name}` : "Tải lên file video (Tối đa 50MB)"}
                 <input ref={videoInputRef} type="file" accept="video/*" style={{ display: "none" }} onChange={onPickVideo} />
               </Button>
@@ -297,6 +333,23 @@ export default function StrengthEdit() {
                 fullWidth
                 size="medium"
               />
+
+              {/* Nút gỡ video */}
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button
+                variant="outlined"
+                color="error"
+                onClick={handleRemoveVideo}
+                disabled={!f.videoUrl}
+                >
+                Gỡ video
+                </Button>
+                {(f.videoUrl || videoFile) && (
+                  <span style={{ alignSelf: "center", opacity: 0.75 }}>
+                    {videoFile ? "Sẽ thay bằng video mới sau khi lưu." : f.videoUrl ? "Video hiện có sẽ bị xoá." : ""}
+                  </span>
+                )}
+              </Box>
             </Box>
           </div>
 
@@ -319,7 +372,7 @@ export default function StrengthEdit() {
                 <div className="sc-field-title">Phân loại *</div>
                 <FormControl fullWidth error={!!errors.type}>
                   <InputLabel id="type-label">Phân loại *</InputLabel>
-                  <Select labelId="type-label" label="Phân loại *" value={f.type} onChange={(e) => onChange("type", e.target.value)}>
+                  <Select labelId="type-label" label="Phân loại *" value={f.type} onChange={(e) => onChange("type", e.target.value)} MenuProps={menuProps}>
                     {TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
                   </Select>
                   <FormHelperText>{errors.type}</FormHelperText>
@@ -343,6 +396,7 @@ export default function StrengthEdit() {
                         {selected.map((val) => <Chip key={val} label={val} size="small" />)}
                       </Box>
                     )}
+                    MenuProps={menuProps}
                   >
                     {muscleOptions.map((m) => (
                       <MenuItem key={m} value={m}>
@@ -370,6 +424,7 @@ export default function StrengthEdit() {
                         {selected.map((val) => <Chip key={val} label={val} size="small" />)}
                       </Box>
                     )}
+                    MenuProps={menuProps}
                   >
                     {muscleOptions.map((m) => (
                       <MenuItem key={m} value={m}>
@@ -387,7 +442,7 @@ export default function StrengthEdit() {
                 <div className="sc-field-title">Dụng cụ *</div>
                 <FormControl fullWidth error={!!errors.equipment}>
                   <InputLabel id="equip-label">Dụng cụ *</InputLabel>
-                  <Select labelId="equip-label" label="Dụng cụ *" value={f.equipment} onChange={(e) => onChange("equipment", e.target.value)}>
+                  <Select labelId="equip-label" label="Dụng cụ *" value={f.equipment} onChange={(e) => onChange("equipment", e.target.value)} MenuProps={menuProps}>
                     {equipmentOptions.map((eq) => <MenuItem key={eq} value={eq}>{eq}</MenuItem>)}
                   </Select>
                   <FormHelperText>{errors.equipment}</FormHelperText>
@@ -398,7 +453,7 @@ export default function StrengthEdit() {
                 <div className="sc-field-title">Mức độ *</div>
                 <FormControl fullWidth error={!!errors.level}>
                   <InputLabel id="level-label">Mức độ *</InputLabel>
-                  <Select labelId="level-label" label="Mức độ *" value={f.level} onChange={(e) => onChange("level", e.target.value)}>
+                  <Select labelId="level-label" label="Mức độ *" value={f.level} onChange={(e) => onChange("level", e.target.value)} MenuProps={menuProps}>
                     {LEVELS.map((lv) => <MenuItem key={lv} value={lv}>{lv}</MenuItem>)}
                   </Select>
                   <FormHelperText>{errors.level}</FormHelperText>
@@ -422,7 +477,7 @@ export default function StrengthEdit() {
             <hr className="sc-divider" />
             <h3 className="sc-section-title">Mô tả</h3>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <div className="sc-field-title-desc">Hướng dẫn tập luyện</div>
               <TextField
                 label="Hướng dẫn tập luyện"

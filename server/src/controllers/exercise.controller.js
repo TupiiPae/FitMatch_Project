@@ -144,12 +144,10 @@ export async function createExercise(req, res, next) {
     const imgFile = (req.files?.image && req.files.image[0]) || req.file || null;
     const b = normalizeBody(req.body);
 
-    // default & meta
     if (!b.type) b.type = "Strength";
     if (req.admin?._id) b.createdByAdmin = req.admin._id;
     b.status = b.status || "active";
 
-    // ảnh: ưu tiên file -> lưu và set path tương đối
     if (imgFile?.buffer && !b.imageUrl) {
       const filename = await saveImageFromBuffer(imgFile);
       if (filename) b.imageUrl = `/uploads/exercises/${filename}`;
@@ -165,12 +163,30 @@ export async function createExercise(req, res, next) {
   }
 }
 
-// PATCH /api/admin/exercises/:id  (ảnh mới field "image"; có thể sửa videoUrl dạng link)
+// PATCH /api/admin/exercises/:id
 export async function updateExercise(req, res, next) {
   try {
     const { id } = req.params;
-    const imgFile = (req.files?.image && req.files.image[0]) || req.file || null;
 
+    // --- Nhánh gỡ video: bỏ qua mọi validator khác ---
+    const isRemoveVideo =
+      req.body?.__removeVideo === true || req.body?.__removeVideo === "true";
+    if (isRemoveVideo) {
+      const it = await Exercise.findByIdAndUpdate(
+        id,
+        { $unset: { videoUrl: 1 } },
+        {
+          new: true,
+          runValidators: false,     // << quan trọng: không validate primaryMuscles...
+        }
+      ).lean();
+
+      if (!it) return res.status(404).json({ message: "Not found" });
+      return res.json({ ok: true, videoUrl: it.videoUrl || "" });
+    }
+
+    // --- Nhánh update thông thường (ảnh/link/thông tin) ---
+    const imgFile = (req.files?.image && req.files.image[0]) || req.file || null;
     const upd = normalizeBody(req.body);
 
     if (imgFile?.buffer && !upd.imageUrl) {
@@ -181,19 +197,27 @@ export async function updateExercise(req, res, next) {
     const it = await Exercise.findByIdAndUpdate(id, upd, {
       new: true,
       runValidators: true,
+      context: "query",
+      // validateModifiedOnly không tác dụng đáng kể trên update validators,
+      // nhưng cứ để đây cho path khác:
+      // validateModifiedOnly: true,
     }).lean();
 
     if (!it) return res.status(404).json({ message: "Not found" });
     return res.json(it);
   } catch (err) {
     if (err?.name === "ValidationError") {
-      return res.status(422).json({ success: false, message: err.message, errors: err.errors });
+      return res.status(422).json({
+        success: false,
+        message: err.message,
+        errors: err.errors
+      });
     }
     return next(err);
   }
 }
 
-// POST /api/admin/exercises/:id/video  (video gửi field "video")
+// POST /api/admin/exercises/:id/video
 export async function uploadExerciseVideo(req, res, next) {
   try {
     const { id } = req.params;

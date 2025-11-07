@@ -1,6 +1,8 @@
+// admin-app/src/pages/pagesExercises/Strength_List/Strength_List.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, listExercisesAdminOnly, deleteExercise, getExerciseMeta } from "../../../lib/api";
+import { toast } from "react-toastify";
 import "./Strength_List.css";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
@@ -10,32 +12,37 @@ export default function Strength_List() {
   const nav = useNavigate();
   const location = useLocation();
 
-  // Filters
+  /* ------------------ Filters ------------------ */
   const [q, setQ] = useState("");
   const [muscle, setMuscle] = useState("");
   const [muscle2, setMuscle2] = useState("");
   const [equipment, setEquipment] = useState("");
   const [level, setLevel] = useState("");
 
-  // Meta
+  /* ------------------ Meta ------------------ */
   const [MUSCLES, setMUSCLES] = useState([]);
   const [EQUIPMENTS, setEQUIPMENTS] = useState([]);
   const [LEVELS, setLEVELS] = useState([]);
 
-  // Data
+  /* ------------------ Data ------------------ */
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
   const [skip, setSkip] = useState(0);
 
-  // selection
+  /* ------------------ Selection ------------------ */
   const [selectedIds, setSelectedIds] = useState([]);
   const allChecked = items.length > 0 && selectedIds.length === items.length;
   const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
 
-  const [confirmId, setConfirmId] = useState(null);
-  const [flashId, setFlashId] = useState(null); // highlight hàng mới tạo
+  /* ------------------ Delete states ------------------ */
+  // confirm modal dùng chung cho single & bulk
+  // { mode: 'single'|'bulk', ids: string[] } | null
+  const [confirm, setConfirm] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);      // đang xóa 1
+  const [bulkDeleting, setBulkDeleting] = useState(false); // đang xóa nhiều
+  const [flashId, setFlashId] = useState(null);            // highlight hàng mới tạo
 
   useEffect(() => {
     (async () => {
@@ -82,7 +89,7 @@ export default function Strength_List() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, muscle, muscle2, equipment, level]);
 
-  // đón state từ trang Create để toast & flash
+  // đón state từ trang Create để flash hàng vừa tạo
   useEffect(() => {
     const s = location.state;
     if (s?.justCreated) {
@@ -99,7 +106,6 @@ export default function Strength_List() {
         } catch {}
       };
       doFlash();
-      // xoá state để tránh toast lại
       nav(location.pathname, { replace: true, state: {} });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -110,28 +116,62 @@ export default function Strength_List() {
   const toggleAll = () => { setSelectedIds(allChecked ? [] : items.map(x => x._id)); };
   const toggleOne = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
+  /* ------------------ Delete: single ------------------ */
   const onDeleteOne = async (id) => {
     try {
+      setDeletingId(id);
       await deleteExercise(id);
+
+      if (items.length === 1 && skip > 0) {
+        setSkip(Math.max(0, skip - limit)); // lùi trang
+      } else {
+        setItems(prev => prev.filter(x => x._id !== id));
+        setTotal(t => Math.max(0, Number(t || 0) - 1));
+        setSelectedIds(sel => sel.filter(x => x !== id));
+      }
+
       toast.success("Đã xóa bài tập");
-      if (items.length === 1 && skip > 0) setSkip(Math.max(0, skip - limit));
-      else await load();
     } catch (e) {
       console.error(e);
-      toast.error("Xóa thất bại");
+      toast.error(e?.response?.data?.message || "Xóa thất bại");
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  const onBulkDelete = async () => {
-    if (!selectedIds.length) return;
-    if (!confirm(`Xóa ${selectedIds.length} bài tập đã chọn?`)) return;
-    for (const id of selectedIds) { try { await deleteExercise(id); } catch {} }
-    toast.success("Đã xóa các bài tập đã chọn");
-    if (selectedIds.length === items.length && skip > 0) setSkip(Math.max(0, skip - limit));
-    else await load();
+  /* ------------------ Delete: bulk ------------------ */
+  const onBulkDelete = async (ids) => {
+    if (!ids?.length) return;
+    try {
+      setBulkDeleting(true);
+      // Xóa song song nhưng an toàn
+      const results = await Promise.allSettled(ids.map(id => deleteExercise(id)));
+      const okCount = results.filter(r => r.status === "fulfilled").length;
+      const failCount = results.length - okCount;
+
+      // Điều chỉnh phân trang nếu xóa hết trang hiện tại
+      const deletingAllOnPage = ids.length >= items.length;
+      if (deletingAllOnPage && skip > 0) {
+        setSkip(Math.max(0, skip - limit));
+        // useEffect(load) sẽ tự tải lại
+      } else {
+        // Xóa lạc quan trong trang hiện tại
+        setItems(prev => prev.filter(x => !ids.includes(x._id)));
+        setTotal(t => Math.max(0, Number(t || 0) - okCount));
+        setSelectedIds([]);
+      }
+
+      if (okCount > 0) toast.success(`Đã xóa ${okCount} bài tập`);
+      if (failCount > 0) toast.error(`${failCount} bài tập xóa thất bại`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Xóa thất bại");
+    } finally {
+      setBulkDeleting(false);
+    }
   };
 
-  // CSV (trang hiện tại)
+  /* ------------------ CSV (trang hiện tại) ------------------ */
   const csv = useMemo(() => {
     const head = [
       "name","type","primaryMuscles","secondaryMuscles","equipment","level","caloriePerRep","createdAt"
@@ -151,7 +191,7 @@ export default function Strength_List() {
     a.click();
   };
 
-  // pagination
+  /* ------------------ Pagination ------------------ */
   const page = Math.floor(skip / limit);
   const pageCount = Math.max(1, Math.ceil((total || 0) / limit));
   const handleLimitChange = (e) => { setLimit(Number(e.target.value)); setSkip(0); };
@@ -178,8 +218,14 @@ export default function Strength_List() {
             <button className="btn ghost" type="button" onClick={downloadCSV}>
               <i className="fa-solid fa-file-export" /> <span>Xuất danh sách</span>
             </button>
-            <button className="btn danger" type="button" disabled={!selectedIds.length} onClick={onBulkDelete}>
-              <i className="fa-regular fa-trash-can" /> <span>Xóa</span>
+            <button
+              className="btn danger"
+              type="button"
+              disabled={!selectedIds.length || bulkDeleting}
+              onClick={() => setConfirm({ mode: "bulk", ids: selectedIds.slice() })}
+            >
+              <i className="fa-regular fa-trash-can" />{" "}
+              <span>{bulkDeleting ? "Đang xóa..." : "Xóa"}</span>
             </button>
             <Link className="btn primary" to="/exercises/strength/create">
               <span>Tạo bài tập</span>
@@ -260,16 +306,16 @@ export default function Strength_List() {
               </div>
 
               <div className="cell type">{it.type || "—"}</div>
-              <div className="cell pmus">{(it.primaryMuscles && it.primaryMuscles.length > 0) ? (it.primaryMuscles.map(m => (<span key={m} className="mchip primary">{m}
-                        </span>
-                      ))
-                    ) : "—"}
-                  </div>  
-              <div className="cell smus">{(it.secondaryMuscles && it.secondaryMuscles.length > 0) ? (it.secondaryMuscles.map(m => (<span key={m} className="mchip">{m}
-                        </span>
-                      ))
-                    ) : "—"}
-                  </div>
+              <div className="cell pmus">
+                {(it.primaryMuscles && it.primaryMuscles.length > 0)
+                  ? it.primaryMuscles.map(m => <span key={m} className="mchip primary">{m}</span>)
+                  : "—"}
+              </div>
+              <div className="cell smus">
+                {(it.secondaryMuscles && it.secondaryMuscles.length > 0)
+                  ? it.secondaryMuscles.map(m => <span key={m} className="mchip">{m}</span>)
+                  : "—"}
+              </div>
               <div className="cell equip">{it.equipment || "—"}</div>
               <div className="cell lvl">{it.level || "—"}</div>
               <div className="cell cal">{it.caloriePerRep ?? "—"}</div>
@@ -279,7 +325,12 @@ export default function Strength_List() {
                 <button className="iconbtn" title="Chỉnh sửa" onClick={() => nav(`/exercises/strength/${it._id}/edit`)}>
                   <i className="fa-regular fa-pen-to-square" />
                 </button>
-                <button className="iconbtn danger" title="Xóa" onClick={()=>setConfirmId(it._id)}>
+                <button
+                  className="iconbtn danger"
+                  title="Xóa"
+                  disabled={deletingId === it._id}
+                  onClick={()=>setConfirm({ mode: "single", ids: [it._id] })}
+                >
                   <i className="fa-solid fa-trash-can" />
                 </button>
               </div>
@@ -309,17 +360,46 @@ export default function Strength_List() {
         </div>
       </div>
 
-      {/* Confirm Delete */}
-      {confirmId && (
-        <div className="cm-backdrop" onClick={()=>setConfirmId(null)}>
+      {/* Confirm Delete (dùng chung cho single & bulk; giữ nguyên className .cm-*) */}
+      {confirm && (
+        <div className="cm-backdrop" onClick={()=>setConfirm(null)}>
           <div className="cm-modal" onClick={(e)=>e.stopPropagation()}>
             <div className="cm-head">
-              <h1 className="cm-title">Xóa bài tập?</h1>
+              <h1 className="cm-title">
+                {confirm.mode === "bulk"
+                  ? `Xóa ${confirm.ids.length} bài tập?`
+                  : "Xóa bài tập?"}
+              </h1>
             </div>
-            <div className="cm-body">Thao tác không thể hoàn tác.</div>
+            <div className="cm-body">
+              Thao tác không thể hoàn tác.
+            </div>
             <div className="cm-foot">
-              <button className="btn ghost" onClick={()=>setConfirmId(null)}>Hủy</button>
-              <button className="btn danger" onClick={async ()=>{await onDeleteOne(confirmId); setConfirmId(null);}}>Xóa</button>
+              <button className="btn ghost" onClick={()=>setConfirm(null)}>Hủy</button>
+              {confirm.mode === "single" ? (
+                <button
+                  className="btn danger"
+                  disabled={deletingId === confirm.ids[0]}
+                  onClick={async ()=>{
+                    const id = confirm.ids[0];
+                    await onDeleteOne(id);
+                    setConfirm(null);
+                  }}
+                >
+                  {deletingId === confirm.ids[0] ? "Đang xóa..." : "Xóa"}
+                </button>
+              ) : (
+                <button
+                  className="btn danger"
+                  disabled={bulkDeleting || !confirm.ids.length}
+                  onClick={async ()=>{
+                    await onBulkDelete(confirm.ids);
+                    setConfirm(null);
+                  }}
+                >
+                  {bulkDeleting ? "Đang xóa..." : `Xóa ${confirm.ids.length}`}
+                </button>
+              )}
             </div>
           </div>
         </div>
