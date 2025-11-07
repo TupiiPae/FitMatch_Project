@@ -161,7 +161,7 @@ export default function StrengthCreate() {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) {
-      toast.error("Vui lòng kiểm tra và sửa các trường bôi đỏ.");
+      toast.error("Vui lòng kiểm tra lại các dữ liệu nhập.");
       scrollToFirstError(errs);
       return;
     }
@@ -221,13 +221,13 @@ export default function StrengthCreate() {
 
   const rowGrid2 = {
     display: "grid",
-    gap: 16,
+    gap: 4,
     gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
     alignItems: "start",
   };
   const rowGrid3 = {
     display: "grid",
-    gap: 16,
+    gap: 4,
     gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
     alignItems: "start",
   };
@@ -304,7 +304,7 @@ export default function StrengthCreate() {
               onChange={onPickImage}
             />
 
-            <div className="sc-field-title">Link hình ảnh (URL)</div>
+            <div className="sc-field-title-upl">Link hình ảnh (URL)</div>
             <TextField
               inputRef={refImgUrl}
               label="Hoặc dán link hình ảnh (URL)"
@@ -334,7 +334,7 @@ export default function StrengthCreate() {
                 />
               </Button>
 
-              <div className="sc-field-title">Link video</div>
+              <div className="sc-field-title-upl">Link video</div>
               <TextField
                 inputRef={refVidUrl}
                 label="Hoặc dán link video (Youtube, Vimeo...)"
@@ -364,7 +364,7 @@ export default function StrengthCreate() {
                   value={f.name}
                   onChange={(e) => onChange("name", e.target.value)}
                   error={!!errors.name}
-                  helperText={errors.name || " "}
+                  helperText={errors.name} 
                   fullWidth
                 />
               </Box>
@@ -384,13 +384,14 @@ export default function StrengthCreate() {
                       <MenuItem key={t} value={t}>{t}</MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.type || " "}</FormHelperText>
+                  <FormHelperText>{errors.type}</FormHelperText> {/* SỬA 2 */}
                 </FormControl>
               </Box>
             </Box>
 
             {/* Hàng 2: Nhóm cơ chính & Nhóm cơ phụ */}
-            <Box sx={{ ...rowGrid2, mt: 2 }}>
+            {/* BỎ mt: 2 Ở DÒNG DƯỚI */}
+            <Box sx={rowGrid2}> 
               <Box>
                 <div className="sc-field-title">Nhóm cơ chính *</div>
                 <FormControl fullWidth error={!!errors.primaryMuscles}>
@@ -417,7 +418,7 @@ export default function StrengthCreate() {
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.primaryMuscles || " "}</FormHelperText>
+                  <FormHelperText>{errors.primaryMuscles}</FormHelperText> {/* SỬA 3 */}
                 </FormControl>
               </Box>
 
@@ -447,13 +448,15 @@ export default function StrengthCreate() {
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{" "}</FormHelperText>
+                  {/* SỬA 4 (Không cần helper text ở đây nếu không có lỗi) */}
+                  {/* <FormHelperText>{" "}</FormHelperText> */} 
                 </FormControl>
               </Box>
             </Box>
 
             {/* Hàng 3: Dụng cụ – Mức độ – Calorie/rep */}
-            <Box sx={{ ...rowGrid3, mt: 2 }}>
+            {/* BỎ mt: 2 Ở DÒNG DƯỚI */}
+            <Box sx={rowGrid3}>
               <Box>
                 <div className="sc-field-title">Dụng cụ *</div>
                 <FormControl fullWidth error={!!errors.equipment}>
@@ -469,7 +472,7 @@ export default function StrengthCreate() {
                       <MenuItem key={eq} value={eq}>{eq}</MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.equipment || " "}</FormHelperText>
+                  <FormHelperText>{errors.equipment}</FormHelperText> {/* SỬA 5 */}
                 </FormControl>
               </Box>
 
@@ -488,7 +491,7 @@ export default function StrengthCreate() {
                       <MenuItem key={lv} value={lv}>{lv}</MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.level || " "}</FormHelperText>
+                  <FormHelperText>{errors.level}</FormHelperText> {/* SỬA 6 */}
                 </FormControl>
               </Box>
 
@@ -499,7 +502,7 @@ export default function StrengthCreate() {
                   value={f.caloriePerRep}
                   onChange={(e) => onChange("caloriePerRep", e.target.value)}
                   error={!!errors.caloriePerRep}
-                  helperText={errors.caloriePerRep || " "}
+                  helperText={errors.caloriePerRep}
                   fullWidth
                   inputRef={refCal}
                 />
@@ -509,25 +512,25 @@ export default function StrengthCreate() {
             <hr className="sc-divider" />
 
             <h3 className="sc-section-title">Mô tả</h3>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <div className="sc-field-title">Hướng dẫn tập luyện</div>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2}}>
+              <div className="sc-field-title-desc">Hướng dẫn tập luyện</div>
               <TextField
                 label="Hướng dẫn tập luyện"
                 value={f.guideHtml}
                 onChange={(e) => onChange("guideHtml", e.target.value)}
                 multiline
-                minRows={5}
+                minRows={10}
                 fullWidth
                 inputRef={refGuide}
               />
 
-              <div className="sc-field-title">Mô tả bài tập</div>
+              <div className="sc-field-title-desc">Mô tả bài tập</div>
               <TextField
                 label="Mô tả bài tập"
                 value={f.descriptionHtml}
                 onChange={(e) => onChange("descriptionHtml", e.target.value)}
                 multiline
-                minRows={5}
+                minRows={10}
                 fullWidth
                 inputRef={refDesc}
               />

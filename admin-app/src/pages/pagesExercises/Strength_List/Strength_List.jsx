@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, listExercisesAdminOnly, deleteExercise, getExerciseMeta } from "../../../lib/api";
-import { toast } from "react-toastify";
 import "./Strength_List.css";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
@@ -87,7 +86,6 @@ export default function Strength_List() {
   useEffect(() => {
     const s = location.state;
     if (s?.justCreated) {
-      toast.success("Tạo bài tập thành công!");
       const doFlash = async () => {
         try {
           if (s.createdId) {
@@ -262,8 +260,16 @@ export default function Strength_List() {
               </div>
 
               <div className="cell type">{it.type || "—"}</div>
-              <div className="cell pmus">{(it.primaryMuscles||[]).join(", ") || "—"}</div>
-              <div className="cell smus">{(it.secondaryMuscles||[]).join(", ") || "—"}</div>
+              <div className="cell pmus">{(it.primaryMuscles && it.primaryMuscles.length > 0) ? (it.primaryMuscles.map(m => (<span key={m} className="mchip primary">{m}
+                        </span>
+                      ))
+                    ) : "—"}
+                  </div>  
+              <div className="cell smus">{(it.secondaryMuscles && it.secondaryMuscles.length > 0) ? (it.secondaryMuscles.map(m => (<span key={m} className="mchip">{m}
+                        </span>
+                      ))
+                    ) : "—"}
+                  </div>
               <div className="cell equip">{it.equipment || "—"}</div>
               <div className="cell lvl">{it.level || "—"}</div>
               <div className="cell cal">{it.caloriePerRep ?? "—"}</div>

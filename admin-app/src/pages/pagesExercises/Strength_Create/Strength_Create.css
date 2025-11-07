@@ -192,7 +192,7 @@
 }
 
 /* Rows & columns (giữ kiểu cũ) */
-.sc-row { display: grid; gap: 16px;}
+.sc-row { display: grid; gap: 4px;}
 .sc-cols-2 { grid-template-columns: 1fr 1fr; }
 .sc-cols-3 { grid-template-columns: 1fr 1fr 1fr; }
 .sc-col.span-2 { grid-column: span 2; }
@@ -202,7 +202,19 @@
   font-size: 12px;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
+}
+.sc-field-title-upl {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: -4px;
+}
+.sc-field-title-desc {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: -4px;
 }
 
 /* Responsive */

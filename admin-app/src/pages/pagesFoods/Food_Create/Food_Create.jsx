@@ -2,15 +2,24 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createFood, createFoodFile } from "../../../lib/api.js";
-import "./Food_Create.css";
 import { toast } from "react-toastify";
+
+// Import các component MUI giống Strength_Create
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import InputLabel from "@mui/material/InputLabel";
+import FormControl from "@mui/material/FormControl";
+import FormHelperText from "@mui/material/FormHelperText";
 
 // Trạng thái form ban đầu
 const initialState = {
   name: "",
   servingDesc: "",
   massG: 100,
-  unit: "g", // Giữ nguyên 'g' để <select> hoạt động
+  unit: "g",
   imageUrl: "",
   kcal: "",
   proteinG: "",
@@ -19,22 +28,36 @@ const initialState = {
   saltG: "",
   sugarG: "",
   fiberG: "",
-  description: "", // Cho Rich Text Editor
+  description: "",
 };
 
 export default function FoodCreate() {
   const nav = useNavigate();
   const [form, setForm] = useState(initialState);
-  const [msg, setMsg] = useState("");
-  const [preview, setPreview] = useState(null);
   const [saving, setSaving] = useState(false);
+  
+  // (MỚI) Dùng 'errors' state thay cho 'msg'
+  const [errors, setErrors] = useState({});
+
+  // (MỚI) Thêm Refs cho các trường để cuộn tới khi lỗi
+  const refName = useRef(null);
+  const refImageBox = useRef(null);
+  const refMassG = useRef(null);
+  const refKcal = useRef(null);
+  const refImgUrl = useRef(null);
+  const refDesc = useRef(null);
+  const refProtein = useRef(null);
+  const refCarb = useRef(null);
+  const refFat = useRef(null);
 
   // Ảnh file upload
   const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
 
   const onChange = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
+  // Hàm helper chuyển đổi
   const toNum = (v) => {
     const s = String(v ?? "").trim();
     if (s === "") return undefined;
@@ -48,7 +71,6 @@ export default function FoodCreate() {
     return Number.isFinite(n) ? n : null;
   };
 
-  // cleanup preview blob khi unmount/đổi file
   useEffect(() => {
     return () => {
       if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
@@ -62,59 +84,94 @@ export default function FoodCreate() {
     if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
     setFile(f);
     setPreview(URL.createObjectURL(f));
-    // nếu nhập file → bỏ URL để tránh gửi cả đôi
     if (form.imageUrl) onChange("imageUrl", "");
   };
 
   const openFileDialog = () => fileInputRef.current?.click();
 
   const handleImagePreview = () => {
-    // Chỉ set preview từ URL khi KHÔNG có file
     if (!file) setPreview(form.imageUrl || null);
   };
 
-  // Validate cơ bản theo BE: name, massG>0, unit hợp lệ, kcal>=0 (bắt buộc)
-  const validate = () => {
-    const name = String(form.name || "").trim();
-    if (!name) return "Vui lòng nhập tên món.";
-    const massG = toNum(form.massG);
-    if (massG === undefined || massG <= 0) return "Khối lượng phải lớn hơn 0.";
-    const unit = form.unit === "ml" ? "ml" : "g";
-    if (!["g", "ml"].includes(unit)) return "Đơn vị không hợp lệ.";
-    const kcal = toNum(form.kcal);
-    if (kcal === undefined || kcal < 0) return "Vui lòng nhập Calo (kcal) ≥ 0.";
-    return "";
+  // (MỚI) Hàm cuộn tới lỗi đầu tiên (copy từ Strength_Create)
+  const scrollToFirstError = (errs) => {
+    const order = [
+      ["name", refName],
+      ["image", refImageBox],
+      ["massG", refMassG],
+      ["kcal", refKcal],
+      ["imageUrl", refImgUrl],
+      ["proteinG", refProtein],
+      ["carbG", refCarb],
+      ["fatG", refFat],
+      ["description", refDesc],
+    ];
+    const first = order.find(([k]) => errs[k]);
+    if (first && first[1]?.current) {
+      try {
+        first[1].current.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (typeof first[1].current.focus === "function") first[1].current.focus();
+      } catch {}
+    }
   };
 
+  // (MỚI) Cập nhật hàm validate để trả về object 'errs'
+  const validate = () => {
+    const errs = {};
+    const name = String(form.name || "").trim();
+    if (!name) errs.name = "Vui lòng nhập tên món ăn";
+    else if (name.length > 100) errs.name = "Tên tối đa 100 ký tự";
+    
+    if (!file && !form.imageUrl) errs.image = "Vui lòng chọn ảnh hoặc nhập link ảnh";
+
+    const massG = toNum(form.massG);
+    if (massG === undefined || massG <= 0) errs.massG = "Khối lượng phải là số dương";
+
+    const kcal = toNum(form.kcal);
+    if (kcal === undefined || kcal < 0) errs.kcal = "Vui lòng nhập Calo (kcal) ≥ 0";
+
+    // Kiểm tra các trường số khác (nếu nhập thì phải >= 0)
+    if (toNum(form.proteinG) < 0) errs.proteinG = "Giá trị phải ≥ 0";
+    if (toNum(form.carbG) < 0) errs.carbG = "Giá trị phải ≥ 0";
+    if (toNum(form.fatG) < 0) errs.fatG = "Giá trị phải ≥ 0";
+    if (toNum(form.saltG) < 0) errs.saltG = "Giá trị phải ≥ 0";
+    if (toNum(form.sugarG) < 0) errs.sugarG = "Giá trị phải ≥ 0";
+    if (toNum(form.fiberG) < 0) errs.fiberG = "Giá trị phải ≥ 0";
+
+    setErrors(errs);
+    return errs;
+  };
+
+  // (MỚI) Cập nhật onSubmit để dùng toast.error và logic 'errs'
   const onSubmit = async (e) => {
     e.preventDefault();
-    setMsg("");
+    const errs = validate();
+    if (Object.keys(errs).length) {
+      toast.error("Vui lòng kiểm tra lại các dữ liệu nhập.");
+      scrollToFirstError(errs);
+      return;
+    }
 
-    // validate trước khi gửi
-    const v = validate();
-    if (v) { setMsg(v); return; }
-
+    setSaving(true);
     const payload = {
       name: String(form.name || "").trim(),
-      portionName: String(form.servingDesc || "").trim() || undefined, // map đúng BE
+      portionName: String(form.servingDesc || "").trim() || undefined,
       massG: toNum(form.massG),
       unit: form.unit === "ml" ? "ml" : "g",
-      // imageUrl chỉ gửi khi KHÔNG có file
       imageUrl: file ? undefined : (String(form.imageUrl || "").trim() || undefined),
-      kcal: toNumOrNull(form.kcal),          // BE yêu cầu ≥0 (đã validate)
-      proteinG: toNumOrNull(form.proteinG),  // optional
-      carbG: toNumOrNull(form.carbG),        // optional
-      fatG: toNumOrNull(form.fatG),          // optional
-      saltG: toNumOrNull(form.saltG),        // optional
-      sugarG: toNumOrNull(form.sugarG),      // optional
-      fiberG: toNumOrNull(form.fiberG),      // optional
+      kcal: toNumOrNull(form.kcal),
+      proteinG: toNumOrNull(form.proteinG),
+      carbG: toNumOrNull(form.carbG),
+      fatG: toNumOrNull(form.fatG),
+      saltG: toNumOrNull(form.saltG),
+      sugarG: toNumOrNull(form.sugarG),
+      fiberG: toNumOrNull(form.fiberG),
       description: String(form.description || "").trim() || undefined,
       sourceType: "admin_created",
     };
 
     try {
       if (file) {
-        // Multipart upload (field 'image')
         const fd = new FormData();
         fd.append("image", file);
         Object.entries(payload).forEach(([k, v]) => {
@@ -122,27 +179,43 @@ export default function FoodCreate() {
         });
         await createFoodFile(fd);
       } else {
-        // JSON body
         await createFood(payload);
       }
+      toast.success("Tạo món ăn thành công!");
+      nav("/foods");
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        (err?.response?.status === 422 ? "Dữ liệu không hợp lệ." : "Đã xảy ra lỗi. Vui lòng thử lại.");
+      toast.error(message);
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-      toast.success("Tạo món ăn thành công!");  
-          nav("/foods");                             
-        } catch (err) {
-          const message =
-            err?.response?.data?.message ||
-            (err?.response?.status === 422 ? "Dữ liệu không hợp lệ." : "Đã xảy ra lỗi. Vui lòng thử lại.");
-          setMsg(message);
-          toast.error(message);                   
-          console.error(err);
-        } finally {
-          setSaving(false);
-        }
-      };
+  // (MỚI) Các helper cho layout (copy từ Strength_Create)
+  const menuProps = {
+    disableScrollLock: true,
+    PaperProps: { sx: { maxHeight: 280, "& ul": { maxHeight: 280 } } },
+    MenuListProps: { dense: true },
+  };
+  const rowGrid2 = {
+    display: "grid",
+    gap: 2,
+    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+    alignItems: "start",
+  };
+  const rowGrid3 = {
+    display: "grid",
+    gap: 4,
+    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
+    alignItems: "start",
+  };
 
   return (
-    <div className="food-create-page">
-      {/* ===== Breadcrumb ===== */}
+    // Đổi tên class 'food-create-page' thành 'strength-create-page' để dùng chung CSS
+    <div className="strength-create-page">
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
         <Link to="/">
           <i className="fa-solid fa-house" aria-hidden="true"></i>
@@ -157,9 +230,7 @@ export default function FoodCreate() {
         <span className="current-page">Tạo món ăn mới</span>
       </nav>
 
-      {/* ===== Card Layout ===== */}
       <div className="card">
-        {/* ===== Page Head ===== */}
         <div className="page-head">
           <h2>Tạo món ăn mới</h2>
           <div className="head-actions">
@@ -169,51 +240,51 @@ export default function FoodCreate() {
             <button
               className="btn primary"
               type="submit"
-              form="create-food-form"
+              form="create-food-form" // Đổi ID form cho khớp
+              disabled={saving}
             >
               <span>{saving ? "Đang lưu..." : "Lưu"}</span>
             </button>
           </div>
         </div>
 
-        {/* ===== Form Layout Mới ===== */}
+        {/* (MỚI) Dùng class 'sc-' từ CSS của Strength_Create */}
         <form
           id="create-food-form"
-          className="fc-form-layout"
+          className="sc-form-layout"
           onSubmit={onSubmit}
         >
           {/* --- CỘT TRÁI: HÌNH ẢNH --- */}
-          <div className="fc-image-col">
-            <h3 className="fc-section-title">Hình ảnh món ăn</h3>
+          <div className="sc-layout-left">
+            <h3 className="sc-section-title">Hình ảnh món ăn</h3>
 
-            {/* Khung ảnh: nhấp để chọn file */}
             <div
-              className="fc-image-box"
+              className="sc-image-box"
               role="button"
               tabIndex={0}
               onClick={openFileDialog}
               onKeyDown={(e) => { if (e.key === "Enter") openFileDialog(); }}
+              ref={refImageBox} // (MỚI) Thêm ref
             >
               {preview ? (
-                <img
-                  src={preview}
-                  alt="Xem trước"
-                  onError={() => setPreview(null)}
-                />
+                <img src={preview} alt="Xem trước" onError={() => setPreview(null)} />
               ) : form.imageUrl ? (
-                <img
-                  src={form.imageUrl}
-                  alt="Xem trước"
-                  onError={() => setPreview(null)}
-                />
+                <img src={form.imageUrl} alt="Xem trước" onError={() => setPreview(null)} />
               ) : (
-                <div className="placeholder">
-                  <span>Xem trước hình ảnh (nhấp để chọn)</span>
+                <div className="sc-placeholder">
+                  <i className="fa-regular fa-image" />
+                  <span>Nhấp để chọn ảnh</span>
                 </div>
               )}
             </div>
+            
+            {/* (MỚI) Hiển thị lỗi ảnh */}
+            {errors.image && (
+              <FormHelperText error sx={{ ml: "14px", mt: "-8px" }}>
+                {errors.image}
+              </FormHelperText>
+            )}
 
-            {/* Input file ẩn */}
             <input
               ref={fileInputRef}
               type="file"
@@ -222,200 +293,210 @@ export default function FoodCreate() {
               onChange={onPickFile}
             />
 
-            {/* Trường Input Float Label (ảnh qua URL) */}
-            <div className="fc-field">
-              <input
-                type="url"
-                id="food-image-url"
-                placeholder=" " // Quan trọng: phải có 1 dấu cách
-                value={form.imageUrl}
-                onChange={(e) => {
-                  // nếu nhập URL → bỏ file đã chọn (tránh gửi cả đôi)
-                  if (file) setFile(null);
-                  onChange("imageUrl", e.target.value);
-                }}
-                onBlur={handleImagePreview}
-              />
-              <label htmlFor="food-image-url">Link hình ảnh (URL)</label>
-            </div>
+            {/* (MỚI) Dùng TextField của MUI */}
+            <div className="sc-field-title-upl">Link hình ảnh (URL)</div>
+            <TextField
+              inputRef={refImgUrl}
+              label="Hoặc dán link hình ảnh (URL)"
+              value={form.imageUrl}
+              onChange={(e) => {
+                if (file) setFile(null);
+                onChange("imageUrl", e.target.value);
+              }}
+              onBlur={handleImagePreview}
+              variant="outlined"
+              fullWidth
+              size="medium"
+            />
           </div>
 
           {/* --- CỘT PHẢI: THÔNG TIN --- */}
-          <div className="fc-fields-col">
-            {/* Nhóm thông tin chung */}
-            <h3 className="fc-section-title">Thông tin chung</h3>
+          <div className="sc-layout-right">
+            <h3 className="sc-section-title">Thông tin chung</h3>
 
-            <div className="fc-fields-grid-2">
-              <div className="fc-field fc-grid-span-2">
-                <input
-                  id="food-name"
+            {/* (MỚI) Dùng Box sx={rowGrid2} và TextField */}
+            <Box sx={rowGrid2}>
+              <Box sx={{ gridColumn: { xs: "1", md: "1 / -1"} }}>
+                <div className="sc-field-title">Tên món ăn *</div>
+                <TextField
+                  inputRef={refName}
+                  label="Tên món ăn *"
                   value={form.name}
                   onChange={(e) => onChange("name", e.target.value)}
-                  required
-                  placeholder=" "
+                  error={!!errors.name}
+                  helperText={errors.name}
+                  fullWidth
                 />
-                <label htmlFor="food-name">Tên món ăn (bắt buộc)</label>
-              </div>
+              </Box>
 
-              <div className="fc-field fc-grid-span-2">
-                <input
-                  id="food-serving"
+              <Box sx={{ gridColumn: { xs: "1", md: "1 / -1"} }}>
+                <div className="sc-field-title">Mô tả khẩu phần</div>
+                <TextField
+                  label="Mô tả khẩu phần (ví dụ: 1 đĩa)"
                   value={form.servingDesc}
                   onChange={(e) => onChange("servingDesc", e.target.value)}
-                  placeholder=" "
+                  fullWidth
                 />
-                <label htmlFor="food-serving">Mô tả khẩu phần (ví dụ: 1 đĩa)</label>
-              </div>
+              </Box>
 
-              <div className="fc-field">
-                <input
+              <Box>
+                <div className="sc-field-title">Khối lượng *</div>
+                <TextField
+                  inputRef={refMassG}
                   type="number"
-                  id="food-mass"
+                  label="Khối lượng *"
                   value={form.massG}
                   onChange={(e) => onChange("massG", e.target.value)}
-                  required
-                  placeholder=" "
-                  min="1"
+                  error={!!errors.massG}
+                  helperText={errors.massG}
+                  fullWidth
+                  inputProps={{ min: 1 }}
                 />
-                <label htmlFor="food-mass">Khối lượng (bắt buộc)</label>
-              </div>
+              </Box>
 
-              {/* Select được style riêng (label luôn nổi) */}
-              <div className="fc-field fc-field-select">
-                <select
-                  id="food-unit"
-                  value={form.unit}
-                  onChange={(e) => onChange("unit", e.target.value)}
-                >
-                  <option value="g">g (gram)</option>
-                  <option value="ml">ml (millilit)</option>
-                </select>
-              </div>
-            </div>
+              {/* (MỚI) Dùng FormControl và Select */}
+              <Box>
+                <div className="sc-field-title">Đơn vị *</div>
+                <FormControl fullWidth>
+                  <InputLabel id="unit-label">Đơn vị *</InputLabel>
+                  <Select
+                    labelId="unit-label"
+                    label="Đơn vị *"
+                    value={form.unit}
+                    onChange={(e) => onChange("unit", e.target.value)}
+                    MenuProps={menuProps}
+                  >
+                    <MenuItem value="g">g (gram)</MenuItem>
+                    <MenuItem value="ml">ml (millilit)</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+            </Box>
 
-            {/* Đường kẻ ngang */}
-            <hr className="fc-divider" />
+            <hr className="sc-divider" />
+            <h3 className="sc-section-title">Thông tin dinh dưỡng</h3>
 
-            {/* Nhóm thông tin dinh dưỡng */}
-            <h3 className="fc-section-title">Thông tin dinh dưỡng</h3>
-
-            {/* Calo 1 hàng */}
-            <div className="fc-field">
-              <input
+            <Box>
+              <div className="sc-field-title">Calo (kcal) *</div>
+              <TextField
+                inputRef={refKcal}
                 type="number"
-                step="0.1"
-                id="food-kcal"
+                label="Calo (kcal) *"
                 value={form.kcal}
                 onChange={(e) => onChange("kcal", e.target.value)}
-                placeholder=" "
-                min="0"
-                required
+                error={!!errors.kcal}
+                helperText={errors.kcal}
+                fullWidth
+                inputProps={{ step: "0.1", min: 0 }}
               />
-              <label htmlFor="food-kcal">Calo (kcal)</label>
-            </div>
+            </Box>
 
-            {/* 3 trường 1 hàng */}
-            <div className="fc-fields-grid-3">
-              <div className="fc-field">
-                <input
+            <Box sx={rowGrid3}>
+              <Box>
+                <div className="sc-field-title">Đạm (g)</div>
+                <TextField
+                  inputRef={refProtein}
                   type="number"
-                  step="0.1"
-                  id="food-p"
+                  label="Đạm (g)"
                   value={form.proteinG}
                   onChange={(e) => onChange("proteinG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  error={!!errors.proteinG}
+                  helperText={errors.proteinG}
+                  fullWidth
+                  inputProps={{ step: "0.1", min: 0 }}
                 />
-                <label htmlFor="food-p">Đạm (g)</label>
-              </div>
-              <div className="fc-field">
-                <input
+              </Box>
+              <Box>
+                <div className="sc-field-title">Đường bột (g)</div>
+                <TextField
+                  inputRef={refCarb}
                   type="number"
-                  step="0.1"
-                  id="food-c"
+                  label="Đường bột (g)"
                   value={form.carbG}
                   onChange={(e) => onChange("carbG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  error={!!errors.carbG}
+                  helperText={errors.carbG}
+                  fullWidth
+                  inputProps={{ step: "0.1", min: 0 }}
                 />
-                <label htmlFor="food-c">Đường bột (g)</label>
-              </div>
-              <div className="fc-field">
-                <input
+              </Box>
+              <Box>
+                <div className="sc-field-title">Chất béo (g)</div>
+                <TextField
+                  inputRef={refFat}
                   type="number"
-                  step="0.1"
-                  id="food-f"
+                  label="Chất béo (g)"
                   value={form.fatG}
                   onChange={(e) => onChange("fatG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  error={!!errors.fatG}
+                  helperText={errors.fatG}
+                  fullWidth
+                  inputProps={{ step: "0.1", min: 0 }}
                 />
-                <label htmlFor="food-f">Chất béo (g)</label>
-              </div>
-            </div>
+              </Box>
+            </Box>
 
-            {/* 3 trường 1 hàng */}
-            <div className="fc-fields-grid-3">
-              <div className="fc-field">
-                <input
+            <Box sx={rowGrid3}>
+              <Box>
+                <div className="sc-field-title">Muối (g)</div>
+                <TextField
                   type="number"
-                  step="0.1"
-                  id="food-salt"
+                  label="Muối (g)"
                   value={form.saltG}
                   onChange={(e) => onChange("saltG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  error={!!errors.saltG}
+                  helperText={errors.saltG}
+                  fullWidth
+                  inputProps={{ step: "0.1", min: 0 }}
                 />
-                <label htmlFor="food-salt">Muối (g)</label>
-              </div>
-              <div className="fc-field">
-                <input
+              </Box>
+              <Box>
+                <div className="sc-field-title">Đường (g)</div>
+                <TextField
                   type="number"
-                  step="0.1"
-                  id="food-sugar"
+                  label="Đường (g)"
                   value={form.sugarG}
                   onChange={(e) => onChange("sugarG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  error={!!errors.sugarG}
+                  helperText={errors.sugarG}
+                  fullWidth
+                  inputProps={{ step: "0.1", min: 0 }}
                 />
-                <label htmlFor="food-sugar">Đường (g)</label>
-              </div>
-              <div className="fc-field">
-                <input
+              </Box>
+              <Box>
+                <div className="sc-field-title">Chất xơ (g)</div>
+                <TextField
                   type="number"
-                  step="0.1"
-                  id="food-fiber"
+                  label="Chất xơ (g)"
                   value={form.fiberG}
                   onChange={(e) => onChange("fiberG", e.target.value)}
-                  placeholder=" "
-                  min="0"
+                  error={!!errors.fiberG}
+                  helperText={errors.fiberG}
+                  fullWidth
+                  inputProps={{ step: "0.1", min: 0 }}
                 />
-                <label htmlFor="food-fiber">Chất xơ (g)</label>
-              </div>
-            </div>
+              </Box>
+            </Box>
 
-            {/* Đường kẻ ngang */}
-            <hr className="fc-divider" />
-
-            {/* Khu vực Rich Text Editor */}
-            <h3 className="fc-section-title">Ghi chú / Mô tả chi tiết</h3>
-
-            {/* TODO: Thay <textarea> bằng component RTE nếu muốn */}
-            <div className="fc-field">
-              <textarea
-                id="food-desc"
-                className="fc-textarea"
+            <hr className="sc-divider" />
+            <h3 className="sc-section-title">Ghi chú / Mô tả chi tiết</h3>
+            
+            <Box>
+              <div className="sc-field-title-descF">Mô tả</div>
+              <TextField
+                inputRef={refDesc}
+                label="Mô tả"
                 value={form.description}
                 onChange={(e) => onChange("description", e.target.value)}
-                placeholder=" "
-                rows="5"
-              ></textarea>
-              <label htmlFor="food-desc">Mô tả</label>
-            </div>
+                multiline
+                minRows={10}
+                fullWidth
+              />
+            </Box>
           </div>
         </form>
-
-        {msg && <div className="fc-ok">{msg}</div>}
+        
+        {/* Bỏ thông báo 'msg' cũ */}
       </div>
     </div>
   );
