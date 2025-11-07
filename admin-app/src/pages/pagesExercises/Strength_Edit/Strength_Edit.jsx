@@ -158,7 +158,7 @@ export default function StrengthEdit() {
     if (!f.level) errs.level = "Vui lòng chọn mức độ";
 
     const cal = String(f.caloriePerRep || "").trim();
-    if (!cal) errs.caloriePerRep = "Vui lòng nhập Calorie/rep";
+    if (!cal) errs.caloriePerRep = "Vui lòng nhập giá trị MET";
     else if (!/^\d+(\.\d+)?$/.test(cal)) errs.caloriePerRep = "Chỉ nhập số dương (có thể thập phân)";
     else if (cal.length > 10) errs.caloriePerRep = "Tối đa 10 ký tự";
 

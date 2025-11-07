@@ -20,6 +20,12 @@ import ImportList from "./pages/pagesFoods/Import_List/Import_List.jsx";
 import StrengthList from "./pages/pagesExercises/Strength_List/Strength_List.jsx";
 import StrengthCreate from "./pages/pagesExercises/Strength_Create/Strength_Create.jsx";
 import StrengthEdit from "./pages/pagesExercises/Strength_Edit/Strength_Edit.jsx";
+import CardioList from "./pages/pagesExercises/Cardio_List/Cardio_List.jsx";
+import CardioCreate from "./pages/pagesExercises/Cardio_Create/Cardio_Create.jsx";
+import CardioEdit from "./pages/pagesExercises/Cardio_Edit/Cardio_Edit.jsx";
+import SportList from "./pages/pagesExercises/Sport_List/Sport_List.jsx";
+import SportCreate from "./pages/pagesExercises/Sport_Create/Sport_Create.jsx";
+import SportEdit from "./pages/pagesExercises/Sport_Edit/Sport_Edit.jsx";
 
 // ===== Users
 import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
@@ -72,6 +78,13 @@ export default function App() {
           <Route path="/exercises/strength" element={<StrengthList />} />
           <Route path="/exercises/strength/create" element={<StrengthCreate />} />
           <Route path="/exercises/strength/:id/edit" element={<StrengthEdit />} />
+          <Route path="/exercises/cardio" element={<CardioList />} />
+          <Route path="/exercises/cardio/create" element={<CardioCreate />} />
+          <Route path="/exercises/cardio/:id/edit" element={<CardioEdit />} />
+          <Route path="/exercises/sport" element={<SportList />} />
+          <Route path="/exercises/sport/create" element={<SportCreate />} />
+          <Route path="/exercises/sport/:id/edit" element={<SportEdit />} />
+          
 
           {/* Người dùng */}
           <Route path="/users" element={<UsersList />} />

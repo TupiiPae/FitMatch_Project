@@ -48,7 +48,7 @@ const buildManagementSections = (rawLevel) => {
       items: [
         { to: "/exercises/strength", label: "Danh sách bài tập - Strength", exact: true },
         { to: "/exercises/cardio", label: "Danh sách bài tập - Cardio" },
-        { to: "/exercises/sport", label: "Danh sách bài tập - Sport" },
+        { to: "/exercises/sport", label: "Danh sách các môn - Sport" },
         { to: "/exercises/create", label: "Tạo bài tập mới" },
         { to: "/exercises/plan-suggest", label: "Tạo lịch tập gợi ý" },
       ],

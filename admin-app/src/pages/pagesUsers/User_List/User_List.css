@@ -46,12 +46,12 @@
 
 /* ===== Title row (ĐÃ SỬA LỖI THỤT LỀ) ===== */
 .page-head{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:12px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 4px 12px 12px; border-bottom: 1px solid #f3f4f6;
 
 }
 .page-head h2{
-  font-size:22px; font-weight:700; color:#0f172a; margin:0;
+  font-size: 20px; font-weight: 700; color: #0f172a; margin: 0;
 }
 .head-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size: 16px;}
 .btn{

@@ -277,7 +277,7 @@ export default function Strength_List() {
             <div className="cell smus">Nhóm cơ phụ</div>
             <div className="cell equip">Dụng cụ</div>
             <div className="cell lvl">Mức độ</div>
-            <div className="cell cal">Calorie/rep</div>
+            <div className="cell cal">Giá trị MET</div>
             <div className="cell created">Thời gian tạo</div>
             <div className="cell act">Thao tác</div>
           </div>

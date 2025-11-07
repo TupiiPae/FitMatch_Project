@@ -161,7 +161,7 @@ export default function StrengthCreate() {
     if (!f.level) errs.level = "Vui lòng chọn mức độ";
 
     const cal = String(f.caloriePerRep || "").trim();
-    if (!cal) errs.caloriePerRep = "Vui lòng nhập Calorie/rep";
+    if (!cal) errs.caloriePerRep = "Vui lòng nhập giá trị MET";
     else if (!/^\d+(\.\d+)?$/.test(cal)) errs.caloriePerRep = "Chỉ nhập số dương (có thể thập phân)";
     else if (cal.length > 10) errs.caloriePerRep = "Tối đa 10 ký tự";
 
@@ -274,12 +274,12 @@ export default function StrengthCreate() {
           <span>Quản lý Bài tập</span>
         </span>
         <span className="separator">/</span>
-        <span className="current-page">Tạo bài tập</span>
+        <span className="current-page">Tạo bài tập - Strength</span>
       </nav>
 
       <div className="card">
         <div className="page-head">
-          <h2>Tạo bài tập</h2>
+          <h2>Tạo bài tập (Strength)</h2>
           <div className="head-actions">
             <button type="button" className="btn ghost" onClick={() => nav(-1)}>
               Hủy
@@ -537,9 +537,9 @@ export default function StrengthCreate() {
               </Box>
 
               <Box>
-                <div className="sc-field-title">Calorie/rep *</div>
+                <div className="sc-field-title">Giá trị MET</div>
                 <TextField
-                  label="Calorie/rep *"
+                  label="Giá trị MET"
                   value={f.caloriePerRep}
                   onChange={(e) => onChange("caloriePerRep", e.target.value)}
                   error={!!errors.caloriePerRep}
