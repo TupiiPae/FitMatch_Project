@@ -168,7 +168,7 @@ html, body { font-size: var(--fs-base); }
 .w-full{ width:100%; }
 .fm-btn-danger{
   border:1px solid var(--fm-border); background:transparent; color:#b91c1c;
-  border-radius:12px; padding:10px 12px; cursor:pointer;
+  border-radius:8px; padding:10px 12px; cursor:pointer;
   display:flex; align-items:center; gap:10px; justify-content:center;
   font-weight:var(--fw-medium);
 }
@@ -209,7 +209,7 @@ html, body { font-size: var(--fs-base); }
 .fm-modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:grid; place-items:center; z-index:60; }
 .fm-modal{
   width:min(420px,92vw); background:var(--fm-panel); color:var(--fm-text);
-  border:1px solid var(--fm-border); border-radius:12px; box-shadow:var(--fm-shadow);
+  border:1px solid var(--fm-border); border-radius:8px; box-shadow:var(--fm-shadow);
   padding:18px 18px 16px; text-align:center; animation:fm-pop .16s ease;
 }
 @keyframes fm-pop{ from{ transform:scale(.98); opacity:0; } to{ transform:scale(1); opacity:1; } }
@@ -226,3 +226,77 @@ html, body { font-size: var(--fs-base); }
 .fm-btn.danger:hover{ background:#fecaca; }
 .theme-dark .fm-btn.danger{ background:#3f1f1f; border-color:#7f1d1d; color:#fecaca; }
 .theme-dark .fm-btn.danger:hover{ background:#5b2222; }
+
+.fm-sublink.fm-sublink--btn{
+  position:relative;
+  display:flex; align-items:center; min-height:38px;
+  padding:0 10px 0 12px;
+  border-radius:999px;
+  color:#002C3E; text-decoration:none;
+  background:transparent; border:0; cursor:pointer;
+  width:100%; text-align:left; font:inherit;
+  transition:background .15s ease, color .15s ease, box-shadow .15s ease;
+  font-weight:500;
+}
+.fm-sublink.fm-sublink--btn::before{
+  content:""; position:absolute; left:-14px; top:50%;
+  width:14px; height:2px; background:#d1d5db; transform:translateY(-50%);
+}
+.theme-dark .fm-sublink.fm-sublink--btn::before{ background:#475569; }
+.fm-sublink.fm-sublink--btn:hover{ background:#78BCC455; }
+
+
+.fm-modal.fm-modal--create{
+  width: min(640px, 94vw);
+  text-align: center;      
+}
+.fm-modal--create.h3{
+  font-size: 14px;
+  font-weight: 500;  
+  color: #002C3E;
+}
+
+/* icon primary cho create modal (màu thương hiệu) */
+.fm-modal__icon.fm-modal__icon--primary{
+  background: #E0F2F1;
+  color: #008080;
+}
+.theme-dark .fm-modal__icon.fm-modal__icon--primary{
+  background: #073638;
+  color: #78BCC4;
+}
+
+/* lưới 3 cột cho 3 lựa chọn (Strength/Cardio/Sport) */
+.fm-modal__grid{
+  margin: 10px 2px 14px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+/* thẻ lựa chọn */
+.fm-option{
+  display:flex; flex-direction:column; gap:8px;
+  padding:8px; border:1px solid var(--fm-border); border-radius:4px;
+  background: var(--fm-panel); color: var(--fm-text);
+  cursor:pointer; text-align:left; transition:
+    transform .08s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
+}
+.fm-option:hover{
+  transform: translateY(-1px);
+  box-shadow: var(--fm-shadow);
+}
+.theme-dark .fm-option:hover{
+  background: rgba(255,255,255,.04);
+  border-color: #334155;
+}
+/* text của lựa chọn */
+.fm-option__title{ font-weight:700; color:#0f172a; }
+.theme-dark .fm-option__title{ color:#e5e7eb; }
+.fm-option__desc{ font-size:12px; color:#64748b; }
+.theme-dark .fm-option__desc{ color:#94a3b8; }
+
+/* Responsive: 1 cột trên màn nhỏ */
+@media (max-width: 720px){
+  .fm-modal__grid{ grid-template-columns: 1fr; }
+}

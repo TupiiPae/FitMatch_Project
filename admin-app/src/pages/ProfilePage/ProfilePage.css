@@ -1,51 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
-/* src/pages/ProfilePage/ProfilePage.css */
 
-/* THAY ĐỔI: Thêm layout padding cho toàn trang, giống .foods-page */
+/* Layout giống foods-page */
 .fm-profile-page {
   padding: 30px;
   display: flex;
   flex-direction: column;
-  gap: 16px; /* Khoảng cách giữa breadcrumb và card */
+  gap: 16px;
   font-family: "Roboto", sans-serif;
 }
 
-/* THAY ĐỔI: Wrapper mới cho nội dung form bên trong .card */
+/* Nội dung trong card, căn trái – fill hợp lý */
 .profile-form-content {
-  padding: 12px; /* Padding nhẹ bên trong card, trước khi bắt đầu form */
-  max-width: 700px; /* Giới hạn chiều rộng như yêu cầu "đỡ trống" */
+  padding: 12px;
+  max-width: 700px; /* cùng “nhịp” với các trang danh sách */
 }
 
-/* XÓA: .fm-page-title, .fm-card, .fm-profile-card
-  Chúng ta giả định .card, .page-head h2 đã được style toàn cục
-  từ FoodList.css hoặc file css chung.
-*/
-
-/* GIỮ NGUYÊN: Tất cả style cho form từ lần trước */
-.fm-form-group {
-  margin-bottom: 16px;
-}
-.fm-form-group label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--fm-text);
-}
-.fm-input {
-  display: block;
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: var(--fm-radius-sm);
-  border: 1px solid var(--fm-border);
-  background: var(--fm-bg);
-  color: var(--fm-text);
-}
-.fm-input:focus {
-  outline: none;
-  border-color: var(--fm-primary);
-  box-shadow: 0 0 0 2px rgba(120, 188, 196, 0.5);
-}
-
+/* Divider, note, muted giữ nguyên hệ thống */
 .fm-form-divider {
   font-size: 14px;
   font-weight: 600;
@@ -55,14 +25,59 @@
   border-top: 1px solid var(--fm-border);
   padding-top: 16px;
 }
-
-/* XÓA: .fm-form-actions và .fm-btn-primary
-   Chúng ta giả định .btn.primary đã được style toàn cục 
-   từ FoodList.css
-*/
-
-.fm-form-group { margin: 14px 0; }
-.fm-form-group.has-error .fm-input { border-color: #ef4444; }
-.fm-error-text { color: #ef4444; font-size: 13px; margin-top: 6px; }
 .fm-muted { color:#6b7280; font-size:14px; margin-top:8px; }
-.fm-note { color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:10px 12px; border-radius:8px; margin-top:8px; }
+.fm-note  { color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:10px 12px; border-radius:8px; margin-top:8px; }
+
+/* ===== PF (Profile Float fields) – tránh xung đột với fc-/al- ===== */
+.pf-form { display: grid; gap: 14px; }
+
+/* Ô nhập kiểu float label */
+.pf-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.pf-field input {
+  height: 56px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 20px 12px 8px 12px;
+  font-size: 14px;
+  background: #fff;
+  transition: all .15s ease;
+}
+.pf-field input:focus {
+  border-color: #008080;
+  box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.15);
+  outline: none;
+}
+
+/* Label nổi */
+.pf-field label {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #6b7280;
+  pointer-events: none;
+  transition: all .15s ease-out;
+  background: transparent;
+  padding: 0 2px;
+}
+.pf-field input:focus + label,
+.pf-field input:not(:placeholder-shown) + label {
+  top: 0;
+  transform: translateY(-50%) scale(0.8);
+  color: #008080;
+  background: #fff;
+  font-weight: 600;
+}
+.pf-field input:not(:placeholder-shown):not(:focus) + label {
+  color: #374151;
+}
+
+/* Lỗi */
+.pf-field.has-error input { border-color: #ef4444 !important; background: #fef2f2; }
+.pf-field.has-error label { color: #b91c1c !important; }
+.pf-error { color: #b91c1c; font-size: 13px; margin-top: 6px; }
