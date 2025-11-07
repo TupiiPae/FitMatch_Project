@@ -1,7 +1,9 @@
+// server/src/index.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
+import path from "path";
 
 import { connectDB } from "./config/db.js";
 
@@ -15,7 +17,7 @@ import foodRoutes from "./routes/food.routes.js";
 import nutritionRoutes from "./routes/nutrition.routes.js";
 import adminFoodsRoutes from "./routes/admin.food.routes.js";
 import adminAccountsRoutes from "./routes/admin.accounts.routes.js";
-import adminExercisesRoutes from "./routes/admin.exercise.routes.js"; // <-- NEW
+import adminExercisesRoutes from "./routes/admin.exercise.routes.js"; 
 
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
@@ -29,6 +31,7 @@ const PORT = process.env.PORT || 5000;
 const MONGO = process.env.MONGO || process.env.MONGO_URI;
 
 // ===== Static uploads =====
+// cho phép truy cập ảnh/video trong thư mục uploads
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -39,7 +42,8 @@ app.use(
 );
 
 // ===== Parsers =====
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "2mb" })); // tăng limit cho form JSON nhỏ
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 // ===== CORS =====
 const allowlist = [
@@ -55,6 +59,7 @@ app.use(
   cors({
     origin: (origin, cb) => {
       if (!origin || allowlist.includes(origin)) return cb(null, true);
+      console.warn(`⚠️  CORS blocked origin: ${origin}`);
       return cb(new Error(`CORS bị chặn cho origin: ${origin}`));
     },
     credentials: true,
@@ -69,17 +74,18 @@ app.use((req, _res, next) => {
 
 if (isDev) mongoose.set("debug", true);
 
-// Fix duplicated /api prefix
+// ===== Fix duplicated /api prefix =====
 app.use((req, _res, next) => {
   if (/^\/api\/api(\/|$)/.test(req.url)) {
     req.url = req.url.replace(/^\/api\/api/, "/api");
-    if (req.originalUrl) req.originalUrl = req.originalUrl.replace(/^\/api\/api/, "/api");
+    if (req.originalUrl)
+      req.originalUrl = req.originalUrl.replace(/^\/api\/api/, "/api");
     console.log("[FIX] Normalised duplicated /api prefix ->", req.url);
   }
   next();
 });
 
-// ===== Health =====
+// ===== Health check =====
 app.get("/", (_req, res) => res.send("FitMatch API v1"));
 
 // ===== Auth routes =====
@@ -101,7 +107,7 @@ app.use(
   adminAccountsRoutes
 );
 
-// Nhóm admin khác (giữ nguyên)
+// Các nhóm admin khác
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminFoodsRoutes);
 
@@ -116,47 +122,71 @@ app.use("/api/user", userRoutes);
 app.use("/api", foodRoutes);
 app.use("/api", nutritionRoutes);
 
-// In danh sách routes khi DEV
-const printRegisteredRoutes = (appInstance) => {
-  const out = [];
-  appInstance._router?.stack?.forEach((layer) => {
-    if (layer.route) {
-      const methods = Object.keys(layer.route.methods).join(",").toUpperCase();
-      out.push(`${methods} ${layer.route.path}`);
-    } else if (layer.name === "router" && layer.handle?.stack) {
-      const mountPath = layer.regexp?.toString() || "<router>";
-      layer.handle.stack.forEach((handler) => {
-        if (handler.route) {
-          const methods = Object.keys(handler.route.methods).join(",").toUpperCase();
-          out.push(`${methods} ${mountPath} -> ${handler.route.path}`);
-        }
-      });
-    }
-  });
-  console.log("=== Registered routes ===\n" + out.join("\n"));
-};
-if (isDev) printRegisteredRoutes(app);
+// ===== Debug: in danh sách routes khi DEV =====
+if (isDev) {
+  const printRegisteredRoutes = (appInstance) => {
+    const out = [];
+    appInstance._router?.stack?.forEach((layer) => {
+      if (layer.route) {
+        const methods = Object.keys(layer.route.methods)
+          .join(",")
+          .toUpperCase();
+        out.push(`${methods} ${layer.route.path}`);
+      } else if (layer.name === "router" && layer.handle?.stack) {
+        const mountPath = layer.regexp?.toString() || "<router>";
+        layer.handle.stack.forEach((handler) => {
+          if (handler.route) {
+            const methods = Object.keys(handler.route.methods)
+              .join(",")
+              .toUpperCase();
+            out.push(`${methods} ${mountPath} -> ${handler.route.path}`);
+          }
+        });
+      }
+    });
+    console.log("=== Registered routes ===\n" + out.join("\n"));
+  };
+  printRegisteredRoutes(app);
+}
 
 // ===== 404 for API =====
 app.use((req, res) => {
   if (req.originalUrl.startsWith("/api/")) {
-    return res.status(404).json({ success: false, message: "Không tìm thấy endpoint" });
+    return res
+      .status(404)
+      .json({ success: false, message: "Không tìm thấy endpoint" });
   }
   return res.status(404).send("Not found");
 });
 
 // ===== Error handler =====
-// eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
-  console.error("Lỗi hệ thống:", err?.message || err);
-  res.status(500).json({ success: false, message: "Lỗi máy chủ" });
+  // Bắt riêng lỗi upload (multer)
+  if (err?.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({
+      success: false,
+      message: "File tải lên quá lớn. Giới hạn ~150MB cho video.",
+    });
+  }
+  if (err?.message?.includes("Chỉ chấp nhận ảnh hoặc video")) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+
+  console.error("❌ Lỗi hệ thống:", err);
+  res
+    .status(500)
+    .json({ success: false, message: "Lỗi máy chủ, vui lòng thử lại sau." });
 });
 
 // ===== Start =====
 connectDB(MONGO)
-  .then(() => app.listen(PORT, () => console.log(`🚀 API on http://localhost:${PORT}`)))
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 FitMatch API đang chạy tại http://localhost:${PORT}`);
+    });
+  })
   .catch((e) => {
-    console.error("Không thể kết nối MongoDB:", e);
+    console.error("❌ Không thể kết nối MongoDB:", e);
     process.exit(1);
   });
 

@@ -276,7 +276,7 @@ export default function Strength_List() {
               <div className="cell created">{fmtDate(it.createdAt)}</div>
 
               <div className="cell act">
-                <button className="iconbtn" title="Chỉnh sửa" onClick={()=>nav(`/exercises/strength/create?id=${it._id}`)}>
+                <button className="iconbtn" title="Chỉnh sửa" onClick={() => nav(`/exercises/strength/${it._id}/edit`)}>
                   <i className="fa-regular fa-pen-to-square" />
                 </button>
                 <button className="iconbtn danger" title="Xóa" onClick={()=>setConfirmId(it._id)}>

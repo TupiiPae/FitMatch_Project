@@ -13,12 +13,13 @@ import FoodsList from "./pages/pagesFoods/Food_List/Food_List.jsx";
 import FoodCreate from "./pages/pagesFoods/Food_Create/Food_Create.jsx";
 import FoodsReview from "./pages/pagesFoods/Review/Review.jsx";
 import FoodEdit from "./pages/pagesFoods/Food_Edit/Food_Edit.jsx";
-// NEW: Import List
+
 import ImportList from "./pages/pagesFoods/Import_List/Import_List.jsx";
 
 // ===== Exercises
 import StrengthList from "./pages/pagesExercises/Strength_List/Strength_List.jsx";
 import StrengthCreate from "./pages/pagesExercises/Strength_Create/Strength_Create.jsx";
+import StrengthEdit from "./pages/pagesExercises/Strength_Edit/Strength_Edit.jsx";
 
 // ===== Users
 import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
@@ -70,6 +71,7 @@ export default function App() {
           {/* Bài tập */}
           <Route path="/exercises/strength" element={<StrengthList />} />
           <Route path="/exercises/strength/create" element={<StrengthCreate />} />
+          <Route path="/exercises/strength/:id/edit" element={<StrengthEdit />} />
 
           {/* Người dùng */}
           <Route path="/users" element={<UsersList />} />

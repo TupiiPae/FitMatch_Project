@@ -1,12 +1,14 @@
+// admin-app/src/pages/pagesExercises/Strength_Edit/Strength_Edit.jsx
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  createExercise,
-  createExerciseFile,
+  getExercise,
+  updateExercise,
   listMuscleGroups,
   listEquipments,
+  api,
 } from "../../../lib/api";
-import "./Strength_Create.css";
+import "../Strength_Create/Strength_Create.css"; // reuse same CSS
 import { toast } from "react-toastify";
 
 import Box from "@mui/material/Box";
@@ -22,13 +24,12 @@ import Checkbox from "@mui/material/Checkbox";
 import ListItemText from "@mui/material/ListItemText";
 import FormHelperText from "@mui/material/FormHelperText";
 
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
+const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
+
 const TYPES = ["Strength", "Cardio", "Sport"];
-const EQUIPMENTS_FALLBACK = [
-  "Không có","Tạ đòn","Tạ đơn","Máy","Banh","Dây kháng lực","Kettlebell","BOSU","TRX"
-];
-const MUSCLES_FALLBACK = [
-  "Ngực","Lưng","Vai","Bụng","Hông","Đùi trước","Đùi sau","Mông","Bắp chân","Tay trước","Tay sau","Cẳng tay","Cổ","Toàn thân","Core"
-];
+const EQUIPMENTS_FALLBACK = ["Không có","Tạ đòn","Tạ đơn","Máy","Banh","Dây kháng lực","Kettlebell","BOSU","TRX"];
+const MUSCLES_FALLBACK = ["Ngực","Lưng","Vai","Bụng","Hông","Đùi trước","Đùi sau","Mông","Bắp chân","Tay trước","Tay sau","Cẳng tay","Cổ","Toàn thân","Core"];
 const LEVELS = ["Cơ bản", "Trung bình", "Nâng cao"];
 
 const init = {
@@ -45,16 +46,20 @@ const init = {
   descriptionHtml: "",
 };
 
-export default function StrengthCreate() {
+export default function StrengthEdit() {
+  const { id } = useParams();
   const nav = useNavigate();
 
+  // options
   const [muscleOptions, setMuscleOptions] = useState(MUSCLES_FALLBACK);
   const [equipmentOptions, setEquipmentOptions] = useState(EQUIPMENTS_FALLBACK);
 
+  // form
   const [f, setF] = useState(init);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // refs
   const refName = useRef(null);
   const refImageBox = useRef(null);
   const refCal = useRef(null);
@@ -63,12 +68,16 @@ export default function StrengthCreate() {
   const refImgUrl = useRef(null);
   const refVidUrl = useRef(null);
 
+  // files + preview
   const imgInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const [imgFile, setImgFile] = useState(null);
   const [imgPreview, setImgPreview] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
 
+  const onChange = (k, v) => setF((s) => ({ ...s, [k]: v }));
+
+  // load options
   useEffect(() => {
     (async () => {
       try {
@@ -82,13 +91,35 @@ export default function StrengthCreate() {
     })();
   }, []);
 
+  // preload data
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getExercise(id);
+        const filled = {
+          ...init,
+          ...data,
+          primaryMuscles: data?.primaryMuscles || [],
+          secondaryMuscles: data?.secondaryMuscles || [],
+          imageUrl: data?.imageUrl || "",
+          videoUrl: data?.videoUrl || "",
+        };
+        setF(filled);
+        if (filled.imageUrl) setImgPreview(toAbs(filled.imageUrl));
+      } catch (e) {
+        toast.error("Không tải được dữ liệu bài tập.");
+        console.error(e);
+      }
+    })();
+  }, [id]);
+
+  // cleanup preview
   useEffect(() => {
     return () => {
-      if (imgPreview && imgPreview.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
+      if (imgPreview && String(imgPreview).startsWith("blob:")) URL.revokeObjectURL(imgPreview);
     };
   }, [imgPreview]);
 
-  const onChange = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const pickImage = () => imgInputRef.current?.click();
   const pickVideo = () => videoInputRef.current?.click();
 
@@ -96,7 +127,7 @@ export default function StrengthCreate() {
     const file = e.target.files?.[0];
     if (!file) return;
     setImgFile(file);
-    if (imgPreview && imgPreview.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
+    if (imgPreview && String(imgPreview).startsWith("blob:")) URL.revokeObjectURL(imgPreview);
     setImgPreview(URL.createObjectURL(file));
     if (f.imageUrl) onChange("imageUrl", "");
   };
@@ -109,37 +140,12 @@ export default function StrengthCreate() {
   };
 
   const showImgFromUrl = () => {
-    if (!imgFile) setImgPreview(f.imageUrl || null);
+    if (!imgFile) setImgPreview(toAbs(f.imageUrl || null));
   };
 
-  const scrollToFirstError = (errs) => {
-    const order = [
-      ["name", refName],
-      ["image", refImageBox],
-      ["caloriePerRep", refCal],
-      ["imageUrl", refImgUrl],
-      ["videoUrl", refVidUrl],
-      ["guideHtml", refGuide],
-      ["descriptionHtml", refDesc],
-    ];
-    const first = order.find(([k]) => errs[k]);
-    if (first && first[1]?.current) {
-      try {
-        first[1].current.scrollIntoView({ behavior: "smooth", block: "center" });
-        if (typeof first[1].current.focus === "function") first[1].current.focus();
-      } catch {}
-    }
-  };
-
+  // validation (same as Create, except name disabled, still validate others)
   const validate = () => {
     const errs = {};
-    const name = String(f.name || "").trim();
-    if (!name) errs.name = "Vui lòng nhập tên bài tập";
-    else if (name.length > 100) errs.name = "Tên tối đa 100 ký tự";
-    else if (!/^[\p{L}\p{M}\s0-9'’\-.,()\/]+$/u.test(name)) {
-      errs.name = "Tên chỉ gồm chữ, số, khoảng trắng và ' - . , ( ) /";
-    }
-
     if (!imgFile && !f.imageUrl) errs.image = "Vui lòng chọn ảnh hoặc nhập link ảnh";
     if (!f.type) errs.type = "Vui lòng chọn phân loại";
     if (!Array.isArray(f.primaryMuscles) || f.primaryMuscles.length === 0) {
@@ -162,13 +168,12 @@ export default function StrengthCreate() {
     const errs = validate();
     if (Object.keys(errs).length) {
       toast.error("Vui lòng kiểm tra lại các dữ liệu nhập.");
-      scrollToFirstError(errs);
       return;
     }
 
     setSaving(true);
     const payload = {
-      name: String(f.name).trim(),
+      // name: giữ nguyên; không cho sửa nên không gửi để tránh đụng unique/validate
       type: f.type || "Strength",
       primaryMuscles: f.primaryMuscles,
       secondaryMuscles: f.secondaryMuscles || [],
@@ -179,11 +184,10 @@ export default function StrengthCreate() {
       descriptionHtml: String(f.descriptionHtml || "").trim() || undefined,
       imageUrl: imgFile ? undefined : (f.imageUrl?.trim() || undefined),
       videoUrl: videoFile ? undefined : (f.videoUrl?.trim() || undefined),
-      sourceType: "admin_created",
     };
 
     try {
-      let created = null;
+      let updated = null;
       if (imgFile || videoFile) {
         const fd = new FormData();
         if (imgFile) fd.append("image", imgFile);
@@ -194,14 +198,13 @@ export default function StrengthCreate() {
             else fd.append(k, String(v));
           }
         });
-        created = await createExerciseFile(fd);
+        updated = await updateExercise(id, fd, true);
       } else {
-        created = await createExercise(payload);
+        updated = await updateExercise(id, payload, false);
       }
 
-      const createdId = created?._id || created?.id;
-      toast.success("Tạo bài tập thành công!");
-      nav("/exercises/strength", { state: { justCreated: true, createdId } });
+      toast.success("Cập nhật bài tập thành công!");
+      nav("/exercises/strength");
     } catch (err) {
         let msg = err?.response?.data?.message;
           if (!msg) {
@@ -222,70 +225,37 @@ export default function StrengthCreate() {
     MenuListProps: { dense: true },
   };
 
-  const rowGrid2 = {
-    display: "grid",
-    gap: 4,
-    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-    alignItems: "start",
-  };
-  const rowGrid3 = {
-    display: "grid",
-    gap: 4,
-    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
-    alignItems: "start",
-  };
+  const rowGrid2 = { display: "grid", gap: 4, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" } };
+  const rowGrid3 = { display: "grid", gap: 4, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" } };
 
   return (
     <div className="strength-create-page">
-      {/* Breadcrumb */}
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
-        <Link to="/">
-          <i className="fa-solid fa-house" aria-hidden="true"></i>
-          <span>Trang chủ</span>
-        </Link>
+        <Link to="/"><i className="fa-solid fa-house" aria-hidden="true"></i><span>Trang chủ</span></Link>
         <span className="separator">/</span>
-        <span className="current-group">
-          <i className="fa-solid fa-dumbbell" aria-hidden="true" />
-          <span>Quản lý Bài tập</span>
-        </span>
+        <span className="current-group"><i className="fa-solid fa-dumbbell" aria-hidden="true" /><span>Quản lý Bài tập</span></span>
         <span className="separator">/</span>
-        <span className="current-page">Tạo bài tập</span>
+        <span className="current-page">Chỉnh sửa bài tập</span>
       </nav>
 
       <div className="card">
         <div className="page-head">
-          <h2>Tạo bài tập</h2>
+          <h2>Chỉnh sửa bài tập</h2>
           <div className="head-actions">
-            <button type="button" className="btn ghost" onClick={() => nav(-1)}>
-              Hủy
-            </button>
-            <button type="submit" form="strength-create-form" className="btn primary" disabled={saving}>
-              {saving ? "Đang lưu..." : "Tạo bài tập"}
+            <button type="button" className="btn ghost" onClick={() => nav(-1)}>Hủy</button>
+            <button type="submit" form="strength-edit-form" className="btn primary" disabled={saving}>
+              {saving ? "Đang lưu..." : "Lưu thay đổi"}
             </button>
           </div>
         </div>
 
-        <form id="strength-create-form" className="sc-form-layout" onSubmit={onSubmit}>
-          {/* LEFT */}
+        <form id="strength-edit-form" className="sc-form-layout" onSubmit={onSubmit}>
           <div className="sc-layout-left">
             <h3 className="sc-section-title">Hình ảnh</h3>
 
-            <div
-              className="sc-image-box"
-              role="button"
-              tabIndex={0}
-              onClick={pickImage}
-              onKeyDown={(e) => e.key === "Enter" && pickImage()}
-              ref={refImageBox}
-            >
+            <div className="sc-image-box" role="button" tabIndex={0} onClick={() => imgInputRef.current?.click()} ref={refImageBox}>
               {imgPreview ? (
-                <img src={imgPreview} alt="Xem trước" />
-              ) : f.imageUrl ? (
-                <img
-                  src={f.imageUrl}
-                  alt="Xem trước"
-                  onError={() => setImgPreview(null)}
-                />
+                <img src={toAbs(imgPreview)} alt="Xem trước" />
               ) : (
                 <div className="sc-placeholder">
                   <i className="fa-regular fa-image" />
@@ -293,29 +263,16 @@ export default function StrengthCreate() {
                 </div>
               )}
             </div>
-            {errors.image && (
-              <FormHelperText error sx={{ ml: "14px", mt: "-8px" }}>
-                {errors.image}
-              </FormHelperText>
-            )}
+            {errors.image && <FormHelperText error sx={{ ml: "14px", mt: "-8px" }}>{errors.image}</FormHelperText>}
 
-            <input
-              ref={imgInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={onPickImage}
-            />
+            <input ref={imgInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onPickImage} />
 
-            <div className="sc-field-title-upl">Link hình ảnh (URL)</div>
+            <div className="sc-field-title">Link hình ảnh (URL)</div>
             <TextField
               inputRef={refImgUrl}
               label="Hoặc dán link hình ảnh (URL)"
               value={f.imageUrl}
-              onChange={(e) => {
-                if (imgFile) setImgFile(null);
-                onChange("imageUrl", e.target.value);
-              }}
+              onChange={(e) => { if (imgFile) setImgFile(null); onChange("imageUrl", e.target.value); }}
               onBlur={showImgFromUrl}
               variant="outlined"
               fullWidth
@@ -323,18 +280,11 @@ export default function StrengthCreate() {
             />
 
             <hr className="sc-divider" />
-
-            <h3 className="sc-section-title">Video hướng dẫn</h3>
+            <h3 className="sc-section-title-upl">Video hướng dẫn</h3>
             <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <Button variant="outlined" onClick={pickVideo} component="label" fullWidth>
-                {videoFile ? `Đã chọn: ${videoFile.name}` : "Tải lên file video (Tối đa 50mb)"}
-                <input
-                  ref={videoInputRef}
-                  type="file"
-                  accept="video/*"
-                  style={{ display: "none" }}
-                  onChange={onPickVideo}
-                />
+              <Button variant="outlined" onClick={() => videoInputRef.current?.click()} component="label" fullWidth>
+                {videoFile ? `Đã chọn: ${videoFile.name}` : "Tải lên file video (Tối đa 50MB)"}
+                <input ref={videoInputRef} type="file" accept="video/*" style={{ display: "none" }} onChange={onPickVideo} />
               </Button>
 
               <div className="sc-field-title-upl">Link video</div>
@@ -342,10 +292,7 @@ export default function StrengthCreate() {
                 inputRef={refVidUrl}
                 label="Hoặc dán link video (URL)"
                 value={f.videoUrl}
-                onChange={(e) => {
-                  if (videoFile) setVideoFile(null);
-                  onChange("videoUrl", e.target.value);
-                }}
+                onChange={(e) => { if (videoFile) setVideoFile(null); onChange("videoUrl", e.target.value); }}
                 variant="outlined"
                 fullWidth
                 size="medium"
@@ -353,11 +300,9 @@ export default function StrengthCreate() {
             </Box>
           </div>
 
-          {/* RIGHT */}
           <div className="sc-layout-right">
             <h3 className="sc-section-title">Thông tin chung</h3>
 
-            {/* Hàng 1: Tên & Phân loại */}
             <Box sx={rowGrid2}>
               <Box>
                 <div className="sc-field-title">Tên bài tập *</div>
@@ -365,9 +310,7 @@ export default function StrengthCreate() {
                   inputRef={refName}
                   label="Tên bài tập *"
                   value={f.name}
-                  onChange={(e) => onChange("name", e.target.value)}
-                  error={!!errors.name}
-                  helperText={errors.name} 
+                  disabled
                   fullWidth
                 />
               </Box>
@@ -376,25 +319,15 @@ export default function StrengthCreate() {
                 <div className="sc-field-title">Phân loại *</div>
                 <FormControl fullWidth error={!!errors.type}>
                   <InputLabel id="type-label">Phân loại *</InputLabel>
-                  <Select
-                    labelId="type-label"
-                    label="Phân loại *"
-                    value={f.type}
-                    onChange={(e) => onChange("type", e.target.value)}
-                    MenuProps={menuProps}
-                  >
-                    {TYPES.map((t) => (
-                      <MenuItem key={t} value={t}>{t}</MenuItem>
-                    ))}
+                  <Select labelId="type-label" label="Phân loại *" value={f.type} onChange={(e) => onChange("type", e.target.value)}>
+                    {TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
                   </Select>
-                  <FormHelperText>{errors.type}</FormHelperText> {/* SỬA 2 */}
+                  <FormHelperText>{errors.type}</FormHelperText>
                 </FormControl>
               </Box>
             </Box>
 
-            {/* Hàng 2: Nhóm cơ chính & Nhóm cơ phụ */}
-            {/* BỎ mt: 2 Ở DÒNG DƯỚI */}
-            <Box sx={rowGrid2}> 
+            <Box sx={rowGrid2}>
               <Box>
                 <div className="sc-field-title">Nhóm cơ chính *</div>
                 <FormControl fullWidth error={!!errors.primaryMuscles}>
@@ -407,12 +340,9 @@ export default function StrengthCreate() {
                     input={<OutlinedInput label="Nhóm cơ chính *" />}
                     renderValue={(selected) => (
                       <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                        {selected.map((val) => (
-                          <Chip key={val} label={val} size="small" />
-                        ))}
+                        {selected.map((val) => <Chip key={val} label={val} size="small" />)}
                       </Box>
                     )}
-                    MenuProps={menuProps}
                   >
                     {muscleOptions.map((m) => (
                       <MenuItem key={m} value={m}>
@@ -421,7 +351,7 @@ export default function StrengthCreate() {
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.primaryMuscles}</FormHelperText> {/* SỬA 3 */}
+                  <FormHelperText>{errors.primaryMuscles}</FormHelperText>
                 </FormControl>
               </Box>
 
@@ -437,12 +367,9 @@ export default function StrengthCreate() {
                     input={<OutlinedInput label="Nhóm cơ phụ" />}
                     renderValue={(selected) => (
                       <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                        {selected.map((val) => (
-                          <Chip key={val} label={val} size="small" />
-                        ))}
+                        {selected.map((val) => <Chip key={val} label={val} size="small" />)}
                       </Box>
                     )}
-                    MenuProps={menuProps}
                   >
                     {muscleOptions.map((m) => (
                       <MenuItem key={m} value={m}>
@@ -451,31 +378,19 @@ export default function StrengthCreate() {
                       </MenuItem>
                     ))}
                   </Select>
-                  {/* SỬA 4 (Không cần helper text ở đây nếu không có lỗi) */}
-                  {/* <FormHelperText>{" "}</FormHelperText> */} 
                 </FormControl>
               </Box>
             </Box>
 
-            {/* Hàng 3: Dụng cụ – Mức độ – Calorie/rep */}
-            {/* BỎ mt: 2 Ở DÒNG DƯỚI */}
             <Box sx={rowGrid3}>
               <Box>
                 <div className="sc-field-title">Dụng cụ *</div>
                 <FormControl fullWidth error={!!errors.equipment}>
                   <InputLabel id="equip-label">Dụng cụ *</InputLabel>
-                  <Select
-                    labelId="equip-label"
-                    label="Dụng cụ *"
-                    value={f.equipment}
-                    onChange={(e) => onChange("equipment", e.target.value)}
-                    MenuProps={menuProps}
-                  >
-                    {equipmentOptions.map((eq) => (
-                      <MenuItem key={eq} value={eq}>{eq}</MenuItem>
-                    ))}
+                  <Select labelId="equip-label" label="Dụng cụ *" value={f.equipment} onChange={(e) => onChange("equipment", e.target.value)}>
+                    {equipmentOptions.map((eq) => <MenuItem key={eq} value={eq}>{eq}</MenuItem>)}
                   </Select>
-                  <FormHelperText>{errors.equipment}</FormHelperText> {/* SỬA 5 */}
+                  <FormHelperText>{errors.equipment}</FormHelperText>
                 </FormControl>
               </Box>
 
@@ -483,18 +398,10 @@ export default function StrengthCreate() {
                 <div className="sc-field-title">Mức độ *</div>
                 <FormControl fullWidth error={!!errors.level}>
                   <InputLabel id="level-label">Mức độ *</InputLabel>
-                  <Select
-                    labelId="level-label"
-                    label="Mức độ *"
-                    value={f.level}
-                    onChange={(e) => onChange("level", e.target.value)}
-                    MenuProps={menuProps}
-                  >
-                    {LEVELS.map((lv) => (
-                      <MenuItem key={lv} value={lv}>{lv}</MenuItem>
-                    ))}
+                  <Select labelId="level-label" label="Mức độ *" value={f.level} onChange={(e) => onChange("level", e.target.value)}>
+                    {LEVELS.map((lv) => <MenuItem key={lv} value={lv}>{lv}</MenuItem>)}
                   </Select>
-                  <FormHelperText>{errors.level}</FormHelperText> {/* SỬA 6 */}
+                  <FormHelperText>{errors.level}</FormHelperText>
                 </FormControl>
               </Box>
 
@@ -513,9 +420,9 @@ export default function StrengthCreate() {
             </Box>
 
             <hr className="sc-divider" />
-
             <h3 className="sc-section-title">Mô tả</h3>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2}}>
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div className="sc-field-title-desc">Hướng dẫn tập luyện</div>
               <TextField
                 label="Hướng dẫn tập luyện"

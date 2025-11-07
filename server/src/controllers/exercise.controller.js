@@ -19,7 +19,7 @@ const toNum = (v) => (v === "" || v == null ? null : Number(v));
 const isJsonArray = (s) => typeof s === "string" && /^\s*\[/.test(s);
 const ensureDir = (d) => { try { fs.mkdirSync(d, { recursive: true }); } catch {} };
 
-/** Lưu ảnh memoryStorage -> .webp vào /uploads/exercises, trả tên file */
+/** Lưu ảnh từ buffer -> .webp vào /uploads/exercises, trả tên file */
 async function saveImageFromBuffer(file) {
   if (!file?.buffer) return null;
   ensureDir(EX_DIR);
@@ -34,7 +34,7 @@ async function saveImageFromBuffer(file) {
   return filename;
 }
 
-/** Lưu video memoryStorage -> file gốc (đuôi từ mimetype/original), trả tên file */
+/** Chọn đuôi video an toàn */
 function pickVideoExt(mt, original = "") {
   const low = (mt || "").toLowerCase();
   const nameLow = (original || "").toLowerCase();
@@ -44,6 +44,8 @@ function pickVideoExt(mt, original = "") {
   if (nameLow.endsWith(".mkv")) return ".mkv";
   return ".mp4";
 }
+
+/** Lưu video từ buffer -> file gốc trong /uploads/exercises_videos, trả tên file */
 async function saveVideoFromBuffer(file) {
   if (!file?.buffer) return null;
   ensureDir(EX_VID_DIR);
@@ -61,7 +63,7 @@ function normalizeBody(body) {
 
   ["primaryMuscles", "secondaryMuscles"].forEach((k) => {
     const val = b[k];
-    if (Array.isArray(val)) return; // đã là mảng
+    if (Array.isArray(val)) return;
     if (isJsonArray(val)) {
       try { b[k] = JSON.parse(val); } catch { b[k] = []; }
     } else if (typeof val === "string" && val.trim()) {
@@ -73,7 +75,6 @@ function normalizeBody(body) {
 
   if ("caloriePerRep" in b) b.caloriePerRep = toNum(b.caloriePerRep);
 
-  // xoá key rỗng để tránh overwrite
   Object.keys(b).forEach((k) => {
     const v = b[k];
     if (v === undefined || v === null) delete b[k];
@@ -116,11 +117,7 @@ export async function listExercises(req, res, next) {
 
     const [total, items] = await Promise.all([
       Exercise.countDocuments(filter),
-      Exercise.find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skp)
-        .limit(lim)
-        .lean(),
+      Exercise.find(filter).sort({ createdAt: -1 }).skip(skp).limit(lim).lean(),
     ]);
 
     const hasMore = skp + items.length < total;
@@ -141,7 +138,7 @@ export async function getExercise(req, res, next) {
   }
 }
 
-// POST /api/admin/exercises  (ảnh gửi field "image"; video KHÔNG gửi ở đây)
+// POST /api/admin/exercises  (ảnh gửi field "image"; KHÔNG nhận video ở đây)
 export async function createExercise(req, res, next) {
   try {
     const imgFile = (req.files?.image && req.files.image[0]) || req.file || null;
@@ -168,7 +165,7 @@ export async function createExercise(req, res, next) {
   }
 }
 
-// PATCH /api/admin/exercises/:id  (ảnh mới gửi field "image"; có thể sửa videoUrl dạng link)
+// PATCH /api/admin/exercises/:id  (ảnh mới field "image"; có thể sửa videoUrl dạng link)
 export async function updateExercise(req, res, next) {
   try {
     const { id } = req.params;
@@ -228,5 +225,4 @@ export async function deleteExercise(req, res, next) {
 export function meta(_req, res) {
   return res.json({ EXERCISE_TYPES, MUSCLE_GROUPS, EQUIPMENTS, LEVELS });
 }
-// alias cho FE (nếu đang gọi getExerciseMeta)
 export const getExerciseMeta = meta;

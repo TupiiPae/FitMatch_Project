@@ -382,7 +382,7 @@ export const createExercise = async (formDataOrJson, isMultipart = false) => {
   }
 };
 
-// Cập nhật bài tập
+// Cập nhật bài tập (CHỈ ảnh + text; KHÔNG gửi video chung request này)
 export const updateExercise = async (id, formDataOrJson, isMultipart = false) => {
   if (isMultipart) {
     const r = await api.patch(`/api/admin/exercises/${id}`, formDataOrJson, {
@@ -446,6 +446,21 @@ export const listEquipments = async () => {
       return [];
     }
   }
+};
+
+/* 4) UPLOAD VIDEO – CÁCH A (endpoint riêng, KHÔNG gộp chung create/update)
+   FE gọi sau khi tạo/cập nhật thành công nếu có videoFile.
+   - id: exerciseId
+   - file: File (video/*)
+*/
+export const uploadExerciseVideoApi = async (id, file) => {
+  const fd = new FormData();
+  fd.append("video", file);
+  const r = await api.post(`/api/admin/exercises/${id}/video`, fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  // BE trả { ok:true, videoUrl } hoặc responseOk
+  return r.data;
 };
 
 /* =========================
