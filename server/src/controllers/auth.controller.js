@@ -215,7 +215,7 @@ export const google = async (req, res) => {
       return res.status(403).json({
         message: "Tài khoản đã bị khóa",
         blocked: true,
-        reason: user.blockedReason || "Tài khoản đã bị khóa bởi quản trị viên.",
+        reason: user.blockedReason || "Vi phạm qui định.",
       });
     }
 
