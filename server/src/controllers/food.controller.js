@@ -234,8 +234,12 @@ export async function updateFood(req, res) {
     if (b.unit !== undefined) set.unit = b.unit === "ml" ? "ml" : "g";
 
     ["name", "imageUrl", "portionName", "sourceType"].forEach((k) => {
-      if (b[k] !== undefined)
-        set[k] = typeof b[k] === "string" ? b[k].trim() : b[k];
+      if (b[k] !== undefined) {
+        const v = typeof b[k] === "string" ? b[k].trim() : b[k];
+        // Không ghi đè imageUrl nếu là chuỗi rỗng
+        if (k === "imageUrl" && v === "") return;
+        set[k] = v;
+      }
     });
     ["kcal", "proteinG", "carbG", "fatG", "saltG", "sugarG", "fiberG"].forEach((k) => {
       if (b[k] !== undefined) set[k] = toNumOrNull(b[k]);
@@ -265,9 +269,11 @@ export async function updateFood(req, res) {
         if (!("approvedBy" in set)) set.approvedBy = userId;
         // set.rejectionReason = undefined; // nếu muốn clear lý do cũ
       } else if (b.status === "rejected") {
-        if (b.rejectionReason !== undefined) {
-          set.rejectionReason = String(b.rejectionReason || "").slice(0, 500) || undefined;
+        const raw = String(b.rejectionReason ?? "").trim();
+        if (!raw) {
+          return res.status(400).json({ message: "Vui lòng nhập lý do từ chối (1–500 ký tự)" });
         }
+        set.rejectionReason = raw.slice(0, 500);
         // Không buộc xóa approvedAt/approvedBy để giữ dấu vết; cần thì uncomment:
         // set.approvedAt = null; set.approvedBy = null;
       }
@@ -313,7 +319,11 @@ export async function approveFood(req, res) {
 
 export async function rejectFood(req, res) {
   const id = req.params.id;
-  const reason = (req.body?.reason || "").slice(0, 500);
+  const raw = String(req.body?.reason ?? "").trim();
+  if (!raw) {
+    return res.status(400).json({ message: "Vui lòng nhập lý do từ chối" });
+  }
+  const reason = raw.slice(0, 500);
   const doc = await Food.findByIdAndUpdate(
     id,
     { status: "rejected", rejectionReason: reason || undefined },

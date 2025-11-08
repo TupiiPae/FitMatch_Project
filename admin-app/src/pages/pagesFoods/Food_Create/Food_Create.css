@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 /* ===== Layout tổng thể ===== */
 .food-create-page {
   padding: 30px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  font-family: "Roboto", sans-serif;
 }
 
 /* ===== (LẤY TỪ LIST.CSS) Định nghĩa các thành phần dùng chung ===== */
@@ -290,3 +292,10 @@
 .fc-msg { margin-top: 14px; padding: 10px 12px; border-radius: 8px; }
 .fc-msg.ok { background: #ecfdf5; color: #065f46; }
 .fc-msg.err { background: #fef2f2; color: #991b1b; }
+
+.sc-field-title-descF {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
+}

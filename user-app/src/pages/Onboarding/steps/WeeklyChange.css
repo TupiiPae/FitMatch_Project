@@ -1,6 +1,6 @@
 .wk-wrap {
     min-height:100vh;
-    background:#f3f4f6;
+    background:#f4f6ea;
     display:flex;
     flex-direction:column;
 }
@@ -10,9 +10,9 @@
     display:flex;
     align-items:center;
     padding:0 150px;
-    background: #ffffffaa;
-    border-bottom:1px solid #eceff4;
-    backdrop-filter:blur(4px)
+    background: #f4f6ea;
+    backdrop-filter:blur(4px);
+    box-shadow: 0 2px 40px rgba(0,0,0,.1);
 }
 
 .wk-logo {
@@ -28,10 +28,10 @@
 }
 
 .wk-card {
-    width:100%;
-    max-width:560px;
+    max-height: 300px;
+    width: 900px;
     background:#fff;
-    border-radius:12px;
+    border-radius:8px;
     padding:24px;
     border:1px solid #eef1f5;
     box-shadow:0 10px 24px rgba(0,0,0,.08);
@@ -39,7 +39,7 @@
 } 
 
 .wk-title {
-    font-size:20px;
+    font-size:24px;
     font-weight:700;
     color:#1f2937;
     margin-bottom:6px
@@ -56,14 +56,15 @@
 }
 
 .wk-tag {
-    color:#6b7280;
-    margin-bottom:2px
+    font-weight: 600;
+    color: #002C3E;
+    margin-bottom:2px;
 }
 
 .wk-highlight {
-    color:#1a73e8;
+    color:#002C3E;
     font-weight:700;
-    font-size:18px
+    font-size:24px
 } 
 
 .wk-reco {
@@ -90,8 +91,8 @@
   left:0;
   right:0;
   height:6px;
-  background:linear-gradient(90deg,#6f42c1 0%,#b388ff 100%);
-  border-radius:10px;
+  background:linear-gradient(90deg,#78BCC4 0%,#008080 100%);
+  border-radius:8px;
   display:flex;justify-content:space-between;align-items:center;
   padding:0 8px;
 }
@@ -106,7 +107,7 @@
 
 .wk-slider{
   position:absolute;
-  top:35px;
+  top:40px;
   left:0;
   width:100%;
   -webkit-appearance:none;appearance:none;
@@ -118,9 +119,9 @@
 .wk-slider::-webkit-slider-thumb{
   -webkit-appearance:none;
   width:24px;height:24px;border-radius:50%;
-  background:#6f42c1;
+  background:#008080;
   border:none;
-  box-shadow:0 0 0 10px rgba(111,66,193,0.2);
+  box-shadow:0 0 0 10px rgba(86, 206, 160, 0.2);
   transition:transform .1s ease;
 }
 
@@ -130,9 +131,8 @@
   width:24px;
   height:24px;
   border-radius:50%;
-  background:#6f42c1;
+  background:#008080;
   border:none;
-  box-shadow:0 0 0 10px rgba(111,66,193,0.2);
 }
 
 .wk-tooltip{
@@ -176,7 +176,7 @@
     min-width:120px;
     height:40px;
     padding:0 18px;
-    border-radius:10px;
+    border-radius:8px;
     font-weight:500;
     cursor:pointer;
     transition:transform .05s,box-shadow .2s,background .2s,border-color .2s
@@ -198,15 +198,13 @@
 }
 
 .btn-primary {
-    background:#1a73e8;
+    background:#008080;
     border:none;
     color:#fff;
-    box-shadow:0 6px 14px rgba(26,115,232,.25)
 }
 
 .btn-primary:hover {
-    background:#1866d6;
-    box-shadow:0 8px 18px rgba(26,115,232,.32)
+    background:#007070;
 }
 
 @media(max-width:560px)

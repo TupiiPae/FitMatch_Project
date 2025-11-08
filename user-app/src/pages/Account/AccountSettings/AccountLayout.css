@@ -33,14 +33,13 @@
 
 /* Sidebar title + item — ĐỒNG BỘ với ProfileLayout */
 .acc-page .pf-side-title{
-  color:#6b7280; font-size:13px; margin:8px 0 6px;
+  color:#111827; font-size:14px; margin:8px 0 6px; font-weight: 500;
 }
 .acc-page .pf-side-item{
   width:100%; text-align:left; padding:10px 12px; border-radius:8px;
   background:transparent; border:0; cursor:pointer; color:#111827;
 }
-.acc-page .pf-side-item:hover{ background:#f3f4f6; }
-.acc-page .pf-side-item.is-active{ background:#e5e7eb; }
+.acc-page .pf-side-item.is-active{ background:#008080; color: #fff;}
 
 .acc-page .pf-content{ width:100%; display:flex; flex-direction:column; gap:16px; }
 
@@ -94,7 +93,7 @@
 .acc-page .logout-dialog{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   width:min(520px, calc(100% - 24px));
-  border:1px solid var(--fm-ring); border-radius:12px; background:#fff; padding:20px;
+  border:1px solid var(--fm-ring); border-radius:8px; background:#fff; padding:20px;
   box-shadow:0 15px 50px rgba(2,6,23,.2);
 }
 .acc-page .logout-title{
@@ -103,12 +102,12 @@
 .acc-page .logout-desc{ text-align:center; color:#6b7280; margin:0 0 18px; }
 .acc-page .logout-actions{ display:flex; justify-content:center; gap:12px; }
 .acc-page .logout-actions .btn-secondary{
-  background:#f3f4f6; color:#111827; border:0; border-radius:10px; padding:10px 16px; cursor:pointer;
+  background:#f3f4f6; color:#111827; border:0; border-radius:8px; padding:10px 16px; cursor:pointer;
 }
 .acc-page .logout-actions .btn-secondary:hover{ filter:brightness(0.97); }
 /* btn-danger đã có trong DeleteAccount.css; phòng khi chưa có, thêm nhẹ: */
 .acc-page .logout-actions .btn-danger{
-  background:#ef4444; color:#fff; border:0; border-radius:10px; padding:10px 16px; cursor:pointer; font-weight:700;
+  background:#ef4444; color:#fff; border:0; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:700;
 }
 .acc-page .logout-actions .btn-danger:hover{ filter:brightness(0.95); }
 

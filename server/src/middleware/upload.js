@@ -8,24 +8,26 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// __dirname = .../server/src/middleware
 // PROJECT_ROOT = .../server
 const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
 
-// ===== Gốc uploads CHUẨN: .../server/uploads =====
-export const UPLOAD_ROOT = path.join(PROJECT_ROOT, "uploads");
-export const AVATAR_DIR  = path.join(UPLOAD_ROOT, "avatars");
-export const FOOD_DIR    = path.join(UPLOAD_ROOT, "foods");
+// ===== Gốc uploads =====
+export const UPLOAD_ROOT    = path.join(PROJECT_ROOT, "uploads");
+export const AVATAR_DIR     = path.join(UPLOAD_ROOT, "avatars");
+export const FOOD_DIR       = path.join(UPLOAD_ROOT, "foods");
 
-// Tạo thư mục cần thiết (chỉ 2 thư mục con này)
-fs.mkdirSync(AVATAR_DIR, { recursive: true });
-fs.mkdirSync(FOOD_DIR,   { recursive: true });
+// ===== Exercises dirs (ảnh & video tách riêng) =====
+export const EXERCISE_IMG_DIR = path.join(UPLOAD_ROOT, "exercises");
+export const EXERCISE_VID_DIR = path.join(UPLOAD_ROOT, "exercises_videos");
 
-// ===== Multer storages =====
-// Dùng memoryStorage: controller sẽ nén/cắt & lưu .webp vào đúng thư mục
+// ensure dirs
+[UPLOAD_ROOT, AVATAR_DIR, FOOD_DIR, EXERCISE_IMG_DIR, EXERCISE_VID_DIR].forEach((d) => {
+  try { fs.mkdirSync(d, { recursive: true }); } catch {}
+});
+
 const memory = multer.memoryStorage();
 
-// Avatar (field "avatar", ảnh <= 2MB)
+/* ---------- Avatar (<=2MB) ---------- */
 export const uploadAvatarSingle = multer({
   storage: memory,
   limits: { fileSize: 2 * 1024 * 1024 },
@@ -35,7 +37,7 @@ export const uploadAvatarSingle = multer({
   },
 }).single("avatar");
 
-// Ảnh món ăn (field "image", ảnh <= 5MB)
+/* ---------- Food image (<=5MB) ---------- */
 export const uploadFoodSingle = multer({
   storage: memory,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -45,11 +47,39 @@ export const uploadFoodSingle = multer({
   },
 }).single("image");
 
-// Import (CSV/XLSX và ZIP) – tối đa 25MB
+/* ---------- Import (CSV/XLSX + ZIP) (<=25MB) ---------- */
 export const uploadImportAny = multer({
   storage: memory,
   limits: { fileSize: 25 * 1024 * 1024 },
 }).fields([
-  { name: "file", maxCount: 1 },    // CSV/XLSX
-  { name: "archive", maxCount: 1 }, // ZIP chứa foods.csv + images/*
+  { name: "file", maxCount: 1 },
+  { name: "archive", maxCount: 1 },
 ]);
+
+/* ======================================================
+ * EXERCISES: TÁCH RIÊNG
+ * - uploadExerciseImageSingle: field name 'image' (image/*)
+ * - uploadExerciseVideoSingle: field name 'video' (video/*)
+ * ====================================================== */
+
+/* ---------- Exercise image (<=8MB) ---------- */
+export const uploadExerciseImageSingle = multer({
+  storage: memory,
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    const mt = file.mimetype || "";
+    if (mt.startsWith("image/")) return cb(null, true);
+    cb(new Error("Chỉ chấp nhận file ảnh cho bài tập"));
+  },
+}).single("image");
+
+/* ---------- Exercise video (<=50MB) ---------- */
+export const uploadExerciseVideoSingle = multer({
+  storage: memory,
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    const mt = file.mimetype || "";
+    if (mt.startsWith("video/")) return cb(null, true);
+    cb(new Error("Chỉ chấp nhận file video cho bài tập"));
+  },
+}).single("video");

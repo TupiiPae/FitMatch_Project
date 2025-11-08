@@ -1,7 +1,8 @@
 // admin-app/src/pagesFoods/Food_List/Food_List.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api, listFoods, deleteFood } from "../../../lib/api.js";
+import { api, listFoodsAdminOnly, deleteFood } from "../../../lib/api.js";
+import { toast } from "react-toastify";
 import "./Food_List.css";
 
 // Chuẩn hoá URL ảnh giống user-app
@@ -15,30 +16,33 @@ const toAbs = (u) => {
 export default function FoodsList() {
   const nav = useNavigate();
 
-  // ===== Filters & state
+  /* ============ Filters & state ============ */
   const [q, setQ] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  /* ============ Data & pagination ============ */
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Pagination state
   const [limit, setLimit] = useState(10);
   const [skip, setSkip] = useState(0);
   const [total, setTotal] = useState(0);
 
-  // selection
+  /* ============ Selection ============ */
   const [selectedIds, setSelectedIds] = useState([]);
   const allChecked = items.length > 0 && selectedIds.length === items.length;
   const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
 
-  // confirm modal
-  const [confirmId, setConfirmId] = useState(null);
+  /* ============ Confirm modal (single & bulk dùng chung) ============ */
+  // { mode:'single'|'bulk', ids:string[] } | null
+  const [confirm, setConfirm] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  // ===== Load data (Server-side-ish Pagination & Filter) =====
+  /* ============ Load data ============ */
   const load = async () => {
     setLoading(true);
-    setSelectedIds([]); // Reset selection khi đổi trang/lọc
+    setSelectedIds([]); // reset chọn khi đổi trang/lọc
     try {
       const params = {
         status: "approved",
@@ -49,9 +53,10 @@ export default function FoodsList() {
       if (dateFrom) params.approvedFrom = dateFrom;
       if (dateTo) params.approvedTo = dateTo;
 
-      const res = await listFoods(params);
-      setItems(res?.items || []);
-      setTotal(res?.total ?? (res?.items?.length || 0));
+      const res = await listFoodsAdminOnly(params);
+      const arr = Array.isArray(res?.items) ? res.items : [];
+      setItems(arr);
+      setTotal(typeof res?.total === "number" ? res.total : arr.length);
     } catch (err) {
       console.error(err);
       setItems([]);
@@ -61,8 +66,7 @@ export default function FoodsList() {
     }
   };
 
-  // Tải lại khi đổi trang (limit/skip)
-  useEffect(() => { load(); }, [limit, skip]);
+  useEffect(() => { load(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [limit, skip]);
 
   // Debounce khi filter text/date thay đổi → reset về trang 1
   useEffect(() => {
@@ -71,30 +75,62 @@ export default function FoodsList() {
       else load();
     }, 250);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, dateFrom, dateTo]);
 
-  // ===== Actions
+  /* ============ Actions: delete single ============ */
   const onDeleteOne = async (id) => {
-    await deleteFood(id);
-    // Nếu xóa item cuối của trang thì lùi trang; ngược lại reload
-    if (items.length === 1 && skip > 0) {
-      setSkip(Math.max(0, skip - limit));
-    } else {
-      await load();
+    try {
+      setDeletingId(id);
+      await deleteFood(id);
+
+      // Nếu xóa item cuối của trang thì lùi trang, ngược lại cập nhật lạc quan
+      if (items.length === 1 && skip > 0) {
+        setSkip(Math.max(0, skip - limit));
+      } else {
+        setItems(prev => prev.filter(x => x._id !== id));
+        setTotal(t => Math.max(0, Number(t || 0) - 1));
+        setSelectedIds(sel => sel.filter(x => x !== id));
+      }
+      toast.success("Đã xóa món ăn");
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.response?.data?.message || "Xóa thất bại");
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  const onBulkDelete = async () => {
-    if (!selectedIds.length) return;
-    if (!confirm(`Xóa ${selectedIds.length} món đã chọn?`)) return;
-    for (const id of selectedIds) { try { await deleteFood(id); } catch {} }
-    if (selectedIds.length === items.length && skip > 0) {
-      setSkip(Math.max(0, skip - limit));
-    } else {
-      await load();
+  /* ============ Actions: delete bulk ============ */
+  const onBulkDelete = async (ids) => {
+    if (!ids?.length) return;
+    try {
+      setBulkDeleting(true);
+      const results = await Promise.allSettled(ids.map(id => deleteFood(id)));
+      const okCount = results.filter(r => r.status === "fulfilled").length;
+      const failCount = results.length - okCount;
+
+      const deletingAllOnPage = ids.length >= items.length;
+      if (deletingAllOnPage && skip > 0) {
+        setSkip(Math.max(0, skip - limit)); // lùi trang, load() sẽ tự gọi
+      } else {
+        // Cập nhật lạc quan
+        setItems(prev => prev.filter(x => !ids.includes(x._id)));
+        setTotal(t => Math.max(0, Number(t || 0) - okCount));
+        setSelectedIds([]);
+      }
+
+      if (okCount > 0) toast.success(`Đã xóa ${okCount} món ăn`);
+      if (failCount > 0) toast.error(`${failCount} món xóa thất bại`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Xóa thất bại");
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
+  /* ============ Selection helpers ============ */
   const toggleAll = () => {
     if (allChecked) setSelectedIds([]);
     else setSelectedIds(items.map((x) => x._id));
@@ -103,7 +139,7 @@ export default function FoodsList() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
-  // ===== CSV (xuất các items trang hiện tại)
+  /* ============ CSV (items trang hiện tại) ============ */
   const csv = useMemo(() => {
     const head = [
       "name","massG","unit","kcal","proteinG","carbG","fatG","creator","approvedAt","status"
@@ -134,7 +170,7 @@ export default function FoodsList() {
     a.click();
   };
 
-  // Pagination helpers
+  /* ============ Pagination helpers ============ */
   const page = Math.floor(skip / limit);
   const pageCount = Math.max(1, Math.ceil((total || 0) / limit));
   const handleLimitChange = (e) => {
@@ -147,7 +183,7 @@ export default function FoodsList() {
     }
   };
 
-  // UI helpers
+  /* ============ UI helpers ============ */
   const badgeRole = (it) => {
     if (it.createdByAdmin) return <span className="role-badge is-admin">Admin</span>;
     if (it.createdBy) return <span className="role-badge is-user">User</span>;
@@ -178,7 +214,6 @@ export default function FoodsList() {
         <div className="page-head">
           <h2>Danh sách món ăn ({total})</h2>
           <div className="head-actions">
-            {/* ĐỔI onClick từ alert(...) -> nav('/foods/import-list') */}
             <button
               className="btn ghost"
               type="button"
@@ -187,12 +222,21 @@ export default function FoodsList() {
             >
               <i className="fa-solid fa-file-import" aria-hidden="true" /> <span>Nhập danh sách</span>
             </button>
+
             <button className="btn ghost" type="button" onClick={downloadCSV}>
               <i className="fa-solid fa-file-export" aria-hidden="true" /> <span>Xuất danh sách</span>
             </button>
-            <button className="btn danger" type="button" onClick={onBulkDelete} disabled={!selectedIds.length}>
-              <i className="fa-regular fa-trash-can" aria-hidden="true" /> <span>Xóa</span>
+
+            <button
+              className="btn danger"
+              type="button"
+              disabled={!selectedIds.length || bulkDeleting}
+              onClick={() => setConfirm({ mode: "bulk", ids: selectedIds.slice() })}
+            >
+              <i className="fa-regular fa-trash-can" aria-hidden="true" />{" "}
+              <span>{bulkDeleting ? "Đang xóa..." : "Xóa"}</span>
             </button>
+
             <Link to="/foods/create" className="btn primary">
               <span>Tạo món ăn</span>
             </Link>
@@ -291,7 +335,12 @@ export default function FoodsList() {
                 <button className="iconbtn" title="Chỉnh sửa" onClick={() => nav(`/foods/${it._id}/edit`)}>
                   <i className="fa-regular fa-pen-to-square" aria-hidden="true"></i>
                 </button>
-                <button className="iconbtn danger" title="Xóa" onClick={() => setConfirmId(it._id)}>
+                <button
+                  className="iconbtn danger"
+                  title="Xóa"
+                  onClick={() => setConfirm({ mode: "single", ids: [it._id] })}
+                  disabled={deletingId === it._id}
+                >
                   <i className="fa-solid fa-trash-can" aria-hidden="true"></i>
                 </button>
               </div>
@@ -324,7 +373,7 @@ export default function FoodsList() {
             <button
               className="btn-page"
               onClick={() => handlePageChange(skip + limit)}
-              disabled={skip + limit >= Math.max(total, 1)}
+              disabled={skip + limit >= total}
             >
               <i className="fa-solid fa-chevron-right" aria-hidden="true"></i>
             </button>
@@ -332,12 +381,12 @@ export default function FoodsList() {
         </div>
       </div>
 
-      {/* Confirm Delete Modal */}
-      {confirmId && (
+      {/* ===== Confirm Delete Modal (.cm-*) dùng chung single & bulk ===== */}
+      {confirm && (
         <div
           className="cm-backdrop"
           role="presentation"
-          onClick={() => setConfirmId(null)}
+          onClick={() => setConfirm(null)}
         >
           <div
             className="cm-modal"
@@ -347,21 +396,43 @@ export default function FoodsList() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="cm-head">
-              <h1 id="cm-title" className="cm-title">Xóa món ăn?</h1>
+              <h1 id="cm-title" className="cm-title">
+                {confirm.mode === "bulk"
+                  ? `Xóa ${confirm.ids.length} món đã chọn?`
+                  : "Xóa món ăn?"}
+              </h1>
             </div>
 
             <div id="cm-desc" className="cm-body">
-              Hành động này sẽ xóa món ăn khỏi danh sách và cơ sở dữ liệu. Thao tác không thể hoàn tác.
+              Hành động này sẽ xóa khỏi danh sách và cơ sở dữ liệu. Thao tác không thể hoàn tác.
             </div>
 
             <div className="cm-foot">
-              <button className="btn ghost" onClick={() => setConfirmId(null)}>Hủy</button>
-              <button
-                className="btn danger"
-                onClick={async () => { await onDeleteOne(confirmId); setConfirmId(null); }}
-              >
-                Xóa
-              </button>
+              <button className="btn ghost" onClick={() => setConfirm(null)}>Hủy</button>
+              {confirm.mode === "single" ? (
+                <button
+                  className="btn danger"
+                  disabled={deletingId === confirm.ids[0]}
+                  onClick={async () => {
+                    const id = confirm.ids[0];
+                    await onDeleteOne(id);
+                    setConfirm(null);
+                  }}
+                >
+                  {deletingId === confirm.ids[0] ? "Đang xóa..." : "Xóa"}
+                </button>
+              ) : (
+                <button
+                  className="btn danger"
+                  disabled={bulkDeleting || !confirm.ids.length}
+                  onClick={async () => {
+                    await onBulkDelete(confirm.ids);
+                    setConfirm(null);
+                  }}
+                >
+                  {bulkDeleting ? "Đang xóa..." : `Xóa ${confirm.ids.length}`}
+                </button>
+              )}
             </div>
           </div>
         </div>

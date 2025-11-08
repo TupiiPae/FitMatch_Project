@@ -90,14 +90,13 @@
   align-items: center;
   padding: 0 14px;
   border-radius: 4px;
-  background: #78BCC4; /* Màu theme */
+  background: #008080; /* Màu theme */
   color: #fff;
   text-decoration: none;
   margin-left: 5px;
   font-weight: 500;
   border: none;
 }
-.create-btn:hover { background: #008080; }
 
 /* Khung bọc riêng khu danh sách (giống .dj-main) */
 .nm-list-frame {
@@ -140,27 +139,38 @@
 .nm-item .macro i { margin-right: 6px; }
 
 .nm-item .act { display: flex; align-items: center; gap: 8px; }
-.heart {
-  width: 40px; /* Vuông vắn */
-  height: 40px;
-  border: 1px solid #fbdde1;
-  background: #fff;
-  border-radius: 4px;
-  color: #e18796;
-  cursor: pointer;
+/* Nút tim: mặc định rỗng, không viền, nền trong suốt */
+.heart{
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: none; cursor: pointer;
 }
-.heart.on { background: #ffe5ea; color: #d12547; }
-.add {
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 4px;
+.heart i{ font-size: 28px; color: #cbd5e1; transition: transform .15s ease, color .15s ease; }
+.heart:hover i{ transform: scale(1.06); color: #94a3b8; }
+/* Đang yêu thích → icon fill + màu nổi bật */
+.heart.on i{ color: #e11d48; }
+/* Nút "Thêm" tròn dạng icon + (đồng bộ với DailyJournal) */
+.nm-item .act .add.add-round {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   border: none;
-  background: #78BCC4; /* Màu theme */
+  background: #78BCC4;
   color: #fff;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 30px;
   cursor: pointer;
+  transition: all .2s ease;
+  padding: 0; /* bỏ padding chữ */
 }
-.add:hover { background: #008080; }
+.nm-item .act .add.add-round:hover {
+  background: #008080;
+  transform: scale(1.08);
+}
+
 
 .more { text-align: center; margin: 20px 0 10px; }
 .more button {
@@ -248,20 +258,20 @@
   color: #111827;
 }
 .btn.primary {
-  background: #78BCC4; /* Màu theme */
+  background: #008080; /* Màu theme */
   color: #fff;
-  border-color: #78BCC4;
 }
-.btn.primary:hover { background: #008080; }
-.btn.ghost { background: #fff; color: #374151; }
+.btn.primary:hover { background: #78BCC4; }
+.btn.ghost {   
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+}
 
 /* ===== Add-to-log Modal ===== */
-.add-modal {
-  width: 720px;
-  max-width: 94vw;
-  border-radius: 4px; /* Border mới */
-  padding: 16px 16px 14px;
-  border: 1px solid #e5e7eb;
+.nm-wrap .add-modal{
+  width:700px; max-width:94vw; border-radius:4px; padding:0;
+  border:1px solid #e5e7eb; overflow:hidden; background:#fff;
 }
 .am-head {
   display: grid;
@@ -372,7 +382,7 @@
 
 .am-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 .am-actions .btn.primary {
-  background: #78BCC4; /* Màu theme */
+  background: #008080; /* Màu theme */
   color: #fff;
   border-color: #78BCC4;
 }
@@ -395,7 +405,6 @@
 /* Menu 3 chấm */
 .more-wrap { position: relative; }
 .more-btn { width: 40px; height: 40px; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.more-btn:hover { background: #f9f9f9; }
 .menu { position: absolute; right: 0; top: 40px; min-width: 140px; background: #fff; border: 1px solid #e5e7eb; border-radius: 4px; box-shadow: 0 8px 20px rgba(0, 0, 0, .08); padding: 6px; z-index: 10 }
 .menu-item { display: block; width: 100%; text-align: left; background: #fff; border: none; padding: 8px 10px; border-radius: 4px; cursor: pointer }
 .menu-item:hover { background: #f3f4f6 }
@@ -411,3 +420,105 @@
   .fm-grid { grid-template-columns: 1fr; }
 }
 
+/* ===== Confirm Delete Modal ===== */
+.confirm-modal{
+  width: min(440px, 92vw);
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.cm-head{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.cm-icon{
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.cm-head h3{
+  margin: 0; font-size: 18px; font-weight: 700; color: #111827;
+}
+.cm-body{
+  padding: 14px 16px;
+  color: #374151;
+}
+
+.cm-foot{
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+
+/* Bổ sung nút màu “Xóa” dùng chung */
+.btn.bad{
+  background:#fef2f2;
+  color:#b91c1c;
+  border:1px solid #f4d0d0;
+}
+.btn.bad:hover{ background:#fee2e2; }
+
+/* ===== USER Reject Reason Modal (scoped .ur-*) ===== */
+.ur-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,.45);
+  backdrop-filter: blur(2px);
+  display: grid; place-items: center;
+  z-index: 1100; /* cao hơn .modal cũ để chắc chắn không xung đột */
+  padding: 16px;
+}
+.ur-modal{
+  width: min(520px, 94vw);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(2,6,23,.18);
+  animation: ur-pop .16s ease-out;
+  display: flex; flex-direction: column;
+}
+@keyframes ur-pop{
+  from { transform: scale(.96); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.ur-head{
+  display: grid; grid-template-columns: auto 1fr;
+  align-items: center; gap: 12px;
+  padding: 16px 16px 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ur-icon{
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  font-size: 18px;
+  background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+}
+.ur-title{
+  margin: 0; font-size: 18px; font-weight: 600; color: #111827;
+}
+.ur-body{
+  padding: 12px 16px; color: #475569; line-height: 1.5;
+  display: grid; gap: 8px;
+}
+.ur-row{ display: flex; align-items: center; gap: 8px; }
+.ur-label{ min-width: 64px; font-weight: 600; color: #374151; font-size: 13px; }
+.ur-val{ color: #0b5066; }
+.ur-reason{
+  margin-top: 2px;
+  border: 1px dashed #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #0f172a; font-weight: 700;
+  white-space: pre-wrap;
+}
+.ur-foot{
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px 16px 16px;
+  border-top: 1px dashed #e5e7eb;
+}

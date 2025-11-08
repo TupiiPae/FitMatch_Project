@@ -46,8 +46,10 @@ const buildManagementSections = (rawLevel) => {
       title: "Bài tập",
       icon: "fa-solid fa-dumbbell",
       items: [
-        { to: "/exercises",              label: "Danh sách bài tập", exact: true },
-        { to: "/exercises/create",       label: "Tạo bài tập mới" },
+        { to: "/exercises/strength", label: "Danh sách bài tập - Strength",},
+        { to: "/exercises/cardio",   label: "Danh sách bài tập - Cardio" },
+        { to: "/exercises/sport",    label: "Danh sách các môn - Sport" },
+        { to: "/exercises/create",   label: "Tạo bài tập/môn thể thao mới", openCreateModal: true },
         { to: "/exercises/plan-suggest", label: "Tạo lịch tập gợi ý" },
       ],
     },
@@ -77,7 +79,6 @@ const subLinkClass = ({ isActive }) =>
 function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
   const { auth } = useAuth();
   const level = Number(auth?.profile?.level) || 2;
-  // Ưu tiên nickname, thiếu thì dùng username, cuối cùng fallback "admin"
   const displayName = auth?.profile?.nickname || auth?.profile?.username || "admin";
 
   return (
@@ -119,6 +120,7 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
     </header>
   );
 }
+
 export default function SidebarLayout(){
   const { auth, logout } = useAuth();
   const level = Number(auth?.profile?.level) || 2;
@@ -137,9 +139,8 @@ export default function SidebarLayout(){
 
   const mgmtSections = useMemo(() => buildManagementSections(level), [level]);
 
-  // Mặc định đóng tất cả dropdown
+  // dropdown states
   const [openKeys, setOpenKeys] = useState(() => new Set());
-
   const isOpen = (key) => openKeys.has(key);
   const toggleSection = (key) => {
     setOpenKeys(prev => {
@@ -150,7 +151,7 @@ export default function SidebarLayout(){
     });
   };
 
-  // Toast login 1 lần / tab
+  // login toast once
   const shownLoginToast = useRef(false);
   useEffect(() => {
     if (auth?.token && !sessionStorage.getItem("fm_toasted_login") && !shownLoginToast.current) {
@@ -160,7 +161,7 @@ export default function SidebarLayout(){
     }
   }, [auth?.token]);
 
-  // Modal logout
+  // logout modal
   const [showConfirm, setShowConfirm] = useState(false);
   const openConfirm = () => setShowConfirm(true);
   const closeConfirm = () => setShowConfirm(false);
@@ -168,6 +169,17 @@ export default function SidebarLayout(){
     closeConfirm();
     logout();
     toast.success("Đăng xuất thành công!");
+  };
+
+  // ===== NEW: Create Exercise modal =====
+  const [showCreateExModal, setShowCreateExModal] = useState(false);
+  const openCreateExModal = () => setShowCreateExModal(true);
+  const closeCreateExModal = () => setShowCreateExModal(false);
+  const goCreate = (type) => {
+    closeCreateExModal();
+    if (type === "Strength") nav("/exercises/strength/create");
+    else if (type === "Cardio") nav("/exercises/cardio/create");
+    else if (type === "Sport") nav("/exercises/sport/create");
   };
 
   const goProfile = () => {
@@ -204,16 +216,32 @@ export default function SidebarLayout(){
                 </button>
 
                 <div className="fm-sec__body">
-                  {(sec.items || []).map((it) => (
-                    <NavLink
-                      key={it.to}
-                      to={it.to}
-                      end={it.exact}
-                      className={subLinkClass}
-                    >
-                      <span className="fm-sublink__text">{it.label}</span>
-                    </NavLink>
-                  ))}
+                  {(sec.items || []).map((it) => {
+                    // intercept item that should open modal
+                    if (it.openCreateModal) {
+                      return (
+                        <button
+                          type="button"
+                          key={it.to}
+                          className="fm-sublink fm-sublink--btn"
+                          onClick={openCreateExModal}
+                          aria-haspopup="dialog"
+                        >
+                          <span className="fm-sublink__text">{it.label}</span>
+                        </button>
+                      );
+                    }
+                    return (
+                      <NavLink
+                        key={it.to}
+                        to={it.to}
+                        end={it.exact}
+                        className={subLinkClass}
+                      >
+                        <span className="fm-sublink__text">{it.label}</span>
+                      </NavLink>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -249,6 +277,7 @@ export default function SidebarLayout(){
         </div>
       </main>
 
+      {/* Logout Modal */}
       {showConfirm && (
         <div className="fm-modal-overlay" onClick={closeConfirm}>
           <div className="fm-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="logout-title">
@@ -260,6 +289,45 @@ export default function SidebarLayout(){
             <div className="fm-modal__actions">
               <button className="fm-btn ghost" onClick={closeConfirm}>Hủy</button>
               <button className="fm-btn danger" onClick={doLogout}>Đăng xuất</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Create Exercise Modal ===== */}
+      {showCreateExModal && (
+        <div className="fm-modal-overlay" onClick={closeCreateExModal}>
+          <div
+            className="fm-modal fm-modal--create"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="createex-title"
+          >
+
+            <h3 className="fm-modal__text">
+              Chọn dữ liệu cần tạo:
+            </h3>
+
+            <div className="fm-modal__grid">
+              <button className="fm-option" onClick={() => goCreate("Strength")}>
+                <div className="fm-option__title">Tạo bài tập</div>
+                <div className="fm-option__desc">Strength</div>
+              </button>
+
+              <button className="fm-option" onClick={() => goCreate("Cardio")}>
+                <div className="fm-option__title">Tạo bài tập</div>
+                <div className="fm-option__desc">Cardio</div>
+              </button>
+
+              <button className="fm-option" onClick={() => goCreate("Sport")}>
+                <div className="fm-option__title">Tạo môn thể thao</div>
+                <div className="fm-option__desc">Sport</div>
+              </button>
+            </div>
+
+            <div className="fm-modal__actions">
+              <button className="fm-btn ghost" onClick={closeCreateExModal}>Đóng</button>
             </div>
           </div>
         </div>

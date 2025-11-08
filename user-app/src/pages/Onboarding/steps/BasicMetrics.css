@@ -1,7 +1,7 @@
 /* === phần cũ giữ nguyên (header/card/buttons/...) === */
 .bm-wrap {
   min-height: 100vh;
-  background: #f3f4f6;
+  background: #f4f6ea;
   display: flex;
   flex-direction: column;
 }
@@ -11,9 +11,10 @@
   display: flex;
   align-items: center;
   padding: 0 150px;
-  background: #ffffffaa;
+  background: #f4f6ea;
   border-bottom: 1px solid #eceff4;
   backdrop-filter: blur(4px);
+  box-shadow: 0 2px 40px rgba(0,0,0,.1);
 }
 
 .bm-logo {
@@ -29,10 +30,10 @@
 }
 
 .bm-card {
-  width: 100%;
-  max-width: 560px;
+  max-height: 450px;
+  width: 900px;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 24px;
   border: 1px solid #eef1f5;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
@@ -40,7 +41,7 @@
 }
 
 .bm-title {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: #1f2937;
   margin-bottom: 6px;
@@ -72,7 +73,7 @@
   min-width: 120px;
   height: 40px;
   padding: 0 18px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
   transition: transform 0.05s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
@@ -94,15 +95,12 @@
 }
 
 .btn-primary {
-  background: #1a73e8;
-  border: none;
+  background: #008080;
   color: #fff;
-  box-shadow: 0 6px 14px rgba(26, 115, 232, 0.25);
 }
 
 .btn-primary:hover {
-  background: #1866d6;
-  box-shadow: 0 8px 18px rgba(26, 115, 232, 0.32);
+  background: #007070;
 }
 
 @media (max-width: 560px) {
@@ -124,8 +122,8 @@
 /* === Thước tối giản: không box riêng, chỉ 1 trục nổi === */
 :root {
   --rs-muted: #6b7280;
-  --rs-accent: #1a73e8;
-  --rs-accent-weak: rgba(26, 115, 232, 0.15);
+  --rs-accent: #78BCC4;
+  --rs-accent-weak: rgba(52, 207, 135, 0.32);
   --rs-track: #e5e7eb;
 }
 
@@ -290,7 +288,7 @@
   color: #0f172a;
   border: 1px solid #e5e7eb;
   padding: 6px 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 700;
   font-size: 15px;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);

@@ -8,6 +8,13 @@ import api from "../../lib/api";
 import "./RecordMeal.css";
 import { toast } from "react-toastify";
 
+// === THÊM MỚI: Imports cho MUI Date Picker ===
+import dayjs from 'dayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { useColorScheme } from "@mui/material/styles";
+
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => {
   if (!u) return u;
@@ -87,8 +94,13 @@ export default function RecordMeal() {
   const gStr = (x) => (x ?? "-");
 
   async function onFav(id) {
-    const { data } = await toggleFavoriteFood(id);
-    setItems((prev) => prev.map(it => it._id === id ? { ...it, isFavorite: data.isFavorite } : it));
+    const { data } = await toggleFavoriteFood(id); // { isFavorite: boolean }
+    setItems((prev) => {
+      const next = prev.map(it => it._id === id ? { ...it, isFavorite: data.isFavorite } : it);
+      // Nếu đang bật tab "Yêu thích" và user bỏ thích -> loại khỏi list hiện tại
+      if (favorites && !data.isFavorite) return next.filter(it => it._id !== id);
+      return next;
+    });
   }
 
   async function openAdd(it) {
@@ -128,17 +140,40 @@ export default function RecordMeal() {
   }, []);
 
   const onDeleteFood = async (id) => {
-    if (!window.confirm("Xóa món này?")) return;
+  };
+  const onEditFood = (id) => nav(`/dinh-duong/ghi-lai/sua-mon/${id}`);
+  const [confirmDel, setConfirmDel] = useState({ open: false, id: null, name: "" });
+  const openConfirmDelete = (it) => setConfirmDel({ open: true, id: it._id, name: it.name });
+  const closeConfirmDelete = () => setConfirmDel({ open: false, id: null, name: "" });
+  const confirmDeleteNow = async () => {
+    if (!confirmDel.id) return;
     try {
-      await deleteFood(id);
+      await deleteFood(confirmDel.id);
       toast.success("Đã xóa món");
       setMenuId(null);
+      closeConfirmDelete();
       load(true);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Xóa thất bại");
     }
   };
-  const onEditFood = (id) => nav(`/dinh-duong/ghi-lai/sua-mon/${id}`);
+
+  const [showReject, setShowReject] = useState(false);
+  const [rejectInfo, setRejectInfo] = useState({ name: "", reason: "" });
+
+  async function openRejectReason(it) {
+    try {
+      const { data } = await getFood(it._id);
+      setRejectInfo({
+        name: data?.name || it.name || "",
+        reason: (data?.rejectionReason || "").trim() || "Admin chưa cung cấp lý do.",
+      });
+      setShowReject(true);
+    } catch {
+      setRejectInfo({ name: it.name || "", reason: "Không lấy được lý do từ chối." });
+      setShowReject(true);
+    }
+  }
 
   return (
     <div className="nm-wrap">
@@ -204,14 +239,36 @@ export default function RecordMeal() {
 
               <div className="act" onClick={(e) => e.stopPropagation()}>
                 {onlyMine && (
-                  <span className={`status-pill ${it.status || "pending"}`}>{statusLabel(it.status)}</span>
+                  it.status === "rejected" ? (
+                    <button
+                      type="button"
+                      className={`status-pill ${it.status}`}
+                      onClick={(e) => { e.stopPropagation(); openRejectReason(it); }}
+                      title="Xem lý do từ chối"
+                    >
+                      {statusLabel(it.status)}
+                    </button>
+                  ) : (
+                    <span className={`status-pill ${it.status || "pending"}`}>{statusLabel(it.status)}</span>
+                  )
                 )}
 
-                <button className={`heart ${it.isFavorite ? "on" : ""}`} onClick={() => onFav(it._id)}>
-                  <i className="fa-solid fa-heart"></i>
+                <button
+                  className={`heart ${it.isFavorite ? "on" : ""}`}
+                  aria-pressed={!!it.isFavorite}
+                  title={it.isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+                  onClick={(e) => { e.stopPropagation(); onFav(it._id); }}
+                >
+                  <i className={`${it.isFavorite ? "fa-solid" : "fa-regular"} fa-heart`}></i>
                 </button>
 
-                <button className="add" onClick={() => openAdd(it)}>Thêm</button>
+                <button
+                  className="add add-round"
+                  title="Thêm vào nhật ký"
+                  onClick={() => openAdd(it)}
+                >
+                  <i className="fa-solid fa-plus"></i>
+                </button>
 
                 {onlyMine && (
                   <div className="more-wrap">
@@ -223,7 +280,7 @@ export default function RecordMeal() {
                     </button>
                     {menuId === it._id && (
                       <div className="menu" onClick={(e) => e.stopPropagation()}>
-                        <button className="menu-item danger" onClick={() => onDeleteFood(it._id)}>Xóa</button>
+                        <button className="menu-item danger" onClick={() => openConfirmDelete(it)}>Xóa</button>
                         <button className="menu-item" onClick={() => onEditFood(it._id)}>Chỉnh sửa</button>
                       </div>
                     )}
@@ -261,8 +318,29 @@ export default function RecordMeal() {
                   <i className="fa-regular fa-calendar"></i>
                   <div className="am-field">
                     <label>Ngày</label>
-                    <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        format="DD/MM/YYYY"
+                        // Chuyển string YYYY-MM-DD (từ state 'date') sang object dayjs
+                        value={date ? dayjs(date) : null}
+                        
+                        // Khi thay đổi, chuyển lại sang string YYYY-MM-DD và gọi setDate
+                        onChange={(newValue) => {
+                          const newDateString = newValue ? newValue.format('YYYY-MM-DD') : '';
+                          setDate(newDateString); // Gọi logic gốc
+                        }}
+                        
+                        slotProps={{
+                          textField: {
+                            placeholder: "DD/MM/YYYY",
+                            style: { width: 170 },
+                            size: "small" 
+                          }
+                        }}
+                      />
+                    </LocalizationProvider>
                   </div>
+
                 </div>
                 <div className="am-when-item">
                   <i className="fa-regular fa-clock"></i>
@@ -356,6 +434,62 @@ export default function RecordMeal() {
           </div>
         )}
       </div>
+
+      {/* ====== REJECT REASON MODAL ====== */}
+      {showReject && (
+        <div className="ur-backdrop" onClick={() => setShowReject(false)}>
+          <div
+            className="ur-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ur-title"
+          >
+            <div className="ur-head">
+              <div className="ur-icon" aria-hidden="true">
+                <i className="fa-regular fa-circle-xmark"></i>
+              </div>
+              <h3 id="ur-title" className="ur-title">Lý do món ăn bị từ chối</h3>
+            </div>
+            <div className="ur-body">
+              <div className="ur-row"><span className="ur-label">Món ăn:</span><b className="ur-val">{rejectInfo.name}</b></div>
+              <div className="ur-row"><span className="ur-label">Lý do:</span></div>
+              <div className="ur-reason">{rejectInfo.reason}</div>
+            </div>
+            <div className="ur-foot">
+              <button className="btn primary" onClick={() => setShowReject(false)}>Đã hiểu</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ====== CONFIRM DELETE MODAL ====== */}
+      {confirmDel.open && (
+        <div className="modal" onClick={closeConfirmDelete}>
+          <div
+            className="modal-card confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-del-title"
+          >
+            <div className="cm-head">
+              <div className="cm-icon">
+                <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+              </div>
+              <h3 id="confirm-del-title">Xóa món ăn?</h3>
+            </div>
+            <div className="cm-body">
+              Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?<br />
+              Thao tác này không thể hoàn tác.
+            </div>
+            <div className="cm-foot">
+              <button className="btn ghost" onClick={closeConfirmDelete}>Hủy</button>
+              <button className="btn bad" onClick={confirmDeleteNow}>Xóa</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

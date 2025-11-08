@@ -1,11 +1,16 @@
+// server/src/controllers/user.controller.js
 import path from "path";
 import fs from "fs";
 import sharp from "sharp";
+import mongoose from "mongoose"; // << thêm
 import { fileURLToPath } from "url";
 import { User } from "../models/User.js";
 import { OnboardingProfile } from "../models/OnboardingProfile.js";
+import NutritionLog from "../models/NutritionLog.js"; // << thêm
+import WaterLog from "../models/WaterLog.js";         // << thêm
+import Food from "../models/Food.js";                 // << thêm
 import { tinhBmi, tinhBmr, tinhTdee, tinhCalorieTarget as _tinhCalorieTarget } from "../utils/health.js";
-import { AVATAR_DIR } from "../middleware/upload.js";
+import { AVATAR_DIR, FOOD_DIR } from "../middleware/upload.js"; // << thêm FOOD_DIR
 
 const tinhCalorieTarget = _tinhCalorieTarget;
 
@@ -61,7 +66,7 @@ export const patchOnboarding = async (req,res)=>{
     const forbidden = ["profile.bmi","profile.bmr","profile.tdee","profile.calorieTarget"];
     const $set = {};
     for(const [k,v] of Object.entries(req.body||{})){ if(forbidden.includes(k)) continue; if(allowed.includes(k)) $set[k]=v; }
-    if(!Object.keys($set).length) return res.status(400).json({ message:"Không có trường hợp lệ" });
+    if(!Object.keys($set).length) return res.status(400).json({ message:"Không có trường hợp hợp lệ" });
 
     if($set["profile.weeklyChangeKg"]!=null){
       const w=Number($set["profile.weeklyChangeKg"]);
@@ -176,7 +181,7 @@ export const updateAccount = async (req,res)=>{
       $unset = $unset || {}; $unset["profile.location"] = "";
     }
 
-    if(!Object.keys($set).length && !$unset) return res.status(400).json({ message:"Không có trường hợp lệ để cập nhật" });
+    if(!Object.keys($set).length && !$unset) return res.status(400).json({ message:"Không có trường hợp hợp lệ để cập nhật" });
 
     // ràng buộc số cơ bản
     if($set["profile.bodyFat"]!=null){
@@ -249,15 +254,88 @@ export const changePassword = async (req,res)=>{
   }
 };
 
-/** DELETE /api/user */
+/** DELETE /api/user
+ *  - Xoá tất cả dữ liệu (Onboarding, NutritionLog, WaterLog, Food do user tạo)
+ *  - Xoá chính tài khoản
+ *  - Dọn file ảnh (avatar, ảnh món ăn) trên disk sau khi commit
+ */
 export const deleteAccount = async (req,res)=>{
+  const userId = req.userId;
+  if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try{
-    await OnboardingProfile.findOneAndDelete({ user:req.userId });
-    await User.findByIdAndDelete(req.userId);
-    return res.json({ success:true, message:"Tài khoản đã được xoá" });
+    const uid = new mongoose.Types.ObjectId(userId);
+
+    // Lấy thông tin cần để dọn file sau commit
+    const user = await User.findById(uid).select("profile.avatarUrl").session(session);
+    const foods = await Food.find({ createdBy: uid }).select("_id imageUrl").session(session);
+
+    // Đếm (tuỳ thích trả về)
+    const [nOnb, nNLogs, nWLogs, nFoods] = await Promise.all([
+      OnboardingProfile.countDocuments({ user: uid }).session(session),
+      NutritionLog.countDocuments({ user: uid }).session(session),
+      WaterLog.countDocuments({ user: uid }).session(session),
+      Food.countDocuments({ createdBy: uid }).session(session),
+    ]);
+
+    // Xoá dữ liệu phụ thuộc
+    await Promise.all([
+      OnboardingProfile.deleteMany({ user: uid }, { session }),
+      NutritionLog.deleteMany({ user: uid }, { session }),
+      WaterLog.deleteMany({ user: uid }, { session }),
+      Food.deleteMany({ createdBy: uid }, { session }),
+    ]);
+
+    // Xoá chính user
+    await User.deleteOne({ _id: uid }, { session });
+
+    // Commit DB trước, rồi mới dọn file để không ảnh hưởng transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    // ====== Cleanup files (không chặn response nếu lỗi) ======
+    // Avatar
+    if (user?.profile?.avatarUrl && String(user.profile.avatarUrl).startsWith("/uploads/avatars/")) {
+      try {
+        const filename = path.basename(user.profile.avatarUrl);
+        const filePath = path.join(AVATAR_DIR, filename);
+        fs.promises.unlink(filePath).catch(()=>{});
+      } catch {}
+    }
+
+    // Ảnh món ăn
+    if (Array.isArray(foods)) {
+      for (const f of foods) {
+        const u = f?.imageUrl;
+        if (u && String(u).startsWith("/uploads/foods/")) {
+          try {
+            const filename = path.basename(u);
+            const filePath = path.join(FOOD_DIR, filename);
+            fs.promises.unlink(filePath).catch(()=>{});
+          } catch {}
+        }
+      }
+    }
+    // ==========================================
+
+    return res.json({
+      success:true,
+      message:"Tài khoản và toàn bộ dữ liệu đã được xoá",
+      deleted:{
+        onboarding: nOnb,
+        nutritionLogs: nNLogs,
+        waterLogs: nWLogs,
+        foods: nFoods,
+        user: 1
+      }
+    });
   }catch(e){
+    try { await session.abortTransaction(); session.endSession(); } catch {}
     console.error("deleteAccount lỗi:", e?.message||e);
-    return res.status(500).json({ message:"Lỗi máy chủ" });
+    return res.status(500).json({ success:false, message:"Lỗi máy chủ" });
   }
 };
 

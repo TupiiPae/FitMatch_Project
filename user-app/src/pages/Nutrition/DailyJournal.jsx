@@ -1,24 +1,40 @@
 // src/pages/Nutrition/DailyJournal.jsx
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { getDayLogs, deleteLog, getStreak, getWater, incWater } from "../../api/nutrition";
 import "./DailyJournal.css";
 import { toast } from "react-toastify";
 import api from "../../lib/api";
 
+// === THÊM MỚI: Imports cho MUI Date Picker ===
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+// ===========================================
+
 // Import logic tìm kiếm và thêm món ăn
 import { searchFoods, addLog } from "../../api/foods";
 
 const HOURS = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
 
-// ===== Helper giống Account.jsx =====
+// ===== Helper =====
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
 const PLACEHOLDER = "/images/food-placeholder.jpg";
-
-// ====== NEW: helper hiển thị theo quantity ======
 const round1 = (v) => Math.round(v * 10) / 10;
 const toNum = (v, def = 0) => (v == null || v === "" || isNaN(+v) ? def : +v);
+
+// Chuẩn hóa/định dạng ngày
+// const toISO = (d) => dayjs(d).format("YYYY-MM-DD"); // Đã có trong hàm parseDisplayToISO
+const fmtDisplay = (iso) => (iso ? dayjs(iso).format("DD/MM/YYYY") : "");
+const parseDisplayToISO = (str) => {
+  // Cho phép nhập dd/mm/yyyy
+  const m = String(str || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const [_, dd, mm, yyyy] = m;
+  const iso = dayjs(`${yyyy}-${mm}-${dd}`, "YYYY-MM-DD", true);
+  return iso.isValid() ? iso.format("YYYY-MM-DD") : null;
+};
 
 // --- Helper tìm kiếm (từ RecordMeal) ---
 const vnNorm = (s) =>
@@ -28,11 +44,9 @@ const vnNorm = (s) =>
     .toLowerCase()
     .trim();
 
-
 export default function DailyJournal() {
-  const [date, setDate] = useState(() => dayjs().format("YYYY-MM-DD"));
+  const [date, setDate] = useState(() => dayjs().format("YYYY-MM-DD")); // ISO
   const [weekDays, setWeekDays] = useState([]);
-  const [curDow, setCurDow] = useState(dayjs(date).day()); // 0..6 (CN..T7)
   const [streak, setStreak] = useState(0);
   const [hot, setHot] = useState(false);
 
@@ -48,14 +62,21 @@ export default function DailyJournal() {
   // === State cho Modal Thêm Món Ăn ===
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [selectedHour, setSelectedHour] = useState(null);
-  // ===================================
 
-  function calcWeek(d) {
-    const base = dayjs(d);
+  // ==== Logic cho Date input (top bar) ====
+  // XÓA BỎ: topDateHiddenRef, onOpenTopDatePicker, onTopDateDisplayChange
+  // GIỮ LẠI hàm xử lý state chính:
+  const onTopDateHiddenChange = (e) => {
+    const iso = e.target.value; // YYYY-MM-DD
+    if (iso) setDate(iso);
+  };
+  // ========================================
+
+  function calcWeek(dISO) {
+    const base = dayjs(dISO);
     const start = base.startOf("week"); // CN
     const arr = Array.from({ length: 7 }, (_, i) => start.add(i, "day"));
     setWeekDays(arr);
-    setCurDow(base.day());
   }
 
   // --- GHIM DỮ LIỆU DB VÀO BIẾN ---
@@ -105,10 +126,7 @@ export default function DailyJournal() {
 
   async function onDelete(logId) {
     try {
-      // (Thêm confirm)
-      if (!window.confirm("Bạn có chắc muốn xóa món ăn này khỏi nhật ký?")) {
-        return;
-      }
+      if (!window.confirm("Bạn có chắc muốn xóa món ăn này khỏi nhật ký?")) return;
       await deleteLog(logId);
       await load();
       toast.success("Xóa khỏi nhật ký thành công");
@@ -127,36 +145,84 @@ export default function DailyJournal() {
     setWaterMl(want);
   }
 
-  // === Hàm điều khiển Modal ===
+  // === Modal Add ===
   const handleOpenAddModal = (hour) => {
     setSelectedHour(hour);
     setAddModalOpen(true);
   };
-
   const handleCloseAddModal = () => {
     setAddModalOpen(false);
     setSelectedHour(null);
   };
-
   const handleFoodAdded = () => {
     handleCloseAddModal();
-    load(); // Tải lại nhật ký sau khi thêm
+    load();
   };
-  // =============================
+
+  // ====== Popup CHỈNH LOG trên timeline ======
+  const [showEdit, setShowEdit] = useState(false);
+  const [editLog, setEditLog] = useState(null);
+  const [editQty, setEditQty] = useState(1);
+  const [editHour, setEditHour] = useState(12);
+
+  const openEditLog = (log) => {
+    setEditLog(log);
+    setEditQty(Number(log?.quantity || 1));
+    setEditHour(Number(log?.hour || 12));
+    setShowEdit(true);
+  };
+  const closeEditLog = () => { setShowEdit(false); setEditLog(null); };
+
+  const saveEditLog = async () => {
+    if (!editLog) return;
+    try {
+      // Chưa có API update ⇒ delete + add
+      await deleteLog(editLog._id);
+      await addLog({
+        foodId: editLog.food?._id || editLog.food,
+        date,
+        hour: editHour,
+        quantity: editQty,
+        massG: null,
+      });
+      toast.success("Cập nhật món trong nhật ký");
+      closeEditLog();
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Cập nhật thất bại");
+    }
+  };
 
   return (
     <div className="dj-wrap">
       <div className="dj-container">
-        {/* TOP BAR */}
         <div className="dj-bar">
           <div className="left">
-            <i className="fa-regular fa-calendar-days"></i>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                format="DD/MM/YYYY"
+                // Chuyển string YYYY-MM-DD (từ state 'date') sang object dayjs
+                value={date ? dayjs(date) : null}
+                onChange={(newValue) => {
+                  // Chuyển object dayjs (từ MUI) về string YYYY-MM-DD
+                  const newDateString = newValue ? newValue.format('YYYY-MM-DD') : '';
+                  // Tạo event giả để gọi hàm logic gốc của bạn
+                  onTopDateHiddenChange({ target: { value: newDateString } });
+                }}
+                slotProps={{
+                  textField: {
+                    placeholder: "DD/MM/YYYY",
+                    style: { width: 150 },
+                    size: "small" // Thêm size small cho gọn
+                  }
+                }}
+              />
+            </LocalizationProvider>
           </div>
-
           <div className="week">
             {weekDays.map((d, i) => (
-              <button key={i}
+              <button
+                key={i}
                 className={`wbtn ${dayjs(date).isSame(d, "day") ? "on" : ""}`}
                 onClick={() => setDate(d.format("YYYY-MM-DD"))}
               >
@@ -166,7 +232,7 @@ export default function DailyJournal() {
           </div>
 
           <div className="right">
-            <i className={`fa-solid fa-fire ${hot ? "hot" : "cold"}`}></i>
+            <i className={`fa-solid fa-fire ${hot ? "hot" : "cold"}`} />
             <span className="streak-num">{streak}</span>
           </div>
         </div>
@@ -176,51 +242,55 @@ export default function DailyJournal() {
           {/* LEFT main (2/3) */}
           <div className="dj-main">
             <div className="col-title">Nhật ký dinh dưỡng</div>
-            
-            {/* === TIÊU ĐỀ GRID (ĐÃ THÊM) === */}
+
+            {/* Grid header */}
             <div className="dj-grid-header">
               <div className="h-col-1">Thời gian</div>
               <div className="h-col-2">Món ăn</div>
               <div className="h-col-3">Thêm</div>
             </div>
-            {/* === HẾT TIÊU ĐỀ GRID === */}
 
             <div className="hour-grid">
-              {HOURS.map(h => (
-                <div key={h} className="hour-row" style={{ minHeight: (logsByHour[h]?.length ? "auto" : "50px") }}>
+              {HOURS.map((h) => (
+                <div key={h} className="hour-row" style={{ minHeight: logsByHour[h]?.length ? "auto" : "50px" }}>
                   <div className="hh">{h}:00</div>
                   <div className="entries">
-                    {logsByHour[h].map(item => {
+                    {logsByHour[h].map((item) => {
                       const q = toNum(item.quantity, 1);
                       const unit = item.food?.unit || "g";
-                      const baseMass = (item.massG ?? item.food?.massG);
+                      const baseMass = item.massG ?? item.food?.massG;
                       const massShow = baseMass != null ? Math.round(toNum(baseMass, 0) * q) : null;
                       const kcalBase = toNum(item.food?.kcal, NaN);
                       const kcalShow = isNaN(kcalBase) ? null : Math.round(kcalBase * q);
 
                       return (
-                        <div key={item._id} className="entry">
+                        <div key={item._id} className="entry" onClick={() => openEditLog(item)}>
                           <img src={item.foodAbs || PLACEHOLDER} alt={item.food?.name} />
                           <div className="einfo">
                             <div className="etitle">{item.food?.name}</div>
                             <div className="esub">
-                              {massShow != null ? `${massShow} ${unit}` : "-"} · {kcalShow != null ? `${kcalShow} cal` : "- cal"} · x{q}
+                              {massShow != null ? `${massShow} ${unit}` : "-"} ·{" "}
+                              {kcalShow != null ? `${kcalShow} cal` : "- cal"} · x{q}
                             </div>
                           </div>
-                          <button className="edel" title="Xoá" onClick={() => onDelete(item._id)}>
-                            <i className="fa-regular fa-trash-can"></i>
+                          <button
+                            className="edel"
+                            title="Xoá"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(item._id);
+                            }}
+                          >
+                            <i className="fa-regular fa-trash-can" />
                           </button>
                         </div>
                       );
                     })}
                   </div>
-                  {/* === NÚT THÊM MÓN ĂN MỚI === */}
+                  {/* Nút thêm */}
                   <div className="hour-add">
-                    <button 
-                      title={`Thêm món ăn lúc ${h}:00`}
-                      onClick={() => handleOpenAddModal(h)}
-                    >
-                      <i className="fa-solid fa-plus"></i>
+                    <button title={`Thêm món ăn lúc ${h}:00`} onClick={() => handleOpenAddModal(h)}>
+                      <i className="fa-solid fa-plus" />
                     </button>
                   </div>
                 </div>
@@ -230,7 +300,7 @@ export default function DailyJournal() {
 
           {/* RIGHT sidebar (1/3) */}
           <div className="dj-side">
-            {/* ======= BẢNG GIÁ TRỊ ĐA LƯỢNG MỚI ======= */}
+            {/* Macro panel */}
             <div className="panel macro">
               <div className="cal-wrapper">
                 <div className="cal-ring">
@@ -245,7 +315,17 @@ export default function DailyJournal() {
                     return (
                       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
                         <circle cx={size / 2} cy={size / 2} r={r} className="ring-bg" strokeWidth={stroke} fill="none" />
-                        <circle cx={size / 2} cy={size / 2} r={r} className="ring-fg" strokeWidth={stroke} fill="none" strokeDasharray={C} strokeDashoffset={dashOffset} strokeLinecap="round" />
+                        <circle
+                          cx={size / 2}
+                          cy={size / 2}
+                          r={r}
+                          className="ring-fg"
+                          strokeWidth={stroke}
+                          fill="none"
+                          strokeDasharray={C}
+                          strokeDashoffset={dashOffset}
+                          strokeLinecap="round"
+                        />
                       </svg>
                     );
                   })()}
@@ -264,56 +344,80 @@ export default function DailyJournal() {
                   <div className="mitem">
                     <div className="mhead">
                       <span>Chất đạm</span>
-                      <span className="mval">{round1(totals.proteinG || 0)}/{Math.round(targets.proteinG || 0)}g</span>
+                      <span className="mval">
+                        {round1(totals.proteinG || 0)}/{Math.round(targets.proteinG || 0)}g
+                      </span>
                     </div>
-                    <div className="mbar red"><span style={{ width: `${pct(totals.proteinG, targets.proteinG)}%` }} /></div>
+                    <div className="mbar red">
+                      <span style={{ width: `${pct(totals.proteinG, targets.proteinG)}%` }} />
+                    </div>
                   </div>
                   <div className="mitem">
                     <div className="mhead">
                       <span>Đường bột</span>
-                      <span className="mval">{round1(totals.carbG || 0)}/{Math.round(targets.carbG || 0)}g</span>
+                      <span className="mval">
+                        {round1(totals.carbG || 0)}/{Math.round(targets.carbG || 0)}g
+                      </span>
                     </div>
-                    <div className="mbar purple"><span style={{ width: `${pct(totals.carbG, targets.carbG)}%` }} /></div>
+                    <div className="mbar purple">
+                      <span style={{ width: `${pct(totals.carbG, targets.carbG)}%` }} />
+                    </div>
                   </div>
                   <div className="mitem">
                     <div className="mhead">
                       <span>Chất béo</span>
-                      <span className="mval">{round1(totals.fatG || 0)}/{Math.round(targets.fatG || 0)}g</span>
+                      <span className="mval">
+                        {round1(totals.fatG || 0)}/{Math.round(targets.fatG || 0)}g
+                      </span>
                     </div>
-                    <div className="mbar green"><span style={{ width: `${pct(totals.fatG, targets.fatG)}%` }} /></div>
+                    <div className="mbar green">
+                      <span style={{ width: `${pct(totals.fatG, targets.fatG)}%` }} />
+                    </div>
                   </div>
                 </div>
                 <div className="col">
                   <div className="mitem">
                     <div className="mhead">
                       <span>Muối</span>
-                      <span className="mval">{round1(totals.saltG || 0)}/{Math.round(targets.saltG || 0)}g</span>
+                      <span className="mval">
+                        {round1(totals.saltG || 0)}/{Math.round(targets.saltG || 0)}g
+                      </span>
                     </div>
-                    <div className="mbar gray"><span style={{ width: `${pct(totals.saltG, targets.saltG)}%` }} /></div>
+                    <div className="mbar gray">
+                      <span style={{ width: `${pct(totals.saltG, targets.saltG)}%` }} />
+                    </div>
                   </div>
                   <div className="mitem">
                     <div className="mhead">
                       <span>Đường</span>
-                      <span className="mval">{round1(totals.sugarG || 0)}/{Math.round(targets.sugarG || 0)}g</span>
+                      <span className="mval">
+                        {round1(totals.sugarG || 0)}/{Math.round(targets.sugarG || 0)}g
+                      </span>
                     </div>
-                    <div className="mbar orange"><span style={{ width: `${pct(totals.sugarG, targets.sugarG)}%` }} /></div>
+                    <div className="mbar orange">
+                      <span style={{ width: `${pct(totals.sugarG, targets.sugarG)}%` }} />
+                    </div>
                   </div>
                   <div className="mitem">
                     <div className="mhead">
                       <span>Chất xơ</span>
-                      <span className="mval">{round1(totals.fiberG || 0)}/{Math.round(targets.fiberG || 0)}g</span>
+                      <span className="mval">
+                        {round1(totals.fiberG || 0)}/{Math.round(targets.fiberG || 0)}g
+                      </span>
                     </div>
-                    <div className="mbar teal"><span style={{ width: `${pct(totals.fiberG, targets.fiberG)}%` }} /></div>
+                    <div className="mbar teal">
+                      <span style={{ width: `${pct(totals.fiberG, targets.fiberG)}%` }} />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ======= NƯỚC UỐNG ======= */}
+            {/* Nước uống */}
             <div className="panel water">
               <div className="wtop">
                 <div className="wleft">
-                  <i className="fa-solid fa-glass-water"></i>
+                  <i className="fa-solid fa-glass-water" />
                   <div>
                     <div className="wlabel">Lượng nước</div>
                     <div className="wval">{waterMl} ml</div>
@@ -321,13 +425,17 @@ export default function DailyJournal() {
                 </div>
 
                 <div className="wctl">
-                  <button type="button" onClick={() => waterDelta(-stepMl)}>–</button>
-                  <input
-                    type="number"
-                    min="50" max="10000" step="50"
-                    value={stepMl}
-                    onChange={e => setStepMl(Math.max(50, Math.min(10000, +e.target.value || 100)))}
-                  />
+                  <button type="button" onClick={() => waterDelta(-stepMl)}>–</button>                 
+                  <div className="input-unit-wrapper">
+                    <input
+                      type="number"
+                      min="50" max="10000" step="50"
+                      value={stepMl}
+                      onChange={(e) => setStepMl(Math.max(50, Math.min(10000, +e.target.value || 100)))}
+                      className="input-with-unit" 
+                    />
+                    <span className="input-unit">ml</span> 
+                  </div>
                   <button type="button" onClick={() => waterDelta(+stepMl)}>+</button>
                 </div>
               </div>
@@ -345,19 +453,153 @@ export default function DailyJournal() {
           onFoodAdded={handleFoodAdded}
         />
       )}
+
+      {/* === MODAL CHỈNH LOG TRÊN TIMELINE === */}
+      {showEdit && editLog && (
+        <div className="modal-backdrop" onClick={closeEditLog}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">
+              Chỉnh sửa món trong nhật ký
+              <button className="modal-close" onClick={closeEditLog}>&times;</button>
+            </h3>
+
+            {/* --- Ảnh và tên món --- */}
+            <div className="am-head">
+              <img
+                className="am-thumb2"
+                src={toAbs(editLog.food?.imageUrl) || PLACEHOLDER}
+                alt={editLog.food?.name || "food"}
+              />
+              <div className="am-info">
+                <div className="am-name">{editLog.food?.name}</div>
+                <div className="am-sub">
+                  {(editLog.food?.portionName || "Khẩu phần tiêu chuẩn")} ·{" "}
+                  {editLog.food?.massG ?? "-"} {editLog.food?.unit || "g"} ·{" "}
+                  {editLog.food?.kcal ?? "-"} cal
+                </div>
+              </div>
+            </div>
+
+            {/* --- Ngày + giờ --- */}
+            <div className="am-when">
+              <div className="am-when-item">
+                <i className="fa-regular fa-calendar" />
+                <div className="am-field">
+                  <label>Ngày</label>
+                  {/* Dùng input text readOnly vì ngày này không cho đổi ở popup này */}
+                  <input type="text" value={fmtDisplay(date)} readOnly />
+                </div>
+              </div>
+              <div className="am-when-item">
+                <i className="fa-regular fa-clock" />
+                <div className="am-field">
+                  <label>Thời gian</label>
+                  <select value={editHour} onChange={(e) => setEditHour(+e.target.value)}>
+                    {HOURS.map((h) => (
+                      <option key={h} value={h}>{h}:00</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* --- Số lượng khẩu phần --- */}
+            <div className="am-qtygrid">
+              <div className="am-qty">
+                <label>Số lượng khẩu phần</label>
+                <div className="am-qty-ctl">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditQty((q) => Math.max(0.1, Math.round((q - 0.5) * 10) / 10))
+                    }
+                  >
+                    –
+                  </button>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={editQty}
+                    onChange={(e) =>
+                      setEditQty(Math.max(0.1, +e.target.value || 1))
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditQty((q) => Math.round((q + 0.5) * 10) / 10)
+                    }
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div className="am-portion">
+                <label>Khẩu phần (g)</label>
+                <input
+                  type="text"
+                  value={
+                    editLog.food?.massG != null
+                      ? `${Math.round(editLog.food.massG * editQty)} g`
+                      : "-"
+                  }
+                  readOnly
+                  className="readonly"
+                />
+                <div className="am-note">* Khối lượng mặc định theo món</div>
+              </div>
+            </div>
+
+            {/* --- Macro hiển thị theo số lượng --- */}
+            <div className="am-macros">
+              <div className="am-macro calo">
+                <div className="m-label">Calo</div>
+                <div className="m-val">
+                  {Math.round((editLog.food?.kcal || 0) * editQty)}{" "}
+                  <span>cal</span>
+                </div>
+              </div>
+              <div className="am-macro protein">
+                <div className="m-label">Đạm</div>
+                <div className="m-val">
+                  {Math.round((editLog.food?.proteinG || 0) * editQty * 10) / 10}{" "}
+                  <span>g</span>
+                </div>
+              </div>
+              <div className="am-macro carb">
+                <div className="m-label">Đường bột</div>
+                <div className="m-val">
+                  {Math.round((editLog.food?.carbG || 0) * editQty * 10) / 10}{" "}
+                  <span>g</span>
+                </div>
+              </div>
+              <div className="am-macro fat">
+                <div className="m-label">Béo</div>
+                <div className="m-val">
+                  {Math.round((editLog.food?.fatG || 0) * editQty * 10) / 10}{" "}
+                  <span>g</span>
+                </div>
+              </div>
+            </div>
+
+            {/* --- Nút hành động --- */}
+            <div className="am-actions">
+              <button className="btn ghost" onClick={closeEditLog}>Đóng</button>
+              <button className="btn primary" onClick={saveEditLog}>Cập nhật</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-
-// ####################################################################
-// #####          COMPONENT MODAL TÌM KIẾM & THÊM MÓN ĂN          #####
-// ####################################################################
+// #####     COMPONENT MODAL TÌM KIẾM & THÊM MÓN ĂN               #####
 
 const HOUR_OPTIONS_MODAL = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
 
-function FoodSearchModal({ date: initialDate, hour: initialHour, onClose, onFoodAdded }) {
-  
+function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodAdded }) {
   // === State của Tìm kiếm ===
   const [q, setQ] = useState("");
   const [items, setItems] = useState([]);
@@ -367,15 +609,23 @@ function FoodSearchModal({ date: initialDate, hour: initialHour, onClose, onFood
   const [hasMore, setHasMore] = useState(false);
   const searchTimer = useRef(null);
 
-  // === State của Modal "Thêm" (lấy từ RecordMeal) ===
+  // === State của Modal "Thêm" ===
   const [showAdd, setShowAdd] = useState(false);
-  const [addFood, setAddFood] = useState(null); // Món ăn đang được chọn để thêm
+  const [addFood, setAddFood] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [massG, setMassG] = useState(""); // massG không dùng nữa
-  const [date, setDate] = useState(initialDate);
+  const [dateISO, setDateISO] = useState(initialISO); // ISO
   const [hour, setHour] = useState(initialHour);
 
-  // --- Logic Tìm kiếm (từ RecordMeal) ---
+  // === Logic cho Date input (trong modal) ===
+  // XÓA BỎ: addHiddenDateRef, openAddDatePicker, onAddDisplayDateChange
+  // GIỮ LẠI hàm xử lý state chính:
+  const onAddHiddenDateChange = (e) => {
+    const iso = e.target.value;
+    if (iso) setDateISO(iso);
+  };
+  // ========================================
+
+  // --- Logic Tìm kiếm ---
   async function load(reset = false) {
     setLoading(true);
     try {
@@ -383,97 +633,93 @@ function FoodSearchModal({ date: initialDate, hour: initialHour, onClose, onFood
         q: q || undefined,
         scope: "all",
         limit,
-        skip: reset ? 0 : skip
+        skip: reset ? 0 : skip,
       };
       const { data } = await searchFoods(params);
       const list = data?.items || [];
       setHasMore(!!data?.hasMore);
       setItems(reset ? list : [...items, ...list]);
       setSkip(reset ? list.length : skip + list.length);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
-  // Tải lần đầu khi mở modal
   useEffect(() => { load(true); /* eslint-disable-next-line */ }, []);
-  
-  // Tự động tìm kiếm khi gõ
+
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      load(true);
-    }, 300); // debounce 300ms
+    searchTimer.current = setTimeout(() => { load(true); }, 300);
     return () => clearTimeout(searchTimer.current);
-  /* eslint-disable-next-line */
+    // eslint-disable-next-line
   }, [q]);
 
-  // Lọc kết quả ngay lập tức
   const filteredItems = useMemo(() => {
     const key = vnNorm(q);
     if (!key) return items;
-    return items.filter(it => vnNorm(it.name).includes(key));
+    return items.filter((it) => vnNorm(it.name).includes(key));
   }, [items, q]);
 
+  // POPUP CHI TIẾT TRONG SEARCH
+  const [showDetail, setShowDetail] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const openDetail = (it) => { setDetail(it); setShowDetail(true); };
+  const closeDetail = () => { setShowDetail(false); setDetail(null); };
 
-  // --- Logic Modal "Thêm" (từ RecordMeal) ---
-  
-  // Mở modal "Thêm" (bước 2)
+  // Mở modal Xác nhận thêm
   async function openAdd(it) {
     setAddFood(it);
     setQuantity(1);
-    // setMassG(it.massG ?? ""); // Bỏ massG
-    // Giữ date và hour từ props
     setShowAdd(true);
   }
 
   // Xác nhận thêm
   async function confirmAdd() {
     try {
-      await addLog({ 
-        foodId: addFood._id, 
-        date, 
-        hour, 
-        quantity, 
-        massG: null // Luôn null
+      await addLog({
+        foodId: addFood._id,
+        date: dateISO,
+        hour,
+        quantity,
+        massG: null,
       });
       setShowAdd(false);
-      onFoodAdded(); // Gọi callback để đóng modal và refresh
+      onFoodAdded();
       toast.success("Thêm vào nhật ký thành công");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Thêm vào nhật ký thất bại");
     }
   }
 
-  // Hiển thị macro
-  const gStr = (x) => (x ?? "-");
+  const gStr = (x) => x ?? "-";
   const f = addFood || {};
   const qNum = Number(quantity || 1);
   const fmt = (v) => (v == null ? "-" : Math.round(v * qNum * 10) / 10);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        
-        {/* === Giao diện Bước 1: TÌM KIẾM === */}
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        {/* Bước 1: Tìm kiếm */}
         {!showAdd && (
           <>
             <h3 className="modal-title">
-              Thêm món ăn lúc {hour}:00
+              Thêm món ăn {fmtDisplay(dateISO)} lúc {hour}:00
               <button className="modal-close" onClick={onClose}>&times;</button>
             </h3>
-            
+
             <div className="modal-search-bar">
-              <i className="fa-solid fa-magnifying-glass"></i>
+              <i className="fa-solid fa-magnifying-glass" />
               <input
                 placeholder="Tìm kiếm thực phẩm hoặc món ăn"
                 value={q}
-                onChange={e => setQ(e.target.value)}
+                onChange={(e) => setQ(e.target.value)}
                 autoFocus
               />
             </div>
 
             <div className="modal-nm-list">
-              {filteredItems.map(it => (
-                <div key={it._id} className="modal-nm-item">
+              {filteredItems.map((it) => (
+                <div key={it._id} className="modal-nm-item" onClick={() => openDetail(it)}>
                   <img src={toAbs(it.imageUrl) || PLACEHOLDER} alt={it.name} />
                   <div className="info">
                     <div className="title">{it.name}</div>
@@ -481,13 +727,15 @@ function FoodSearchModal({ date: initialDate, hour: initialHour, onClose, onFood
                       {it.portionName || "Khẩu phần"} · {it.massG ?? "-"} {it.unit || "g"} · {it.kcal ?? "-"} cal
                     </div>
                     <div className="macro">
-                      <span className="protein"><i className="fa-solid fa-drumstick-bite"></i> {gStr(it.proteinG)} g</span>
-                      <span className="carb"><i className="fa-solid fa-bread-slice"></i> {gStr(it.carbG)} g</span>
-                      <span className="fat"><i className="fa-solid fa-bacon"></i> {gStr(it.fatG)} g</span>
+                      <span className="protein"><i className="fa-solid fa-drumstick-bite"></i> {it.proteinG ?? "-"} g</span>
+                      <span className="carb"><i className="fa-solid fa-bread-slice"></i> {it.carbG ?? "-"} g</span>
+                      <span className="fat"><i className="fa-solid fa-bacon"></i> {it.fatG ?? "-"} g</span>
                     </div>
                   </div>
-                  <div className="act">
-                    <button className="add" onClick={() => openAdd(it)}>Thêm</button>
+                  <div className="act" onClick={(e) => e.stopPropagation()}>
+                    <button className="add add-round" title="Thêm vào nhật ký"  onClick={() => openAdd(it)}>
+                      <i className="fa-solid fa-plus"></i>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -502,12 +750,61 @@ function FoodSearchModal({ date: initialDate, hour: initialHour, onClose, onFood
           </>
         )}
 
-        {/* === Giao diện Bước 2: XÁC NHẬN THÊM (từ RecordMeal) === */}
+        {/* Modal Chi tiết món trong Tìm kiếm (class mới, tránh xung đột) */}
+        {showDetail && detail && !showAdd && (
+          <div className="djd-detail-backdrop" onClick={closeDetail}>
+            <div className="djd-detail-card djd--small" onClick={(e) => e.stopPropagation()}>
+              <button className="djd-detail-close" onClick={closeDetail} aria-label="Đóng">×</button>
+
+              <div className="djd-detail-head">
+                <img
+                  className="djd-detail-thumb"
+                  src={toAbs(detail.imageUrl) || PLACEHOLDER}
+                  alt={detail.name}
+                />
+                <div className="djd-detail-titlebox">
+                  <h3 className="djd-detail-title">{detail.name}</h3>
+                  <div className="djd-detail-sub">
+                    {(detail.portionName || "Khẩu phần tiêu chuẩn")} · {(detail.massG ?? "-")} {detail.unit || "g"} · {(detail.kcal ?? "-")} cal
+                  </div>
+                  <div className="djd-detail-chips">
+                    <span className="djd-chip red"><i className="fa-solid fa-drumstick-bite"></i> Đạm {(detail.proteinG ?? "-")}g</span>
+                    <span className="djd-chip purple"><i className="fa-solid fa-bread-slice"></i> Carb {(detail.carbG ?? "-")}g</span>
+                    <span className="djd-chip green"><i className="fa-solid fa-bacon"></i> Béo {(detail.fatG ?? "-")}g</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="djd-detail-grid">
+                <div className="djd-detail-kv">
+                  <div><span>Khối lượng</span><b>{detail.massG ?? "-"} {detail.unit || "g"}</b></div>
+                  <div><span>Calo</span><b>{detail.kcal ?? "-"} cal</b></div>
+                  <div><span>Đạm</span><b>{detail.proteinG ?? "-"} g</b></div>
+                  <div><span>Đường bột</span><b>{detail.carbG ?? "-"} g</b></div>
+                </div>
+                <div className="djd-detail-kv">
+                  <div><span>Chất béo</span><b>{detail.fatG ?? "-"} g</b></div>
+                  <div><span>Muối (NaCl)</span><b>{detail.saltG ?? "-"} g</b></div>
+                  <div><span>Đường</span><b>{detail.sugarG ?? "-"} g</b></div>
+                  <div><span>Chất xơ</span><b>{detail.fiberG ?? "-"} g</b></div>
+                </div>
+              </div>
+
+              {detail.sourceType && (
+                <div className="djd-detail-note">
+                  <span className="badge">{detail.sourceType}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Bước 2: Xác nhận thêm */}
         {showAdd && addFood && (
           <>
             <div className="am-head">
               <button className="am-back" onClick={() => setShowAdd(false)}>
-                <i className="fa-solid fa-arrow-left"></i> Quay lại
+                <i className="fa-solid fa-arrow-left" /> Quay lại
               </button>
               <div className="am-thumb-wrap">
                 <img className="am-thumb" src={toAbs(addFood?.imageUrl) || PLACEHOLDER} alt={addFood?.name || "food"} />
@@ -520,18 +817,38 @@ function FoodSearchModal({ date: initialDate, hour: initialHour, onClose, onFood
 
             <div className="am-when">
               <div className="am-when-item">
-                <i className="fa-regular fa-calendar"></i>
+                <i className="fa-regular fa-calendar" />
+                
+                {/* === THAY THẾ: Sử dụng MUI DatePicker cho Modal Add === */}
                 <div className="am-field">
                   <label>Ngày</label>
-                  <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      format="DD/MM/YYYY"
+                      value={dateISO ? dayjs(dateISO) : null}
+                      onChange={(newValue) => {
+                        const newDateString = newValue ? newValue.format('YYYY-MM-DD') : '';
+                        onAddHiddenDateChange({ target: { value: newDateString } });
+                      }}
+                      slotProps={{
+                        textField: {
+                          placeholder: "DD/MM/YYYY",
+                          style: { width: 170 },
+                          size: "small" // Đồng bộ style
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
               </div>
               <div className="am-when-item">
-                <i className="fa-regular fa-clock"></i>
+                <i className="fa-regular fa-clock" />
                 <div className="am-field">
                   <label>Thời gian</label>
-                  <select value={hour} onChange={e => setHour(+e.target.value)}>
-                    {HOUR_OPTIONS_MODAL.map(h => <option key={h} value={h}>{`${h}:00`}</option>)}
+                  <select value={hour} onChange={(e) => setHour(+e.target.value)}>
+                    {HOUR_OPTIONS_MODAL.map((h) => (
+                      <option key={h} value={h}>{`${h}:00`}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -541,14 +858,25 @@ function FoodSearchModal({ date: initialDate, hour: initialHour, onClose, onFood
               <div className="am-qty">
                 <label>Số lượng khẩu phần</label>
                 <div className="am-qty-ctl">
-                  <button type="button" onClick={() => setQuantity(q => Math.max(0.1, round1((q || 1) - 0.5)))}>–</button>
-                  <input type="number" min="0.1" step="0.1" value={quantity} onChange={e => setQuantity(Math.max(0.1, +e.target.value || 1))} />
-                  <button type="button" onClick={() => setQuantity(q => round1((q || 1) + 0.5))}>+</button>
+                  <button type="button" onClick={() => setQuantity((q) => Math.max(0.1, round1((q || 1) - 0.5)))}>–</button>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(0.1, +e.target.value || 1))}
+                  />
+                  <button type="button" onClick={() => setQuantity((q) => round1((q || 1) + 0.5))}>+</button>
                 </div>
               </div>
               <div className="am-portion">
                 <label>Khẩu phần (g)</label>
-                <input type="text" value={addFood?.massG != null ? `${addFood.massG} g` : "-"} readOnly className="readonly" />
+                <input
+                  type="text"
+                  value={addFood?.massG != null ? `${addFood.massG} g` : "-"}
+                  readOnly
+                  className="readonly"
+                />
                 <div className="am-note">* Khối lượng mặc định theo món</div>
               </div>
             </div>
@@ -561,7 +889,7 @@ function FoodSearchModal({ date: initialDate, hour: initialHour, onClose, onFood
             </div>
 
             <div className="am-actions">
-              <button className="btn ghost" onClick={() => setShowAdd(false)}>Hủy</button>
+              <button className="btn ghost" onClick={onClose}>Hủy</button>
               <button className="btn primary" onClick={confirmAdd}>Xác nhận thêm</button>
             </div>
           </>
@@ -570,4 +898,3 @@ function FoodSearchModal({ date: initialDate, hour: initialHour, onClose, onFood
     </div>
   );
 }
-

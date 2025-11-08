@@ -48,8 +48,14 @@ export default function FoodsReview() {
   const onRejectAsk       = (item) => setConfirm({ mode: "reject", item, reason: "" });
   const onBulkApproveAsk  = () => setConfirm({ mode: "approve-bulk", items: selectedIds });
   const onBulkRejectAsk   = () => setConfirm({ mode: "reject-bulk",  items: selectedIds, reason: "" });
+  const reasonTooLong = (confirm?.reason || "").length > 500;
+  const reasonEmpty   = !((confirm?.reason || "").trim().length);
 
   const onConfirm = async () => {
+    if (confirm.mode.includes("reject")) {
+      if (reasonEmpty) { toast.error("Vui lòng nhập lý do từ chối"); return; }
+      if (reasonTooLong) { toast.error("Lý do tối đa 500 ký tự"); return; }
+    }
     if (!confirm) return;
     setLoading(true);
     try {
@@ -57,13 +63,15 @@ export default function FoodsReview() {
         await approveFood(confirm.item._id);
         toast.success("Duyệt món ăn thành công");
       } else if (confirm.mode === "reject") {
-        await rejectFood(confirm.item._id, confirm.reason || "");
-        toast.success("Từ chối món ăn");
+        await rejectFood(confirm.item._id, (confirm.reason || "").trim());
+        toast.success("Từ chối món ăn thành công");
       } else if (confirm.mode === "approve-bulk") {
         for (const id of confirm.items) { try { await approveFood(id); } catch {} }
         toast.success(`Đã duyệt ${confirm.items.length} món`);
       } else if (confirm.mode === "reject-bulk") {
-        for (const id of confirm.items) { try { await rejectFood(id, confirm.reason || ""); } catch {} }
+        for (const id of confirm.items) {
+          try { await rejectFood(id, (confirm.reason || "").trim()); } catch {}
+        }
         toast.success(`Đã từ chối ${confirm.items.length} món`);
       }
     } catch (e) {
@@ -273,7 +281,7 @@ export default function FoodsReview() {
               {confirmInfo.description}
               {confirmInfo.showReason && (
                 <div className="cr-reason">
-                  <label className="cr-label">Lý do (tùy chọn)</label>
+                  <label className="cr-label">Lý do từ chối <span className="req">*</span></label>
                   <textarea
                     className="cr-textarea"
                     rows={3}
@@ -281,12 +289,21 @@ export default function FoodsReview() {
                     onChange={(e)=>setConfirm(s=>({...s, reason: e.target.value}))}
                     placeholder="Ví dụ: Thông tin dinh dưỡng chưa rõ ràng…"
                   />
+                  <div className="cr-hint">
+                    <span>{(confirm?.reason || "").length}/500</span>
+                    {reasonTooLong && <span className="cr-err">Tối đa 500 ký tự</span>}
+                    {reasonEmpty && <span className="cr-err"> Bắt buộc nhập lý do</span>}
+                  </div>
                 </div>
               )}
             </div>
             <div className="cm-foot">
               <button className="btn ghost" onClick={() => setConfirm(null)}>Hủy</button>
-              <button className={`btn ${confirmInfo.btnClass}`} onClick={onConfirm}>
+              <button
+                className={`btn ${confirmInfo.btnClass}`}
+                onClick={onConfirm}
+                disabled={confirmInfo.showReason && (reasonEmpty || reasonTooLong)}
+              >
                 {confirmInfo.btnText}
               </button>
             </div>

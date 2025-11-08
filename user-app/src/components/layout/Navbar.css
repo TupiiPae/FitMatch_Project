@@ -24,7 +24,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f6f7fb;
+  background: #f4f6ea;
   color: var(--fm-text);
 }
 
@@ -78,7 +78,7 @@
   display: inline-flex; align-items: center; gap: 6px;
   padding: 10px 12px; border-radius: 10px;
   text-decoration: none;
-  color: var(--nav-text); /* Màu chữ mới */
+  color: #002C3E;  /* Màu chữ mới */
   font-weight: 500;
   transition: color 0.2s ease, background-color 0.2s ease;
 }

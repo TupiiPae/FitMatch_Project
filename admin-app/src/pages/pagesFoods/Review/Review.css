@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 /* ===== Page layout (giống List.css) ===== */
 .foods-page { /* Bạn có thể đổi tên class này thành .list-page nếu dùng chung */
   padding: 30px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  font-family: "Roboto", sans-serif;
 }
 
 /* ===== Breadcrumb (giống List.css) ===== */
@@ -23,11 +25,10 @@
 /* ===== Title row (giống List.css - đã có padding) ===== */
 .page-head {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 12px;
-  padding: 0 12px; /* Thụt lề */
+  gap: 12px; padding: 4px 12px 12px; border-bottom: 1px solid #f3f4f6;
 }
 .page-head h2 {
-  font-size: 22px; font-weight: 700; color: #0f172a; margin: 0;
+  font-size: 20px; font-weight: 700; color: #0f172a; margin: 0;
 }
 .head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 16px; }
 
@@ -280,11 +281,10 @@
   border-radius: 10px;
   padding: 10px 12px;
   min-height: 92px;
-  font-family: inherit;
-  resize: vertical;
+
 }
 .cr-textarea:focus {
-  border-color: #5b6bff;
+  border-color: #008080;
   box-shadow: 0 0 0 2px #c7d2fe;
   outline: none;
 }

@@ -1,6 +1,6 @@
 .nk-wrap {
   min-height: 100vh;
-  background: #f3f4f6;
+  background: #f4f6ea;
   display: flex;
   flex-direction: column;
 }
@@ -11,9 +11,9 @@
   display: flex;
   align-items: center;
   padding: 0 150px;
-  background: #ffffffaa;
+  background: #f4f6ea;
   backdrop-filter: blur(4px);
-  border-bottom: 1px solid #eceff4;
+  box-shadow: 0 2px 40px rgba(0,0,0,.1);
 }
 .nk-logo { height: 150px; }
 /* center area */
@@ -26,10 +26,10 @@
 }
 
 .nk-card {
-  width: 100%;
-  max-width: 720px; /* tăng để đủ 2 cột */
+  max-height: 400px;
+  width: 900px; 
   background: #fff;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 28px 24px;
   box-shadow: 0 10px 24px rgba(0,0,0,0.08);
   text-align: center;
@@ -37,8 +37,8 @@
 }
 
 .nk-title {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: #1f2937;
   margin-bottom: 6px;
 }
@@ -57,7 +57,7 @@
   width: 100%;
   height: 44px;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0 14px;
   font-size: 15px;
   outline: none;
@@ -70,17 +70,12 @@
 }
 .nk-input::placeholder { color: #9ca3af; }
 .nk-input:focus {
-  border-color: #1976d2;
+  border-color: #008080;
   box-shadow: 0 0 0 3px rgba(25,118,210,0.12);
 }
 
 .nk-input-wrap { text-align: left; }
 
-.nk-error {
-  margin-top: 8px;
-  color: #d32f2f;
-  font-size: 12px;
-}
 .nk-hint {
   margin-top: 8px;
   color: #6b7280;
@@ -92,7 +87,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
-  margin-top: 14px;
+  margin-top: 20px;
   text-align: left;
 }
 .nk-col { display: flex; flex-direction: column; }
@@ -115,9 +110,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 16px 14px;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 8px;
   cursor: pointer;
   user-select: none;
   color: #111827;
@@ -132,14 +127,12 @@
 .sex-icon { display: inline-flex; color: #6b7280; }
 .sex-text { font-weight: 500; }
 
-.sex-card:hover { border-color: #c7d2fe; }
+.sex-card:hover { border-color: #008080; }
 .sex-card.active {
-  border-color: #1a73e8;
-  background: #f3f8ff;
-  box-shadow: 0 6px 14px rgba(26,115,232,.12);
+  border-color: #008080;
   color: #0f172a;
 }
-.sex-card.active .sex-icon { color: #1a73e8; }
+.sex-card.active .sex-icon { color: #008080; }
 
 /* Ngày sinh đẹp hơn (icon + padding trái) */
 .dob-input {
@@ -168,7 +161,7 @@
   min-width: 120px;
   height: 40px;
   padding: 0 18px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
   transition: transform .05s, box-shadow .2s, background .2s, border-color .2s;
@@ -180,15 +173,14 @@
   border: 1px solid #d1d5db;
   color: #111827;
 }
-.btn-outline:hover { border-color: #9ca3af; box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+.btn-outline:hover { border-color: #9ca3af; }
 
 .btn-primary {
-  background: #1a73e8;
+  background: #008080;
   border: none;
   color: #fff;
-  box-shadow: 0 6px 14px rgba(26,115,232,.25);
 }
-.btn-primary:hover { background: #1866d6; box-shadow: 0 8px 18px rgba(26,115,232,.32); }
+.btn-primary:hover { background: #007070;}
 
 @media (max-width: 720px) {
   .nk-two-col { grid-template-columns: 1fr; }
@@ -197,4 +189,28 @@
   .nk-card { padding: 22px 16px; }
   .nk-actions { width: 100%; justify-content: center; }
   .btn { flex: 1; max-width: 220px; }
+}
+
+/* Ẩn hoàn toàn dòng helper (MUI) khi rỗng để không chiếm khoảng trống */
+.nk-field .MuiFormHelperText-root:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+  height: 0;
+}
+
+/* Với DatePicker — helper của TextField lồng bên trong */
+.nk-dob .MuiFormHelperText-root:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+  height: 0;
+}
+
+/* Màu lỗi bên dưới radio giới tính */
+.nk-error {
+  margin-top: 6px;
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 1.35;
 }
