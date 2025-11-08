@@ -1,18 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+// admin-app/src/pagesUsers/User_List/User_List.jsx
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { listUsers, blockUser, unblockUser } from "../../../lib/api.js";
 import "./User_List.css";
 
-/** Popup khóa tài khoản – nhập lý do */
+/** Popup khóa tài khoản – nhập lý do (gọi onSubmit(reason:string)) */
 function BlockReasonModal({ open, onClose, onSubmit, count, loading }) {
   const [reason, setReason] = useState("");
-
-  useEffect(() => {
-    if (open) setReason("");
-  }, [open]);
-
+  useEffect(() => { if (open) setReason(""); }, [open]);
   if (!open) return null;
+
   return (
     <div className="cm-backdrop" onMouseDown={(e) => e.target.classList.contains("cm-backdrop") && onClose()}>
       <div className="cm-modal" role="dialog" aria-modal="true" aria-labelledby="blk-title">
@@ -21,9 +19,8 @@ function BlockReasonModal({ open, onClose, onSubmit, count, loading }) {
         </div>
         <div className="cm-body">
           <p style={{ marginTop: 0 }}>
-            {count > 1
-              ? <>Bạn sắp khóa <b>{count}</b> tài khoản. Hãy nhập lý do để người dùng thấy khi đăng nhập.</>
-              : <>Bạn sắp khóa <b>1</b> tài khoản. Hãy nhập lý do để người dùng thấy khi đăng nhập.</>}
+            {count > 1 ? <>Bạn sắp khóa <b>{count}</b> tài khoản. Hãy nhập lý do để người dùng thấy khi đăng nhập.</>
+                      : <>Bạn sắp khóa <b>1</b> tài khoản. Hãy nhập lý do để người dùng thấy khi đăng nhập.</>}
           </p>
           <label className="fc-field" style={{ width: "100%" }}>
             <span className="fc-label">Lý do khóa (bắt buộc)</span>
@@ -57,7 +54,7 @@ function BlockReasonModal({ open, onClose, onSubmit, count, loading }) {
   );
 }
 
-/** Popup xác nhận mở khóa (tuỳ chọn) */
+/** Popup xác nhận mở khóa */
 function ConfirmModal({ open, onClose, onConfirm, message, loading }) {
   if (!open) return null;
   return (
@@ -89,18 +86,16 @@ export default function UsersList() {
   const [total, setTotal] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // popup state
+  // POPUP states
   const [blockModalOpen, setBlockModalOpen] = useState(false);
-  const [blockIds, setBlockIds] = useState([]); // ids to block
+  const [blockIds, setBlockIds] = useState([]);       // ids to block
   const [blockLoading, setBlockLoading] = useState(false);
 
   const [unblockModalOpen, setUnblockModalOpen] = useState(false);
-  const [unblockIds, setUnblockIds] = useState([]);
+  const [unblockIds, setUnblockIds] = useState([]);   // ids to unblock
   const [unblockLoading, setUnblockLoading] = useState(false);
 
-  const allChecked = items.length > 0 && selectedIds.length === items.length;
-  const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
-
+  // Load list
   const load = async () => {
     setLoading(true);
     setSelectedIds([]);
@@ -117,15 +112,26 @@ export default function UsersList() {
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [limit, skip]);
-
   useEffect(() => {
-    const t = setTimeout(() => {
-      if (skip !== 0) setSkip(0);
-      else load();
-    }, 250);
+    const t = setTimeout(() => { if (skip !== 0) setSkip(0); else load(); }, 250);
     return () => clearTimeout(t);
     // eslint-disable-next-line
   }, [q]);
+
+  // Selection helpers
+  const allChecked = items.length > 0 && selectedIds.length === items.length;
+  const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
+
+  const selectedUsers = useMemo(
+    () => items.filter((u) => selectedIds.includes(u._id)),
+    [items, selectedIds]
+  );
+
+  // Enable/disable buttons theo yêu cầu:
+  // - Khóa đã chọn: chỉ bật khi tất cả selected đều chưa bị khóa
+  const canBlockSelected = selectedUsers.length > 0 && selectedUsers.every((u) => !u.blocked);
+  // - Mở khóa: chỉ bật khi có ÍT NHẤT 1 user đang bị khóa
+  const canUnblockSelected = selectedUsers.length > 0 && selectedUsers.some((u) => !!u.blocked);
 
   const toggleAll = () => {
     if (allChecked) setSelectedIds([]);
@@ -135,22 +141,27 @@ export default function UsersList() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
-  // ====== BLOCK with reason ======
+  // ====== BLOCK flow ======
   const openBlockSingle = (id) => {
+    // Chỉ cho phép khóa nếu user hiện tại chưa bị khóa
+    const target = items.find((x) => x._id === id);
+    if (target?.blocked) {
+      toast.info("Tài khoản đã bị khóa.");
+      return;
+    }
     setBlockIds([id]);
     setBlockModalOpen(true);
   };
   const openBlockSelected = () => {
-    if (!selectedIds.length) return;
+    if (!canBlockSelected) return; // theo yêu cầu: nếu trong list có tài khoản đã khóa -> disable
     setBlockIds(selectedIds.slice());
     setBlockModalOpen(true);
   };
   const submitBlock = async (reason) => {
     setBlockLoading(true);
     try {
-      // gọi API lần lượt để giữ thông báo rõ ràng
       for (const id of blockIds) {
-        await blockUser(id, { reason }); // cần API nhận { reason }
+        await blockUser(id, reason); // UI truyền string (lib/api sẽ post {reason})
       }
       toast.success(`Đã khóa ${blockIds.length} tài khoản.`);
       setBlockModalOpen(false);
@@ -163,10 +174,19 @@ export default function UsersList() {
     }
   };
 
-  // ====== UNBLOCK confirm ======
+  // ====== UNBLOCK flow ======
+  const openUnblockSingle = (id) => {
+    const target = items.find((x) => x._id === id);
+    if (!target?.blocked) {
+      toast.info("Tài khoản đang hoạt động, không cần mở khóa.");
+      return;
+    }
+    setUnblockIds([id]);
+    setUnblockModalOpen(true);
+  };
   const openUnblockSelected = () => {
-    if (!selectedIds.length) return;
-    setUnblockIds(selectedIds.slice());
+    if (!canUnblockSelected) return; // nếu không có tài khoản bị khóa trong list -> disable
+    setUnblockIds(selectedIds.filter((id) => items.find((u) => u._id === id && u.blocked)));
     setUnblockModalOpen(true);
   };
   const submitUnblock = async () => {
@@ -186,16 +206,7 @@ export default function UsersList() {
     }
   };
 
-  const onUnblockRow = async (id) => {
-    try {
-      await unblockUser(id);
-      toast.success("Đã mở khóa tài khoản.");
-      await load();
-    } catch (e) {
-      toast.error(e?.response?.data?.message || "Mở khóa thất bại.");
-    }
-  };
-
+  // Misc helpers
   const page = Math.floor(skip / limit);
   const pageCount = Math.max(1, Math.ceil(total / limit));
   const handleLimitChange = (e) => { setLimit(Number(e.target.value)); setSkip(0); };
@@ -210,40 +221,35 @@ export default function UsersList() {
 
   return (
     <div className="foods-page user-list-page">
-      {/* ===== Breadcrumb ===== */}
+      {/* Breadcrumb */}
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
-        <Link to="/">
-          <i className="fa-solid fa-house"></i>
-          <span>Trang chủ</span>
-        </Link>
+        <Link to="/"><i className="fa-solid fa-house"></i><span>Trang chủ</span></Link>
         <span className="separator">/</span>
-        <span className="current-group">
-          <i className="fa-solid fa-users"></i>
-          <span>Quản lý Người dùng</span>
-        </span>
+        <span className="current-group"><i className="fa-solid fa-users"></i><span>Quản lý Người dùng</span></span>
         <span className="separator">/</span>
         <span className="current-page">Danh sách người dùng</span>
       </nav>
 
-      {/* ===== Card ===== */}
+      {/* Card */}
       <div className="card">
-        {/* Title & actions */}
         <div className="page-head">
           <h2>Danh sách người dùng ({total})</h2>
           <div className="head-actions">
             <button
               className="btn danger"
               type="button"
-              disabled={!selectedIds.length}
+              disabled={!canBlockSelected}
               onClick={openBlockSelected}
+              title={!canBlockSelected && selectedIds.length ? "Trong danh sách chọn đã có tài khoản bị khóa." : undefined}
             >
               <i className="fa-solid fa-lock" /> <span>Khóa đã chọn</span>
             </button>
             <button
               className="btn ghost"
               type="button"
-              disabled={!selectedIds.length}
+              disabled={!canUnblockSelected}
               onClick={openUnblockSelected}
+              title={!canUnblockSelected && selectedIds.length ? "Danh sách chọn không có tài khoản nào bị khóa." : undefined}
             >
               <i className="fa-solid fa-lock-open" /> <span>Mở khóa</span>
             </button>
@@ -301,23 +307,32 @@ export default function UsersList() {
                   aria-label={`Chọn ${displayName(u)}`}
                 />
               </label>
+
               <div className="cell name">
                 <div className="title">{displayName(u)}</div>
                 <div className="sub">#{String(u._id).slice(-6)}</div>
               </div>
+
               <div className="cell sex">{sexLabel(u?.profile?.sex)}</div>
               <div className="cell email">{u?.email || "—"}</div>
               <div className="cell phone">{u?.phone || "—"}</div>
               <div className="cell country">Việt Nam</div>
               <div className="cell address">{fullAddress(u)}</div>
               <div className="cell created">{fmtDate(u?.createdAt)}</div>
+
               <div className="cell status">
                 {u?.blocked ? (
-                  <span className="status-badge is-blocked" title="Tài khoản đã bị khóa">Đã khóa</span>
+                  <span
+                    className="status-badge is-blocked"
+                    title={u?.blockedReason ? String(u.blockedReason) : "Tài khoản đã bị khóa"}
+                  >
+                    Đã khóa
+                  </span>
                 ) : (
                   <span className="status-badge is-active">Hoạt động</span>
                 )}
               </div>
+
               <div className="cell act">
                 <button
                   className="iconbtn"
@@ -342,7 +357,7 @@ export default function UsersList() {
                     className="iconbtn"
                     type="button"
                     title="Mở khóa"
-                    onClick={() => onUnblockRow(u._id)}
+                    onClick={() => openUnblockSingle(u._id)} // ✅ mở popup xác nhận cho 1 tài khoản
                   >
                     <i className="fa-solid fa-lock-open"></i>
                   </button>
@@ -352,7 +367,7 @@ export default function UsersList() {
           ))}
         </div>
 
-        {/* Pagination Controls */}
+        {/* Pagination */}
         <div className="pagination-controls">
           <div className="per-page">
             <span>Hiển thị:</span>
@@ -363,23 +378,11 @@ export default function UsersList() {
             </select>
           </div>
           <div className="page-nav">
-            <span className="page-info">
-              Trang {page + 1} / {pageCount} (Tổng: {total})
-            </span>
-            <button
-              className="btn-page"
-              onClick={() => handlePageChange(skip - limit)}
-              disabled={skip === 0}
-              aria-label="Trang trước"
-            >
+            <span className="page-info">Trang {page + 1} / {pageCount} (Tổng: {total})</span>
+            <button className="btn-page" onClick={() => handlePageChange(skip - limit)} disabled={skip === 0} aria-label="Trang trước">
               <i className="fa-solid fa-chevron-left"></i>
             </button>
-            <button
-              className="btn-page"
-              onClick={() => handlePageChange(skip + limit)}
-              disabled={skip + limit >= total}
-              aria-label="Trang sau"
-            >
+            <button className="btn-page" onClick={() => handlePageChange(skip + limit)} disabled={skip + limit >= total} aria-label="Trang sau">
               <i className="fa-solid fa-chevron-right"></i>
             </button>
           </div>

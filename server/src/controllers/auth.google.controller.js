@@ -109,7 +109,6 @@ export async function googleLogin(req, res) {
         message: "Tài khoản đã bị khóa",
         blocked: true,
         reason: user.blockedReason || "Tài khoản đã bị khóa bởi quản trị viên.",
-        blockedAt: user.blockedAt || null,
       });
     }
 
