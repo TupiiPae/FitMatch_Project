@@ -40,7 +40,7 @@ function computeDerived(profile){
 
 /** GET /api/user/me */
 export const getMe = async (req,res)=>{
-  const me = await User.findById(req.userId).select("_id username email phone role onboarded profile createdAt").lean();
+  const me = await User.findById(req.userId).select("_id username email phone role onboarded blocked blockedReason profile createdAt").lean();
   if(!me) return res.status(404).json({ message:"Không tìm thấy người dùng" });
   const needBackfill = !!me.profile && (me.profile?.bmi==null || me.profile?.bmr==null || me.profile?.tdee==null);
   if(needBackfill){

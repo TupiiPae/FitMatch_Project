@@ -26,8 +26,8 @@ function BlockReasonModal({ open, onClose, onSubmit, count, loading }) {
             <span className="fc-label">Lý do khóa (bắt buộc)</span>
             <textarea
               className="auth-input"
-              rows={4}
-              placeholder="VD: Tài khoản bị nghi ngờ vi phạm điều khoản sử dụng…"
+              rows={5}
+              placeholder="Nhập lý do khóa"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               maxLength={500}

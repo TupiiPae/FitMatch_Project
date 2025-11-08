@@ -66,10 +66,9 @@ export default function Login() {
     } catch (err) {
       const status = err?.response?.status;
       const data = err?.response?.data || {};
-      // ⚠️ Bắt cả 423 (Locked) và 403 (có trường blocked)
       if (status === 423 || (status === 403 && data?.blocked)) {
         toast.error("Đăng nhập không thành công");
-        setBlockedReason(data?.reason || "");
+        setBlockedReason(String(data?.reason || data?.blockedReason || data?.message || ""));
         setBlockedOpen(true);
         setUsernameErr("");
         setPasswordErr("");
@@ -112,7 +111,7 @@ export default function Login() {
         const d = e?.response?.data || {};
         if (status === 423 || (status === 403 && d?.blocked)) {
           toast.error("Đăng nhập không thành công");
-          setBlockedReason(d?.reason || "");
+          setBlockedReason(String(d?.reason || d?.blockedReason || d?.message || ""));
           setBlockedOpen(true);
           setUsernameErr("");
           setPasswordErr("");
