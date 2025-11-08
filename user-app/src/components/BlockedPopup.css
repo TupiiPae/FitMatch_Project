@@ -1,0 +1,71 @@
+/* TẤT CẢ selector đều prefix blk-* để tránh xung đột */
+.blk-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: grid; place-items: center; z-index: 9999;
+}
+
+.blk-modal {
+  width: min(680px, calc(100vw - 32px));
+  background: var(--card-bg, #fff);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.25);
+  overflow: hidden;
+  text-align: left !important;
+  color: var(--card-fg, #111827);
+}
+
+.blk-head { padding: 16px 20px 0 20px; }
+.blk-head h3 {
+ font-size: 18px; font-weight: 700; 
+  display: flex; align-items: center; gap: 10px;
+  text-align: left !important;
+  color: #F7444E;
+}
+
+.blk-body { padding: 0 24px 0 24px; }
+.blk-hero { display: flex; justify-content: center; margin-top: -20px;}
+.blk-hero img { width: 350px; height: 350px; object-fit: contain; }
+
+.blk-main-title {
+    text-align: center;
+  font-weight: 700; font-size: 16px;
+  margin-top: -50px;
+}
+
+/* BOX LÝ DO có khung, tiêu đề “nằm giữa line top” */
+.blk-reason {
+  position: relative;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px 16px 14px 16px; /* chừa chỗ cho title overlap */
+  margin-top: 60px;
+  background: #fff;
+}
+.blk-reason-title {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  padding: 0 20px; height: 24px; line-height: 24px;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 999px;
+  font-weight: 700; font-size: 14px; color: #111827;
+}
+.blk-reason-text { white-space: pre-wrap; font-size: 15px; color: #111827; }
+
+.blk-contact-text  { margin: 40px 0 0 0; font-size: 14px; text-align: center;}
+.blk-contact-text span {
+    color: #008080;
+    font-weight: 800;
+}
+
+/* FOOTER buttons full-width, chia đôi */
+.blk-foot { padding: 14px 20px 20px 20px; }
+.blk-actions { display: flex; gap: 12px; }
+.blk-btn {
+  flex: 1; display: inline-flex; justify-content: center; align-items: center;
+  gap: 8px; padding: 12px 16px; border-radius: 10px; border: 1px solid transparent;
+  background: var(--fm-primary, #008080); color: #fff; font-weight: 700; text-decoration: none;
+}
+
+.blk-btn-call:hover { background-color: #007070 }
+.blk-btn-ghost {
+  background: #fff; color: #111827; border-color: #e5e7eb;
+}
+.blk-btn-ghost:hover { filter: brightness(0.96); }

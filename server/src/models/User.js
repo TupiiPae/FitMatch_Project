@@ -116,6 +116,8 @@ const userSchema = new mongoose.Schema({
     select: false,
   },
   blocked: { type: Boolean, default: false },
+  blockedReason: { type: String, trim: true, maxlength: 500, default: undefined },
+  blockedAt: { type: Date, default: undefined },
   role: { type: String, enum: ["user", "admin"], default: "user" },
   onboarded: { type: Boolean, default: false },
   profile: profileSchema,

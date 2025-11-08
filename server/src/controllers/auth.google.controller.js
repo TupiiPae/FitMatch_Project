@@ -56,7 +56,6 @@ async function getProfileFromIdToken(credential) {
 export async function googleLogin(req, res) {
   try {
     const { access_token, credential } = req.body || {};
-
     if (!access_token && !credential) {
       return res.status(400).json({ message: "Thiếu thông tin xác thực từ Google." });
     }
@@ -66,9 +65,9 @@ export async function googleLogin(req, res) {
     if (access_token) profile = await getProfileFromAccessToken(access_token);
     else profile = await getProfileFromIdToken(credential);
 
-    const email = profile?.email;
+    const email = (profile?.email || "").trim().toLowerCase();
     const emailVerified = !!profile?.email_verified;
-    const name = profile?.name || "";
+    const name = (profile?.name || "").trim();
     const picture = profile?.picture || "";
     // const sub = profile?.sub; // nếu muốn lưu providerId
 
@@ -87,8 +86,8 @@ export async function googleLogin(req, res) {
       // 2) Chưa có -> tạo mới (KHÔNG set profile.goal rỗng!)
       const emailPrefix = email.split("@")[0];
       const username = await ensureUniqueUsername(toUsername(emailPrefix));
-      const nickname = name.trim() || username;
-      const randomPass = crypto.randomBytes(18).toString("hex"); // để thỏa schema; sẽ được hash
+      const nickname = name || username;
+      const randomPass = crypto.randomBytes(18).toString("hex"); // để thỏa schema; sẽ được hash ở pre('save')
 
       user = await User.create({
         username,
@@ -99,8 +98,18 @@ export async function googleLogin(req, res) {
         profile: {
           nickname,                // schema yêu cầu nickname
           avatarUrl: picture || undefined,
-          // TUYỆT ĐỐI không set goal ở đây để tránh enum lỗi
+          // KHÔNG set goal để tránh lỗi enum
         },
+      });
+    }
+
+    // === CHẶN TÀI KHOẢN BỊ KHÓA (điểm mới) ===
+    if (user.blocked) {
+      return res.status(403).json({
+        message: "Tài khoản đã bị khóa",
+        blocked: true,
+        reason: user.blockedReason || "Tài khoản đã bị khóa bởi quản trị viên.",
+        blockedAt: user.blockedAt || null,
       });
     }
 

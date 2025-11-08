@@ -252,7 +252,7 @@
 .btn-page:hover { background: #f9fafb; }
 .btn-page:disabled { opacity: 0.5; cursor: not-allowed; background: #f9fafb; }
 
-@media (max-width: 1200px) {
+/* @media (max-width: 1200px) {
   .admin-list-page .thead,
   .admin-list-page .trow {
     grid-template-columns:
@@ -297,7 +297,7 @@
     font-size: 13px;
     color: #6b7280;
   }
-}
+} */
 
 /* ===== Confirm Delete Modal (.cm-*) ===== */
 .cm-backdrop{

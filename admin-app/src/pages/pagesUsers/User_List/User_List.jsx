@@ -1,10 +1,86 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import { listUsers, blockUser, unblockUser } from "../../../lib/api.js";
-import "./User_List.css"; // Đảm bảo bạn đã import file CSS của User_List
+import "./User_List.css";
+
+/** Popup khóa tài khoản – nhập lý do */
+function BlockReasonModal({ open, onClose, onSubmit, count, loading }) {
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (open) setReason("");
+  }, [open]);
+
+  if (!open) return null;
+  return (
+    <div className="cm-backdrop" onMouseDown={(e) => e.target.classList.contains("cm-backdrop") && onClose()}>
+      <div className="cm-modal" role="dialog" aria-modal="true" aria-labelledby="blk-title">
+        <div className="cm-head">
+          <h3 id="blk-title"><i className="fa-solid fa-lock"></i> Khóa tài khoản</h3>
+        </div>
+        <div className="cm-body">
+          <p style={{ marginTop: 0 }}>
+            {count > 1
+              ? <>Bạn sắp khóa <b>{count}</b> tài khoản. Hãy nhập lý do để người dùng thấy khi đăng nhập.</>
+              : <>Bạn sắp khóa <b>1</b> tài khoản. Hãy nhập lý do để người dùng thấy khi đăng nhập.</>}
+          </p>
+          <label className="fc-field" style={{ width: "100%" }}>
+            <span className="fc-label">Lý do khóa (bắt buộc)</span>
+            <textarea
+              className="auth-input"
+              rows={4}
+              placeholder="VD: Tài khoản bị nghi ngờ vi phạm điều khoản sử dụng…"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={500}
+              required
+            />
+          </label>
+          <div className="error-stack" aria-live="polite">
+            {!reason.trim() && <span className="error-item">Vui lòng nhập lý do khóa.</span>}
+          </div>
+        </div>
+        <div className="cm-foot">
+          <button type="button" className="btn ghost" onClick={onClose} disabled={loading}>Hủy</button>
+          <button
+            type="button"
+            className={`btn danger ${loading ? "loading" : ""}`}
+            onClick={() => reason.trim() && onSubmit(reason.trim())}
+            disabled={!reason.trim() || loading}
+          >
+            <i className="fa-solid fa-lock" /> <span>Khóa tài khoản</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Popup xác nhận mở khóa (tuỳ chọn) */
+function ConfirmModal({ open, onClose, onConfirm, message, loading }) {
+  if (!open) return null;
+  return (
+    <div className="cm-backdrop" onMouseDown={(e) => e.target.classList.contains("cm-backdrop") && onClose()}>
+      <div className="cm-modal" role="dialog" aria-modal="true" aria-labelledby="cfm-title">
+        <div className="cm-head">
+          <h3 id="cfm-title"><i className="fa-solid fa-lock-open"></i> Mở khóa tài khoản</h3>
+        </div>
+        <div className="cm-body">
+          <p style={{ margin: 0 }}>{message}</p>
+        </div>
+        <div className="cm-foot">
+          <button type="button" className="btn ghost" onClick={onClose} disabled={loading}>Hủy</button>
+          <button type="button" className={`btn ${loading ? "loading" : ""}`} onClick={onConfirm} disabled={loading}>
+            <i className="fa-solid fa-lock-open" /> <span>Mở khóa</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function UsersList() {
-  // ... (Toàn bộ state và logic giữ nguyên) ...
   const [q, setQ] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -12,8 +88,19 @@ export default function UsersList() {
   const [skip, setSkip] = useState(0);
   const [total, setTotal] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
+
+  // popup state
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [blockIds, setBlockIds] = useState([]); // ids to block
+  const [blockLoading, setBlockLoading] = useState(false);
+
+  const [unblockModalOpen, setUnblockModalOpen] = useState(false);
+  const [unblockIds, setUnblockIds] = useState([]);
+  const [unblockLoading, setUnblockLoading] = useState(false);
+
   const allChecked = items.length > 0 && selectedIds.length === items.length;
   const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
+
   const load = async () => {
     setLoading(true);
     setSelectedIds([]);
@@ -28,7 +115,9 @@ export default function UsersList() {
       setLoading(false);
     }
   };
+
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [limit, skip]);
+
   useEffect(() => {
     const t = setTimeout(() => {
       if (skip !== 0) setSkip(0);
@@ -37,6 +126,7 @@ export default function UsersList() {
     return () => clearTimeout(t);
     // eslint-disable-next-line
   }, [q]);
+
   const toggleAll = () => {
     if (allChecked) setSelectedIds([]);
     else setSelectedIds(items.map((x) => x._id));
@@ -44,14 +134,68 @@ export default function UsersList() {
   const toggleOne = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
-  const onBlock = async (id) => {
-    await blockUser(id);
-    await load();
+
+  // ====== BLOCK with reason ======
+  const openBlockSingle = (id) => {
+    setBlockIds([id]);
+    setBlockModalOpen(true);
   };
-  const onUnblock = async (id) => {
-    await unblockUser(id);
-    await load();
+  const openBlockSelected = () => {
+    if (!selectedIds.length) return;
+    setBlockIds(selectedIds.slice());
+    setBlockModalOpen(true);
   };
+  const submitBlock = async (reason) => {
+    setBlockLoading(true);
+    try {
+      // gọi API lần lượt để giữ thông báo rõ ràng
+      for (const id of blockIds) {
+        await blockUser(id, { reason }); // cần API nhận { reason }
+      }
+      toast.success(`Đã khóa ${blockIds.length} tài khoản.`);
+      setBlockModalOpen(false);
+      setBlockIds([]);
+      await load();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Khóa tài khoản thất bại.");
+    } finally {
+      setBlockLoading(false);
+    }
+  };
+
+  // ====== UNBLOCK confirm ======
+  const openUnblockSelected = () => {
+    if (!selectedIds.length) return;
+    setUnblockIds(selectedIds.slice());
+    setUnblockModalOpen(true);
+  };
+  const submitUnblock = async () => {
+    setUnblockLoading(true);
+    try {
+      for (const id of unblockIds) {
+        await unblockUser(id);
+      }
+      toast.success(`Đã mở khóa ${unblockIds.length} tài khoản.`);
+      setUnblockModalOpen(false);
+      setUnblockIds([]);
+      await load();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Mở khóa tài khoản thất bại.");
+    } finally {
+      setUnblockLoading(false);
+    }
+  };
+
+  const onUnblockRow = async (id) => {
+    try {
+      await unblockUser(id);
+      toast.success("Đã mở khóa tài khoản.");
+      await load();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Mở khóa thất bại.");
+    }
+  };
+
   const page = Math.floor(skip / limit);
   const pageCount = Math.max(1, Math.ceil(total / limit));
   const handleLimitChange = (e) => { setLimit(Number(e.target.value)); setSkip(0); };
@@ -64,16 +208,10 @@ export default function UsersList() {
   };
   const displayName = (u) => u?.profile?.nickname || u?.username || "—";
 
-
   return (
-    // ===== THAY ĐỔI Ở ĐÂY =====
-    // Thêm class "user-list-page" để CSS của chúng ta "mạnh" hơn
-    <div className="foods-page user-list-page"> 
-      {/* ===== KẾT THÚC THAY ĐỔI ===== */}
-
+    <div className="foods-page user-list-page">
       {/* ===== Breadcrumb ===== */}
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
-        {/* ... (Giữ nguyên) ... */}
         <Link to="/">
           <i className="fa-solid fa-house"></i>
           <span>Trang chủ</span>
@@ -87,23 +225,32 @@ export default function UsersList() {
         <span className="current-page">Danh sách người dùng</span>
       </nav>
 
-      {/* ===== Card: chứa toàn bộ nội dung ===== */}
-      {/* (Phần còn lại của file JSX giữ nguyên y hệt) */}
+      {/* ===== Card ===== */}
       <div className="card">
-        {/* ===== Title & actions (giống foods) ===== */}
+        {/* Title & actions */}
         <div className="page-head">
           <h2>Danh sách người dùng ({total})</h2>
           <div className="head-actions">
-            <button className="btn danger" type="button" disabled={!selectedIds.length}>
+            <button
+              className="btn danger"
+              type="button"
+              disabled={!selectedIds.length}
+              onClick={openBlockSelected}
+            >
               <i className="fa-solid fa-lock" /> <span>Khóa đã chọn</span>
             </button>
-            <button className="btn ghost" type="button" disabled={!selectedIds.length}>
+            <button
+              className="btn ghost"
+              type="button"
+              disabled={!selectedIds.length}
+              onClick={openUnblockSelected}
+            >
               <i className="fa-solid fa-lock-open" /> <span>Mở khóa</span>
             </button>
           </div>
         </div>
 
-        {/* ===== Card-head: search ===== */}
+        {/* Search */}
         <div className="card-head">
           <div className="search">
             <i className="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
@@ -118,18 +265,18 @@ export default function UsersList() {
           </div>
         </div>
 
-        {/* ===== Table ===== */}
+        {/* Table */}
         <div className="table">
           <div className="thead">
-          <label className="cell cb">
-            <input
-              type="checkbox"
-              checked={allChecked}
-              ref={(el) => { if (el) el.indeterminate = someChecked; }}
-              onChange={toggleAll}
-              aria-label="Chọn tất cả"
-            />
-          </label>
+            <label className="cell cb">
+              <input
+                type="checkbox"
+                checked={allChecked}
+                ref={(el) => { if (el) el.indeterminate = someChecked; }}
+                onChange={toggleAll}
+                aria-label="Chọn tất cả"
+              />
+            </label>
             <div className="cell name">Tên người dùng</div>
             <div className="cell sex">Giới tính</div>
             <div className="cell email">Email</div>
@@ -166,7 +313,7 @@ export default function UsersList() {
               <div className="cell created">{fmtDate(u?.createdAt)}</div>
               <div className="cell status">
                 {u?.blocked ? (
-                  <span className="status-badge is-blocked">Đã khóa</span>
+                  <span className="status-badge is-blocked" title="Tài khoản đã bị khóa">Đã khóa</span>
                 ) : (
                   <span className="status-badge is-active">Hoạt động</span>
                 )}
@@ -180,12 +327,13 @@ export default function UsersList() {
                 >
                   <i className="fa-regular fa-comment-dots"></i>
                 </button>
+
                 {!u?.blocked ? (
                   <button
                     className="iconbtn danger"
                     type="button"
                     title="Khóa người dùng"
-                    onClick={() => onBlock(u._id)}
+                    onClick={() => openBlockSingle(u._id)}
                   >
                     <i className="fa-solid fa-lock"></i>
                   </button>
@@ -194,7 +342,7 @@ export default function UsersList() {
                     className="iconbtn"
                     type="button"
                     title="Mở khóa"
-                    onClick={() => onUnblock(u._id)}
+                    onClick={() => onUnblockRow(u._id)}
                   >
                     <i className="fa-solid fa-lock-open"></i>
                   </button>
@@ -204,7 +352,7 @@ export default function UsersList() {
           ))}
         </div>
 
-        {/* ===== Pagination Controls ===== */}
+        {/* Pagination Controls */}
         <div className="pagination-controls">
           <div className="per-page">
             <span>Hiển thị:</span>
@@ -237,6 +385,26 @@ export default function UsersList() {
           </div>
         </div>
       </div>
+
+      {/* MODALS */}
+      <BlockReasonModal
+        open={blockModalOpen}
+        onClose={() => { if (!blockLoading) setBlockModalOpen(false); }}
+        onSubmit={submitBlock}
+        count={blockIds.length}
+        loading={blockLoading}
+      />
+      <ConfirmModal
+        open={unblockModalOpen}
+        onClose={() => { if (!unblockLoading) setUnblockModalOpen(false); }}
+        onConfirm={submitUnblock}
+        loading={unblockLoading}
+        message={
+          unblockIds.length > 1
+            ? <>Bạn chắc chắn muốn mở khóa <b>{unblockIds.length}</b> tài khoản đã chọn?</>
+            : <>Bạn chắc chắn muốn mở khóa tài khoản đã chọn?</>
+        }
+      />
     </div>
   );
 }

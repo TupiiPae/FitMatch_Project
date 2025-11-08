@@ -476,11 +476,8 @@ export const removeExerciseVideoApi = async (id) => {
 export const listUsers = (params) =>
   api.get("/api/admin/users", { params }).then((r) => r.data);
 
-export const blockUser = (id) =>
-  api.post(`/api/admin/users/${id}/block`).then((r) => r.data);
-
-export const unblockUser = (id) =>
-  api.post(`/api/admin/users/${id}/unblock`).then((r) => r.data);
+export const blockUser = (id, reason) => api.post(`/api/admin/users/${id}/block`, { reason });
+export const unblockUser = (id) => api.post(`/api/admin/users/${id}/unblock`);
 
 export const updateMyAdminProfile = async ({ nickname }) => {
   if (!nickname || typeof nickname !== "string") {

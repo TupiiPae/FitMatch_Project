@@ -5,32 +5,49 @@ import "../Style/style.css";
 import api from "../../lib/api";
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
+import BlockedPopup from "../../components/BlockedPopup";
 
 export default function Login() {
   const nav = useNavigate();
 
-  const [username, setUsername]   = useState("");
-  const [password, setPassword]   = useState("");
-  const [showPass, setShowPass]   = useState(false);
-  const [loading, setLoading]     = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [usernameErr, setUsernameErr] = useState("");
   const [passwordErr, setPasswordErr] = useState("");
 
+  // popup blocked
+  const [blockedOpen, setBlockedOpen] = useState(false);
+  const [blockedReason, setBlockedReason] = useState("");
+
   const validateUsername = () => {
     const v = username.trim();
-    if (!v) { setUsernameErr("Vui lòng nhập tên tài khoản"); return false; }
-    setUsernameErr(""); return true;
+    if (!v) {
+      setUsernameErr("Vui lòng nhập tên tài khoản");
+      return false;
+    }
+    setUsernameErr("");
+    return true;
   };
   const validatePassword = () => {
-    if (!password) { setPasswordErr("Vui lòng nhập mật khẩu"); return false; }
-    if (password.length < 6) { setPasswordErr("Mật khẩu phải có ít nhất 6 ký tự"); return false; }
-    setPasswordErr(""); return true;
+    if (!password) {
+      setPasswordErr("Vui lòng nhập mật khẩu");
+      return false;
+    }
+    if (password.length < 6) {
+      setPasswordErr("Mật khẩu phải có ít nhất 6 ký tự");
+      return false;
+    }
+    setPasswordErr("");
+    return true;
   };
 
   async function onSubmit(e) {
     e.preventDefault();
-    setUsernameErr(""); setPasswordErr("");
+    setUsernameErr("");
+    setPasswordErr("");
     if (!validateUsername() || !validatePassword()) return;
 
     setLoading(true);
@@ -44,27 +61,42 @@ export default function Login() {
       localStorage.setItem("role", data.user?.role || "user");
       localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
       toast.success("Đăng nhập thành công!");
-      if (data.user?.onboarded) nav("/home"); else nav("/onboarding");
+      if (data.user?.onboarded) nav("/home");
+      else nav("/onboarding");
     } catch (err) {
       const status = err?.response?.status;
-      const msg = err?.response?.data?.message ||
-        (status === 401 ? "Sai mật khẩu." :
-         status === 400 ? "Tài khoản không tồn tại hoặc thông tin không hợp lệ." :
-         "Đăng nhập thất bại. Vui lòng thử lại.");
-      if (status === 400) setUsernameErr(msg);
-      else setPasswordErr(msg);
-    } finally { setLoading(false); }
+      const data = err?.response?.data || {};
+      // ⚠️ Bắt cả 423 (Locked) và 403 (có trường blocked)
+      if (status === 423 || (status === 403 && data?.blocked)) {
+        toast.error("Đăng nhập không thành công");
+        setBlockedReason(data?.reason || "");
+        setBlockedOpen(true);
+        setUsernameErr("");
+        setPasswordErr("");
+      } else {
+        const msg =
+          data?.message ||
+          (status === 401
+            ? "Sai mật khẩu."
+            : status === 400
+            ? "Tài khoản không tồn tại hoặc thông tin không hợp lệ."
+            : "Đăng nhập thất bại. Vui lòng thử lại.");
+        if (status === 400) setUsernameErr(msg);
+        else setPasswordErr(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
-  // --- GOOGLE LOGIN (custom button, giữ nguyên thiết kế) ---
+  // --- GOOGLE LOGIN (custom button) ---
   const startGoogleLogin = useGoogleLogin({
-    flow: "implicit",                  // dùng popup, trả access_token
+    flow: "implicit",
     scope: "openid email profile",
     onSuccess: async (resp) => {
       try {
         const payload = {
           access_token: resp?.access_token || null,
-          // dự phòng cho các flow khác nếu bạn dùng sau này:
           credential: resp?.credential || null,
           code: resp?.code || null,
         };
@@ -73,15 +105,26 @@ export default function Login() {
         localStorage.setItem("role", data.user?.role || "user");
         localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
         toast.success("Đăng nhập bằng Google thành công!");
-        if (data.user?.onboarded) nav("/home"); else nav("/onboarding");
+        if (data.user?.onboarded) nav("/home");
+        else nav("/onboarding");
       } catch (e) {
-        toast.error(e?.response?.data?.message || "Đăng nhập Google thất bại.");
+        const status = e?.response?.status;
+        const d = e?.response?.data || {};
+        if (status === 423 || (status === 403 && d?.blocked)) {
+          toast.error("Đăng nhập không thành công");
+          setBlockedReason(d?.reason || "");
+          setBlockedOpen(true);
+          setUsernameErr("");
+          setPasswordErr("");
+        } else {
+          toast.error(d?.message || "Đăng nhập Google thất bại.");
+        }
       }
     },
     onError: () => toast.error("Google Login thất bại"),
   });
 
-  // Ripple cho nút social (giữ nguyên)
+  // Ripple cho nút social
   function handleSocialRipple(e) {
     const btn = e.currentTarget;
     const ripple = btn.querySelector(".social-ripple");
@@ -97,8 +140,6 @@ export default function Login() {
     void ripple.offsetWidth;
     ripple.classList.add("is-animating");
   }
-
-  // click Google = ripple + start login
   function onClickGoogle(e) {
     handleSocialRipple(e);
     startGoogleLogin();
@@ -111,7 +152,9 @@ export default function Login() {
         <h1>Đăng nhập</h1>
       </div>
 
-      <div className="auth-divider"><span>Nhập thông tin tài khoản</span></div>
+      <div className="auth-divider">
+        <span>Nhập thông tin tài khoản</span>
+      </div>
 
       {/* Username */}
       <input
@@ -146,7 +189,12 @@ export default function Login() {
           required
           maxLength={200}
         />
-        <button type="button" className="eye-toggle" onClick={() => setShowPass(v => !v)} aria-label="Hiện/ẩn mật khẩu">
+        <button
+          type="button"
+          className="eye-toggle"
+          onClick={() => setShowPass((v) => !v)}
+          aria-label="Hiện/ẩn mật khẩu"
+        >
           <i className={`fa-solid ${showPass ? "fa-eye-slash" : "fa-eye"}`} />
         </button>
       </div>
@@ -154,19 +202,30 @@ export default function Login() {
         {passwordErr && <span className="error-item">{passwordErr}</span>}
       </div>
 
-      <button type="submit" className={`material-btn ${loading ? "loading" : ""}`} disabled={loading} style={{ marginTop: 6 }}>
+      <button
+        type="submit"
+        className={`material-btn ${loading ? "loading" : ""}`}
+        disabled={loading}
+        style={{ marginTop: 6 }}
+      >
         <span className="btn-text">Đăng nhập</span>
       </button>
 
       <div className="forgot-row under-login">
-        <button type="button" className="btn-resetpwd link-blue" onClick={() => nav("/reset-password")}>
+        <button
+          type="button"
+          className="btn-resetpwd link-blue"
+          onClick={() => nav("/reset-password")}
+        >
           Quên mật khẩu
         </button>
       </div>
 
-      <div className="auth-divider"><span>HOẶC</span></div>
+      <div className="auth-divider">
+        <span>HOẶC</span>
+      </div>
 
-      {/* SOCIAL – giữ nguyên UI */}
+      {/* SOCIAL */}
       <div className="social-login">
         <button
           type="button"
@@ -176,10 +235,22 @@ export default function Login() {
         >
           <div className="social-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
             </svg>
           </div>
           <span>&ensp;Đăng nhập với Google</span>
@@ -189,5 +260,15 @@ export default function Login() {
     </form>
   );
 
-  return <AuthLayout mode="login" renderSignIn={renderSignIn} renderSignUp={<div />} />;
+  return (
+    <>
+      <AuthLayout
+        mode="login"
+        renderSignIn={renderSignIn}
+        renderSignUp={<div />}
+        suppressOutsideClose={blockedOpen}
+      />
+      <BlockedPopup open={blockedOpen} reason={blockedReason} onClose={() => setBlockedOpen(false)} />
+    </>
+  );
 }

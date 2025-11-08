@@ -2,6 +2,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import fetch from "node-fetch"; // nếu đang dùng Node <18, đảm bảo đã cài: npm i node-fetch
 
 import { User } from "../models/User.js";
 import PasswordReset from "../models/PasswordReset.js";
@@ -11,16 +12,31 @@ import { sendOtpEmail } from "../utils/mailer.js";
 const OTP_TTL_MINUTES = Number(process.env.OTP_TTL_MINUTES || 2); // TTL OTP (phút) – mặc định 2 để đồng bộ UI
 const RESEND_COOLDOWN_SEC = Number(process.env.OTP_RESEND_COOLDOWN_SEC || 60); // cooldown gửi lại (giây)
 const MAX_OTP_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5); // số lần nhập sai tối đa
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
 /* --------------------------- Helpers --------------------------- */
 const norm = (v) => (typeof v === "string" ? v.trim() : "");
 const normLower = (v) => (typeof v === "string" ? v.trim().toLowerCase() : "");
 const genOTP = () => String(Math.floor(100000 + Math.random() * 900000)); // 6 số
-
 const signToken = (user) =>
   jwt.sign({ id: user._id, role: user.role || "user" }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
+    expiresIn: JWT_EXPIRES_IN,
   });
+
+const ensureUniqueUsername = async (base) => {
+  let slug = String(base || "user").replace(/[^a-zA-Z0-9]/g, "") || "user";
+  if (slug.length < 4) slug = slug + Math.floor(1000 + Math.random() * 9000);
+  let candidate = slug;
+  let i = 0;
+  // Thử tối đa 100 lần để chắc chắn duy nhất
+  while (i < 100) {
+    const existed = await User.findOne({ username: candidate }).select("_id").lean();
+    if (!existed) return candidate;
+    i += 1;
+    candidate = `${slug}${i}`;
+  }
+  return `${slug}${Date.now()}`;
+};
 
 /* =========================== AUTH CORE =========================== */
 export const register = async (req, res) => {
@@ -93,6 +109,14 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "Tài khoản không tồn tại." });
     }
+    if (user.blocked) {
+      return res.status(403).json({
+        message: "Tài khoản đã bị khóa",
+        blocked: true,
+        reason: user.blockedReason || "Tài khoản đã bị khóa bởi quản trị viên.",
+        /*blockedAt: user.blockedAt || null,*/
+      });
+    }
     if (!user.password) {
       console.error("[auth.login] user has no password field", user._id);
       return res.status(500).json({ message: "Lỗi dữ liệu người dùng." });
@@ -119,6 +143,98 @@ export const login = async (req, res) => {
   } catch (err) {
     console.error("[auth.login]", err);
     return res.status(500).json({ message: "Lỗi server." });
+  }
+};
+
+/* =========================== GOOGLE LOGIN =========================== */
+/**
+ * FE gọi: POST /auth/google  với payload:
+ *  { access_token?:string, credential?:string, code?:string }
+ * Hiện tại dùng @react-oauth/google (implicit) → access_token.
+ */
+export const google = async (req, res) => {
+  try {
+    const accessToken = norm(req.body.access_token);
+    const credential = norm(req.body.credential); // dự phòng nếu đổi flow
+    const code = norm(req.body.code);             // dự phòng nếu đổi flow
+
+    if (!accessToken && !credential && !code) {
+      return res.status(400).json({ message: "Thiếu access_token/credential/code." });
+    }
+
+    // Ưu tiên access_token (flow hiện tại)
+    let googleEmail = null;
+    let googleSub = null; // google user id
+    let googleName = null;
+
+    if (accessToken) {
+      const resp = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!resp.ok) {
+        return res.status(400).json({ message: "Token Google không hợp lệ." });
+      }
+      const info = await resp.json();
+      googleEmail = normLower(info?.email || "");
+      googleSub = norm(info?.sub || "");
+      googleName = norm(info?.name || "");
+    } else {
+      // Nếu sau này bạn dùng ID token (credential) hoặc authorization code,
+      // thì bổ sung xử lý tại đây (đổi code -> access_token -> userinfo).
+      return res.status(400).json({ message: "Flow Google chưa được hỗ trợ." });
+    }
+
+    if (!googleEmail) {
+      return res.status(400).json({ message: "Không lấy được email từ Google." });
+    }
+    // Schema bạn yêu cầu email @gmail.com
+    if (!/@gmail\.com$/i.test(googleEmail)) {
+      return res.status(400).json({ message: "Email Google phải là @gmail.com." });
+    }
+
+    // Tìm theo email
+    let user = await User.findOne({ email: googleEmail }).select("+password");
+    if (!user) {
+      // Tạo mới người dùng (tối thiểu): username suy ra từ email
+      const baseUsername = googleEmail.split("@")[0];
+      const username = await ensureUniqueUsername(baseUsername);
+      // Mật khẩu ngẫu nhiên để pass schema (user đăng nhập lại vẫn dùng Google)
+      const randomPass = crypto.randomBytes(12).toString("base64url").slice(0, 12);
+
+      user = await User.create({
+        username,
+        email: googleEmail,
+        password: randomPass,
+        profile: {
+          nickname: googleName || username, // nickname required trong schema
+        },
+      });
+    }
+
+    if (user.blocked) {
+      return res.status(403).json({
+        message: "Tài khoản đã bị khóa",
+        blocked: true,
+        reason: user.blockedReason || "Tài khoản đã bị khóa bởi quản trị viên.",
+        blockedAt: user.blockedAt || null,
+      });
+    }
+
+    const token = signToken(user);
+    return res.json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        onboarded: !!user.onboarded,
+        profile: user.profile || {},
+      },
+    });
+  } catch (err) {
+    console.error("[auth.google]", err);
+    return res.status(500).json({ message: "Đăng nhập Google thất bại." });
   }
 };
 

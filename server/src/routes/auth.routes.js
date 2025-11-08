@@ -13,11 +13,15 @@ import { googleLogin } from "../controllers/auth.google.controller.js";
 
 const router = express.Router();
 
-// Giới hạn tốc độ để chống spam / brute-force
+/** (Không bắt buộc) Health check cho cụm /auth */
+router.get("/ping", (_req, res) => res.json({ ok: true, ts: Date.now() }));
+
+// Đăng ký / Đăng nhập (chống brute-force)
 router.post("/register", authLimiter, register);
 router.post("/login", authLimiter, login);
 
-router.post("/google", googleLogin);
+// Đăng nhập Google (nên có limiter để tránh spam token)
+router.post("/google", authLimiter, googleLogin);
 
 // Quên mật khẩu (OTP qua email)
 router.post("/password/forgot", authLimiter, passwordForgot);
