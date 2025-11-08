@@ -316,7 +316,7 @@ export default function FoodForm() {
                 onChange={(e) => up("unit", e.target.value)}
               >
                 {UNIT_OPTIONS.map((u) => (
-                  <option key={u} value={u}>{u.toUpperCase()}</option>
+                  <option key={u} value={u}>{u}</option>
                 ))}
               </select>
             </div>

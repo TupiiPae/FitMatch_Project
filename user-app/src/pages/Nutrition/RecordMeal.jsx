@@ -13,6 +13,7 @@ import dayjs from 'dayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { useColorScheme } from "@mui/material/styles";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => {
@@ -157,6 +158,23 @@ export default function RecordMeal() {
     }
   };
 
+  const [showReject, setShowReject] = useState(false);
+  const [rejectInfo, setRejectInfo] = useState({ name: "", reason: "" });
+
+  async function openRejectReason(it) {
+    try {
+      const { data } = await getFood(it._id);
+      setRejectInfo({
+        name: data?.name || it.name || "",
+        reason: (data?.rejectionReason || "").trim() || "Admin chưa cung cấp lý do.",
+      });
+      setShowReject(true);
+    } catch {
+      setRejectInfo({ name: it.name || "", reason: "Không lấy được lý do từ chối." });
+      setShowReject(true);
+    }
+  }
+
   return (
     <div className="nm-wrap">
       {/* ===== HEAD ===== */}
@@ -221,7 +239,18 @@ export default function RecordMeal() {
 
               <div className="act" onClick={(e) => e.stopPropagation()}>
                 {onlyMine && (
-                  <span className={`status-pill ${it.status || "pending"}`}>{statusLabel(it.status)}</span>
+                  it.status === "rejected" ? (
+                    <button
+                      type="button"
+                      className={`status-pill ${it.status}`}
+                      onClick={(e) => { e.stopPropagation(); openRejectReason(it); }}
+                      title="Xem lý do từ chối"
+                    >
+                      {statusLabel(it.status)}
+                    </button>
+                  ) : (
+                    <span className={`status-pill ${it.status || "pending"}`}>{statusLabel(it.status)}</span>
+                  )
                 )}
 
                 <button
@@ -405,6 +434,34 @@ export default function RecordMeal() {
           </div>
         )}
       </div>
+
+      {/* ====== REJECT REASON MODAL ====== */}
+      {showReject && (
+        <div className="ur-backdrop" onClick={() => setShowReject(false)}>
+          <div
+            className="ur-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ur-title"
+          >
+            <div className="ur-head">
+              <div className="ur-icon" aria-hidden="true">
+                <i className="fa-regular fa-circle-xmark"></i>
+              </div>
+              <h3 id="ur-title" className="ur-title">Lý do món ăn bị từ chối</h3>
+            </div>
+            <div className="ur-body">
+              <div className="ur-row"><span className="ur-label">Món ăn:</span><b className="ur-val">{rejectInfo.name}</b></div>
+              <div className="ur-row"><span className="ur-label">Lý do:</span></div>
+              <div className="ur-reason">{rejectInfo.reason}</div>
+            </div>
+            <div className="ur-foot">
+              <button className="btn primary" onClick={() => setShowReject(false)}>Đã hiểu</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ====== CONFIRM DELETE MODAL ====== */}
       {confirmDel.open && (

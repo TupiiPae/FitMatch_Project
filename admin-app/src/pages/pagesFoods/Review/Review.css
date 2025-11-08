@@ -281,10 +281,10 @@
   border-radius: 10px;
   padding: 10px 12px;
   min-height: 92px;
-  resize: vertical;
+
 }
 .cr-textarea:focus {
-  border-color: #5b6bff;
+  border-color: #008080;
   box-shadow: 0 0 0 2px #c7d2fe;
   outline: none;
 }

@@ -300,7 +300,11 @@ export const rejectFood = async (id, reason = "") => {
     return r.data;
   } catch (e) {
     if (e?.response?.status === 404) {
-      const r2 = await api.patch(`/api/foods/${id}`, { status: "rejected" });
+      const r2 = await api.patch(`/api/foods/${id}`, {
+       status: "rejected",
+       // BE yêu cầu 'rejectionReason' khi PATCH
+       rejectionReason: String(reason || "").trim(),
+     });
       return r2.data;
     }
     throw e;

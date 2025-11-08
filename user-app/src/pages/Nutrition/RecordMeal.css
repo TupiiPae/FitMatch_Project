@@ -443,12 +443,13 @@
   color: #b91c1c;
 }
 .cm-head h3{
-  margin: 0; font-size: 18px; font-weight: 800; color: #111827;
+  margin: 0; font-size: 18px; font-weight: 700; color: #111827;
 }
 .cm-body{
   padding: 14px 16px;
   color: #374151;
 }
+
 .cm-foot{
   padding: 12px 16px;
   border-top: 1px solid #e5e7eb;
@@ -462,3 +463,62 @@
   border:1px solid #f4d0d0;
 }
 .btn.bad:hover{ background:#fee2e2; }
+
+/* ===== USER Reject Reason Modal (scoped .ur-*) ===== */
+.ur-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,.45);
+  backdrop-filter: blur(2px);
+  display: grid; place-items: center;
+  z-index: 1100; /* cao hơn .modal cũ để chắc chắn không xung đột */
+  padding: 16px;
+}
+.ur-modal{
+  width: min(520px, 94vw);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(2,6,23,.18);
+  animation: ur-pop .16s ease-out;
+  display: flex; flex-direction: column;
+}
+@keyframes ur-pop{
+  from { transform: scale(.96); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.ur-head{
+  display: grid; grid-template-columns: auto 1fr;
+  align-items: center; gap: 12px;
+  padding: 16px 16px 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ur-icon{
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  font-size: 18px;
+  background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+}
+.ur-title{
+  margin: 0; font-size: 18px; font-weight: 600; color: #111827;
+}
+.ur-body{
+  padding: 12px 16px; color: #475569; line-height: 1.5;
+  display: grid; gap: 8px;
+}
+.ur-row{ display: flex; align-items: center; gap: 8px; }
+.ur-label{ min-width: 64px; font-weight: 600; color: #374151; font-size: 13px; }
+.ur-val{ color: #0b5066; }
+.ur-reason{
+  margin-top: 2px;
+  border: 1px dashed #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #0f172a; font-weight: 700;
+  white-space: pre-wrap;
+}
+.ur-foot{
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px 16px 16px;
+  border-top: 1px dashed #e5e7eb;
+}
