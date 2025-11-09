@@ -18,6 +18,7 @@ import nutritionRoutes from "./routes/nutrition.routes.js";
 import adminFoodsRoutes from "./routes/admin.food.routes.js";
 import adminAccountsRoutes from "./routes/admin.accounts.routes.js";
 import adminExercisesRoutes from "./routes/admin.exercise.routes.js"; 
+import adminUsersRoutes from "./routes/admin.users.routes.js";
 
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
@@ -106,6 +107,8 @@ app.use(
   },
   adminAccountsRoutes
 );
+
+app.use("/api/admin", adminUsersRoutes);
 
 // Các nhóm admin khác
 app.use("/api/admin", adminRoutes);

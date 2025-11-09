@@ -311,3 +311,51 @@
     display:none;
   }
 }
+
+/* Chips danh sách email trong modal */
+.ulist-chipwrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ulist-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.2;
+  max-width: 100%;
+}
+.ulist-chip-mail {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ulist-chip-reason {
+  margin-left: 6px;
+  color: #6b7280;
+  white-space: nowrap;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Segmented filter buttons */
+.filters .filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.seg {
+  display: inline-flex; gap: 6px;
+  background: #f3f4f6; padding: 4px; border-radius: 999px;
+}
+.seg-btn {
+  border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  font-size: 13px;
+}
+.seg-btn.is-active {
+  background: white; box-shadow: 0 0 0 1px #e5e7eb inset;
+}
