@@ -14,7 +14,7 @@ function EmailChips({ users, showReason = false }) {
           <span className="ulist-chip-mail">{u.email || "—"}</span>
           {showReason && (
             <span className="ulist-chip-reason">
-              {u.blockedReason ? `: ${u.blockedReason}` : ": (không có lý do)"}
+              {u.blockedReason ? `: ${u.blockedReason}` : ": (Vi phạm tiêu chuẩn cộng đồng)"}
             </span>
           )}
         </div>
