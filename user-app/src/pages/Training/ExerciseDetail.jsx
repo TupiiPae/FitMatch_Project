@@ -1,0 +1,107 @@
+// src/pages/Training/ExerciseDetail.jsx
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { getExercise } from "../../api/exercises";
+import api from "../../lib/api";
+import "./ExerciseDetail.css";
+
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
+const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
+
+// Map EN->VI
+const TYPE_VI = { Strength: "Kháng lực", Cardio: "Cardio", Sport: "Thể thao" };
+
+export default function ExerciseDetail() {
+  const nav = useNavigate();
+  const { id } = useParams();
+  const [it, setIt] = useState(null);
+
+  useEffect(() => { (async () => { try { setIt(await getExercise(id)); } catch {} })(); }, [id]);
+
+  if (!it) return <div className="exd-wrap"><div className="exd-loading">Đang tải...</div></div>;
+
+  const typeLabel = TYPE_VI[it.type] || it.type || "—";
+
+  return (
+    <div className="nm-wrap">
+      <div className="nm-head" style={{ justifyContent: "space-between" }}>
+        <button type="button" className="tool-left" onClick={() => nav(-1)}>
+          <i className="fa-solid fa-chevron-left"></i> Quay lại
+        </button>
+        <div style={{ fontWeight: 700 }}>Chi tiết bài tập</div>
+      </div>
+
+      <div className="nm-list-frame exd-frame">
+        <h1 className="exd-title">{it.name}</h1>
+        <div className="exd-note">Được tạo bởi đội ngũ FitMatch</div>
+
+        {it.videoUrl && (
+          <div className="exd-video">
+            <div className="exd-video-box">
+              <video src={toAbs(it.videoUrl)} controls preload="metadata" />
+            </div>
+          </div>
+        )}
+
+        <div className="exd-cols">
+          {/* Hồ sơ bài tập */}
+          <div className="exd-left">
+            <div className="exdp-card">
+              <div className="exdp-strip" />
+              <div className="exdp-head">Chi tiết bài tập</div>
+              <table className="exdp-table">
+                <tbody>
+                  <tr>
+                    <th>Nhóm cơ tác động chính</th>
+                    <td className="exdp-link">{(it.primaryMuscles || [])[0] || "—"}</td>
+                  </tr>
+                  <tr>
+                    <th>Loại bài tập</th>
+                    <td>{it.type === "Strength" ? "Kháng lực" : (it.type || "—")}</td>
+                  </tr>
+                  <tr>
+                    <th>Dụng cụ yêu cầu</th>
+                    <td>{it.equipment || "—"}</td>
+                  </tr>
+                  <tr>
+                    <th>Mức độ bài tập</th>
+                    <td>{it.level || "—"}</td>
+                  </tr>
+                  <tr>
+                    <th>Nhóm cơ phụ</th>
+                    <td>{(it.secondaryMuscles || []).join(", ") || "—"}</td>
+                  </tr>
+                  <tr>
+                    <th>Giá trị MET</th>
+                    <td>{it.caloriePerRep || "—"}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Ảnh minh hoạ */}
+          <div className="exd-right">
+            <div className="exd-img" /* style={{ '--exd-img-w': '520px' }} */>
+              <img src={toAbs(it.imageUrl)} alt={it.name} />
+            </div>
+          </div>
+        </div>
+
+        {it.guideHtml && (
+          <section className="exd-section exd-centered">
+            <h2>Hướng dẫn bài tập</h2>
+            <div className="exd-html" dangerouslySetInnerHTML={{ __html: it.guideHtml }} />
+          </section>
+        )}
+
+        {it.descriptionHtml && (
+          <section className="exd-section exd-centered">
+            <h2>Mô tả bài tập</h2>
+            <div className="exd-html" dangerouslySetInnerHTML={{ __html: it.descriptionHtml }} />
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}

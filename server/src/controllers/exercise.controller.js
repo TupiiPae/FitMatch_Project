@@ -85,22 +85,17 @@ function normalizeBody(body) {
 }
 
 /* ========= Controllers ========= */
+const pickSort = (s) => {
+  const v = String(s || "").trim().toLowerCase();
+  if (v === "name" || v === "name_asc") return { name: 1 };
+  if (v === "-name" || v === "name_desc") return { name: -1 };
+  return { createdAt: -1 };
+};
 
 // GET /api/admin/exercises
 export async function listExercises(req, res, next) {
   try {
-    const {
-      q,
-      type,
-      equipment,
-      level,
-      primary,
-      secondary,
-      status,
-      limit = 10,
-      skip = 0,
-    } = req.query;
-
+    const { q, type, equipment, level, primary, secondary, status, limit = 10, skip = 0, sort } = req.query;
     const and = [];
     const qTrim = (q || "").trim();
     if (qTrim) and.push({ $text: { $search: qTrim } });
@@ -115,11 +110,11 @@ export async function listExercises(req, res, next) {
     const lim = Math.max(1, Number(limit));
     const skp = Math.max(0, Number(skip));
 
+    const sortObj = pickSort(sort);
     const [total, items] = await Promise.all([
       Exercise.countDocuments(filter),
-      Exercise.find(filter).sort({ createdAt: -1 }).skip(skp).limit(lim).lean(),
+      Exercise.find(filter).sort(sortObj).skip(skp).limit(lim).lean(),
     ]);
-
     const hasMore = skp + items.length < total;
     return res.json({ items, total, limit: lim, skip: skp, hasMore });
   } catch (err) {

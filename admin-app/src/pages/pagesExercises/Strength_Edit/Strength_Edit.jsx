@@ -346,7 +346,7 @@ export default function StrengthEdit() {
                 </Button>
                 {(f.videoUrl || videoFile) && (
                   <span style={{ alignSelf: "center", opacity: 0.75 }}>
-                    {videoFile ? "Sẽ thay bằng video mới sau khi lưu." : f.videoUrl ? "Video hiện có sẽ bị xoá." : ""}
+                    {videoFile ? "Gỡ video hiện tại." : f.videoUrl ? "Video hiện có sẽ bị xoá." : ""}
                   </span>
                 )}
               </Box>

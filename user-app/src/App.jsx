@@ -18,6 +18,11 @@ import RecordMeal from "./pages/Nutrition/RecordMeal";
 import FoodForm from "./pages/Nutrition/FoodForm";
 import DailyJournal from "./pages/Nutrition/DailyJournal";
 
+// Train
+import StrengthList from "./pages/Training/StrengthList";
+import CardioList from "./pages/Training/CardioList";
+import SportList from "./pages/Training/SportList";
+import ExerciseDetail from "./pages/Training/ExerciseDetail";
 
 // Layout (Navbar + Footer)
 import AppShell from "./components/layout/AppShell";
@@ -105,12 +110,10 @@ export default function App() {
           {/* === TẬP LUYỆN (Đã cập nhật) === */}
           <Route path="/tap-luyen" element={<Navigate to="/tap-luyen/lich-cua-ban" replace />} />
           <Route path="/tap-luyen/lich-cua-ban" element={<LichTap />} />
-          <Route path="/tap-luyen/bai-tap" element={<BaiTap />} />
-          <Route path="/tap-luyen/bai-tap/cardio" element={<Cardio />} />
-          {/* Link "Kháng lực" từ navbar */}
-          <Route path="/tap-luyen/bai-tap/khang-luc" element={<Workout />} />
-          {/* Link "Các môn thể thao" từ navbar */}
-          <Route path="/tap-luyen/bai-tap/the-thao" element={<TheThao />} />
+          <Route path="/tap-luyen/bai-tap/khang-luc" element={<StrengthList />} />
+          <Route path="/tap-luyen/bai-tap/cardio" element={<CardioList />} />
+          <Route path="/tap-luyen/bai-tap/the-thao" element={<SportList />} /> {/* UI riêng */}
+          <Route path="/tap-luyen/bai-tap/chi-tiet/:id" element={<ExerciseDetail />} />
           <Route path="/tap-luyen/goi-y" element={<GoiYTap />} />
 
           {/* Tài khoản */}

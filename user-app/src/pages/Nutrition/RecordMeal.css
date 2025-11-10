@@ -124,11 +124,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid #eee; /* Nhạt hơn */
+  border: 1px solid #002C3E55; /* Nhạt hơn */
   border-radius: 4px;
   padding: 10px;
   cursor: pointer;
   background: #fff;
+
 }
 .nm-item:hover { background: #fcfcfc; }
 .nm-item img { width: 64px; height: 64px; border-radius: 4px; object-fit: cover; }
