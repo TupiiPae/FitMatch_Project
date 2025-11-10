@@ -56,12 +56,6 @@ export const uploadImportAny = multer({
   { name: "archive", maxCount: 1 },
 ]);
 
-/* ======================================================
- * EXERCISES: TÁCH RIÊNG
- * - uploadExerciseImageSingle: field name 'image' (image/*)
- * - uploadExerciseVideoSingle: field name 'video' (video/*)
- * ====================================================== */
-
 /* ---------- Exercise image (<=8MB) ---------- */
 export const uploadExerciseImageSingle = multer({
   storage: memory,

@@ -121,7 +121,7 @@
   margin-right: auto;
   text-align: left;     /* nội dung canh trái */
 }
-.exd-section h2{ margin:0 0 8px 0; font-size: 20px; font-weight: 800;   letter-spacing: .01em;   color: #002C3E;}
+.exd-section h2{ margin:0 0 8px 0; font-size: 20px; font-weight: 800;   letter-spacing: .01em;   color: #002C3E;   text-transform: uppercase;}
 .exd-html :where(p,li){ line-height:1.7; }
 .exd-html img{ max-width:100%; height:auto; border-radius:6px; }
 
