@@ -128,3 +128,31 @@
 /* Loading */
 .exd-wrap{ padding:24px; }
 .exd-loading{ color:#64748b; }
+
+/* Khối HTML render từ editor */
+.exd-html ol,
+.exd-html ul {
+  /* ép hiển thị list lại nếu bị reset */
+  list-style-position: outside;
+  margin: 8px 0;
+  padding-left: 1.25rem;
+}
+
+.exd-html ol {
+  list-style-type: decimal !important;
+}
+
+.exd-html ul {
+  list-style-type: disc !important;
+}
+
+.exd-html li {
+  margin: 4px 0;
+}
+
+/* (tuỳ chọn) hỗ trợ list lồng nhau đẹp hơn */
+.exd-html ol ol { list-style-type: lower-alpha !important; }
+.exd-html ol ul { list-style-type: disc !important; }
+.exd-html ul ul { list-style-type: circle !important; }
+.exd-html ul ol { list-style-type: decimal !important; }
+

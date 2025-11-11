@@ -1,7 +1,12 @@
+// admin-app/src/pages/pagesExercises/Sport_Edit/Sport_Edit.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  getExercise, updateExercise, listMuscleGroups, listEquipments, api
+  getExercise,
+  updateExercise,
+  listMuscleGroups,
+  listEquipments,
+  api,
 } from "../../../lib/api";
 import "../Sport_Create/Sport_Create.css";
 import { toast } from "react-toastify";
@@ -18,6 +23,8 @@ import Chip from "@mui/material/Chip";
 import Checkbox from "@mui/material/Checkbox";
 import ListItemText from "@mui/material/ListItemText";
 import FormHelperText from "@mui/material/FormHelperText";
+
+import RichTextEditorTiptap from "../../../components/Editor/RichTextEditorTiptap";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
@@ -39,7 +46,7 @@ const init = {
   descriptionHtml: "",
 };
 
-export default function Sport_Edit() {
+export default function SportEdit() {
   const { id } = useParams();
   const nav = useNavigate();
 
@@ -53,7 +60,6 @@ export default function Sport_Edit() {
   const refName = useRef(null);
   const refImageBox = useRef(null);
   const refCal = useRef(null);
-  const refDesc = useRef(null);
   const refImgUrl = useRef(null);
 
   const imgInputRef = useRef(null);
@@ -62,17 +68,29 @@ export default function Sport_Edit() {
 
   const onChange = (k, v) => setF((s) => ({ ...s, [k]: v }));
 
+  // options (alive-guard)
   useEffect(() => {
+    let alive = true;
     (async () => {
-      try { const resM = await listMuscleGroups().catch(() => null); if (resM?.length) setMuscleOptions(resM); } catch {}
-      try { const resE = await listEquipments().catch(() => null); if (resE?.length) setEquipmentOptions(resE); } catch {}
+      try {
+        const resM = await listMuscleGroups().catch(() => null);
+        if (alive && resM?.length) setMuscleOptions(resM);
+      } catch {}
+      try {
+        const resE = await listEquipments().catch(() => null);
+        if (alive && resE?.length) setEquipmentOptions(resE);
+      } catch {}
     })();
+    return () => { alive = false; };
   }, []);
 
+  // preload data (alive-guard)
   useEffect(() => {
+    let alive = true;
     (async () => {
       try {
         const data = await getExercise(id);
+        if (!alive) return;
         const filled = {
           ...init,
           ...data,
@@ -84,15 +102,22 @@ export default function Sport_Edit() {
         setF(filled);
         if (filled.imageUrl) setImgPreview(toAbs(filled.imageUrl));
       } catch (e) {
-        toast.error("Không tải được dữ liệu môn thể thao.");
-        console.error(e);
+        if (alive) {
+          toast.error("Không tải được dữ liệu môn thể thao.");
+          console.error(e);
+        }
       }
     })();
+    return () => { alive = false; };
   }, [id]);
 
-  useEffect(() => () => { if (imgPreview && String(imgPreview).startsWith("blob:")) URL.revokeObjectURL(imgPreview); }, [imgPreview]);
+  // cleanup preview
+  useEffect(() => {
+    return () => { if (imgPreview && String(imgPreview).startsWith("blob:")) URL.revokeObjectURL(imgPreview); };
+  }, [imgPreview]);
 
   const pickImage = () => imgInputRef.current?.click();
+
   const onPickImage = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -101,6 +126,7 @@ export default function Sport_Edit() {
     setImgPreview(URL.createObjectURL(file));
     if (f.imageUrl) onChange("imageUrl", "");
   };
+
   const showImgFromUrl = () => { if (!imgFile) setImgPreview(toAbs(f.imageUrl || null)); };
 
   const validate = () => {
@@ -112,11 +138,16 @@ export default function Sport_Edit() {
     if (!f.level) errs.level = "Vui lòng chọn mức độ";
 
     const cal = String(f.caloriePerRep || "").trim();
-    if (!cal) errs.caloriePerRep = "Vui lòng nhập giá MET";
+    if (!cal) errs.caloriePerRep = "Vui lòng nhập giá trị MET";
     else if (!/^\d+(\.\d+)?$/.test(cal)) errs.caloriePerRep = "Chỉ nhập số dương (có thể thập phân)";
     else if (cal.length > 10) errs.caloriePerRep = "Tối đa 10 ký tự";
 
-    setErrors(errs); return errs;
+    const name = String(f.name || "").trim();
+    if (!name) errs.name = "Vui lòng nhập tên môn";
+    else if (name.length > 100) errs.name = "Tên tối đa 100 ký tự";
+
+    setErrors(errs);
+    return errs;
   };
 
   const onSubmit = async (e) => {
@@ -141,7 +172,10 @@ export default function Sport_Edit() {
         const fd = new FormData();
         fd.append("image", imgFile);
         Object.entries(payload).forEach(([k, v]) => {
-          if (v !== undefined && v !== null) fd.append(k, Array.isArray(v) ? JSON.stringify(v) : String(v));
+          if (v !== undefined && v !== null) {
+            if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
+            else fd.append(k, String(v));
+          }
         });
         await updateExercise(id, fd, true);
       } else {
@@ -152,13 +186,22 @@ export default function Sport_Edit() {
       nav("/exercises/sport");
     } catch (err) {
       let msg = err?.response?.data?.message;
-      if (!msg) msg = err?.response?.status === 413 ? "File quá lớn." : (err?.response?.status === 422 ? "Dữ liệu không hợp lệ." : "Lỗi máy chủ, thử lại sau.");
+      if (!msg) {
+        if (err?.response?.status === 413) msg = "File quá lớn.";
+        else if (err?.response?.status === 422) msg = "Dữ liệu không hợp lệ.";
+        else msg = "Lỗi máy chủ, thử lại sau.";
+      }
       toast.error(msg);
       console.error(err);
     } finally { setSaving(false); }
   };
 
-  const menuProps = { disableScrollLock: true, PaperProps: { sx: { maxHeight: 280, "& ul": { maxHeight: 280 } } }, MenuListProps: { dense: true } };
+  const menuProps = {
+    disableScrollLock: true,
+    PaperProps: { sx: { maxHeight: 280, "& ul": { maxHeight: 280 } } },
+    MenuListProps: { dense: true },
+  };
+
   const rowGrid2 = { display: "grid", gap: 4, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" } };
   const rowGrid3 = { display: "grid", gap: 4, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" } };
 
@@ -196,8 +239,17 @@ export default function Sport_Edit() {
 
             <input ref={imgInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onPickImage} />
 
-            <div className="sc-field-title">Link hình ảnh (URL)</div>
-            <TextField inputRef={refImgUrl} label="Hoặc dán link hình ảnh (URL)" value={f.imageUrl} onChange={(e) => { if (imgFile) setImgFile(null); onChange("imageUrl", e.target.value); }} onBlur={showImgFromUrl} variant="outlined" fullWidth size="medium" />
+            <div className="sc-field-title-upl">Link hình ảnh (URL)</div>
+            <TextField
+              inputRef={refImgUrl}
+              label="Hoặc dán link hình ảnh (URL)"
+              value={f.imageUrl}
+              onChange={(e) => { if (imgFile) setImgFile(null); onChange("imageUrl", e.target.value); }}
+              onBlur={showImgFromUrl}
+              variant="outlined"
+              fullWidth
+              size="medium"
+            />
           </div>
 
           <div className="sc-layout-right">
@@ -206,7 +258,15 @@ export default function Sport_Edit() {
             <Box sx={rowGrid2}>
               <Box>
                 <div className="sc-field-title">Tên môn *</div>
-                <TextField inputRef={refName} label="Tên môn *" value={f.name} onChange={(e)=>onChange("name", e.target.value)} error={!!errors.name} helperText={errors.name} fullWidth />
+                <TextField
+                  inputRef={refName}
+                  label="Tên môn *"
+                  value={f.name}
+                  onChange={(e) => onChange("name", e.target.value)}
+                  error={!!errors.name}
+                  helperText={errors.name}
+                  fullWidth
+                />
               </Box>
 
               <Box>
@@ -302,14 +362,26 @@ export default function Sport_Edit() {
               </Box>
 
               <Box>
-                <div className="sc-field-title">Giá trị MET</div>
-                <TextField label="Giá trị MET" value={f.caloriePerRep} onChange={(e) => onChange("caloriePerRep", e.target.value)} error={!!errors.caloriePerRep} helperText={errors.caloriePerRep} fullWidth inputRef={refCal} />
+                <div className="sc-field-title">Giá trị MET *</div>
+                <TextField
+                  label="Giá trị MET *"
+                  value={f.caloriePerRep}
+                  onChange={(e) => onChange("caloriePerRep", e.target.value)}
+                  error={!!errors.caloriePerRep}
+                  helperText={errors.caloriePerRep}
+                  fullWidth
+                  inputRef={refCal}
+                />
               </Box>
             </Box>
 
             <hr className="sc-divider" />
             <h3 className="sc-section-title">Mô tả môn thể thao</h3>
-            <TextField label="Mô tả môn thể thao" value={f.descriptionHtml} onChange={(e) => onChange("descriptionHtml", e.target.value)} multiline minRows={10} fullWidth inputRef={refDesc} />
+            <RichTextEditorTiptap
+              valueHtml={f.descriptionHtml}
+              onChangeHtml={(html) => onChange("descriptionHtml", html)}
+              minHeight={260}
+            />
           </div>
         </form>
       </div>

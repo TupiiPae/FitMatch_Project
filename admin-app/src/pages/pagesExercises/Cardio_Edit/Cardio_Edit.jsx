@@ -1,8 +1,14 @@
+// admin-app/src/pages/pagesExercises/Cardio_Edit/Cardio_Edit.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  getExercise, updateExercise, listMuscleGroups, listEquipments,
-  uploadExerciseVideoApi, removeExerciseVideoApi, api
+  getExercise,
+  updateExercise,
+  listMuscleGroups,
+  listEquipments,
+  uploadExerciseVideoApi,
+  removeExerciseVideoApi,
+  api,
 } from "../../../lib/api";
 import "../Cardio_Create/Cardio_Create.css";
 import { toast } from "react-toastify";
@@ -19,6 +25,8 @@ import Chip from "@mui/material/Chip";
 import Checkbox from "@mui/material/Checkbox";
 import ListItemText from "@mui/material/ListItemText";
 import FormHelperText from "@mui/material/FormHelperText";
+
+import RichTextEditorTiptap from "../../../components/Editor/RichTextEditorTiptap";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
@@ -42,7 +50,7 @@ const init = {
   descriptionHtml: "",
 };
 
-export default function Cardio_Edit() {
+export default function CardioEdit() {
   const { id } = useParams();
   const nav = useNavigate();
 
@@ -56,8 +64,6 @@ export default function Cardio_Edit() {
   const refName = useRef(null);
   const refImageBox = useRef(null);
   const refCal = useRef(null);
-  const refGuide = useRef(null);
-  const refDesc = useRef(null);
   const refImgUrl = useRef(null);
   const refVidUrl = useRef(null);
 
@@ -69,18 +75,32 @@ export default function Cardio_Edit() {
 
   const onChange = (k, v) => setF((s) => ({ ...s, [k]: v }));
 
+  // load options (alive-guard)
   useEffect(() => {
+    let alive = true;
     (async () => {
-      try { const resM = await listMuscleGroups().catch(() => null); if (resM?.length) setMuscleOptions(resM); } catch {}
-      try { const resE = await listEquipments().catch(() => null); if (resE?.length) setEquipmentOptions(resE); } catch {}
+      try {
+        const resM = await listMuscleGroups().catch(() => null);
+        if (alive && resM?.length) setMuscleOptions(resM);
+      } catch {}
+      try {
+        const resE = await listEquipments().catch(() => null);
+        if (alive && resE?.length) setEquipmentOptions(resE);
+      } catch {}
     })();
+    return () => { alive = false; };
   }, []);
 
+  // preload data (alive-guard)
   useEffect(() => {
+    let alive = true;
     (async () => {
       try {
         const data = await getExercise(id);
-        const filled = { ...init, ...data,
+        if (!alive) return;
+        const filled = {
+          ...init,
+          ...data,
           primaryMuscles: data?.primaryMuscles || [],
           secondaryMuscles: data?.secondaryMuscles || [],
           imageUrl: data?.imageUrl || "",
@@ -89,13 +109,19 @@ export default function Cardio_Edit() {
         setF(filled);
         if (filled.imageUrl) setImgPreview(toAbs(filled.imageUrl));
       } catch (e) {
-        toast.error("Không tải được dữ liệu bài tập.");
-        console.error(e);
+        if (alive) {
+          toast.error("Không tải được dữ liệu bài tập.");
+          console.error(e);
+        }
       }
     })();
+    return () => { alive = false; };
   }, [id]);
 
-  useEffect(() => () => { if (imgPreview && String(imgPreview).startsWith("blob:")) URL.revokeObjectURL(imgPreview); }, [imgPreview]);
+  // cleanup preview
+  useEffect(() => {
+    return () => { if (imgPreview && String(imgPreview).startsWith("blob:")) URL.revokeObjectURL(imgPreview); };
+  }, [imgPreview]);
 
   const pickImage = () => imgInputRef.current?.click();
   const pickVideo = () => videoInputRef.current?.click();
@@ -131,7 +157,8 @@ export default function Cardio_Edit() {
     else if (!/^\d+(\.\d+)?$/.test(cal)) errs.caloriePerRep = "Chỉ nhập số dương (có thể thập phân)";
     else if (cal.length > 10) errs.caloriePerRep = "Tối đa 10 ký tự";
 
-    setErrors(errs); return errs;
+    setErrors(errs);
+    return errs;
   };
 
   const handleRemoveVideo = async () => {
@@ -171,7 +198,10 @@ export default function Cardio_Edit() {
         const fd = new FormData();
         fd.append("image", imgFile);
         Object.entries(payload).forEach(([k, v]) => {
-          if (v !== undefined && v !== null) fd.append(k, Array.isArray(v) ? JSON.stringify(v) : String(v));
+          if (v !== undefined && v !== null) {
+            if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
+            else fd.append(k, String(v));
+          }
         });
         updated = await updateExercise(id, fd, true);
       } else {
@@ -192,13 +222,22 @@ export default function Cardio_Edit() {
       nav("/exercises/cardio");
     } catch (err) {
       let msg = err?.response?.data?.message;
-      if (!msg) msg = err?.response?.status === 413 ? "File quá lớn." : (err?.response?.status === 422 ? "Dữ liệu không hợp lệ." : "Lỗi máy chủ, thử lại sau.");
+      if (!msg) {
+        if (err?.response?.status === 413) msg = "File quá lớn.";
+        else if (err?.response?.status === 422) msg = "Dữ liệu không hợp lệ.";
+        else msg = "Lỗi máy chủ, thử lại sau.";
+      }
       toast.error(msg);
       console.error(err);
     } finally { setSaving(false); }
   };
 
-  const menuProps = { disableScrollLock: true, PaperProps: { sx: { maxHeight: 280, "& ul": { maxHeight: 280 } } }, MenuListProps: { dense: true } };
+  const menuProps = {
+    disableScrollLock: true,
+    PaperProps: { sx: { maxHeight: 280, "& ul": { maxHeight: 280 } } },
+    MenuListProps: { dense: true },
+  };
+
   const rowGrid2 = { display: "grid", gap: 4, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" } };
   const rowGrid3 = { display: "grid", gap: 4, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" } };
 
@@ -236,11 +275,20 @@ export default function Cardio_Edit() {
 
             <input ref={imgInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onPickImage} />
 
-            <div className="sc-field-title">Link hình ảnh (URL)</div>
-            <TextField inputRef={refImgUrl} label="Hoặc dán link hình ảnh (URL)" value={f.imageUrl} onChange={(e) => { if (imgFile) setImgFile(null); onChange("imageUrl", e.target.value); }} onBlur={showImgFromUrl} variant="outlined" fullWidth size="medium" />
+            <div className="sc-field-title-upl">Link hình ảnh (URL)</div>
+            <TextField
+              inputRef={refImgUrl}
+              label="Hoặc dán link hình ảnh (URL)"
+              value={f.imageUrl}
+              onChange={(e) => { if (imgFile) setImgFile(null); onChange("imageUrl", e.target.value); }}
+              onBlur={showImgFromUrl}
+              variant="outlined"
+              fullWidth
+              size="medium"
+            />
 
             <hr className="sc-divider" />
-            <h3 className="sc-section-title-upl">Video hướng dẫn</h3>
+            <h3 className="sc-section-title">Video hướng dẫn</h3>
             <Box sx={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <Button variant="outlined" onClick={pickVideo} component="label" fullWidth>
                 {videoFile ? `Đã chọn: ${videoFile.name}` : "Tải lên file video (Tối đa 50MB)"}
@@ -248,7 +296,15 @@ export default function Cardio_Edit() {
               </Button>
 
               <div className="sc-field-title-upl">Link video</div>
-              <TextField inputRef={refVidUrl} label="Hoặc dán link video (URL)" value={f.videoUrl} onChange={(e) => { if (videoFile) setVideoFile(null); onChange("videoUrl", e.target.value); }} variant="outlined" fullWidth size="medium" />
+              <TextField
+                inputRef={refVidUrl}
+                label="Hoặc dán link video (URL)"
+                value={f.videoUrl}
+                onChange={(e) => { if (videoFile) setVideoFile(null); onChange("videoUrl", e.target.value); }}
+                variant="outlined"
+                fullWidth
+                size="medium"
+              />
 
               <Box sx={{ display: "flex", gap: 1 }}>
                 <Button variant="outlined" color="error" onClick={handleRemoveVideo} disabled={!f.videoUrl}>
@@ -365,20 +421,36 @@ export default function Cardio_Edit() {
               </Box>
 
               <Box>
-                <div className="sc-field-title">Giá trị MET</div>
-                <TextField label="Giá trị MET" value={f.caloriePerRep} onChange={(e) => onChange("caloriePerRep", e.target.value)} error={!!errors.caloriePerRep} helperText={errors.caloriePerRep} fullWidth inputRef={refCal} />
+                <div className="sc-field-title">Giá trị MET *</div>
+                <TextField
+                  label="Giá trị MET *"
+                  value={f.caloriePerRep}
+                  onChange={(e) => onChange("caloriePerRep", e.target.value)}
+                  error={!!errors.caloriePerRep}
+                  helperText={errors.caloriePerRep}
+                  fullWidth
+                  inputRef={refCal}
+                />
               </Box>
             </Box>
 
             <hr className="sc-divider" />
             <h3 className="sc-section-title">Mô tả</h3>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <div className="sc-field-title-desc">Hướng dẫn tập luyện</div>
-              <TextField label="Hướng dẫn tập luyện" value={f.guideHtml} onChange={(e) => onChange("guideHtml", e.target.value)} multiline minRows={10} fullWidth inputRef={refGuide} />
+              <RichTextEditorTiptap
+                valueHtml={f.guideHtml}
+                onChangeHtml={(html) => onChange("guideHtml", html)}
+                minHeight={260}
+              />
 
               <div className="sc-field-title-desc">Mô tả bài tập</div>
-              <TextField label="Mô tả bài tập" value={f.descriptionHtml} onChange={(e) => onChange("descriptionHtml", e.target.value)} multiline minRows={10} fullWidth inputRef={refDesc} />
+              <RichTextEditorTiptap
+                valueHtml={f.descriptionHtml}
+                onChangeHtml={(html) => onChange("descriptionHtml", html)}
+                minHeight={260}
+              />
             </Box>
           </div>
         </form>

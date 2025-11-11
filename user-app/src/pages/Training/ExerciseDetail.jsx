@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getExercise } from "../../api/exercises";
 import api from "../../lib/api";
 import "./ExerciseDetail.css";
+import DOMPurify from "dompurify";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
@@ -11,16 +12,36 @@ const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toS
 // Map EN->VI
 const TYPE_VI = { Strength: "Kháng lực", Cardio: "Cardio", Sport: "Thể thao" };
 
+// Sanitize helper (giữ format, chặn XSS)
+const safeHtml = (html) =>
+  DOMPurify.sanitize(String(html || ""), {
+    USE_PROFILES: { html: true }, // cho phép thẻ HTML cơ bản (p, h2, h3, ul, ol, li, b, i, u, blockquote, a, ...).
+  });
+
 export default function ExerciseDetail() {
   const nav = useNavigate();
   const { id } = useParams();
   const [it, setIt] = useState(null);
+  const [err, setErr] = useState("");
 
-  useEffect(() => { (async () => { try { setIt(await getExercise(id)); } catch {} })(); }, [id]);
+  useEffect(() => {
+    (async () => {
+      try {
+        setErr("");
+        const data = await getExercise(id);
+        setIt(data);
+      } catch (e) {
+        setErr("Không tải được dữ liệu bài tập.");
+      }
+    })();
+  }, [id]);
 
+  if (err) return <div className="exd-wrap"><div className="exd-error">{err}</div></div>;
   if (!it) return <div className="exd-wrap"><div className="exd-loading">Đang tải...</div></div>;
 
   const typeLabel = TYPE_VI[it.type] || it.type || "—";
+  const guideHtml = safeHtml(it.guideHtml);
+  const descHtml = safeHtml(it.descriptionHtml);
 
   return (
     <div className="nm-wrap">
@@ -38,7 +59,13 @@ export default function ExerciseDetail() {
         {it.videoUrl && (
           <div className="exd-video">
             <div className="exd-video-box">
-              <video src={toAbs(it.videoUrl)} controls preload="metadata" />
+              <video
+                src={toAbs(it.videoUrl)}
+                controls
+                preload="metadata"
+                playsInline
+                style={{ width: "100%", height: "auto", display: "block", borderRadius: 12 }}
+              />
             </div>
           </div>
         )}
@@ -57,7 +84,7 @@ export default function ExerciseDetail() {
                   </tr>
                   <tr>
                     <th>Loại bài tập</th>
-                    <td>{it.type === "Strength" ? "Kháng lực" : (it.type || "—")}</td>
+                    <td>{typeLabel}</td>
                   </tr>
                   <tr>
                     <th>Dụng cụ yêu cầu</th>
@@ -73,7 +100,7 @@ export default function ExerciseDetail() {
                   </tr>
                   <tr>
                     <th>Giá trị MET</th>
-                    <td>{it.caloriePerRep || "—"}</td>
+                    <td>{it.caloriePerRep ?? "—"}</td>
                   </tr>
                 </tbody>
               </table>
@@ -82,23 +109,23 @@ export default function ExerciseDetail() {
 
           {/* Ảnh minh hoạ */}
           <div className="exd-right">
-            <div className="exd-img" /* style={{ '--exd-img-w': '520px' }} */>
+            <div className="exd-img">
               <img src={toAbs(it.imageUrl)} alt={it.name} />
             </div>
           </div>
         </div>
 
-        {it.guideHtml && (
+        {guideHtml && (
           <section className="exd-section exd-centered">
             <h2>Hướng dẫn bài tập</h2>
-            <div className="exd-html" dangerouslySetInnerHTML={{ __html: it.guideHtml }} />
+            <div className="exd-html" dangerouslySetInnerHTML={{ __html: guideHtml }} />
           </section>
         )}
 
-        {it.descriptionHtml && (
+        {descHtml && (
           <section className="exd-section exd-centered">
             <h2>Mô tả bài tập</h2>
-            <div className="exd-html" dangerouslySetInnerHTML={{ __html: it.descriptionHtml }} />
+            <div className="exd-html" dangerouslySetInnerHTML={{ __html: descHtml }} />
           </section>
         )}
       </div>

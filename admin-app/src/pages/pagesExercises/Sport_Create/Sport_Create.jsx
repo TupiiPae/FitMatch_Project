@@ -18,6 +18,7 @@ import Chip from "@mui/material/Chip";
 import Checkbox from "@mui/material/Checkbox";
 import ListItemText from "@mui/material/ListItemText";
 import FormHelperText from "@mui/material/FormHelperText";
+import RichTextEditorTiptap from "../../../components/Editor/RichTextEditorTiptap";
 
 const TYPES = ["Strength", "Cardio", "Sport"];
 const EQUIPMENTS_FALLBACK = ["Không có","Tạ đòn","Tạ đơn","Máy","Banh","Dây kháng lực","Kettlebell","BOSU","TRX"];
@@ -360,15 +361,11 @@ export default function Sport_Create() {
 
             <h3 className="sc-section-title">Mô tả môn thể thao</h3>
             <div className="sc-field-title-desc">Hướng dẫn tập luyện</div>
-            <TextField
-              label="Mô tả môn thể thao"
-              value={f.descriptionHtml}
-              onChange={(e) => onChange("descriptionHtml", e.target.value)}
-              multiline
-              minRows={10}
-              fullWidth
-              inputRef={refDesc}
-            />
+              <RichTextEditorTiptap
+                valueHtml={f.descriptionHtml}
+                onChangeHtml={(html) => onChange("descriptionHtml", html)}
+                minHeight={260}
+              />
           </div>
         </form>
       </div>

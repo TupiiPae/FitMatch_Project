@@ -23,6 +23,7 @@ import Chip from "@mui/material/Chip";
 import Checkbox from "@mui/material/Checkbox";
 import ListItemText from "@mui/material/ListItemText";
 import FormHelperText from "@mui/material/FormHelperText";
+import RichTextEditorTiptap from "../../../components/Editor/RichTextEditorTiptap";
 
 const TYPES = ["Strength", "Cardio", "Sport"];
 const EQUIPMENTS_FALLBACK = [
@@ -555,25 +556,17 @@ export default function StrengthCreate() {
             <h3 className="sc-section-title">Mô tả</h3>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2}}>
               <div className="sc-field-title-desc">Hướng dẫn tập luyện</div>
-              <TextField
-                label="Hướng dẫn tập luyện"
-                value={f.guideHtml}
-                onChange={(e) => onChange("guideHtml", e.target.value)}
-                multiline
-                minRows={10}
-                fullWidth
-                inputRef={refGuide}
+              <RichTextEditorTiptap
+                valueHtml={f.guideHtml}
+                onChangeHtml={(html) => onChange("guideHtml", html)}
+                minHeight={260}
               />
 
               <div className="sc-field-title-desc">Mô tả bài tập</div>
-              <TextField
-                label="Mô tả bài tập"
-                value={f.descriptionHtml}
-                onChange={(e) => onChange("descriptionHtml", e.target.value)}
-                multiline
-                minRows={10}
-                fullWidth
-                inputRef={refDesc}
+              <RichTextEditorTiptap
+                valueHtml={f.descriptionHtml}
+                onChangeHtml={(html) => onChange("descriptionHtml", html)}
+                minHeight={260}
               />
             </Box>
           </div>

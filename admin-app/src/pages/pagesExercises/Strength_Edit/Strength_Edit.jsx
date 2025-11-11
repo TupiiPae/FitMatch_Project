@@ -1,3 +1,4 @@
+// admin-app/src/pages/pagesExercises/Strength_Edit/Strength_Edit.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -24,6 +25,8 @@ import Chip from "@mui/material/Chip";
 import Checkbox from "@mui/material/Checkbox";
 import ListItemText from "@mui/material/ListItemText";
 import FormHelperText from "@mui/material/FormHelperText";
+
+import RichTextEditorTiptap from "../../../components/Editor/RichTextEditorTiptap";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
@@ -64,8 +67,6 @@ export default function StrengthEdit() {
   const refName = useRef(null);
   const refImageBox = useRef(null);
   const refCal = useRef(null);
-  const refGuide = useRef(null);
-  const refDesc = useRef(null);
   const refImgUrl = useRef(null);
   const refVidUrl = useRef(null);
 
@@ -75,29 +76,32 @@ export default function StrengthEdit() {
   const [imgFile, setImgFile] = useState(null);
   const [imgPreview, setImgPreview] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
-  const [removingVideo, setRemovingVideo] = useState(false); // user nhấn gỡ video?
 
   const onChange = (k, v) => setF((s) => ({ ...s, [k]: v }));
 
-  // load options
+  // load options (with alive guard)
   useEffect(() => {
+    let alive = true;
     (async () => {
       try {
         const resM = await listMuscleGroups().catch(() => null);
-        if (resM && Array.isArray(resM) && resM.length) setMuscleOptions(resM);
+        if (alive && resM && Array.isArray(resM) && resM.length) setMuscleOptions(resM);
       } catch {}
       try {
         const resE = await listEquipments().catch(() => null);
-        if (resE && Array.isArray(resE) && resE.length) setEquipmentOptions(resE);
+        if (alive && resE && Array.isArray(resE) && resE.length) setEquipmentOptions(resE);
       } catch {}
     })();
+    return () => { alive = false; };
   }, []);
 
-  // preload data
+  // preload data (with alive guard)
   useEffect(() => {
+    let alive = true;
     (async () => {
       try {
         const data = await getExercise(id);
+        if (!alive) return;
         const filled = {
           ...init,
           ...data,
@@ -109,10 +113,13 @@ export default function StrengthEdit() {
         setF(filled);
         if (filled.imageUrl) setImgPreview(toAbs(filled.imageUrl));
       } catch (e) {
-        toast.error("Không tải được dữ liệu bài tập.");
-        console.error(e);
+        if (alive) {
+          toast.error("Không tải được dữ liệu bài tập.");
+          console.error(e);
+        }
       }
     })();
+    return () => { alive = false; };
   }, [id]);
 
   // cleanup preview
@@ -138,7 +145,6 @@ export default function StrengthEdit() {
     const file = e.target.files?.[0];
     if (!file) return;
     setVideoFile(file);
-    setRemovingVideo(false);
     if (f.videoUrl) onChange("videoUrl", "");
   };
 
@@ -167,25 +173,25 @@ export default function StrengthEdit() {
   };
 
   // Gỡ video: gọi API riêng để xoá videoUrl trên server
-    const handleRemoveVideo = async () => {
+  const handleRemoveVideo = async () => {
     try {
-        await removeExerciseVideoApi(id);
-        setF((s) => ({ ...s, videoUrl: "" }));
-        toast.success("Đã gỡ video khỏi bài tập");
+      await removeExerciseVideoApi(id);
+      setF((s) => ({ ...s, videoUrl: "" }));
+      toast.success("Đã gỡ video khỏi bài tập");
     } catch (err) {
-        const msg = err?.response?.data?.message || "Không gỡ được video";
-        toast.error(msg);
-        console.error(err);
+      const msg = err?.response?.data?.message || "Không gỡ được video";
+      toast.error(msg);
+      console.error(err);
     }
-    };
+  };
 
-    const onSubmit = async (e) => {
-        e.preventDefault();
-        const errs = validate();
-        if (Object.keys(errs).length) {
-        toast.error("Vui lòng kiểm tra lại các dữ liệu nhập.");
-        return;
-        }
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) {
+      toast.error("Vui lòng kiểm tra lại các dữ liệu nhập.");
+      return;
+    }
 
     setSaving(true);
     const payload = {
@@ -337,12 +343,12 @@ export default function StrengthEdit() {
               {/* Nút gỡ video */}
               <Box sx={{ display: "flex", gap: 1 }}>
                 <Button
-                variant="outlined"
-                color="error"
-                onClick={handleRemoveVideo}
-                disabled={!f.videoUrl}
+                  variant="outlined"
+                  color="error"
+                  onClick={handleRemoveVideo}
+                  disabled={!f.videoUrl}
                 >
-                Gỡ video
+                  Gỡ video
                 </Button>
                 {(f.videoUrl || videoFile) && (
                   <span style={{ alignSelf: "center", opacity: 0.75 }}>
@@ -461,9 +467,9 @@ export default function StrengthEdit() {
               </Box>
 
               <Box>
-                <div className="sc-field-title">Calorie/rep *</div>
+                <div className="sc-field-title">Giá trị MET *</div>
                 <TextField
-                  label="Calorie/rep *"
+                  label="Giá trị MET *"
                   value={f.caloriePerRep}
                   onChange={(e) => onChange("caloriePerRep", e.target.value)}
                   error={!!errors.caloriePerRep}
@@ -479,25 +485,19 @@ export default function StrengthEdit() {
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <div className="sc-field-title-desc">Hướng dẫn tập luyện</div>
-              <TextField
+              <RichTextEditorTiptap
                 label="Hướng dẫn tập luyện"
-                value={f.guideHtml}
-                onChange={(e) => onChange("guideHtml", e.target.value)}
-                multiline
-                minRows={10}
-                fullWidth
-                inputRef={refGuide}
+                valueHtml={f.guideHtml}
+                onChangeHtml={(html) => onChange("guideHtml", html)}
+                minHeight={260}
               />
 
               <div className="sc-field-title-desc">Mô tả bài tập</div>
-              <TextField
+              <RichTextEditorTiptap
                 label="Mô tả bài tập"
-                value={f.descriptionHtml}
-                onChange={(e) => onChange("descriptionHtml", e.target.value)}
-                multiline
-                minRows={10}
-                fullWidth
-                inputRef={refDesc}
+                valueHtml={f.descriptionHtml}
+                onChangeHtml={(html) => onChange("descriptionHtml", html)}
+                minHeight={260}
               />
             </Box>
           </div>
