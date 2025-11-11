@@ -194,7 +194,6 @@
   border-radius: 4px; /* Border mới */
   padding: 16px;
 }
-/* ... (các style modal-card cũ) ... */
 
 /* ===== FOOD MODAL (Detail) ===== */
 .food-modal {
@@ -406,7 +405,7 @@
 /* Menu 3 chấm */
 .more-wrap { position: relative; }
 .more-btn { width: 40px; height: 40px; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.menu { position: absolute; right: 0; top: 40px; min-width: 140px; background: #fff; border: 1px solid #e5e7eb; border-radius: 4px; box-shadow: 0 8px 20px rgba(0, 0, 0, .08); padding: 6px; z-index: 10 }
+.menu { position: absolute; right: 0; top: 40px; min-width: 140px;box-shadow: 0 8px 20px rgba(0, 0, 0, .08); padding: 6px; z-index: 10 }
 .menu-item { display: block; width: 100%; text-align: left; background: #fff; border: none; padding: 8px 10px; border-radius: 4px; cursor: pointer }
 .menu-item:hover { background: #f3f4f6 }
 .menu-item.danger { color: #dc2626 }
