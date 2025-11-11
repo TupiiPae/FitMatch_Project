@@ -1,0 +1,48 @@
+/* user-app/src/pages/Training/components/ExercisePicker.css */
+
+.ep-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,.35);
+  display:flex; align-items:center; justify-content:center; z-index:1000;
+}
+.ep-modal{
+  width:min(920px, 92vw); max-height:82vh; overflow:hidden;
+  background:#fff; border:1px solid #e9ecef; border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.18); display:flex; flex-direction:column;
+}
+
+/* Head */
+.ep-head{
+  display:flex; gap:10px; align-items:center; padding:12px; border-bottom:1px solid #eef2f6;
+}
+.ep-head input{
+  flex:1 1 auto; height:42px; border:1px solid #dee2e6; border-radius:10px; padding:0 12px; outline:0;
+}
+.ep-head input:focus{ border-color:#1a73e8; box-shadow:0 0 0 3px rgba(26,115,232,.12); }
+
+/* List */
+.ep-list{
+  padding:10px; overflow:auto; display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;
+}
+@media (max-width: 720px){ .ep-list{ grid-template-columns:1fr; } }
+
+.ep-item{
+  display:flex; gap:10px; align-items:center; text-align:left;
+  border:1px solid #e9ecef; border-radius:12px; background:#fff; padding:10px; cursor:pointer;
+}
+.ep-item:hover{ background:#f8fafc; }
+.ep-item img{
+  width:72px; height:72px; object-fit:cover; border-radius:10px; border:1px solid #eef2f6; background:#f1f5f9;
+}
+.ep-info{ min-width:0; }
+.ep-name{
+  font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ep-sub{ color:#64748b; font-size:13px; margin-top:2px; }
+
+.ep-empty{
+  grid-column:1/-1; text-align:center; color:#64748b; padding:20px 0;
+}
+
+/* Button fallback */
+.btn{ height:38px; padding:0 12px; border-radius:10px; border:1px solid #e9ecef; background:#fff; cursor:pointer; }
+.btn.ghost{ background:#fff; }

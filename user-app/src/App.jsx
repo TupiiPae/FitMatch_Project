@@ -23,6 +23,8 @@ import StrengthList from "./pages/Training/StrengthList";
 import CardioList from "./pages/Training/CardioList";
 import SportList from "./pages/Training/SportList";
 import ExerciseDetail from "./pages/Training/ExerciseDetail";
+import WorkoutList from "./pages/Training/WorkoutList";
+import WorkoutCreate from "./pages/Training/WorkoutCreate";
 
 // Layout (Navbar + Footer)
 import AppShell from "./components/layout/AppShell";
@@ -109,7 +111,9 @@ export default function App() {
 
           {/* === TẬP LUYỆN (Đã cập nhật) === */}
           <Route path="/tap-luyen" element={<Navigate to="/tap-luyen/lich-cua-ban" replace />} />
-          <Route path="/tap-luyen/lich-cua-ban" element={<LichTap />} />
+          <Route path="/tap-luyen/lich-cua-ban" element={<WorkoutList />} />
+          <Route path="/tap-luyen/lich-cua-ban/tao" element={<WorkoutCreate />} />
+          <Route path="/tap-luyen/lich-cua-ban/sua/:id" element={<WorkoutCreate />} />
           <Route path="/tap-luyen/bai-tap/khang-luc" element={<StrengthList />} />
           <Route path="/tap-luyen/bai-tap/cardio" element={<CardioList />} />
           <Route path="/tap-luyen/bai-tap/the-thao" element={<SportList />} /> {/* UI riêng */}

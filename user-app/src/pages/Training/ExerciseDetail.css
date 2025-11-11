@@ -32,6 +32,7 @@
   background:#0b0f19;
   border-radius:4px;
   overflow:hidden;
+  margin-bottom: 30px;
 }
 .exd-video-box video{ width:100%; height:100%; display:block; }
 
@@ -114,7 +115,7 @@
 }
 
 /* ===== SECTION “Hướng dẫn/Mô tả” ===== */
-.exd-section{ margin-top:20px; }
+.exd-section{ margin-top:30px; }
 .exd-centered{
   max-width: 1000px;     /* căn giữa trang với bề rộng giới hạn */
   margin-left: auto;
@@ -136,6 +137,8 @@
   list-style-position: outside;
   margin: 8px 0;
   padding-left: 1.25rem;
+  font-size: 18px;
+  font-family: 'Open Sans', Arial, sans-serif;
 }
 
 .exd-html ol {

@@ -20,6 +20,7 @@ import adminAccountsRoutes from "./routes/admin.accounts.routes.js";
 import adminExercisesRoutes from "./routes/admin.exercise.routes.js"; 
 import adminUsersRoutes from "./routes/admin.users.routes.js";
 import exercisePublicRoutes from "./routes/exercise.routes.js";
+import workoutRoutes from "./routes/workout.routes.js";
 
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
@@ -126,7 +127,7 @@ app.use("/api/user", userRoutes);
 app.use("/api", foodRoutes);
 app.use("/api", nutritionRoutes);
 app.use("/api", exercisePublicRoutes);
-
+app.use("/api", workoutRoutes);
 // ===== Debug: in danh sách routes khi DEV =====
 if (isDev) {
   const printRegisteredRoutes = (appInstance) => {
