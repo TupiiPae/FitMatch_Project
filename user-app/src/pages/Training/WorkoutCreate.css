@@ -18,23 +18,41 @@
 
 /* Trái: nút quay lại */
 .wc-head .back{
-  height:40px; min-width:40px; padding:0 12px;
-  display:flex; align-items:center; justify-content:center;
-  border:1px solid #002C3E; background:#fff; border-radius:4px; cursor:pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #002C3E;
+  border-radius: 4px;
+  height: 40px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 700;
 }
 .wc-head .back i{ font-size:16px; color:#0f172a; }
 
 /* Giữa: tiêu đề */
 .wc-head .title{
-  flex:1; font-weight:800; font-size:18px; color:#0f172a; padding:0 4px;
+  flex:1; font-weight:700; font-size:18px; color:#002C3E; text-align: center;
 }
 
 /* Phải: nút Tạo lịch */
 .wc-head .create{
-  height:40px; padding:0 14px; border-radius:4px; border:none;
-  background:#008080; color:#fff; font-weight:700; cursor:pointer;
+  height: 40px;
+  padding: 0 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #002C3E;
+  background: #fff;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  background: #008080;
+  color: #fff;
 }
-.wc-head .create:hover{ background:#78BCC4; }
+.wc-head .create:hover{ background:#007070; }
 
 /* ===== MAIN FRAME (card ngoài): đồng bộ .nm-list-frame ===== */
 .wc-frame{
@@ -65,133 +83,105 @@
 }
 .wc-title-input:focus{ border-bottom-color:#008080; }
 
-/* ===== 3 ô đếm: tổng bài / set / reps (đồng bộ chip/card của RecordMeal) ===== */
+/* ===== Giữ các style wrap/head/frame/card/title như trước ===== */
+
+/* === METRICS: giống wl-metrics, không bọc box === */
 .wc-metrics{
   display:grid; grid-template-columns: repeat(3, 1fr);
-  gap:10px; margin:8px 0 12px;
+  gap:0; margin:8px 0 12px;
 }
-.wc-metric{
-  border:1px solid #e5e7eb; border-radius:4px; padding:10px; background:#fff;
+.wc-metrics .mcol{
+  text-align:center; padding:6px 6px;
+  display:flex; flex-direction:column; gap:2px; position:relative;
 }
-.wc-metric .m-label{ font-size:12px; font-weight:700; color:#475569; margin-bottom:4px; }
-.wc-metric .m-val{ font-size:18px; font-weight:800; color:#0f172a; }
+.wc-metrics .mcol + .mcol{ border-left:1px solid #e5e7eb; }
+.wc-metrics .num{ font-size:18px; font-weight:800; color:#0f172a; }
+.wc-metrics .lab{ font-size:12px; color:#64748b; }
 
-/* ===== Line tách ===== */
-.wc-sep{ border:0; border-top:1px solid #e5e7eb; margin:12px 0; }
+/* ==== Line ==== */
+.wc-sep{ border:0; border-top:1px solid #e5e7eb; margin:14px 0; }
 
-/* ===== BOX chọn/nhập bài tập ===== */
-.wc-exlist{ display:flex; flex-direction:column; gap:10px; }
-
-/* Trạng thái “chưa chọn bài tập” */
+/* ==== BOX CHỌN BÀI TẬP ==== */
 .wc-expick{
-  border:1px dashed #cbd5e1; border-radius:4px; background:#f8fafc;
-  padding:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  border-radius:8px;
+  padding:12px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  box-shadow:0 2px 8px rgba(2,6,23,.03);
 }
+.wc-expick .exp-left{ display:flex; align-items:center; gap:10px; }
 .wc-expick .label{ font-weight:700; color:#0b5066; }
-.wc-expick .pick-btn{
-  height:36px; padding:0 12px; border-radius:4px; border:1px solid #002C3E;
-  background:#fff; cursor:pointer; font-weight:600;
+.wc-select{
+  height:40px; padding:0 12px; border-radius:6px;
+  border:1px solid #cbd5e1; background:#fff; font-weight:600; cursor:pointer;
+  display:inline-flex; align-items:center; gap:8px;
 }
-.wc-expick .more-btn{
-  width:36px; height:36px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer;
-}
+.wc-select i{ color:#334155; }
 
-/* Trạng thái “đã chọn bài tập” */
+/* ==== BOX CHI TIẾT BÀI TẬP ==== */
 .wc-exbox{
-  border:1px solid #002C3E55; border-radius:4px; background:#fff;
-  padding:12px; position:relative;
+  border:1px solid #e5e7eb; border-radius:8px; background:#fff;
+  padding:12px; box-shadow:0 2px 8px rgba(2,6,23,.03);
 }
 .wc-exbox .ex-head{
   display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;
+  border-bottom:1px solid #f1f5f9; padding-bottom:6px;
 }
-.wc-exbox .ex-name{
-  font-weight:800; color:#0f172a;
-}
-.wc-exbox .ex-actions{ display:flex; align-items:center; gap:8px; }
-.wc-exbox .ex-actions .more-btn{
+.wc-exbox .ex-name{ font-weight:800; color:#0f172a; }
+.more-btn{
   width:36px; height:36px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
 }
+.more-btn.icon-del{ border-color:#f1f5f9; }
 
-/* Bảng set: Set / Kg / Reps / Nghỉ (s) */
-.wc-sets{
-  width:100%; border-collapse:separate; border-spacing:0 8px;
-}
+/* Bảng set: input nhỏ gọn */
+.wc-sets{ width:100%; border-collapse:separate; border-spacing:0 8px; }
 .wc-sets th{
   text-align:left; font-size:12px; color:#475569; font-weight:700; padding:0 6px;
+  border-bottom:1px solid #eef2f7; height:28px;
 }
-.wc-sets td{ padding:0 6px; }
+.wc-sets td{ padding:0 6px; vertical-align:middle; }
 .wc-sets .set-no{ width:40px; color:#64748b; font-weight:700; }
 .wc-sets input{
-  width:100px; height:36px; border:1px solid #e5e7eb; border-radius:4px; padding:0 10px; outline:none; background:#fff;
+  width:72px; height:30px; border:1px solid #e5e7eb; border-radius:6px; padding:0 8px; outline:none; background:#fff;
+  font-size:13px;
 }
 .wc-sets input:focus{ border-color:#008080; }
 
-/* Nút thêm set (giống nút “Xem thêm”) */
-.wc-addset{
-  margin-top:8px; display:flex; justify-content:center;
+/* Nút full-width “Thêm Set” màu xanh */
+.wc-addrow{ margin-top:6px; }
+.wc-addrow button{
+  width:100%; height:36px; border:none; border-radius:9px;
+  background:#1d4ed8; color:#fff; font-weight:700; cursor:pointer;
 }
-.wc-addset button{
-  height:36px; padding:0 14px; border-radius:4px; border:1px solid #002C3E; background:#fff; font-weight:600; cursor:pointer;
-}
-.wc-addset button:hover{ background:#f9f9f9; }
+.wc-addrow button:hover{ filter:brightness(0.95); }
 
-/* Nút tròn thêm box bài tập */
-.wc-add-box{
-  margin-top:10px; display:flex; justify-content:flex-start;
-}
-.wc-add-box .round{
-  width:36px; height:36px; border-radius:50%; border:1px solid #002C3E; background:#fff; cursor:pointer;
+/* Nút tròn thêm 1 box chọn bài tập (theo yêu cầu class wc-addset) */
+.wc-addbox{ margin-top:10px; }
+.wc-addset{
+  width:36px; height:36px; border-radius:50%;
+  border:1px solid #002C3E; background:#fff; cursor:pointer;
   display:grid; place-items:center; font-size:18px;
 }
 
-/* ... (giữ nguyên các đoạn CSS trước của bạn) ... */
-
-/* Bọc menu để dropdown bám đúng vào icon */
-.more-wrap{
-  position: relative;
-  display: inline-block; /* để menu canh theo đúng khối nút */
-}
-
-/* Dropdown rơi ngay dưới icon; bám cạnh phải của .more-wrap */
+/* Dropdown menu dùng chung */
+.more-wrap{ position:relative; display:inline-block; }
 .menu{
-  position:absolute;
-  right:0;
-  top: calc(100% + 6px); /* ngay bên dưới icon, cách 6px */
-  min-width:140px;
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:4px;
-  box-shadow:0 8px 20px rgba(0,0,0,.08);
-  padding:6px;
-  z-index: 1000;
+  position:absolute; right:0; top:calc(100% + 6px); min-width:160px;
+  background:#fff; border:1px solid #e5e7eb; border-radius:6px;
+  box-shadow:0 8px 20px rgba(0,0,0,.08); padding:6px; z-index:1000;
 }
 .menu-item{ display:block; width:100%; text-align:left; background:#fff; border:none; padding:8px 10px; border-radius:4px; cursor:pointer; }
 .menu-item:hover{ background:#f3f4f6; }
 .menu-item.danger{ color:#dc2626; }
 
-/* ===== Picker overlay (fallback để đảm bảo popup ở giữa) ===== */
-.wc-picker-overlay{
-  position: fixed; inset: 0;
-  background: rgba(15,23,42,.45);
-  backdrop-filter: blur(2px);
-  display: grid;
-  place-items: center;
-  z-index: 1100;
-  padding: 16px;
-}
-.wc-picker-dialog{
-  width: min(920px, 96vw);
-  max-height: 86vh;
-  overflow: auto;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(2,6,23,.18);
-}
+/* Picker overlay giữ nguyên */
+.wc-picker-overlay{ position:fixed; inset:0; background:rgba(15,23,42,.45); backdrop-filter:blur(2px); display:grid; place-items:center; z-index:1100; padding:16px; }
+.wc-picker-dialog{ width:min(920px,96vw); max-height:86vh; overflow:auto; background:#fff; border:1px solid #e5e7eb; border-radius:10px; box-shadow:0 10px 30px rgba(2,6,23,.18); }
 
-/* ===== Responsive ===== */
-@media (max-width: 640px){
+/* Responsive */
+@media (max-width:640px){
   .wc-metrics{ grid-template-columns:1fr; }
-  .wc-head .title{ font-size:16px; }
 }
 
