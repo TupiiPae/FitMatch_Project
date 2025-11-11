@@ -144,18 +144,54 @@
   display:grid; place-items:center; font-size:18px;
 }
 
-/* Dropdown 3 chấm dùng chung (đồng bộ RecordMeal) */
-.more-wrap{ position:relative; }
+/* ... (giữ nguyên các đoạn CSS trước của bạn) ... */
+
+/* Bọc menu để dropdown bám đúng vào icon */
+.more-wrap{
+  position: relative;
+  display: inline-block; /* để menu canh theo đúng khối nút */
+}
+
+/* Dropdown rơi ngay dưới icon; bám cạnh phải của .more-wrap */
 .menu{
-  position:absolute; right:0; top:42px; min-width:140px; background:#fff;
-  border:1px solid #e5e7eb; border-radius:4px; box-shadow:0 8px 20px rgba(0,0,0,.08); padding:6px; z-index:10;
+  position:absolute;
+  right:0;
+  top: calc(100% + 6px); /* ngay bên dưới icon, cách 6px */
+  min-width:140px;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:4px;
+  box-shadow:0 8px 20px rgba(0,0,0,.08);
+  padding:6px;
+  z-index: 1000;
 }
 .menu-item{ display:block; width:100%; text-align:left; background:#fff; border:none; padding:8px 10px; border-radius:4px; cursor:pointer; }
 .menu-item:hover{ background:#f3f4f6; }
 .menu-item.danger{ color:#dc2626; }
+
+/* ===== Picker overlay (fallback để đảm bảo popup ở giữa) ===== */
+.wc-picker-overlay{
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,.45);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  z-index: 1100;
+  padding: 16px;
+}
+.wc-picker-dialog{
+  width: min(920px, 96vw);
+  max-height: 86vh;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(2,6,23,.18);
+}
 
 /* ===== Responsive ===== */
 @media (max-width: 640px){
   .wc-metrics{ grid-template-columns:1fr; }
   .wc-head .title{ font-size:16px; }
 }
+

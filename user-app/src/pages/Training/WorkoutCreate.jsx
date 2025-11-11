@@ -108,24 +108,18 @@ export default function WorkoutCreate() {
 
   // ===== submit =====
   const buildPayload = () => {
+    const toNum = (v) => Number.isFinite(+v) ? Number(v) : 0;
     const items = blocks
-      .filter(b => !!b.exercise)
-      .map(b => ({
-        exerciseId: b.exercise._id,
-        name: b.exercise.name,
-        type: b.exercise.type,
-        sets: b.sets.map(s => ({
-          kg: s.kg === "" ? null : Number(s.kg),
-          reps: s.reps === "" ? null : Number(s.reps),
-          restSec: s.restSec === "" ? null : Number(s.restSec),
-        })),
-      }));
-
-    return {
-      name: name.trim(),
-      items,
-      totals,
-    };
+       .filter(b => !!b.exercise)
+       .map(b => ({
+         exercise: b.exercise._id,              // <-- đúng key server mong đợi
+         sets: b.sets.map(s => ({
+           kg: s.kg === "" ? null : Number(s.kg),
+           reps: s.reps === "" ? null : Number(s.reps),
+           restSec: s.restSec === "" ? null : Number(s.restSec),
+         })),
+       }));
+    return { name: name.trim(), items };         // totals BE tự tính
   };
 
   const validate = () => {
@@ -145,12 +139,10 @@ export default function WorkoutCreate() {
     if (!validate()) return;
     const payload = buildPayload();
     try {
-      // API dự kiến: POST /api/user/workouts
-      await api.post("/api/user/workouts", payload);
+      await api.post("/user/workouts", payload);
       toast.success("Tạo lịch tập thành công");
       nav("/tap-luyen/lich-cua-ban");
     } catch (err) {
-      // Nếu BE chưa có endpoint, báo rõ
       const msg =
         err?.response?.data?.message ||
         "Không thể lưu lịch tập. Có thể API chưa được triển khai (/api/user/workouts).";
@@ -160,9 +152,9 @@ export default function WorkoutCreate() {
   };
 
   return (
-    <div className="wc-wrap">
+    <div className="wc-wrap" onClick={() => setMenuIdx(-1)}>
       {/* ===== HEAD ===== */}
-      <div className="wc-head" onClick={() => setMenuIdx(-1)}>
+      <div className="wc-head" onClick={(e) => e.stopPropagation()}>
         <button className="back" onClick={() => nav(-1)} aria-label="Quay lại">
           <i className="fa-solid fa-arrow-left" />
         </button>
@@ -171,7 +163,7 @@ export default function WorkoutCreate() {
       </div>
 
       {/* ===== FRAME ===== */}
-      <div className="wc-frame">
+      <div className="wc-frame" onClick={(e) => e.stopPropagation()}>
         {/* Card: Tên & tổng quan */}
         <div className="wc-card">
           <label className="wc-title-label">Tên lịch tập</label>
@@ -206,36 +198,47 @@ export default function WorkoutCreate() {
                 {!b.exercise ? (
                   <div className="wc-expick">
                     <div className="label">Chọn bài tập</div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button className="pick-btn" onClick={() => openPickerFor(idx)}>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <button
+                        type="button"
+                        className="pick-btn"
+                        onClick={() => openPickerFor(idx)}
+                      >
                         Chọn bài tập
                       </button>
-                      <button
-                        className="more-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuIdx(menuIdx === idx ? -1 : idx);
-                        }}
-                        aria-label="Thêm tùy chọn"
-                      >
-                        <i className="fa-solid fa-ellipsis-vertical" />
-                      </button>
-                      {menuIdx === idx && (
-                        <div className="menu" onClick={(e) => e.stopPropagation()}>
-                          <button className="menu-item danger" onClick={() => removeBlock(idx)}>
-                            Xóa
-                          </button>
-                        </div>
-                      )}
+
+                      {/* Bọc menu đúng .more-wrap để menu rơi xuống dưới icon */}
+                      <div className="more-wrap">
+                        <button
+                          type="button"
+                          className="more-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuIdx(menuIdx === idx ? -1 : idx);
+                          }}
+                          aria-label="Thêm tùy chọn"
+                        >
+                          <i className="fa-solid fa-ellipsis-vertical" />
+                        </button>
+                        {menuIdx === idx && (
+                          <div className="menu" onClick={(e) => e.stopPropagation()}>
+                            <button className="menu-item danger" onClick={() => removeBlock(idx)}>
+                              Xóa
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="wc-exbox" onClick={() => setMenuIdx(-1)}>
+                  <div className="wc-exbox">
                     <div className="ex-head">
                       <div className="ex-name">{b.exercise.name}</div>
                       <div className="ex-actions">
                         <div className="more-wrap">
                           <button
+                            type="button"
                             className="more-btn"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -303,6 +306,7 @@ export default function WorkoutCreate() {
                             <td>
                               {b.sets.length > 1 && (
                                 <button
+                                  type="button"
                                   className="more-btn"
                                   title="Xóa set"
                                   onClick={() => removeSet(idx, si)}
@@ -317,7 +321,7 @@ export default function WorkoutCreate() {
                     </table>
 
                     <div className="wc-addset">
-                      <button onClick={() => addSet(idx)}>+ Thêm Set</button>
+                      <button type="button" onClick={() => addSet(idx)}>+ Thêm Set</button>
                     </div>
                   </div>
                 )}
@@ -333,13 +337,19 @@ export default function WorkoutCreate() {
         </div>
       </div>
 
-      {/* ===== Exercise Picker (popup) ===== */}
+      {/* ===== Exercise Picker (popup) – đảm bảo nằm giữa màn hình ===== */}
       {pickerOpen && (
-        <ExercisePicker
-          types={["Strength", "Cardio"]}
-          onClose={() => setPickerOpen(false)}
-          onSelect={onPickedExercise}
-        />
+        // Nếu ExercisePicker đã có .ep-backdrop thì nó sẽ center;
+        // khung dưới đây là "fallback" đảm bảo nằm giữa.
+        <div className="wc-picker-overlay" onClick={() => setPickerOpen(false)} role="dialog" aria-modal="true">
+          <div className="wc-picker-dialog" onClick={(e) => e.stopPropagation()}>
+            <ExercisePicker
+              types={["Strength", "Cardio"]}
+              onClose={() => setPickerOpen(false)}
+              onSelect={onPickedExercise}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,35 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./WorkoutList.css";
+import { listMyWorkouts, listSavedWorkouts } from "../../api/workouts";
 
-/** 
- * NOTE API:
- * Bạn có thể tạo file api/workouts.js với 2 hàm sau (đúng chuẩn wrappers đang dùng):
- *   - listMyWorkouts({ q, limit, skip }) -> { items, hasMore }
- *   - listSavedWorkouts({ q, limit, skip }) -> { items, hasMore }
- * Dưới đây mình gọi giả lập bằng setTimeout để bạn có UI ngay.
- */
-
-function mockFetch(listType, { q }) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const base = [
-        { _id: "w1", title: "Push", exCount: 7, setCount: 21, repCount: 168 },
-        { _id: "w2", title: "Pull", exCount: 6, setCount: 18, repCount: 144 },
-        { _id: "w3", title: "Legs", exCount: 5, setCount: 15, repCount: 120 },
-      ];
-      const saved = [
-        { _id: "s1", title: "Full Body Beginner", exCount: 6, setCount: 18, repCount: 120 },
-        { _id: "s2", title: "Upper/Lower Split", exCount: 8, setCount: 24, repCount: 192 },
-      ];
-      let items = listType === "mine" ? base : saved;
-      if (q?.trim()) {
-        const key = q.trim().toLowerCase();
-        items = items.filter((x) => x.title.toLowerCase().includes(key));
-      }
-      resolve({ items, hasMore: false });
-    }, 250);
-  });
+// Map từ schema BE -> UI item
+function mapPlanToUi(p) {
+  const t = p?.totals || {};
+  return {
+    _id: p._id,
+    title: p.name || "(Không tên)",
+    exCount: t.exercises ?? 0,
+    setCount: t.sets ?? 0,
+    repCount: t.reps ?? 0,
+    updatedAt: p.updatedAt,
+  };
 }
 
 export default function WorkoutList() {
@@ -51,19 +35,19 @@ export default function WorkoutList() {
   async function loadAll() {
     setLoading(true);
     try {
-      // TODO: thay mockFetch bằng listMyWorkouts & listSavedWorkouts từ api/workouts.js
       const [a, b] = await Promise.all([
-        mockFetch("mine", { q }),
-        mockFetch("saved", { q }),
+        listMyWorkouts({ q, limit: 50, skip: 0 }),
+        listSavedWorkouts({ q, limit: 50, skip: 0 }),
       ]);
-      setMine(a.items || []);
-      setSaved(b.items || []);
+      setMine((a.items || []).map(mapPlanToUi));
+      // Chưa có data gợi ý -> vẫn map nhưng nếu rỗng sẽ hiển thị “chưa có”
+      setSaved((b.items || []).map(mapPlanToUi));
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { loadAll(); /* mount */ }, []);
   useEffect(() => {
     const t = setTimeout(loadAll, 250);
     return () => clearTimeout(t);
@@ -184,22 +168,16 @@ function WorkoutItem({ item, mine }) {
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
 
-  const goDetail = () => nav(`/tap-luyen/tao-lich/${item._id}`); // hoặc route xem chi tiết riêng
+  const goDetail = () => nav(`/tap-luyen/tao-lich/${item._id}`); // TODO: đổi sang route detail của bạn
 
   return (
     <div className="wl-item" onClick={goDetail}>
       <div className="wl-info">
         <div className="wl-title">{item.title}</div>
         <div className="wl-chips">
-          <span className="chip">
-            <b>{item.exCount ?? 0}</b> bài
-          </span>
-          <span className="chip">
-            <b>{item.setCount ?? 0}</b> set
-          </span>
-          <span className="chip">
-            <b>{item.repCount ?? 0}</b> reps
-          </span>
+          <span className="chip"><b>{item.exCount ?? 0}</b> bài</span>
+          <span className="chip"><b>{item.setCount ?? 0}</b> set</span>
+          <span className="chip"><b>{item.repCount ?? 0}</b> reps</span>
         </div>
       </div>
 

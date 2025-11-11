@@ -1,18 +1,25 @@
 /* user-app/src/pages/Training/components/ExercisePicker.css */
 
 .ep-backdrop{
-  position:fixed; inset:0; background:rgba(0,0,0,.35);
-  display:flex; align-items:center; justify-content:center; z-index:1000;
+  position:fixed; inset:0; background:rgba(15,23,42,.45);
+  display:grid; place-items:center; z-index:2000; /* cao hơn footer/header */
+  backdrop-filter: blur(2px);
 }
 .ep-modal{
-  width:min(920px, 92vw); max-height:82vh; overflow:hidden;
-  background:#fff; border:1px solid #e9ecef; border-radius:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.18); display:flex; flex-direction:column;
+  width:min(920px, 96vw);
+  max-height:86vh;
+  overflow:hidden;
+  background:#fff;
+  border:1px solid #e9ecef;
+  border-radius:12px;
+  box-shadow:0 10px 30px rgba(2,6,23,.18);
+  display:flex; flex-direction:column;
 }
 
 /* Head */
 .ep-head{
-  display:flex; gap:10px; align-items:center; padding:12px; border-bottom:1px solid #eef2f6;
+  display:flex; gap:10px; align-items:center;
+  padding:12px; border-bottom:1px solid #eef2f6;
 }
 .ep-head input{
   flex:1 1 auto; height:42px; border:1px solid #dee2e6; border-radius:10px; padding:0 12px; outline:0;
@@ -43,6 +50,6 @@
   grid-column:1/-1; text-align:center; color:#64748b; padding:20px 0;
 }
 
-/* Button fallback */
+/* Button */
 .btn{ height:38px; padding:0 12px; border-radius:10px; border:1px solid #e9ecef; background:#fff; cursor:pointer; }
 .btn.ghost{ background:#fff; }

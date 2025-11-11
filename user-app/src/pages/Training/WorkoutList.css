@@ -44,8 +44,17 @@
 
 /* Section head + line */
 .wl-sec-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-.wl-sec-title{ font-weight:800; font-size:16px; color:#0f172a; }
-.wl-line{ border:0; border-top:1px solid #e5e7eb; margin:18px 0; }
+.wl-sec-title{   
+  font-weight: 700;
+  padding: 20px 20px;
+  margin-bottom: 10px;
+  text-align: left; /* THAY ĐỔI: Căn lề trái */
+  font-size: 26px;
+  color: #002C3E;
+  background-color: #F7F8F3;
+  width: 100%;
+  border-radius: 4px;}
+.wl-line{ border:0; border-top:1px solid #e5e7eb; margin:50px 0; }
 
 .wl-list{ display:flex; flex-direction:column; gap:10px; }
 .wl-empty{ color:#64748b; background:#f8fafc; border:1px dashed #e5e7eb; border-radius:6px; padding:12px; }

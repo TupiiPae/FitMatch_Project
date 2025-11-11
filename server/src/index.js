@@ -1,4 +1,3 @@
-// server/src/index.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -17,7 +16,7 @@ import foodRoutes from "./routes/food.routes.js";
 import nutritionRoutes from "./routes/nutrition.routes.js";
 import adminFoodsRoutes from "./routes/admin.food.routes.js";
 import adminAccountsRoutes from "./routes/admin.accounts.routes.js";
-import adminExercisesRoutes from "./routes/admin.exercise.routes.js"; 
+import adminExercisesRoutes from "./routes/admin.exercise.routes.js";
 import adminUsersRoutes from "./routes/admin.users.routes.js";
 import exercisePublicRoutes from "./routes/exercise.routes.js";
 import workoutRoutes from "./routes/workout.routes.js";
@@ -34,7 +33,6 @@ const PORT = process.env.PORT || 5000;
 const MONGO = process.env.MONGO || process.env.MONGO_URI;
 
 // ===== Static uploads =====
-// cho phép truy cập ảnh/video trong thư mục uploads
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -45,7 +43,7 @@ app.use(
 );
 
 // ===== Parsers =====
-app.use(express.json({ limit: "2mb" })); // tăng limit cho form JSON nhỏ
+app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 // ===== CORS =====
@@ -111,12 +109,8 @@ app.use(
 );
 
 app.use("/api/admin", adminUsersRoutes);
-
-// Các nhóm admin khác
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminFoodsRoutes);
-
-// ===== NEW: Admin Exercises =====
 app.use("/api/admin", adminExercisesRoutes);
 
 // ===== User routes =====
@@ -127,24 +121,23 @@ app.use("/api/user", userRoutes);
 app.use("/api", foodRoutes);
 app.use("/api", nutritionRoutes);
 app.use("/api", exercisePublicRoutes);
-app.use("/api", workoutRoutes);
-// ===== Debug: in danh sách routes khi DEV =====
+
+// ===== IMPORTANT: Workout routes under /api/user (để FE gọi /user/workouts) =====
+app.use("/api/user", workoutRoutes);
+
+// ===== Debug: list registered routes in DEV =====
 if (isDev) {
   const printRegisteredRoutes = (appInstance) => {
     const out = [];
     appInstance._router?.stack?.forEach((layer) => {
       if (layer.route) {
-        const methods = Object.keys(layer.route.methods)
-          .join(",")
-          .toUpperCase();
+        const methods = Object.keys(layer.route.methods).join(",").toUpperCase();
         out.push(`${methods} ${layer.route.path}`);
       } else if (layer.name === "router" && layer.handle?.stack) {
         const mountPath = layer.regexp?.toString() || "<router>";
         layer.handle.stack.forEach((handler) => {
           if (handler.route) {
-            const methods = Object.keys(handler.route.methods)
-              .join(",")
-              .toUpperCase();
+            const methods = Object.keys(handler.route.methods).join(",").toUpperCase();
             out.push(`${methods} ${mountPath} -> ${handler.route.path}`);
           }
         });
@@ -158,16 +151,13 @@ if (isDev) {
 // ===== 404 for API =====
 app.use((req, res) => {
   if (req.originalUrl.startsWith("/api/")) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Không tìm thấy endpoint" });
+    return res.status(404).json({ success: false, message: "Không tìm thấy endpoint" });
   }
   return res.status(404).send("Not found");
 });
 
 // ===== Error handler =====
 app.use((err, _req, res, _next) => {
-  // Bắt riêng lỗi upload (multer)
   if (err?.code === "LIMIT_FILE_SIZE") {
     return res.status(413).json({
       success: false,
@@ -179,9 +169,7 @@ app.use((err, _req, res, _next) => {
   }
 
   console.error("❌ Lỗi hệ thống:", err);
-  res
-    .status(500)
-    .json({ success: false, message: "Lỗi máy chủ, vui lòng thử lại sau." });
+  res.status(500).json({ success: false, message: "Lỗi máy chủ, vui lòng thử lại sau." });
 });
 
 // ===== Start =====
