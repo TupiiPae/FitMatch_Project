@@ -84,8 +84,7 @@
   cursor:pointer;
 }
 .menuWL{
-  position:absolute; right:0; top:40px; min-width:200px; background:#fff; border:1px solid #e5e7eb;
-  border-radius:6px; box-shadow:0 8px 20px rgba(0,0,0,.08); padding:6px; z-index:10;
+  position:absolute; right:0; top:40px; min-width:200px; background:#fff; box-shadow:0 8px 20px rgba(0,0,0,.08); padding:6px; z-index:10;
 }
 .menu-item{ display:block; width:100%; text-align:left; background:#fff; border:none; padding:8px 10px; border-radius:4px; cursor:pointer; }
 .menu-item:hover{ background:#f3f4f6; }
