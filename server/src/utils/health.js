@@ -73,116 +73,65 @@ export const ACTIVITY_MAP = { ...ACTIVITY_FACTORS };
 
 // ======= CALORIES / MACROS =======
 
-// 1 kg mỡ ~ 7700 kcal
-export const KCAL_PER_KG = 7700;
+export const KCAL_PER_KG = 7700; // 1 kg mỡ ~ 7700 kcal
 
-// Chuẩn hoá & ràng buộc giá trị
 function clamp(num, min, max) {
   return Math.min(Math.max(num, min), max);
 }
 
-/**
- * Tính mức điều chỉnh kcal mỗi ngày dựa trên mục tiêu thay đổi cân nặng theo tuần.
- * ví dụ mục tiêu -0.5 kg/tuần => daily_adjust ~ -550 kcal/ngày
- */
 export function tinhDieuChinhKcalTheoTuan(mucTieuTuanKg) {
   const w = Number(mucTieuTuanKg || 0);
   if (!Number.isFinite(w) || w === 0) return 0;
   const perDay = (KCAL_PER_KG * Math.abs(w)) / 7; // kcal/ngày
-  // Trả ra giá trị dương (để cộng/trừ theo mục tiêu cụ thể)
   return Math.round(perDay);
 }
 
-/**
- * Tính Calorie Target (mức calo nạp vào mỗi ngày) từ TDEE + mục tiêu.
- * - mucTieu: "giam_can" | "duy_tri" | "tang_can" | "giam_mo" | "tang_co"
- * - mucTieuTuan: kg/tuần (dấu của hướng thay đổi do mucTieu quyết định)
- * - bmr: tuỳ chọn, để không cho target thấp quá bmr*0.8 (có thể chỉnh)
- * - trả về số nguyên (kcal/ngày), luôn trong [800..8000]
- */
 export function tinhCalorieTarget({ tdee, mucTieu, mucTieuTuan, bmr }) {
-  // Kiểm tra đầu vào
   assert(typeof tdee === "number" && tdee > 0, "TDEE không hợp lệ để tính calorieTarget");
-
   const adj = tinhDieuChinhKcalTheoTuan(mucTieuTuan);
   let raw;
   switch (mucTieu) {
     case "giam_can":
     case "giam_mo":
-      raw = tdee - adj; // deficit
-      break;
+      raw = tdee - adj; break;
     case "tang_can":
     case "tang_co":
-      raw = tdee + adj; // surplus
-      break;
+      raw = tdee + adj; break;
     case "duy_tri":
     default:
-      raw = tdee;
-      break;
+      raw = tdee; break;
   }
-
-  // Giới hạn an toàn
   let minSafe = 800;
-  if (typeof bmr === "number" && bmr > 0) {
-    // không để thấp hơn ~80% BMR (tuỳ chỉnh nếu cần)
-    minSafe = Math.max(minSafe, Math.round(bmr * 0.8));
-  }
-  const target = clamp(Math.round(raw), minSafe, 8000);
-  return target;
+  if (typeof bmr === "number" && bmr > 0) minSafe = Math.max(minSafe, Math.round(bmr * 0.8));
+  return clamp(Math.round(raw), minSafe, 8000);
 }
 
-/**
- * Từ calorieTarget và % macro → quy đổi ra gram.
- * - macroProtein/macroCarb/macroFat là % (tổng 100)
- * - 1g: protein=4kcal, carb=4kcal, fat=9kcal
- */
 export function tinhMacroGram({ calorieTarget, macroProtein = 20, macroCarb = 50, macroFat = 30 }) {
   assert(typeof calorieTarget === "number" && calorieTarget > 0, "calorieTarget không hợp lệ");
   const totalPct = (macroProtein || 0) + (macroCarb || 0) + (macroFat || 0);
   assert(totalPct > 0, "Tổng % macro phải > 0");
-
-  // Chuẩn hoá về tổng 100
   const k = 100 / totalPct;
   const pPct = macroProtein * k, cPct = macroCarb * k, fPct = macroFat * k;
-
   const pGram = Math.round((calorieTarget * (pPct / 100)) / 4);
   const cGram = Math.round((calorieTarget * (cPct / 100)) / 4);
   const fGram = Math.round((calorieTarget * (fPct / 100)) / 9);
-
   return { proteinGram: pGram, carbGram: cGram, fatGram: fGram };
 }
 
-/**
- * Tính mục tiêu dinh dưỡng đa lượng theo GOAL + cân nặng + calorieTarget/tdee.
- * Mapping theo yêu cầu:
- *  - Giảm mỡ (cut):            "giam_can","giam_mo"  -> Protein 2.4 g/kg, Fat 0.8 g/kg
- *  - Giữ cân (duy trì):        "duy_tri"             -> Protein 2.0 g/kg, Fat 0.8 g/kg
- *  - Tăng cơ (bulk lean):      "tang_can","tang_co"  -> Protein 2.2 g/kg, Fat 1.0 g/kg
- *  - Carb = phần kcal còn lại.
- *  - Muối: 5 g/ngày; Đường tự do: 10% kcal; Xơ: 14 g / 1000 kcal.
- */
 export function tinhMacroMucTieu({ mucTieu = "duy_tri", canNangKg, calorieTarget, tdee }) {
-  // validate input
   assert(typeof canNangKg === "number" && canNangKg >= MIN_WEIGHT_KG && canNangKg <= MAX_WEIGHT_KG, "Cân nặng ngoài phạm vi hợp lệ");
   let cal = Number.isFinite(calorieTarget) && calorieTarget > 0
     ? Math.round(calorieTarget)
     : (Number.isFinite(tdee) && tdee > 0 ? Math.round(tdee) : 2000);
 
-  // preset protein/fat theo goal
   let pPerKg, fPerKg;
   switch (mucTieu) {
     case "giam_can":
-    case "giam_mo":
-      pPerKg = 2.4; fPerKg = 0.8;     // cut
-      break;
+    case "giam_mo": pPerKg = 2.4; fPerKg = 0.8; break;
     case "tang_can":
-    case "tang_co":
-      pPerKg = 2.2; fPerKg = 1.0;     // bulk lean
-      break;
+    case "tang_co": pPerKg = 2.2; fPerKg = 1.0; break;
     case "duy_tri":
-    default:
-      pPerKg = 2.0; fPerKg = 0.8;     // maintain
-      break;
+    default:        pPerKg = 2.0; fPerKg = 0.8; break;
   }
 
   const proteinG = Math.max(0, Math.round(canNangKg * pPerKg));
@@ -193,43 +142,103 @@ export function tinhMacroMucTieu({ mucTieu = "duy_tri", canNangKg, calorieTarget
   const kcalLeft        = Math.max(0, cal - (kcalFromProtein + kcalFromFat));
   const carbG           = Math.max(0, Math.round(kcalLeft / 4));
 
-  // Muối/Đường/Xơ áp dụng chung
-  const saltG  = 5;                                 // g/ngày
-  const sugarG = Math.round((cal * 0.10) / 4);      // 10% cal → g đường tự do
-  const fiberG = Math.round(14 * (cal / 1000));     // 14 g / 1000 kcal
+  const saltG  = 5;
+  const sugarG = Math.round((cal * 0.10) / 4);
+  const fiberG = Math.round(14 * (cal / 1000));
 
-  // % macro (nếu cần lưu/hiển thị)
   const macroProtein = Math.round((kcalFromProtein / cal) * 100);
   const macroFat     = Math.round((kcalFromFat     / cal) * 100);
   const macroCarb    = Math.max(0, 100 - macroProtein - macroFat);
 
-  return {
-    // năng lượng
-    kcal: cal,
-
-    // mục tiêu theo gram
-    proteinG, fatG, carbG,
-
-    // ràng buộc phụ
-    saltG, sugarG, fiberG,
-
-    // phần trăm (tham khảo/hiển thị)
-    macroProtein, macroCarb, macroFat,
-  };
+  return { kcal: cal, proteinG, fatG, carbG, saltG, sugarG, fiberG, macroProtein, macroCarb, macroFat };
 }
 
-/**
- * Tiện lợi: nhận trực tiếp từ user.profile (schema bạn đã cung cấp).
- * - Ưu tiên calorieTarget; fallback tdee.
- */
 export function tinhMacroMucTieuTuProfile(profile = {}) {
-  const {
-    goal: mucTieu = "duy_tri",
-    weightKg: canNangKg,
-    calorieTarget,
-    tdee,
-  } = profile || {};
-
+  const { goal: mucTieu = "duy_tri", weightKg: canNangKg, calorieTarget, tdee } = profile || {};
   return tinhMacroMucTieu({ mucTieu, canNangKg, calorieTarget, tdee });
 }
 
+/* ================================================================
+ *       TÍNH CALO CHO BÀI TẬP (Strength | Cardio | Sport)
+ *  Công thức chung:
+ *    Calories = ( MET(caloriePerRep) × 3.5 × cân_nặng(kg) × thời_gian(phút) ) / 200
+ *  Trong đó, thời_gian(phút) cho từng bài:
+ *    thời_gian = (thời_gian_tập + thời_gian_nghỉ) / 60
+ *    - thời_gian_tập   = tổng_reps * 3 (giây)
+ *    - thời_gian_nghỉ  = (số_set - 1) * 60 (giây)
+ *  Lưu ý: áp dụng giống nhau cho Strength, Cardio, Sport.
+ * ================================================================ */
+
+/** Tổng reps của 1 block (một bài), từ mảng sets */
+function _sumReps(sets) {
+  if (!Array.isArray(sets)) return 0;
+  return sets.reduce((s, st) => s + (Number(st?.reps || 0) || 0), 0);
+}
+
+/** Tính thời gian (giây) cho 1 block: {workSec, restSec, totalSec} */
+export function tinhThoiGianBlock_Giay(block) {
+  const setsCount = Array.isArray(block?.sets) ? block.sets.length : 0;
+  const repsTotal = _sumReps(block?.sets);
+  const workSec = repsTotal * 3;                       // 3 giây / rep
+  const restSec = Math.max(0, setsCount - 1) * 60;     // 60 giây giữa các set
+  return { workSec, restSec, totalSec: workSec + restSec, setsCount, repsTotal };
+}
+
+/** Đổi sang phút cho 1 block */
+export function tinhThoiGianBlock_Phut(block) {
+  const { totalSec } = tinhThoiGianBlock_Giay(block);
+  return totalSec / 60;
+}
+
+/** MET × 3.5 × kg × phút / 200 */
+export function tinhKcalTheoMET(caloriePerRep, canNangKg, minutes) {
+  const m = Math.max(0, Number(caloriePerRep || 0));
+  const w = Number(canNangKg || 0);
+  const t = Math.max(0, Number(minutes || 0));
+  assert(w >= MIN_WEIGHT_KG && w <= MAX_WEIGHT_KG, "Cân nặng ngoài phạm vi hợp lệ");
+  return (m * 3.5 * w * t) / 200;
+}
+
+/**
+ * Tính tổng kcal của cả lịch tập theo công thức thời gian.
+ * items: [{ exercise:{ caloriePerRep, type }, sets:[{reps,restSec?}, ...] }, ...]
+ * canNangKg: cân nặng hiện tại của user
+ */
+export function tinhTongKcalLichTap_TheoThoiGian({ items = [], canNangKg }) {
+  assert(Array.isArray(items), "items phải là mảng");
+  assert(typeof canNangKg === "number", "Thiếu canNangKg");
+
+  let totalKcal = 0;
+  let totalMinutes = 0;
+  let totalReps = 0;
+  let totalSets = 0;
+
+  for (const it of items) {
+    const cpr = Number(it?.exercise?.caloriePerRep ?? it?.exCaloriePerRep ?? 0) || 0;
+
+    const tgBlockMin = tinhThoiGianBlock_Phut(it);
+    const kcalBlock  = tinhKcalTheoMET(cpr, canNangKg, tgBlockMin);
+
+    const { repsTotal, setsCount } = (() => {
+      const { repsTotal, setsCount } = tinhThoiGianBlock_Giay(it);
+      return { repsTotal, setsCount };
+    })();
+
+    totalMinutes += tgBlockMin;
+    totalKcal    += kcalBlock;
+    totalReps    += repsTotal;
+    totalSets    += setsCount;
+  }
+
+  return {
+    totalMinutes: Number(totalMinutes.toFixed(2)),
+    totalReps,
+    totalSets,
+    totalKcal: Math.round(totalKcal), // làm tròn để hiển thị
+  };
+}
+
+// ====== (Tuỳ chọn) Giữ lại tên cũ nhưng CHUYỂN sang gọi theo thời gian ======
+// export function tinhTongKcalLichTap(params) {
+//   return tinhTongKcalLichTap_TheoThoiGian(params);
+// }

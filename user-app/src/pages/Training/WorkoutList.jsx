@@ -295,6 +295,10 @@ function WorkoutItem({ item, mine, menuOpen, onToggleMenu, onDelete, onEdit, onM
           <div className="num">{item.repCount ?? 0}</div>
           <div className="lab">Tổng số reps</div>
         </div>
+          <div className="mcol">
+          <div className="num">Gán dữ liệu ở đây</div>
+          <div className="lab">Tổng lượng Calorie đốt</div>
+        </div>
       </div>
     </div>
   );

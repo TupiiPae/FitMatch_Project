@@ -6,7 +6,7 @@ import "./ExercisePicker.css";
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
 const PLACEHOLDER = "/images/food-placeholder.jpg";
-const TYPE_VI = { Strength: "Kháng lực", Cardio: "Cardio", Sport: "Thể thao" };
+const TYPE_VI = { Strength: "Kháng lực", Cardio: "Cardio",};
 
 export default function ExercisePicker({
   types = ["Strength", "Cardio"],
