@@ -13,25 +13,28 @@ import {
   EXERCISE_IMG_DIR as EX_DIR,
   EXERCISE_VID_DIR as EX_VID_DIR,
 } from "../middleware/upload.js";
+import { uploadImageWithResize, uploadVideo, deleteFile } from "../utils/cloudinary.js";
 
 /* ========= Helpers ========= */
 const toNum = (v) => (v === "" || v == null ? null : Number(v));
 const isJsonArray = (s) => typeof s === "string" && /^\s*\[/.test(s);
 const ensureDir = (d) => { try { fs.mkdirSync(d, { recursive: true }); } catch {} };
 
-/** Lưu ảnh từ buffer -> .webp vào /uploads/exercises, trả tên file */
+/** Upload ảnh từ buffer lên Cloudinary, trả về URL */
 async function saveImageFromBuffer(file) {
   if (!file?.buffer) return null;
-  ensureDir(EX_DIR);
-  const base = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-  const filename = `${base}.webp`;
-  const absPath = path.join(EX_DIR, filename);
-  await sharp(file.buffer)
-    .rotate()
-    .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 85 })
-    .toFile(absPath);
-  return filename;
+  try {
+    const imageUrl = await uploadImageWithResize(
+      file.buffer,
+      "asset/folder/exercises",
+      { width: 1200, height: 1200, fit: "inside", withoutEnlargement: true },
+      { quality: 85 }
+    );
+    return imageUrl;
+  } catch (error) {
+    console.error("[saveImageFromBuffer]", error);
+    return null;
+  }
 }
 
 /** Chọn đuôi video an toàn */
@@ -45,16 +48,19 @@ function pickVideoExt(mt, original = "") {
   return ".mp4";
 }
 
-/** Lưu video từ buffer -> file gốc trong /uploads/exercises_videos, trả tên file */
+/** Upload video từ buffer lên Cloudinary, trả về URL */
 async function saveVideoFromBuffer(file) {
   if (!file?.buffer) return null;
-  ensureDir(EX_VID_DIR);
-  const base = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-  const ext = pickVideoExt(file.mimetype, file.originalname);
-  const filename = `${base}${ext}`;
-  const absPath = path.join(EX_VID_DIR, filename);
-  await fs.promises.writeFile(absPath, file.buffer);
-  return filename;
+  try {
+    const videoUrl = await uploadVideo(
+      file.buffer,
+      "asset/folder/exercise_videos"
+    );
+    return videoUrl;
+  } catch (error) {
+    console.error("[saveVideoFromBuffer]", error);
+    return null;
+  }
 }
 
 /** Chuẩn hoá body: parse mảng, ép số, loại bỏ chuỗi rỗng */
@@ -144,8 +150,8 @@ export async function createExercise(req, res, next) {
     b.status = b.status || "active";
 
     if (imgFile?.buffer && !b.imageUrl) {
-      const filename = await saveImageFromBuffer(imgFile);
-      if (filename) b.imageUrl = `/uploads/exercises/${filename}`;
+      const imageUrl = await saveImageFromBuffer(imgFile);
+      if (imageUrl) b.imageUrl = imageUrl;
     }
 
     const doc = await Exercise.create(b);
@@ -167,6 +173,13 @@ export async function updateExercise(req, res, next) {
     const isRemoveVideo =
       req.body?.__removeVideo === true || req.body?.__removeVideo === "true";
     if (isRemoveVideo) {
+      const existing = await Exercise.findById(id).lean();
+      
+      // Xóa video từ Cloudinary nếu có
+      if (existing?.videoUrl && existing.videoUrl.includes("cloudinary.com")) {
+        await deleteFile(existing.videoUrl, "video").catch(() => {});
+      }
+      
       const it = await Exercise.findByIdAndUpdate(
         id,
         { $unset: { videoUrl: 1 } },
@@ -185,8 +198,14 @@ export async function updateExercise(req, res, next) {
     const upd = normalizeBody(req.body);
 
     if (imgFile?.buffer && !upd.imageUrl) {
-      const filename = await saveImageFromBuffer(imgFile);
-      if (filename) upd.imageUrl = `/uploads/exercises/${filename}`;
+      // Xóa ảnh cũ từ Cloudinary nếu có
+      const existing = await Exercise.findById(id).lean();
+      if (existing?.imageUrl && existing.imageUrl.includes("cloudinary.com")) {
+        await deleteFile(existing.imageUrl, "image").catch(() => {});
+      }
+      
+      const imageUrl = await saveImageFromBuffer(imgFile);
+      if (imageUrl) upd.imageUrl = imageUrl;
     }
 
     const it = await Exercise.findByIdAndUpdate(id, upd, {
@@ -219,8 +238,16 @@ export async function uploadExerciseVideo(req, res, next) {
     const vidFile = (req.files?.video && req.files.video[0]) || req.file || null;
     if (!vidFile?.buffer) return res.status(400).json({ message: "Không có file video" });
 
-    const vname = await saveVideoFromBuffer(vidFile);
-    const videoUrl = `/uploads/exercises_videos/${vname}`;
+    // Xóa video cũ từ Cloudinary nếu có
+    const existing = await Exercise.findById(id).lean();
+    if (existing?.videoUrl && existing.videoUrl.includes("cloudinary.com")) {
+      await deleteFile(existing.videoUrl, "video").catch(() => {});
+    }
+
+    const videoUrl = await saveVideoFromBuffer(vidFile);
+    if (!videoUrl) {
+      return res.status(500).json({ message: "Lỗi upload video" });
+    }
 
     await Exercise.findByIdAndUpdate(id, { $set: { videoUrl } }, { runValidators: true });
     return res.json({ ok: true, videoUrl });
@@ -233,6 +260,20 @@ export async function uploadExerciseVideo(req, res, next) {
 export async function deleteExercise(req, res, next) {
   try {
     const { id } = req.params;
+    const exercise = await Exercise.findById(id).lean();
+    
+    if (exercise) {
+      // Xóa ảnh từ Cloudinary nếu có
+      if (exercise.imageUrl && exercise.imageUrl.includes("cloudinary.com")) {
+        await deleteFile(exercise.imageUrl, "image").catch(() => {});
+      }
+      
+      // Xóa video từ Cloudinary nếu có
+      if (exercise.videoUrl && exercise.videoUrl.includes("cloudinary.com")) {
+        await deleteFile(exercise.videoUrl, "video").catch(() => {});
+      }
+    }
+    
     await Exercise.findByIdAndDelete(id);
     return res.json(responseOk());
   } catch (err) {

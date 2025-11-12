@@ -11,6 +11,7 @@ import WaterLog from "../models/WaterLog.js";         // << thêm
 import Food from "../models/Food.js";                 // << thêm
 import { tinhBmi, tinhBmr, tinhTdee, tinhCalorieTarget as _tinhCalorieTarget } from "../utils/health.js";
 import { AVATAR_DIR, FOOD_DIR } from "../middleware/upload.js"; // << thêm FOOD_DIR
+import { uploadImageWithResize, deleteFile, extractPublicId } from "../utils/cloudinary.js";
 
 const tinhCalorieTarget = _tinhCalorieTarget;
 
@@ -296,13 +297,19 @@ export const deleteAccount = async (req,res)=>{
     await session.commitTransaction();
     session.endSession();
 
-    // ====== Cleanup files (không chặn response nếu lỗi) ======
+    // ====== Cleanup files từ Cloudinary (không chặn response nếu lỗi) ======
     // Avatar
-    if (user?.profile?.avatarUrl && String(user.profile.avatarUrl).startsWith("/uploads/avatars/")) {
+    if (user?.profile?.avatarUrl) {
       try {
-        const filename = path.basename(user.profile.avatarUrl);
-        const filePath = path.join(AVATAR_DIR, filename);
-        fs.promises.unlink(filePath).catch(()=>{});
+        // Kiểm tra nếu là Cloudinary URL
+        if (user.profile.avatarUrl.includes("cloudinary.com")) {
+          await deleteFile(user.profile.avatarUrl, "image");
+        } else if (String(user.profile.avatarUrl).startsWith("/uploads/avatars/")) {
+          // Fallback: xóa local nếu còn file cũ
+          const filename = path.basename(user.profile.avatarUrl);
+          const filePath = path.join(AVATAR_DIR, filename);
+          fs.promises.unlink(filePath).catch(()=>{});
+        }
       } catch {}
     }
 
@@ -310,11 +317,17 @@ export const deleteAccount = async (req,res)=>{
     if (Array.isArray(foods)) {
       for (const f of foods) {
         const u = f?.imageUrl;
-        if (u && String(u).startsWith("/uploads/foods/")) {
+        if (u) {
           try {
-            const filename = path.basename(u);
-            const filePath = path.join(FOOD_DIR, filename);
-            fs.promises.unlink(filePath).catch(()=>{});
+            // Kiểm tra nếu là Cloudinary URL
+            if (u.includes("cloudinary.com")) {
+              await deleteFile(u, "image");
+            } else if (String(u).startsWith("/uploads/foods/")) {
+              // Fallback: xóa local nếu còn file cũ
+              const filename = path.basename(u);
+              const filePath = path.join(FOOD_DIR, filename);
+              fs.promises.unlink(filePath).catch(()=>{});
+            }
           } catch {}
         }
       }
@@ -342,9 +355,15 @@ export const deleteAccount = async (req,res)=>{
 export const uploadAvatar = async (req,res)=>{
   try{
     const file=req.file; if(!file) return res.status(400).json({ success:false, message:"Không có tệp avatar" });
-    const baseName=`${req.userId||"guest"}-${Date.now()}`, outPath=path.join(AVATAR_DIR,`${baseName}.webp`);
-    await sharp(file.buffer).rotate().resize(512,512,{fit:"cover",position:"center"}).toFormat("webp",{quality:85}).toFile(outPath);
-    const avatarUrl=`/uploads/avatars/${baseName}.webp`;
+    
+    // Upload lên Cloudinary
+    const avatarUrl = await uploadImageWithResize(
+      file.buffer,
+      "asset/folder/avatars",
+      { width: 512, height: 512, fit: "cover" },
+      { quality: 85 }
+    );
+    
     const updatedUser=await User.findByIdAndUpdate(
       req.userId,
       {$set:{"profile.avatarUrl":avatarUrl}},

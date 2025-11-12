@@ -6,6 +6,7 @@ import Food from "../models/Food.js";
 import NutritionLog from "../models/NutritionLog.js";
 import { responseOk } from "../utils/response.js";
 import { FOOD_DIR } from "../middleware/upload.js";
+import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
 
 const isNum = (v) => Number.isFinite(v);
 const toNumOrNull = (v) =>
@@ -141,24 +142,29 @@ export async function createFood(req, res) {
 
     const name = String(b.name || "").trim();
     const mass = Number(b.massG);
+    const kcal = toNumOrNull(b.kcal);
+    
     // Kiểm tra rất cơ bản, phần còn lại giao cho Mongoose validators ở model
     if (!name || !isNum(mass) || mass <= 0) {
       return res.status(400).json({ message: "name & massG required" });
+    }
+    
+    // kcal là required trong model
+    if (kcal === null || kcal === undefined) {
+      return res.status(400).json({ message: "kcal is required" });
     }
 
     // Ảnh: chấp nhận multipart (req.file) hoặc link (b.imageUrl)
     let imageUrl = b.imageUrl || null;
     if (req.file) {
       try {
-        ensureDir();
-        const fn = `${userId || "anon"}-${Date.now()}.webp`;
-        const out = path.join(FOOD_DIR, fn);
-        await sharp(req.file.buffer)
-          .rotate()
-          .resize(800, 800, { fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 82 })
-          .toFile(out);
-        imageUrl = `/uploads/foods/${fn}`;
+        // Upload lên Cloudinary
+        imageUrl = await uploadImageWithResize(
+          req.file.buffer,
+          "asset/folder/foods",
+          { width: 800, height: 800, fit: "inside", withoutEnlargement: true },
+          { quality: 82 }
+        );
       } catch (e) {
         console.error("[food.upload]", e?.message || e);
       }
@@ -171,7 +177,7 @@ export async function createFood(req, res) {
       portionName: b.portionName || undefined,
       massG: mass,
       unit: b.unit === "ml" ? "ml" : "g",
-      kcal: toNumOrNull(b.kcal),
+      kcal: kcal, // Đã validate ở trên
       proteinG: toNumOrNull(b.proteinG),
       carbG: toNumOrNull(b.carbG),
       fatG: toNumOrNull(b.fatG),
@@ -247,15 +253,19 @@ export async function updateFood(req, res) {
 
     if (req.file) {
       try {
-        ensureDir();
-        const fn = `${userId || "anon"}-${Date.now()}.webp`;
-        const out = path.join(FOOD_DIR, fn);
-        await sharp(req.file.buffer)
-          .rotate()
-          .resize(800, 800, { fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 82 })
-          .toFile(out);
-        set.imageUrl = `/uploads/foods/${fn}`;
+        // Xóa ảnh cũ từ Cloudinary nếu có
+        if (doc.imageUrl && doc.imageUrl.includes("cloudinary.com")) {
+          await deleteFile(doc.imageUrl, "image").catch(() => {});
+        }
+        
+        // Upload ảnh mới lên Cloudinary
+        const newImageUrl = await uploadImageWithResize(
+          req.file.buffer,
+          "asset/folder/foods",
+          { width: 800, height: 800, fit: "inside", withoutEnlargement: true },
+          { quality: 82 }
+        );
+        set.imageUrl = newImageUrl;
       } catch (e) {
         console.error("[food.upload][update]", e?.message || e);
       }

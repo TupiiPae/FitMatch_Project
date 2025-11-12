@@ -5,7 +5,7 @@ import { requireAtLeast } from "../middleware/requireAdminLevel.js";
 import Food from "../models/Food.js";
 import { uploadImportAny, uploadFoodSingle } from "../middleware/upload.js";
 import { importFoods, validateFoods } from "../controllers/admin.food.import.controller.js";
-import { updateFood } from "../controllers/food.controller.js";
+import { createFood, updateFood } from "../controllers/food.controller.js";
 
 const r = Router();
 
@@ -58,6 +58,7 @@ r.get("/foods", async (req, res) => {
 });
 
 // KHÔNG thêm "/admin" lần nữa ở path con!
+r.post("/foods", uploadFoodSingle, createFood); // Tạo món ăn mới
 r.post("/foods/import/validate", uploadImportAny, validateFoods);
 r.post("/foods/import",          uploadImportAny, importFoods);
 r.patch("/foods/:id", uploadFoodSingle, updateFood);
