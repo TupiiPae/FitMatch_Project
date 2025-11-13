@@ -172,7 +172,7 @@ export default function WorkoutCreate() {
             <label className="wc-title-label">Tên lịch tập <span className="req">*</span></label>
             <input
               className="wc-title-input"
-              placeholder="Tên lịch tập"
+              placeholder="Nhập tên lịch tập"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -200,7 +200,7 @@ export default function WorkoutCreate() {
                 </div>
                 <div className="ov-col">
                   <div className="ov-num">{totals.setCount}</div>
-                  <div className="ov-lab">Tổng số set</div>
+                  <div className="ov-lab">Tổng số hiệp</div>
                 </div>
                 <div className="ov-col">
                   <div className="ov-num">{totals.repCount}</div>
@@ -210,11 +210,10 @@ export default function WorkoutCreate() {
             </div>
           </div>
         </div>
-
-        {/* Divider giữa top và bottom */}
-        <div className="wc-divider" />
+      </div>
 
         {/* BOTTOM: danh sách box */}
+      <div className="wc-frame" onClick={(e) => e.stopPropagation()}> 
         <div className="wc-bottom">
           <h3 className="ff-section-title">Bài tập</h3>
 
@@ -275,6 +274,7 @@ export default function WorkoutCreate() {
                           <th></th>
                         </tr>
                       </thead>
+
                       <tbody>
                         {b.sets.map((st, si) => (
                           <tr key={si}>
@@ -325,7 +325,7 @@ export default function WorkoutCreate() {
         <div className="wc-picker-overlay" onClick={() => setPickerOpen(false)} role="dialog" aria-modal="true">
           <div className="wc-picker-dialog" onClick={(e) => e.stopPropagation()}>
             <ExercisePicker
-              types={["Strength", "Cardio", "Sport"]}
+              types={["Strength", "Cardio"]}
               onClose={() => setPickerOpen(false)}
               onSelect={onPickedExercise}
             />

@@ -50,10 +50,10 @@
 .ep-act{ display:flex; align-items:center; }
 .ep-add{
   width:36px; height:36px; border-radius:50%; border:none; cursor:pointer;
-  background:#78BCC4; color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px;
+  background:#008080; color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px;
   transition:transform .15s ease, background .15s ease;
 }
-.ep-add:hover{ background:#008080; transform:scale(1.06); }
+.ep-add:hover{ background:#78BCC4; transform:scale(1.06); }
 
 .ep-empty{ text-align:center; color:#64748b; padding:18px 0; }
 
