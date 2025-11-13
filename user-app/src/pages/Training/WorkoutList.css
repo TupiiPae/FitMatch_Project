@@ -48,7 +48,7 @@
   font-weight:700; text-align:left;
   font-size:18px; color:#002C3E; border-radius:4px;
 }
-.wl-line{ border:0; border-top:1px solid #e5e7eb; margin: 50px 200px 20px 200px;}
+.wl-line{ border:0; border-top:1px solid #002C3E55; margin: 50px 200px 20px 200px;}
 
 .wl-list{ display:flex; flex-direction:column; gap:12px; }
 .wl-empty{ color:#64748b;padding:12px; margin: 0 150px 0 150px;}
@@ -56,13 +56,13 @@
 
 /* ===== ITEM CARD (theo mock) ===== */
 .wl-item{
-  border:1px solid #002C3E55;
+  border:2px solid #002C3E55;
   border-radius:8px;              /* bo tròn ~8px */
   padding:14px 14px 10px;
   background:#fff;
   cursor:pointer;
   transition: background .12s ease;
-  box-shadow: 0 2px 4px rgba(52, 207, 135, 0.32);
+  box-shadow: 0 2px 4px rgba(47, 67, 143, 0.32);
 }
 .wl-item:hover{ background:#fcfcfc; }
 
@@ -100,10 +100,10 @@
   display:flex; flex-direction:column; gap:2px;
   position:relative;
 }
-.wl-metrics .mcol + .mcol{ border-left:1px solid #e5e7eb; } /* vạch dọc */
+.wl-metrics .mcol + .mcol{ border-left:1px solid #002C3E55; } /* vạch dọc */
 .wl-metrics .num{ font-size:18px; font-weight:700; color:#0f172a; }
 .wl-metrics .lab{ font-size:14px; color:#64748b; }
-
+.wl-metrics .calo {color: #ef4444}
 /* ===== Modal (dùng lại style giống RecordMeal) ===== */
 .modal { position: fixed; inset: 0; background: rgba(15,23,42,.5); display: flex; align-items: center; justify-content: center; z-index: 999; }
 .modal-card { width: 520px; max-width: 92vw; background: #fff; border-radius: 6px; padding: 16px; }

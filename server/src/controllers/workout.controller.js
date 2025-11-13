@@ -1,7 +1,9 @@
 // server/src/controllers/workout.controller.js
 import WorkoutPlan from "../models/WorkoutPlan.js";
 import Exercise from "../models/Exercise.js";
+import { User } from "../models/User.js";
 import { responseOk } from "../utils/response.js";
+import { calcPlanKcalByMET } from "../utils/health.js";
 
 function ownerFilter(userId) { return { user: userId, status: "active" }; }
 function savedFilter(userId) { return { savedBy: userId, status: "active" }; }
@@ -27,7 +29,7 @@ export async function getPlan(req, res) {
   const plan = await WorkoutPlan.findById(id).lean();
   if (!plan) return res.status(404).json({ message: "Không tìm thấy lịch tập" });
   if (String(plan.user) !== String(req.userId) && !(plan.savedBy || []).includes(req.userId)) {
-    // vẫn cho xem nếu đã lưu
+    // cho xem nếu đã lưu — giữ nguyên
   }
   return res.json(responseOk(plan));
 }
@@ -38,11 +40,13 @@ export async function createPlan(req, res) {
 
   if (!name || !Array.isArray(items)) return res.status(422).json({ message: "Dữ liệu không hợp lệ" });
 
-  // build items with snapshot
-  const exerciseIds = items.map(it => it.exercise);
+  // map exercise info
+  const ids = items.map(it => it.exercise);
   const exMap = new Map();
-  if (exerciseIds.length) {
-    const exs = await Exercise.find({ _id: { $in: exerciseIds } }).select("_id name type").lean();
+  if (ids.length) {
+    const exs = await Exercise.find({ _id: { $in: ids } })
+      .select("_id name type caloriePerRep")
+      .lean();
     exs.forEach(e => exMap.set(String(e._id), e));
   }
 
@@ -53,15 +57,23 @@ export async function createPlan(req, res) {
     return {
       exercise: e._id,
       exerciseName: e.name,
-      type: e.type === "Cardio" ? "Cardio" : "Strength",
+      type: e.type === "Cardio" ? "Cardio" : (e.type === "Sport" ? "Sport" : "Strength"),
+      caloriePerRep: Number(e.caloriePerRep || 0),
       sets,
     };
   });
 
   const plan = new WorkoutPlan({ user: userId, name: String(name).trim(), items: normalized });
   plan.recalcTotals();
-  await plan.save();
 
+  // cân nặng hiện tại của user
+  const user = await User.findById(userId).select("profile.weightKg").lean();
+  const weightKg = Number(user?.profile?.weightKg || 60);
+
+  // tính & lưu tổng kcal
+  plan.totals.kcal = calcPlanKcalByMET(plan.items, weightKg);
+
+  await plan.save();
   return res.status(201).json(responseOk(plan));
 }
 
@@ -75,11 +87,12 @@ export async function updatePlan(req, res) {
   if (name != null) plan.name = String(name).trim();
 
   if (Array.isArray(items)) {
-    // refresh snapshot for any changed exercise
-    const exIds = items.map(it => it.exercise);
+    const ids = items.map(it => it.exercise);
     const exMap = new Map();
-    if (exIds.length) {
-      const exs = await Exercise.find({ _id: { $in: exIds } }).select("_id name type").lean();
+    if (ids.length) {
+      const exs = await Exercise.find({ _id: { $in: ids } })
+        .select("_id name type caloriePerRep")
+        .lean();
       exs.forEach(e => exMap.set(String(e._id), e));
     }
     plan.items = items.map(it => {
@@ -89,13 +102,19 @@ export async function updatePlan(req, res) {
       return {
         exercise: e._id,
         exerciseName: e.name,
-        type: e.type === "Cardio" ? "Cardio" : "Strength",
+        type: e.type === "Cardio" ? "Cardio" : (e.type === "Sport" ? "Sport" : "Strength"),
+        caloriePerRep: Number(e.caloriePerRep || 0),
         sets,
       };
     });
   }
 
   plan.recalcTotals();
+
+  const user = await User.findById(req.userId).select("profile.weightKg").lean();
+  const weightKg = Number(user?.profile?.weightKg || 60);
+  plan.totals.kcal = calcPlanKcalByMET(plan.items, weightKg);
+
   await plan.save();
   return res.json(responseOk(plan));
 }

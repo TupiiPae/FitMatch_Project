@@ -13,7 +13,7 @@
   --fm-muted: #6b7280;
 
   /* === MÀU MỚI === */
-  --nav-bg: #f4f6ea;
+  --nav-bg: #f4f6ea; 
   --nav-text: #78BCC4;
   --menu-hover-text: #008080;
 }
@@ -24,7 +24,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f4f6ea;
+  background: #f4f6ea; /*#f4f6ea*/
   color: var(--fm-text);
 }
 

@@ -7,7 +7,9 @@ import {
   faBookmark, faRightFromBracket, faUser, faMessage, faGear, faCircleInfo,
   faShieldHalved, faCamera, faChartLine, faUserFriends, faMobileAlt,
   faAppleAlt, faUtensils, faBrain, faCalculator, faBookOpen,
-  faHeartPulse, faPersonRunning, faDumbbell, faVolleyball
+  faHeartPulse, faPersonRunning, faDumbbell, faVolleyball,
+  faClipboard,
+  faClipboardList
 } from "@fortawesome/free-solid-svg-icons";
 import { getMe } from "../../api/account";
 import api from "../../lib/api";
@@ -281,28 +283,35 @@ export default function Navbar({
                         <FontAwesomeIcon icon={faCalendar} />
                         <div>
                           <strong>Lịch tập của bạn</strong>
-                          <span>Xem kế hoạch tập luyện tuần này</span>
+                          <span>Xem kế hoạch tập luyện của bạn</span>
+                        </div>
+                      </NavLink>
+                      <NavLink to="/tap-luyen/lich-cua-ban/tao" className="fm-megamenu-link" role="menuitem">
+                        <FontAwesomeIcon icon={faClipboardList} />
+                        <div>
+                          <strong>Tạo lịch tập của bạn</strong>
+                          <span>Xây dựng kế hoạch tập luyện của bạn</span>
                         </div>
                       </NavLink>
                       <NavLink to="/tap-luyen/bai-tap/khang-luc" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faDumbbell} />
                         <div>
                           <strong>Các bài tập kháng lực</strong>
-                          <span>Xây dựng và phát triển cơ bắp</span>
+                          <span>Danh sách bài tập xây dựng và phát triển cơ bắp</span>
                         </div>
                       </NavLink>
                       <NavLink to="/tap-luyen/bai-tap/cardio" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faHeartPulse} />
                         <div>
-                          <strong>Các bài tập Cardio</strong>
-                          <span>Tăng cường sức bền tim mạch</span>
+                          <strong>Các bài tập cardio</strong>
+                          <span>Danh sách bài tập tăng cường sức bền tim mạch</span>
                         </div>
                       </NavLink>
                       <NavLink to="/tap-luyen/bai-tap/the-thao" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faVolleyball} />
                         <div>
                           <strong>Các môn thể thao</strong>
-                          <span>Ghi lại hoạt động thể thao của bạn</span>
+                          <span>Danh sách các môn thể thao </span>
                         </div>
                       </NavLink>
                       <NavLink to="/tap-luyen/goi-y" className="fm-megamenu-link" role="menuitem">

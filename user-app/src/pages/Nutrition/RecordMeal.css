@@ -124,11 +124,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid #002C3E55; /* Nhạt hơn */
+  border: 2px solid #002C3E55; /* Nhạt hơn */
   border-radius: 4px;
   padding: 10px;
   cursor: pointer;
   background: #fff;
+  box-shadow: 0 2px 4px rgba(47, 67, 143, 0.32);
 
 }
 .nm-item:hover { background: #fcfcfc; }
@@ -156,7 +157,7 @@
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: #78BCC4;
+  background: #008080;
   color: #fff;
   display: inline-flex;
   align-items: center;
@@ -168,7 +169,7 @@
   padding: 0; /* bỏ padding chữ */
 }
 .nm-item .act .add.add-round:hover {
-  background: #008080;
+  background: #78BCC4;
   transform: scale(1.08);
 }
 

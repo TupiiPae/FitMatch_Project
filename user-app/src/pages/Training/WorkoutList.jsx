@@ -1,16 +1,15 @@
+// user-app/src/pages/Workout/WorkoutList.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./WorkoutList.css";
 import { listMyWorkouts, listSavedWorkouts, deletePlan } from "../../api/workouts";
 import { toast } from "react-toastify";
 
-// Map từ schema BE -> UI item
 function mapPlanToUi(p) {
   const t = p?.totals || {};
   const names = (p?.items || [])
     .map(it => it?.exerciseName || it?.name)
     .filter(Boolean);
-  // Ghép thành “note” (1 dòng), cắt gọn nếu dài
   const raw = names.join(", ");
   const MAX = 120;
   const note = raw.length > MAX ? raw.slice(0, MAX).replace(/\s+[^,]*$/, "") + "…" : raw;
@@ -18,10 +17,11 @@ function mapPlanToUi(p) {
   return {
     _id: p._id,
     title: p.name || "(Không tên)",
-    note,                                  // <— dòng mô tả bài tập
+    note,
     exCount: t.exercises ?? 0,
     setCount: t.sets ?? 0,
     repCount: t.reps ?? 0,
+    kcal: t.kcal ?? t.calories ?? p.totalKcal ?? 0,   // <— tổng calorie đã lưu
     updatedAt: p.updatedAt,
   };
 }
@@ -29,22 +29,20 @@ function mapPlanToUi(p) {
 export default function WorkoutList() {
   const nav = useNavigate();
 
-  // search + filter
   const [q, setQ] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [showMine, setShowMine] = useState(true);
   const [showSaved, setShowSaved] = useState(true);
 
-  // data
   const [mine, setMine] = useState([]);
   const [saved, setSaved] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // UI states (dropdown + confirm delete)
   const [menuId, setMenuId] = useState(null);
   const [confirmDel, setConfirmDel] = useState({ open: false, id: null, name: "" });
 
   const headRef = useRef(null);
+  const nf = new Intl.NumberFormat("vi-VN");
 
   async function loadAll() {
     setLoading(true);
@@ -61,10 +59,9 @@ export default function WorkoutList() {
     }
   }
 
-  useEffect(() => { loadAll(); /* mount */ }, []);
+  useEffect(() => { loadAll(); }, []);
   useEffect(() => { const t = setTimeout(loadAll, 250); return () => clearTimeout(t); }, [q]);
 
-  // click outside: đóng dropdown
   useEffect(() => {
     const fn = (e) => {
       if (!headRef.current?.contains(e.target)) setFilterOpen(false);
@@ -77,7 +74,6 @@ export default function WorkoutList() {
   const listMine = useMemo(() => mine, [mine]);
   const listSaved = useMemo(() => saved, [saved]);
 
-  // ===== Confirm delete helpers =====
   const openConfirmDelete = (it) => setConfirmDel({ open: true, id: it._id, name: it.title });
   const closeConfirmDelete = () => setConfirmDel({ open: false, id: null, name: "" });
   const confirmDeleteNow = async () => {
@@ -106,7 +102,6 @@ export default function WorkoutList() {
           />
         </div>
 
-        {/* Filter dropdown giống RecordMeal */}
         <div className={`filter ${filterOpen ? "open" : ""}`} onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
@@ -145,7 +140,7 @@ export default function WorkoutList() {
 
       {/* ===== LIST FRAME ===== */}
       <div className="wl-list-frame">
-        {/* Mục “Tạo bởi bạn” */}
+        {/* Mine */}
         <div className="wl-section">
           <div className="wl-sec-head">
             <div className="wl-sec-title">Lịch tập tạo bởi bạn</div>
@@ -166,7 +161,12 @@ export default function WorkoutList() {
                     menuOpen={menuId === w._id}
                     onToggleMenu={() => setMenuId(menuId === w._id ? null : w._id)}
                     onDelete={() => openConfirmDelete(w)}
-                    onEdit={() => {/* Tạm thời: mở trang sửa khi có */}}
+                    onEdit={() => { 
+                      setMenuId(null);
+                      // mở WorkoutCreate ở chế độ edit
+                      // dùng query param cho an toàn router
+                      nav(`/tap-luyen/lich-cua-ban/tao?id=${w._id}`);
+                    }}
                     onMarkDone={() => { toast.success("Đã đánh dấu là đã thực hiện"); setMenuId(null); }}
                   />
                 ))
@@ -179,7 +179,7 @@ export default function WorkoutList() {
 
         <hr className="wl-line" />
 
-        {/* Mục “Gợi ý đã lưu” */}
+        {/* Saved */}
         <div className="wl-section">
           <div className="wl-sec-head">
             <div className="wl-sec-title">Lịch tập gợi ý đã lưu</div>
@@ -198,7 +198,7 @@ export default function WorkoutList() {
                     item={w}
                     menuOpen={menuId === w._id}
                     onToggleMenu={() => setMenuId(menuId === w._id ? null : w._id)}
-                    onDelete={null /* không cho xóa ở danh sách đã lưu */}
+                    onDelete={null}
                     onEdit={null}
                     onMarkDone={() => { toast.success("Đã đánh dấu là đã thực hiện"); setMenuId(null); }}
                   />
@@ -211,7 +211,7 @@ export default function WorkoutList() {
         </div>
       </div>
 
-      {/* ====== CONFIRM DELETE MODAL (giống RecordMeal) ====== */}
+      {/* confirm delete */}
       {confirmDel.open && (
         <div className="modal" onClick={closeConfirmDelete}>
           <div
@@ -225,7 +225,6 @@ export default function WorkoutList() {
               <div className="cm-icon">
                 <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
               </div>
-              <h3 id="confirm-del-title">Xóa lịch tập?</h3>
             </div>
             <div className="cm-body">
               Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?<br />
@@ -244,11 +243,12 @@ export default function WorkoutList() {
 
 function WorkoutItem({ item, mine, menuOpen, onToggleMenu, onDelete, onEdit, onMarkDone }) {
   const nav = useNavigate();
-  const goDetail = () => nav(`/tap-luyen/tao-lich/${item._id}`); // TODO: route detail thực tế
+  const goDetail = () => nav(`/tap-luyen/tao-lich/${item._id}`); // giữ placeholder nếu bạn có trang chi tiết
+
+  const nf = new Intl.NumberFormat("vi-VN");
 
   return (
     <div className="wl-item" onClick={goDetail}>
-      {/* TOP: Title + note + menu */}
       <div className="wl-top">
         <div className="wl-tmeta">
           <div className="wl-title">{item.title}</div>
@@ -281,7 +281,6 @@ function WorkoutItem({ item, mine, menuOpen, onToggleMenu, onDelete, onEdit, onM
         </div>
       </div>
 
-      {/* BOTTOM: 3 chips tổng số */}
       <div className="wl-metrics" aria-label="Tóm tắt lịch tập">
         <div className="mcol">
           <div className="num">{item.exCount ?? 0}</div>
@@ -295,8 +294,8 @@ function WorkoutItem({ item, mine, menuOpen, onToggleMenu, onDelete, onEdit, onM
           <div className="num">{item.repCount ?? 0}</div>
           <div className="lab">Tổng số reps</div>
         </div>
-          <div className="mcol">
-          <div className="num">Gán dữ liệu ở đây</div>
+        <div className="mcol">
+          <div className="num calo"><i className="fa-solid fa-fire-flame-curved" /> {nf.format(item.kcal || 0)} kcal</div>
           <div className="lab">Tổng lượng Calorie đốt</div>
         </div>
       </div>

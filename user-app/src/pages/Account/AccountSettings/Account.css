@@ -112,7 +112,7 @@
 .acc-page .pf-content .acc-edit{
   display:inline-flex; align-items:center; gap:8px;
   border:1px solid var(--fm-ring); background:#fff; color:#002C3E;
-  border-radius:30px; padding:6px 10px; cursor:pointer; font-weight:400;
+  border-radius:30px; padding:6px 10px; cursor:pointer; font-weight:400; font-size: 18px;
 }
 .acc-page .pf-content .acc-edit:hover{ background:#f9fafb; }
 .acc-page .pf-content .acc-edit-actions{ display:flex; gap:2px; }

@@ -4,7 +4,7 @@ import "./Account.css";
 import { getMe } from "../../../api/account";
 import api from "../../../lib/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCamera, faPen, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCamera, faPen, faPenToSquare, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 import AvatarCropper from "../../../components/AvatarCropper";
 import countries from "../../../data/locations/countries.json";
@@ -250,7 +250,7 @@ export default function AccountInfo() {
           <div className="acc-sec-head">
             <h3>Thông tin cá nhân</h3>
             {!editInfo ? (
-              <button className="acc-edit" onClick={() => setEditInfo(true)}><FontAwesomeIcon icon={faPen} /></button>
+              <button className="acc-edit" onClick={() => setEditInfo(true)}><FontAwesomeIcon icon={faPenToSquare} /></button>
             ) : (
               <div className="acc-edit-actions">
                 <button className="btn-tertiary" onClick={() => { 
@@ -377,7 +377,7 @@ export default function AccountInfo() {
           <div className="acc-sec-head">
             <h3>Địa chỉ</h3>
             {!editAddr ? (
-              <button className="acc-edit" onClick={() => setEditAddr(true)}><FontAwesomeIcon icon={faPen} /></button>
+              <button className="acc-edit" onClick={() => setEditAddr(true)}><FontAwesomeIcon icon={faPenToSquare} /></button>
             ) : (
               <div className="acc-edit-actions">
                 <button className="btn-tertiary" onClick={() => {

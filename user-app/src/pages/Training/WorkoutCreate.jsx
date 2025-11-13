@@ -1,5 +1,6 @@
+// user-app/src/pages/Workout/WorkoutCreate.jsx
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import "./WorkoutCreate.css";
 import { toast } from "react-toastify";
 import api from "../../lib/api";
@@ -31,6 +32,12 @@ const kcalByMET = (caloriePerRep, weightKg, minutes) => {
 
 export default function WorkoutCreate() {
   const nav = useNavigate();
+  const loc = useLocation();
+  const params = useParams();
+
+  // detect edit mode: ưu tiên query ?id=..., fallback /:id
+  const query = new URLSearchParams(loc.search);
+  const editingId = query.get("id") || params.id || null;
 
   const [name, setName] = useState("");
   const [blocks, setBlocks] = useState([makeEmptyBlock()]);
@@ -54,6 +61,35 @@ export default function WorkoutCreate() {
     })();
   }, []);
 
+  // nếu edit: load plan
+  useEffect(() => {
+    if (!editingId) return;
+    (async () => {
+      try {
+        const r = await api.get(`/user/workouts/${editingId}`);
+        const plan = r?.data?.data || r?.data || {};
+        setName(plan?.name || "");
+        const mapped = (plan?.items || []).map(it => ({
+          // dựng lại object exercise để FE tính kcal y như lúc tạo
+          exercise: {
+            _id: it.exercise,
+            name: it.exerciseName,
+            type: it.type,
+            caloriePerRep: it.caloriePerRep ?? 0,
+          },
+          sets: (it.sets || []).map(s => ({
+            kg: s.kg ?? "",
+            reps: s.reps ?? "",
+            restSec: s.restSec ?? "",
+          })),
+        }));
+        setBlocks(mapped.length ? mapped : [makeEmptyBlock()]);
+      } catch (e) {
+        toast.error("Không tải được lịch tập cần chỉnh sửa");
+      }
+    })();
+  }, [editingId]);
+
   // totals
   const totals = useMemo(() => {
     const exCount = blocks.filter((b) => !!b.exercise).length;
@@ -62,7 +98,7 @@ export default function WorkoutCreate() {
     return { exCount, setCount, repCount };
   }, [blocks]);
 
-  // total kcal
+  // total kcal (theo thời gian)
   const totalKcal = useMemo(() => {
     if (!weightKg) return 0;
     let total = 0;
@@ -118,7 +154,7 @@ export default function WorkoutCreate() {
     });
   };
 
-  // submit
+  // payload
   const buildPayload = () => {
     const items = blocks
       .filter((b) => !!b.exercise)
@@ -132,20 +168,27 @@ export default function WorkoutCreate() {
       }));
     return { name: name.trim(), items };
   };
+
   const validate = () => {
     if (!name.trim()) { toast.error("Vui lòng nhập tên lịch tập"); return false; }
     if (!blocks.some((b) => !!b.exercise)) { toast.error("Vui lòng chọn ít nhất 1 bài tập"); return false; }
     return true;
   };
-  const onCreate = async () => {
+
+  const onSave = async () => {
     if (!validate()) return;
     const payload = buildPayload();
     try {
-      await api.post("/user/workouts", payload);
-      toast.success("Tạo lịch tập thành công");
+      if (editingId) {
+        await api.patch(`/user/workouts/${editingId}`, payload);
+        toast.success("Cập nhật lịch tập thành công");
+      } else {
+        await api.post("/user/workouts", payload);
+        toast.success("Tạo lịch tập thành công");
+      }
       nav("/tap-luyen/lich-cua-ban");
     } catch (err) {
-      const msg = err?.response?.data?.message || "Không thể lưu lịch tập. Có thể API chưa được triển khai (/api/user/workouts).";
+      const msg = err?.response?.data?.message || (editingId ? "Không thể cập nhật lịch tập." : "Không thể lưu lịch tập.");
       toast.error(msg);
       console.error("[WorkoutCreate] save error:", err);
     }
@@ -155,12 +198,13 @@ export default function WorkoutCreate() {
 
   return (
     <div className="wc-wrap" onClick={() => setMenuIdx(-1)}>
+      {/* ===== HEAD ===== */}
       <div className="wc-head" onClick={(e) => e.stopPropagation()}>
         <button type="button" className="tool-left" onClick={() => nav(-1)}>
           <i className="fa-solid fa-chevron-left"></i> Quay lại
         </button>
-        <div className="title">Xây dựng lịch tập</div>
-        <button className="create" onClick={onCreate}>Tạo lịch</button>
+        <div className="title">{editingId ? "Chỉnh sửa lịch tập" : "Xây dựng lịch tập"}</div>
+        <button className="create" onClick={onSave}>{editingId ? "Cập nhật" : "Tạo lịch"}</button>
       </div>
 
       <div className="wc-frame" onClick={(e) => e.stopPropagation()}>
@@ -177,12 +221,11 @@ export default function WorkoutCreate() {
               onChange={(e) => setName(e.target.value)}
             />
           </div>
-          
+
           {/* RIGHT */}
           <div className="wc-top-right">
             <h3 className="ff-section-title">Tổng quan lịch tập</h3>
             <div className="wc-overview">
-              {/* phần đầu ở giữa */}
               <div className="ov-head ov-center">
                 <div className="ov-head">
                   <div className="ov-icon"><i className="fa-solid fa-fire-flame-curved" /></div>
@@ -192,7 +235,6 @@ export default function WorkoutCreate() {
               </div>
               <div className="ov-sep" />
 
-              {/* số liệu */}
               <div className="ov-metrics">
                 <div className="ov-col">
                   <div className="ov-num">{totals.exCount}</div>
@@ -212,8 +254,8 @@ export default function WorkoutCreate() {
         </div>
       </div>
 
-        {/* BOTTOM: danh sách box */}
-      <div className="wc-frame" onClick={(e) => e.stopPropagation()}> 
+      {/* BOTTOM */}
+      <div className="wc-frame" onClick={(e) => e.stopPropagation()}>
         <div className="wc-bottom">
           <h3 className="ff-section-title">Bài tập</h3>
 
@@ -325,7 +367,7 @@ export default function WorkoutCreate() {
         <div className="wc-picker-overlay" onClick={() => setPickerOpen(false)} role="dialog" aria-modal="true">
           <div className="wc-picker-dialog" onClick={(e) => e.stopPropagation()}>
             <ExercisePicker
-              types={["Strength", "Cardio"]}
+              types={["Strength", "Cardio", "Sport"]}
               onClose={() => setPickerOpen(false)}
               onSelect={onPickedExercise}
             />

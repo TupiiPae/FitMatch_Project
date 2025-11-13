@@ -126,7 +126,7 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #eef2f7;
+  border-bottom: 2px solid #002C3E55;
 }
 .dj-grid-header .h-col-1 {
   text-align: center; /* Căn giữa "Thời gian" */
@@ -145,7 +145,7 @@
   display: grid;
   grid-template-columns: 100px 1fr 50px; /* Thêm cột cho nút + */
   align-items: flex-start;
-  border-top: 1px dashed #eef2f7;
+  border-top: 1px dashed #002C3E55;
   /* THAY ĐỔI: Căn lề */
   padding: 8px;
   gap: 8px;
@@ -154,10 +154,10 @@
 .hh {
   color: #333;
   font-size: 13px;
-  line-height: 30px; /* Căn giữa với nút */
+  line-height: 30px; 
   font-weight: 600;
-  margin-top: 0; /* Bỏ margin top cũ */
-  text-align: center; /* Căn giữa */
+  margin-top: 0; 
+  text-align: center; 
 }
 .entries { display: flex; flex-direction: column; gap: 6px; }
 
@@ -202,7 +202,7 @@
   height: 30px;
   border-radius: 50%;
   border: none;
-  background: #78BCC4;
+  background: #008080;
   color: white;
   font-size: 16px;
   line-height: 30px;
@@ -210,7 +210,7 @@
   transition: all 0.2s ease;
 }
 .hour-add button:hover {
-  background: #008080;
+  background: #78BCC4;
   transform: scale(1.1);
 }
 
@@ -472,7 +472,7 @@
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: #78BCC4;
+  background: #008080;
   color: #fff;
   display: inline-flex;
   align-items: center;
@@ -484,7 +484,7 @@
   padding: 0; /* bỏ padding chữ */
 }
 .modal-nm-item .add.add-round:hover {
-  background: #008080;
+  background: #78BCC4;
   transform: scale(1.08);
 }
 .modal-more {
@@ -676,8 +676,7 @@
 
 .djd-detail-close{
   position:absolute; top:8px; right:10px;
-  width:32px; height:32px; border:1px solid #e5e7eb;
-  border-radius:4px; background:#fff; color:#6b7280;
+  width:32px; height:32px;  background:#fff; color:#6b7280;
   font-size:18px; line-height:30px; cursor:pointer;
 }
 .djd-detail-close:hover{ background:#f9fafb; color:#111827; }

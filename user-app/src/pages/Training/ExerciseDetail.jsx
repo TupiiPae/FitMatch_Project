@@ -54,7 +54,6 @@ export default function ExerciseDetail() {
 
       <div className="nm-list-frame exd-frame">
         <h1 className="exd-title">{it.name}</h1>
-        <div className="exd-note">Được tạo bởi đội ngũ FitMatch</div>
 
         {it.videoUrl && (
           <div className="exd-video">
@@ -75,7 +74,7 @@ export default function ExerciseDetail() {
           <div className="exd-left">
             <div className="exdp-card">
               <div className="exdp-strip" />
-              <div className="exdp-head">Chi tiết bài tập</div>
+              <div className="exdp-head">Tổng quan bài tập</div>
               <table className="exdp-table">
                 <tbody>
                   <tr>
@@ -114,20 +113,21 @@ export default function ExerciseDetail() {
             </div>
           </div>
         </div>
+        <div className="exd-cols">
+          {guideHtml && (
+            <section className="exd-section exd-centered">
+              <h2>Hướng dẫn bài tập</h2>
+              <div className="exd-html" dangerouslySetInnerHTML={{ __html: guideHtml }} />
+            </section>
+          )}
 
-        {guideHtml && (
-          <section className="exd-section exd-centered">
-            <h2>Hướng dẫn bài tập</h2>
-            <div className="exd-html" dangerouslySetInnerHTML={{ __html: guideHtml }} />
-          </section>
-        )}
-
-        {descHtml && (
-          <section className="exd-section exd-centered">
-            <h2>Mô tả bài tập</h2>
-            <div className="exd-html" dangerouslySetInnerHTML={{ __html: descHtml }} />
-          </section>
-        )}
+          {descHtml && (
+            <section className="exd-section exd-centered">
+              <h2>Mô tả bài tập</h2>
+              <div className="exd-html" dangerouslySetInnerHTML={{ __html: descHtml }} />
+            </section>
+          )}
+        </div>
       </div>
     </div>
   );
