@@ -212,12 +212,12 @@
 
 /* Picker overlay */
 .wc-picker-overlay{
-  position:fixed; inset:0; background:rgba(15,23,42,.45);
-  backdrop-filter:blur(2px); display:grid; place-items:center; z-index:1100; padding:16px;
+  position:fixed; inset:0; background: rgba(15, 23, 42, .5);
+ display:grid; place-items:center; z-index:100; padding:16px;
 }
 .wc-picker-dialog{
   width:min(920px,96vw); max-height:86vh; overflow:auto; background:#fff;
-  border:1px solid #e5e7eb; border-radius:4px; box-shadow:0 10px 30px rgba(2,6,23,.18);
+  border-radius:4px; box-shadow:0 10px 30px rgba(2,6,23,.18);
 }
 
 /* Responsive */
