@@ -137,3 +137,99 @@
 .btn.ghost{ background:#fff; }
 .btn.bad{ background:#fef2f2; color:#b91c1c; border:1px solid #f4d0d0; }
 .btn.bad:hover{ background:#fee2e2; }
+
+/* ===== WORKOUT PLAN MODAL ===== */
+.wp-modal{
+  width: 620px;
+  max-width: 94vw;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 16px;
+  position: relative;
+
+  /* NEW: khống chế chiều cao & bố cục */
+  max-height: 700px;           /* yêu cầu */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;            /* ẩn phần tràn ở ngoài modal */
+}
+
+.wp-close{
+  position:absolute; right:10px; top:10px;
+  width:32px; height:32px; display:grid; place-items:center;
+  border:none; background:transparent; cursor:pointer; color:#475569;
+}
+.wp-close:hover{ color:#0f172a; }
+
+.wp-head{
+  display:grid; grid-template-columns:120px 1fr; gap:14px; align-items:center; 
+  margin-bottom:10px;
+
+  /* NEW: cố định chiều cao head, không cuộn */
+  flex: 0 0 auto;
+}
+
+.wp-thumb{
+  width:120px; height:120px; object-fit:cover;
+  border-radius:4px; border:1px solid #eef2f7;
+}
+.wp-titlebox{ display:flex; flex-direction:column; gap:6px; }
+.wp-title{ margin:0; font-size:20px; font-weight:700; }
+.wp-sub{ color:#6b7280; font-size:13px; }
+
+.wp-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
+.wp-chips .chip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border-radius:999px; font-size:14px;
+  border:1px solid #e5e7eb; color:#374151; background:#fff;
+}
+.wp-chips .chip-red{ border-color:#f4d0d0; color:#b91c1c; }
+.wp-chips .chip-blue{ border-color:#d8f0f2; color:#0b5066; }
+.wp-chips .chip-gray{ border-color:#e5e7eb; color:#475569; }
+
+/* Exercise list box */
+.wp-exlist{
+  border:1px dashed #002C3E55;
+  border-radius:8px;
+  padding:12px;
+  display:grid; gap:10px;
+  margin-top:8px;
+  background:#fff;
+
+  /* NEW: phần này sẽ cuộn khi dài */
+  flex: 1 1 auto;     /* chiếm phần còn lại của modal */
+  min-height: 0;      /* quan trọng để overflow hoạt động trong flex container */
+  overflow: auto;     /* bật scroll dọc */
+}
+
+.wp-exrow{
+  display:flex; align-items:center; gap:12px;
+  padding:6px 8px; border-radius:8px;
+}
+.wp-eximg{
+  width:80px; height:80px; border-radius:999px; 
+  object-fit:cover; border:1px solid #e5e7eb; background:#f8fafc;
+
+  /* FIX: giữ đúng kích thước tròn 64px */
+  flex: 0 0 64px;
+}
+.wp-exmeta{ display:flex; flex-direction:column; gap:2px; }
+.wp-exname{
+  background:none; border:none; padding:0; margin:0;
+  color:#008080; font-weight:600; cursor:pointer; text-align:left; font-size: 18px;
+}
+.wp-exname:hover{ text-decoration:underline; }
+.wp-exsub{ color:#6b7280; font-size:16px; }
+
+/* Modal footer */
+.wp-actions{ 
+  display:flex; justify-content:flex-end; gap:10px; margin-top:10px;
+
+  /* NEW: cố định footer, không cuộn */
+  flex: 0 0 auto;
+}
+
+/* Tuỳ chọn: thẩm mỹ thanh cuộn (WebKit) */
+.wp-exlist::-webkit-scrollbar{ width:8px; }
+.wp-exlist::-webkit-scrollbar-thumb{ background:#e5e7eb; border-radius:999px; }
+.wp-exlist:hover::-webkit-scrollbar-thumb{ background:#cbd5e1; }

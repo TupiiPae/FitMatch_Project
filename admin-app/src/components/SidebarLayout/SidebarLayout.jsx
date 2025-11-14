@@ -247,7 +247,7 @@ export default function SidebarLayout(){
             );
           })}
 
-          <div className="fm-cat fm-cat--settings">Cài đặt</div>
+          <div className="fm-cat fm-cat--settings">Hồ sơ</div>
 
           <button className="fm-sec__head fm-sec__head--single" onClick={goProfile} title="Thông tin tài khoản">
             <div className="fm-sec__title">

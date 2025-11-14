@@ -8,6 +8,14 @@ import { calcPlanKcalByMET } from "../utils/health.js";
 function ownerFilter(userId) { return { user: userId, status: "active" }; }
 function savedFilter(userId) { return { savedBy: userId, status: "active" }; }
 
+// Chuẩn hoá đường dẫn ảnh (luôn trả về chuỗi bắt đầu bằng http(s) hoặc '/')
+function normalizeImage(u) {
+  if (!u) return "";
+  const s = String(u).trim();
+  if (!s) return "";
+  return (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("/")) ? s : `/${s}`;
+}
+
 export async function listPlans(req, res) {
   const { q, scope = "mine", limit = 20, skip = 0 } = req.query;
   const userId = req.userId;
@@ -26,17 +34,41 @@ export async function listPlans(req, res) {
 
 export async function getPlan(req, res) {
   const { id } = req.params;
-  const plan = await WorkoutPlan.findById(id).lean();
+  let plan = await WorkoutPlan.findById(id).lean();
   if (!plan) return res.status(404).json({ message: "Không tìm thấy lịch tập" });
-  if (String(plan.user) !== String(req.userId) && !(plan.savedBy || []).includes(req.userId)) {
-    // cho xem nếu đã lưu — giữ nguyên
+
+  // Cho xem nếu là chủ hoặc đã lưu (đúng như comment cũ của bạn)
+  if (String(plan.user) !== String(req.userId) && !(plan.savedBy || []).map(String).includes(String(req.userId))) {
+    // Không chặn đọc: giữ nguyên behavior cho phép xem nếu đã lưu
   }
+
+  // Backfill imageUrl cho các item cũ (nếu thiếu), đồng thời normalize đường dẫn
+  if (Array.isArray(plan.items) && plan.items.some(it => !it.imageUrl)) {
+    const needIds = plan.items.filter(it => !it.imageUrl).map(it => it.exercise);
+    if (needIds.length) {
+      const exs = await Exercise.find({ _id: { $in: needIds } }).select("_id imageUrl").lean();
+      const map = new Map(exs.map(e => [String(e._id), normalizeImage(e.imageUrl || "")]));
+      let changed = false;
+      const fixed = plan.items.map(it => {
+        if (!it.imageUrl) {
+          const img = map.get(String(it.exercise)) || "";
+          if (img) { changed = true; return { ...it, imageUrl: img }; }
+        }
+        return it;
+      });
+      if (changed) {
+        await WorkoutPlan.updateOne({ _id: id }, { $set: { items: fixed } });
+        plan = { ...plan, items: fixed };
+      }
+    }
+  }
+
   return res.json(responseOk(plan));
 }
 
 export async function createPlan(req, res) {
   const userId = req.userId;
-  const { name, items = [] } = req.body;
+  const { name, items = [], note = "" } = req.body;
 
   if (!name || !Array.isArray(items)) return res.status(422).json({ message: "Dữ liệu không hợp lệ" });
 
@@ -45,7 +77,7 @@ export async function createPlan(req, res) {
   const exMap = new Map();
   if (ids.length) {
     const exs = await Exercise.find({ _id: { $in: ids } })
-      .select("_id name type caloriePerRep")
+      .select("_id name type caloriePerRep imageUrl")
       .lean();
     exs.forEach(e => exMap.set(String(e._id), e));
   }
@@ -59,11 +91,17 @@ export async function createPlan(req, res) {
       exerciseName: e.name,
       type: e.type === "Cardio" ? "Cardio" : (e.type === "Sport" ? "Sport" : "Strength"),
       caloriePerRep: Number(e.caloriePerRep || 0),
+      imageUrl: normalizeImage(e.imageUrl),
       sets,
     };
   });
 
-  const plan = new WorkoutPlan({ user: userId, name: String(name).trim(), items: normalized });
+  const plan = new WorkoutPlan({
+    user: userId,
+    name: String(name).trim(),
+    note: String(note || "").trim(),
+    items: normalized,
+  });
   plan.recalcTotals();
 
   // cân nặng hiện tại của user
@@ -83,15 +121,29 @@ export async function updatePlan(req, res) {
   if (!plan) return res.status(404).json({ message: "Không tìm thấy lịch tập" });
   if (String(plan.user) !== String(req.userId)) return res.status(403).json({ message: "Không có quyền" });
 
-  const { name, items } = req.body;
+  // Backfill (một lần) cho dữ liệu cũ đang thiếu imageUrl
+  if (Array.isArray(plan.items) && plan.items.some(it => !it.imageUrl)) {
+    const needIds = plan.items.filter(it => !it.imageUrl).map(it => it.exercise);
+    if (needIds.length) {
+      const exs = await Exercise.find({ _id: { $in: needIds } }).select("_id imageUrl").lean();
+      const map = new Map(exs.map(e => [String(e._id), normalizeImage(e.imageUrl || "")]));
+      plan.items = plan.items.map(it => ({
+        ...it,
+        imageUrl: normalizeImage(it.imageUrl) || map.get(String(it.exercise)) || ""
+      }));
+    }
+  }
+
+  const { name, items, note } = req.body;
   if (name != null) plan.name = String(name).trim();
+  if (note != null) plan.note = String(note).trim();
 
   if (Array.isArray(items)) {
     const ids = items.map(it => it.exercise);
     const exMap = new Map();
     if (ids.length) {
       const exs = await Exercise.find({ _id: { $in: ids } })
-        .select("_id name type caloriePerRep")
+        .select("_id name type caloriePerRep imageUrl")
         .lean();
       exs.forEach(e => exMap.set(String(e._id), e));
     }
@@ -104,6 +156,7 @@ export async function updatePlan(req, res) {
         exerciseName: e.name,
         type: e.type === "Cardio" ? "Cardio" : (e.type === "Sport" ? "Sport" : "Strength"),
         caloriePerRep: Number(e.caloriePerRep || 0),
+        imageUrl: normalizeImage(e.imageUrl),
         sets,
       };
     });

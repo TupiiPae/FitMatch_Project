@@ -32,12 +32,11 @@
   background:#0b0f19;
   border-radius:4px;
   overflow:hidden;
-  margin-bottom: 30px;
 }
 .exd-video-box video{ width:100%; height:100%; display:block; }
 
 /* ===== 2 CỘT (chia đôi) ===== */
-.exd-cols{ display:grid; grid-template-columns: 1fr 1fr; gap:30px; padding: 0 135px 0 135px;}
+.exd-cols{ display:grid; grid-template-columns: 1fr 1fr; gap:30px; padding: 30px 135px 0 135px;}
 @media (max-width: 980px){ .exd-cols{ grid-template-columns: 1fr; } }
 
 .exdp-card{
@@ -123,7 +122,6 @@
 }
 
 /* ===== SECTION “Hướng dẫn/Mô tả” ===== */
-.exd-section{ margin-top:30px; }
 .exd-centered{
   max-width: 1400px;
   text-align: left;     /* nội dung canh trái */

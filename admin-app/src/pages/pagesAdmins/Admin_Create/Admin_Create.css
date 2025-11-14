@@ -24,7 +24,7 @@
 .fc-field input {
   height: 56px;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 20px 12px 8px 12px;
   font-size: 14px;
   background: #fff;
@@ -72,11 +72,9 @@
 .fc-field.has-error input,
 .input-invalid {
   border-color: #ef4444 !important;
-  background-color: #fef2f2;
+
 }
-.fc-field.has-error label {
-  color: #b91c1c !important;
-}
+
 .fc-field.has-error input:focus + label {
   color: #b91c1c !important;
 }
@@ -107,7 +105,7 @@
   background: #fef2f2;
   border: 1px solid #fecaca;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 4px;
   font-weight: 500;
 }
 

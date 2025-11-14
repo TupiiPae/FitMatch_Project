@@ -40,6 +40,7 @@ export default function WorkoutCreate() {
   const editingId = query.get("id") || params.id || null;
 
   const [name, setName] = useState("");
+  const [note, setNote] = useState("");                 // <— ghi chú (mới)
   const [blocks, setBlocks] = useState([makeEmptyBlock()]);
   const [weightKg, setWeightKg] = useState(null);
 
@@ -69,13 +70,14 @@ export default function WorkoutCreate() {
         const r = await api.get(`/user/workouts/${editingId}`);
         const plan = r?.data?.data || r?.data || {};
         setName(plan?.name || "");
+        setNote(plan?.note || "");                       // <— load ghi chú
         const mapped = (plan?.items || []).map(it => ({
-          // dựng lại object exercise để FE tính kcal y như lúc tạo
           exercise: {
             _id: it.exercise,
             name: it.exerciseName,
             type: it.type,
             caloriePerRep: it.caloriePerRep ?? 0,
+            imageUrl: it.imageUrl || "",
           },
           sets: (it.sets || []).map(s => ({
             kg: s.kg ?? "",
@@ -166,7 +168,7 @@ export default function WorkoutCreate() {
           restSec: s.restSec === "" ? null : Number(s.restSec),
         })),
       }));
-    return { name: name.trim(), items };
+    return { name: name.trim(), note: note.trim(), items }; 
   };
 
   const validate = () => {
@@ -213,12 +215,23 @@ export default function WorkoutCreate() {
           {/* LEFT */}
           <div className="wc-top-left">
             <h3 className="ff-section-title">Lịch tập</h3>
+
             <label className="wc-title-label">Tên lịch tập <span className="req">*</span></label>
             <input
               className="wc-title-input"
               placeholder="Nhập tên lịch tập"
               value={name}
               onChange={(e) => setName(e.target.value)}
+            />
+
+            {/* === Ghi chú lịch tập (mới) === */}
+            <label className="wc-title-label" style={{ marginTop: 12 }}>Ghi chú lịch tập</label>
+            <textarea
+              className="wc-title-input wc-note-input"
+              placeholder="Ví dụ: Lịch này cho ngày Pull, ưu tiên kỹ thuật – Tempo 3-1-1"
+              rows={5}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
             />
           </div>
 
@@ -367,7 +380,7 @@ export default function WorkoutCreate() {
         <div className="wc-picker-overlay" onClick={() => setPickerOpen(false)} role="dialog" aria-modal="true">
           <div className="wc-picker-dialog" onClick={(e) => e.stopPropagation()}>
             <ExercisePicker
-              types={["Strength", "Cardio", "Sport"]}
+              types={["Strength", "Cardio"]}
               onClose={() => setPickerOpen(false)}
               onSelect={onPickedExercise}
             />

@@ -26,18 +26,18 @@ export default function Welcome() {
     setErrs((e) => ({ ...e, [idx]: true }));
 
   return (
-    <div className="wl-wrap">
-      <div className="wl-head">
-        <h2 className="wl-title">~ Chào mừng đến với ~</h2>
+    <div className="wel-wrap">
+      <div className="wel-head">
+        <h2 className="wel-title">~ Chào mừng đến với ~</h2>
         <Link to="/" className="logo-link" aria-label="Về trang chủ">
           <img src="/images/logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
         </Link>
       </div>
 
-      <div className="wl-grid">
+      <div className="wel-grid">
         {FEATURES.map((f, idx) => (
-          <div className="wl-item" key={idx}>
-            <div className="wl-thumb">
+          <div className="wel-item" key={idx}>
+            <div className="wel-thumb">
               {/* Nếu ảnh lỗi, hiện khung xám (placeholder) */}
               {!errs[idx] ? (
                 <img
@@ -49,15 +49,15 @@ export default function Welcome() {
                   onError={() => onImgError(idx)}
                 />
               ) : (
-                <div className="wl-thumb-fallback" />
+                <div className="wel-thumb-fallback" />
               )}
             </div>
-            <p className="wl-caption">{f.caption}</p>
+            <p className="wel-caption">{f.caption}</p>
           </div>
         ))}
       </div>
 
-      <button className="wl-start" onClick={() => nav("../ten-goi")}>
+      <button className="wel-start" onClick={() => nav("../ten-goi")}>
         Bắt đầu
       </button>
     </div>

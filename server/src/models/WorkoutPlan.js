@@ -12,7 +12,8 @@ const ItemSchema = new mongoose.Schema({
   // snapshots để tránh thay đổi theo thời gian
   exerciseName: { type: String, required: true },
   type: { type: String, enum: ["Strength","Cardio","Sport"], required: true },
-  caloriePerRep: { type: Number, default: 0 }, // <— snapshot MET/caloriePerRep
+  caloriePerRep: { type: Number, default: 0 }, 
+  imageUrl: { type: String, default: "" },
   sets: { type: [SetSchema], default: [{ kg: 0, reps: 0, restSec: 0 }] },
 }, { _id: false });
 
@@ -20,12 +21,15 @@ const TotalsSchema = new mongoose.Schema({
   exercises: { type: Number, default: 0 },
   sets: { type: Number, default: 0 },
   reps: { type: Number, default: 0 },
-  kcal: { type: Number, default: 0 },          // <— tổng calorie đốt, được tính & lưu
+  kcal: { type: Number, default: 0 },          // tổng calorie đốt
 }, { _id: false });
 
 const WorkoutPlanSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   name: { type: String, required: true, maxlength: 100, trim: true },
+
+  // === Ghi chú lịch tập (mới) ===
+  note: { type: String, maxlength: 1000, trim: true, default: "" },
 
   items: { type: [ItemSchema], default: [] },
   totals: { type: TotalsSchema, default: () => ({}) },

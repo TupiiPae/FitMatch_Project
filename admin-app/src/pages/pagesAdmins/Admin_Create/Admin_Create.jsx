@@ -39,7 +39,7 @@ export default function AdminCreate(){
   const onSubmit = async (ev) => {
     ev.preventDefault();
     setErrs({});
-    if (!validate()) { toast.error("Vui lòng sửa lỗi trước khi lưu."); return; }
+    if (!validate()) { toast.error("Vui lòng nhập đúng các trường trước khi lưu."); return; }
     setLoading(true);
     try {
       await createAdminAccount({ username: username.trim(), nickname: nickname.trim() });
