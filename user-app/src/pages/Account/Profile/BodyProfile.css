@@ -1,0 +1,113 @@
+.card {
+  border-radius: 4px;
+}
+
+/* Bố cục dọc (giống bạn đang dùng) */
+.pf-grid-2{
+  display:grid;
+  grid-template-columns: 1fr; /* 1 cột để đổ xuống dọc */
+  gap:16px;                   /* = nhịp dọc chung */
+  padding: 0 12px;
+}
+.pf-grid-2 > :first-child{ order:1; }
+.pf-grid-2 > :last-child{  order:2; }
+
+/* Bảng mục tiêu: đồng bộ bo & viền với GoalsCustomize */
+.pf-table{
+  border:1px solid var(--fm-ring);
+  border-radius:10px;          /* bo 10 */
+  overflow:hidden;
+  background:#fff;             /* đồng nhất nền với card */
+}
+.pf-tr{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+}
+.pf-tr + .pf-tr{ border-top:1px solid var(--fm-ring); }
+.pf-tr-head{ background:#f8fafc; font-weight:600; }
+.pf-td{ padding:8px 10px; }    /* padding bằng fact-row/pill vùng Goals */
+.pf-td-end{ text-align:right; }
+/* Đây là code gốc của bạn, được thêm vào 1 dòng 'transition' */
+.pf-actions .btn-primary-1 {
+  display: flex;
+  align-items: center;
+  justify-self: center;
+  padding: 10px 450px;
+  background: #008080;
+  color: #fff;
+  border-radius: 15px;
+  cursor: pointer;
+
+  /* Thêm dòng này để tạo hiệu ứng chuyển động mượt */
+  /* transition: [thuộc tính] [thời gian] [kiểu chuyển động]; */
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+/* Đây là code hiệu ứng khi trỏ chuột vào */
+.pf-actions .btn-primary-1:hover {
+  /* Di chuyển nút lên trên 4px */
+  transform: translateY(-2px);
+  background:#78BCC4;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+}
+/* Khối đo lường: đồng bộ card nhỏ */
+.pf-measures{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap:10px;                    /* nhịp = Goals pills gap gần nhất */
+}
+.measure{
+  background:#fff;
+  border:1px solid var(--fm-ring);
+  border-radius:10px;          /* bo 10 để đồng nhất */
+  padding:10px 10px;           /* tương đương card nhỏ */
+  box-shadow:0 0 0 rgba(0,0,0,0); /* giữ phẳng như Goals */
+}
+.measure-top{
+  display:flex; align-items:center; justify-content:space-between;
+}
+.measure-name{ font-weight:600; }
+.measure-add{
+  width:26px; height:26px;
+  border-radius:50%;
+  border:1px solid #cbd5e1;
+  background:#f8fafc;
+  cursor:pointer;
+}
+.measure-value{ margin-top:10px; color:#6b7280; }
+
+/* Form blocks: dùng util chung từ ProfileLayout.css (không sửa lại) */
+
+/* Nút hành động: giữ nhịp như Goals */
+.pf-actions{ margin-top:12px; }
+.pf-actions-right{ text-align:right; }
+.btn-secondary{
+  background:#008080; color:#fff; border:0; border-radius:8px; padding:10px 20px; cursor:pointer;
+}
+.btn-secondary:hover{ background:#78BCC4; }
+.pf-modal { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; z-index: 60; }
+.pf-modal-backdrop { position:absolute; inset:0; background: rgba(0,0,0,.35); }
+.pf-modal-card {
+  position: relative; z-index: 1; width: 96%; max-width: 580px;
+  background:#fff; border:1px solid var(--fm-ring); border-radius:12px; padding:16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+}
+.pf-form-2 { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+.pf-form-2 > label { display:flex; flex-direction:column; gap:6px; font-size:14px; color:#334155; }
+.pf-form-2 input, .pf-form-2 select { padding:8px 10px; border:1px solid var(--fm-ring); border-radius:8px; }
+.btn-tertiary{
+  border:1px solid var(--fm-ring); background:#fff; border-radius:8px; padding:10px 15px; font-weight:600; cursor:pointer;
+}
+.btn-tertiary:hover{ background:#f9fafb; }
+.btn-primary2{
+  background:#008080; color:#fff; border:0; border-radius:8px; padding:10px 30px; cursor:pointer;
+}
+.btn-primary2:hover{ background:#006666; }
+
+/* Responsive khớp với Goals */
+@media (max-width:1024px){
+  .pf-measures{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width:640px){
+  .pf-measures{ grid-template-columns: 1fr; }
+}

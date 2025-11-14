@@ -1,0 +1,128 @@
+/* ====== LAYOUT CHUNG TRANG TÀI KHOẢN (scoped) ====== */
+.acc-page .pf-wrap{
+  max-width: var(--nav-max-width);
+  margin: 0 auto;
+  padding: 0 var(--nav-x-pad);
+}
+
+/* Header */
+.acc-page .pf-head{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-bottom:16px;
+}
+.acc-page .pf-user{ display:flex; align-items:center; gap:12px; }
+.acc-page .pf-avatar{ width:72px; height:72px; border-radius:50%; overflow:hidden; border:1px solid var(--fm-ring); background:#fff; }
+.acc-page .pf-avatar img{ width:100%; height:100%; object-fit:cover; }
+.acc-page .pf-name{ font-weight:700; color:#111827; }
+.acc-page .pf-join{ font-size:12px; color:#6b7280; }
+.acc-page .pf-cta{ background:#e6f4ff; border:1px solid #bfe0ff; color:#0b6fdc; padding:8px 12px; border-radius:8px; cursor:pointer; }
+
+/* Body grid: sidebar sticky + content dọc */
+.acc-page .pf-body{
+  display:grid;
+  grid-template-columns: 280px minmax(0,1fr);
+  gap: 20px;
+}
+
+.acc-page .pf-side{
+  position: sticky;
+  top: calc(var(--nav-size) + 16px);
+  align-self: start;
+  height: fit-content;
+}
+
+/* Sidebar title + item — ĐỒNG BỘ với ProfileLayout */
+.acc-page .pf-side-title{
+  color:#111827; font-size:14px; margin:8px 0 6px; font-weight: 500;
+}
+.acc-page .pf-side-item{
+  width:100%; text-align:left; padding:10px 12px; border-radius:8px;
+  background:transparent; border:0; cursor:pointer; color:#111827;
+}
+.acc-page .pf-side-item.is-active{ background:#008080; color: #fff;}
+
+.acc-page .pf-content{ width:100%; display:flex; flex-direction:column; gap:16px; }
+
+/* Card & typography */
+.acc-page .card{
+  background:#fff; border:1px solid var(--fm-ring); border-radius:4px;
+  padding:16px; box-shadow:0 4px 20px rgba(0,0,0,.03);
+}
+.acc-page .pf-title{ font-size:20px; margin:0 0 12px; }
+.acc-page .pf-subtitle{ font-size:14px; margin:12px 0 8px; color:#111827; }
+.acc-page .pf-desc{ color:#6b7280; font-size:14px; margin:6px 0 14px; }
+
+/* Form utils */
+.acc-page .pf-form-row{ display:flex; flex-direction:column; gap:6px; margin-bottom:6px; }
+.acc-page .pf-form-row label, .acc-page .pf-form-cell label{ font-size:12px; color:#6b7280; }
+.acc-page .pf-form-row select, .acc-page .pf-form-row input, .acc-page .pf-unit input{
+  border:1px solid var(--fm-ring); border-radius:8px; padding:8px 10px; outline:none; background:#fff;
+}
+.acc-page .pf-form-5{
+  display:grid; grid-template-columns: repeat(5, minmax(0,1fr));
+  gap:8px; margin-top:8px;
+}
+.acc-page .pf-form-cell{ display:flex; flex-direction:column; gap:6px; }
+.acc-page .pf-unit{ display:flex; align-items:center; gap:6px; }
+.acc-page .pf-unit span{ color:#6b7280; font-size:12px; }
+.acc-page .pf-unit[data-muted] input{ background:#f8fafc; }
+
+/* Table đơn giản */
+.acc-page .pf-table{ border:1px solid var(--fm-ring); border-radius:4px; overflow:hidden; }
+.acc-page .pf-tr{ display:grid; grid-template-columns: 1fr 1fr; }
+.acc-page .pf-tr + .pf-tr{ border-top:1px solid var(--fm-ring); }
+.acc-page .pf-tr-head{ background:#f8fafc; font-weight:600; }
+.acc-page .pf-td{ padding:8px 10px; }
+.acc-page .pf-td-end{ text-align:right; }
+
+/* Buttons */
+.acc-page .pf-actions{ margin-top:12px; }
+.acc-page .pf-actions-right{ text-align:right; }
+.acc-page .btn-primary{
+  background:#002C3E; color:#fff; border:0; border-radius:8px; padding:10px 14px; cursor:pointer;
+}
+.acc-page .btn-primary:hover{ filter:brightness(0.95); }
+.acc-page .btn-secondary{
+  background:#e5e7eb; color:#111827; border:0; border-radius:8px; padding:10px 14px; cursor:pointer;
+}
+.acc-page .btn-secondary:hover{ filter:brightness(0.97); }
+
+/* ===== Modal xác nhận Đăng xuất ===== */
+.acc-page .logout-modal{ position:fixed; inset:0; z-index:1000; }
+.acc-page .logout-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.35); backdrop-filter:saturate(120%) blur(1px); }
+.acc-page .logout-dialog{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:min(520px, calc(100% - 24px));
+  border:1px solid var(--fm-ring); border-radius:8px; background:#fff; padding:20px;
+  box-shadow:0 15px 50px rgba(2,6,23,.2);
+}
+.acc-page .logout-title{
+  font-weight:800; font-size:20px; text-align:center; margin-bottom:8px; color:#111827;
+}
+.acc-page .logout-desc{ text-align:center; color:#6b7280; margin:0 0 18px; }
+.acc-page .logout-actions{ display:flex; justify-content:center; gap:12px; }
+.acc-page .logout-actions .btn-secondary{
+  background:#f3f4f6; color:#111827; border:0; border-radius:8px; padding:10px 16px; cursor:pointer;
+}
+.acc-page .logout-actions .btn-secondary:hover{ filter:brightness(0.97); }
+/* btn-danger đã có trong DeleteAccount.css; phòng khi chưa có, thêm nhẹ: */
+.acc-page .logout-actions .btn-danger{
+  background:#ef4444; color:#fff; border:0; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:700;
+}
+.acc-page .logout-actions .btn-danger:hover{ filter:brightness(0.95); }
+
+/* Responsive chung */
+@media (max-width:1200px){
+  .acc-page .pf-form-5{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+@media (max-width:1024px){
+  .acc-page .pf-form-5{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+}
+@media (max-width:980px){
+  .acc-page .pf-body{ grid-template-columns: 1fr; }
+  .acc-page .pf-side{ position: static; }
+  .acc-page .pf-form-5{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width:640px){
+  .acc-page .pf-form-5{ grid-template-columns: 1fr; }
+}

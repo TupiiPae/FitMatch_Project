@@ -1,0 +1,88 @@
+/* Dùng lại .nm-wrap, .nm-head, .nm-list-frame, .more từ RecordMeal.css */
+
+/* Head: thêm style cho select có caret giống nút Lọc */
+.nm-head.exh { gap: 10px; }
+.ex-select {
+  position: relative;
+  height: 40px;
+  border: 1px solid #002C3E;
+  border-radius: 4px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 8px 0 0;
+  
+}
+.ex-select select{
+  appearance: none;
+  -webkit-appearance: none;
+  height: 38px;
+  border: none;
+  background: transparent;
+  padding: 0 28px 0 10px;
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+}
+.ex-select i{
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: #555;
+}
+
+/* Nút tạo lịch tập bên phải */
+.ex-create-plan{
+  margin-left: auto; /* đẩy sang phải */
+}
+
+/* GRID: 4 cột, card nhỏ gọn */
+.ex-grid{
+  display:grid;
+  gap:15px;
+}
+.ex-grid-4{
+  grid-template-columns: repeat(4, minmax(0,1fr));
+}
+@media (max-width: 1200px){ .ex-grid-4{ grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 900px){ .ex-grid-4{ grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 600px){ .ex-grid-4{ grid-template-columns: 1fr; } }
+
+.ex-card{
+  border:2px solid #002C3E55;
+  border-radius:4px;
+  background:#fff;
+  padding:8px;
+  cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease, background .12s;
+  box-shadow: 0 2px 4px rgba(47, 67, 143, 0.32);
+}
+.ex-card:hover{
+  transform: translateY(-1px);
+  box-shadow:0 6px 16px rgba(0,44,62,.06);
+  background:#fcfcfc;
+}
+
+.ex-thumb{
+  width:100%;
+  aspect-ratio:5/3;
+  border-radius:4px;
+  overflow:hidden;
+  background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #eef2f7;
+}
+.ex-thumb img{ width:100%; height:100%; object-fit:contain; }
+
+.ex-name{ margin-top:6px; font-weight:600; text-align:center; font-size:16px; }
+.ex-chips{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:6px; }
+.ex-chip{
+  font-size:11px; line-height:1;
+  padding:5px 8px;
+  border-radius:999px;
+  border:1px solid #e5e7eb;
+  background:#f3f4f6;
+  color:#334155;
+}
+.ex-tap{ text-align:center; color:#FF7043; font-size:12px; margin-top:6px; }
+.ex-empty{ text-align:center; color:#64748b; padding:14px 0 6px; }

@@ -1,0 +1,99 @@
+/* ========= Backdrop & modal ========= */
+.ep-backdrop{
+  position:fixed; inset:0; background:rgba(15,23,42,.5);
+  display:flex; align-items:center; justify-content:center;
+  z-index:2000; padding:16px; backdrop-filter:blur(2px);
+}
+.ep-modal{
+  width:min(680px,96vw); max-height:90vh; background:#fff; border-radius:4px;
+  border:1px solid #e5e7eb; box-shadow:0 10px 30px rgba(2,6,23,.18);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+
+/* ========= Header ========= */
+.ep-titlebar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-bottom:1px solid #eef2f6; background:#fff;
+}
+.ep-title{ font-weight:600; font-size:18px; }
+.ep-close{
+  width:32px; height:32px; 
+  background:#fff; color:#6b7280; font-size:20px; line-height:30px; cursor:pointer;
+}
+
+/* ========= Search ========= */
+.ep-search{
+  display:flex; align-items:center; gap:8px; padding:12px 16px;
+  border-bottom:1px solid #eef2f6; background:#fff;
+}
+.ep-search i{ color:#9aa0a6; }
+.ep-search input{
+  width:100%; border:none; outline:0; font-size:16px; padding:4px 0;
+}
+
+/* ========= List (long scroll, 1 cột) ========= */
+.ep-list{
+  flex:1 1 auto; overflow:auto; background:#fcfcfc; padding:8px;
+}
+.ep-row{
+  display:grid; grid-template-columns:60px 1fr auto; gap:12px;
+  align-items:center; background:#fff; border:1px solid #e9ecef; border-radius:4px;
+  padding:8px; margin-bottom:8px; cursor:pointer;
+}
+.ep-row:hover{ background:#f8fafc; }
+.ep-row img{
+  width:60px; height:60px; border-radius:4px; object-fit:cover; background:#f1f5f9; border:1px solid #eef2f6;
+}
+.ep-info{ min-width:0; }
+.ep-name{ font-weight:600; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ep-sub{ font-size:12px; color:#64748b; margin-top:2px; }
+.ep-act{ display:flex; align-items:center; }
+.ep-add{
+  width:36px; height:36px; border-radius:50%; border:none; cursor:pointer;
+  background:#008080; color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px;
+  transition:transform .15s ease, background .15s ease;
+}
+.ep-add:hover{ background:#78BCC4; transform:scale(1.06); }
+
+.ep-empty{ text-align:center; color:#64748b; padding:18px 0; }
+
+/* ========= Detail popup (image left – profile right) ========= */
+.epd-backdrop{
+  position:fixed; inset:0; background:rgba(15,23,42,.5);
+  display:flex; align-items:center; justify-content:center;
+  z-index:2100; padding:16px;
+}
+.epd-card{
+  width:min(860px,96vw); background:#fff; border:1px solid #e5e7eb; border-radius:4px;
+  box-shadow:0 10px 30px rgba(2,6,23,.18); position:relative; overflow:hidden;
+}
+.epd-close{
+  position:absolute; top:10px; right:10px;
+  width:32px; height:32px; 
+  background:#fff; color:#6b7280; font-size:20px; line-height:30px; cursor:pointer; z-index:2;
+}
+.epd-close:hover{ background:#f9fafb; color:#111827; }
+
+.epd-grid{ display:grid; grid-template-columns: 1fr 1.3fr; gap:0; }
+@media (max-width: 780px){ .epd-grid{ grid-template-columns:1fr; } }
+
+/* Left image */
+.epd-left{ background:#f8fafc; display:flex; align-items:center; justify-content:center; padding:16px; }
+.epd-img img{ width:min(360px, 100%); height:auto; object-fit:contain; border-radius:4px; border:1px solid #eef2f6; }
+
+/* Right profile */
+.epd-right{ padding:16px; }
+.epd-title{ margin:0; font-size:20px; font-weight:800; color:#0f172a; }
+.epd-sub{ color:#64748b; font-size:13px; margin:4px 0 10px; }
+
+.epd-table{ width:100%; border-collapse:collapse; background:#fff; border:1px solid #eef2f6; border-radius:4px; overflow:hidden; }
+.epd-table th, .epd-table td{ padding:10px 12px; border-bottom:1px solid #eef2f6; vertical-align:middle; font-size:14px; }
+.epd-table th{ width:40%; color:#5a6774; text-align:left; }
+.epd-table tr:last-child th, .epd-table tr:last-child td{ border-bottom:none; }
+
+.epd-actions{ display:flex; justify-content:flex-end; margin-top:12px; }
+.epd-pick{
+  height:38px; padding:0 14px; border-radius:6px; border:1px solid #002C3E;
+  background:#008080; color:#fff; font-weight:700; cursor:pointer;
+}
+.epd-pick:hover{ background:#007070; }

@@ -1,0 +1,380 @@
+/* ===== Khung trang (giống .dj-wrap) ===== */
+.ff-wrap {
+  background-color: #f4f6ea; /* Nền mới */
+  min-height: 100%;
+  margin: -16px; /* Kéo nền ra */
+  padding: 24px 28px 16px 28px;
+}
+
+/* ===== Toolbar (Giữ nguyên) ===== */
+.ff-toolbar {
+  padding: 0;
+  /* position: relative; 
+  /* z-index: 5; (Bỏ) */
+  /* height: 88px; (Bỏ) */
+}
+.ff-toolbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;   /* trái – phải */
+  background: #fff;
+  z-index: 5;
+  padding: 12px 16px;
+  border-radius: 4px;
+  border: 1px solid #002C3E;
+  box-shadow: 0 4px 10px rgba(0, 44, 62, .04);
+  max-width: 1700px;
+  margin: 0 auto 24px;
+}
+
+.tool-left  { /* nút quay lại (trái) */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #002C3E;
+  border-radius: 4px;
+  height: 40px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.tool-right {        /* nhóm tạo món/xóa (phải) */
+  display: flex;
+  gap: 8px;
+  margin-left: auto; /* đẩy sang phải */
+}
+
+/* === Buttons (Giữ nguyên) === */
+.ff-wrap .btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #002C3E;
+  background: #fff;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.ff-wrap .btn.primary {
+  background: #008080;
+  color: #fff;
+}
+.btn.primary:hover { background: #007070; }
+.btn.ghost.danger {
+  color: #b91c1c;
+  border-color: #f4d0d0;
+}
+.btn.ghost.danger:hover { background-color: #fef2f2; }
+.btn.light { background: #f8fafc; border-color: #002C3E; }
+.btn.light:hover { background: #f1f5f9; }
+.ff-wrap .btn.bad {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #f4d0d0;
+}
+.btn.bad:hover { background: #fee2e2; }
+
+
+/* ===== (THAY ĐỔI) Layout Form 2 cột (Giống .fc-form-layout) ===== */
+.ff-grid-card {
+  display: grid;
+  grid-template-columns: 300px 1fr; /* Cột 1 cố định (ảnh), Cột 2 co giãn (form) */
+  gap: 0; /* Tắt gap để border-right hoạt động */
+  padding: 24px;
+  max-width: 1700px;
+  margin: 0 auto; /* Căn giữa */
+  
+  background: #fff;
+  border: 1px solid #002C3E;
+  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(0, 44, 62, .04);
+}
+
+.ff-image-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-right: 1px solid #e5e7eb;
+  padding-right: 24px;
+}
+
+.ff-fields-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 24px;
+}
+
+/* ===== (THAY ĐỔI) Tiêu đề nhóm (Giống .fc-section-title) ===== */
+.ff-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  position: relative;
+  padding-left: 14px;
+}
+.ff-section-title:not(:first-child) {
+  margin-top: 8px; /* Khoảng cách giữa các nhóm */
+}
+.ff-section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background-color: #F7444E; /* Màu cam */
+  border-radius: 2px;
+}
+
+/* (THAY ĐỔI) Đường kẻ ngang */
+.ff-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 8px 0;
+}
+
+
+/* ===== (THAY ĐỔI) Box xem trước ảnh (Giống .fc-image-box) ===== */
+.ff-image-box {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed #002C3E; /* Border nét đứt */
+  border-radius: 4px; /* Radius mới */
+  background: #f9fafb;
+  padding: 8px;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ff-image-box:hover {
+  border-color: #78BCC4;
+  background: #f0fafa;
+}
+.ff-image-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.ff-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #9ca3af;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+.ff-placeholder i { font-size: 42px; }
+
+
+/* ===== (THAY ĐỔI) CSS cho Float Label Input (Giống .fc-field) ===== */
+.ff-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Box nhập liệu (input, select, textarea) */
+.ff-field .ff-ipt,
+.ff-field .ff-textarea {
+  height: 56px; /* Chiều cao cố định */
+  border: 1px solid #002C3E; /* Border mới */
+  border-radius: 4px; /* Radius mới */
+  padding: 20px 12px 8px 12px;
+  font-size: 14px;
+  background: #fff;
+  transition: all 0.15s ease;
+}
+.ff-textarea {
+  height: auto;
+  min-height: 120px;
+}
+
+/* Label (chữ tiêu đề) */
+.ff-field label {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #6b7280;
+  pointer-events: none;
+  transition: all 0.15s ease-out;
+  background: transparent;
+  padding: 0 2px;
+  margin: 0; /* Ghi đè margin cũ */
+}
+
+/* TRẠNG THÁI NỔI (FLOAT) */
+.ff-field .ff-ipt:focus + label,
+.ff-field .ff-ipt:not(:placeholder-shown) + label,
+.ff-field .ff-textarea:focus + label,
+.ff-field .ff-textarea:not(:placeholder-shown) + label {
+  top: 0;
+  transform: translateY(-50%) scale(0.85); /* Thu nhỏ */
+  color: #008080; /* Đổi màu khi focus */
+  background: #fff; /* Nền trắng để che đường viền */
+  font-weight: 600;
+}
+/* Trạng thái không focus nhưng có chữ */
+.ff-field .ff-ipt:not(:placeholder-shown):not(:focus) + label,
+.ff-field .ff-textarea:not(:placeholder-shown):not(:focus) + label {
+  color: #374151; /* Màu chữ đậm hơn khi không focus */
+}
+
+/* Khi focus vào input */
+.ff-field .ff-ipt:focus,
+.ff-field .ff-textarea:focus {
+  border-color: #78BCC4;
+  box-shadow: 0 0 0 2px #e4f3f5;
+  outline: none;
+}
+
+/* Style riêng cho <select> (label luôn nổi) */
+.ff-field-select label {
+  top: 0;
+  transform: translateY(-50%) scale(0.85);
+  color: #374151;
+  background: #fff;
+  font-weight: 600;
+}
+.ff-field-select .ff-ipt { /* Áp dụng cho select */
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+/* Lỗi validation */
+.ff-field.is-invalid .ff-ipt,
+.ff-field.is-invalid .ff-textarea {
+  border-color: #dc2626;
+}
+.ff-field.is-invalid label {
+  color: #dc2626;
+}
+.ff-field .error-stack { min-height: 16px; margin-top: 4px; }
+.ff-field .error-item { color: #dc2626; font-size: 12px; }
+
+
+/* ===== (THAY ĐỔI) Lưới layout cho các trường ===== */
+.ff-fields-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.ff-fields-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+.ff-grid-span-2 {
+  grid-column: 1 / -1;
+}
+
+
+/* ===== Responsive ===== */
+@media (max-width: 1080px) {
+  .ff-grid-card {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .ff-image-col {
+    border-right: none;
+    padding-right: 0;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 24px;
+  }
+  .ff-fields-col {
+    padding-left: 0;
+    padding-top: 12px;
+  }
+}
+@media (max-width: 768px) {
+  .ff-wrap { padding: 12px 16px; }
+
+  /* giữ một hàng; cho phép co giãn, nếu thiếu chỗ thì các nút vẫn ưu tiên cùng hàng */
+  .ff-toolbar { height: auto; }
+  .ff-toolbox {
+    flex-wrap: wrap;          /* cho phép xuống hàng khi cực hẹp nhưng vẫn giữ trái/phải */
+    justify-content: space-between;
+    gap: 8px 10px;
+  }
+  .tool-right { margin-left: auto; }  /* luôn dính về bên phải */
+
+  .ff-grid-card { grid-template-columns: 1fr; padding: 16px; }
+  .ff-image-col {
+    border-right: none; padding-right: 0;
+    border-bottom: 1px solid #e5e7eb; padding-bottom: 24px;
+  }
+  .ff-fields-col { padding-left: 0; padding-top: 12px; }
+
+  .ff-fields-grid-2, .ff-fields-grid-3 { grid-template-columns: 1fr; }
+  .ff-grid-span-2 { grid-column: auto; }
+}
+
+
+/* ===== Modal xác nhận (Cập nhật) ===== */
+.ff-wrap .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); display: flex; align-items: center; justify-content: center; z-index: 40; }
+.ff-wrap .modal-card { width: min(520px, 92%); background: #fff; border-radius: 4px; border: 1px solid #e5e7eb; }
+.ff-wrap .modal-card.small { width: min(420px, 92%); }
+.ff-wrap .modal-head { padding: 14px; border-bottom: 1px solid #e5e7eb; }
+.ff-wrap .modal-body{ padding: 14px; }
+.ff-wrap .modal-foot { padding: 12px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; }
+
+.ff-wrap .muted { color: #6b7280; }
+
+/* ===== Confirm Delete Modal (match RecordMeal) ===== */
+.confirm-modal{
+  width: min(440px, 92vw);
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cm-head{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.cm-icon{
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.cm-head h3{
+  margin: 0; font-size: 18px; font-weight: 800; color: #111827;
+}
+.cm-body{
+  padding: 14px 16px;
+  color: #374151;
+}
+.cm-foot{
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+
+/* Nút “Xóa” tông đỏ (dùng chung nếu chưa có) */
+.btn.bad{
+  background:#fef2f2;
+  color:#b91c1c;
+  border:1px solid #f4d0d0;
+}
+.btn.bad:hover{ background:#fee2e2; }

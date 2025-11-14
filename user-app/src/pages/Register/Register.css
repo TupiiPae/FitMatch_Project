@@ -1,0 +1,24 @@
+/* Register dùng chung style với Login – chỉ giữ vài tinh chỉnh nhỏ nếu cần */
+
+/* Tiêu đề thống nhất */
+.auth-container .auth-form h1 { font-family:'Montserrat',sans-serif; }
+
+/* Đảm bảo khoảng cách đều giữa các input */
+.auth-container .auth-form .auth-input + .error-message { margin-bottom: 4px; }
+
+/* Tuỳ chọn: thu nhỏ khoảng trắng phần mô tả */
+.auth-container .auth-form > span { margin-bottom: 12px; }
+
+/* Social bar giống Login */
+.auth-container .auth-social .icon{
+  border: 1px solid #e5e7eb;
+  border-radius: 20%;
+  width: 40px; height: 40px;
+  display:inline-flex; align-items:center; justify-content:center;
+  color:#374151; background:#fff; box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+.auth-container .auth-social .icon:hover{ transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,.12); }
+
+/* Nút chính & link dưới giống Login */
+.auth-container .material-btn{ background:#512da8; }
+.auth-container .create-account{ color:#512da8; }

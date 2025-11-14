@@ -1,0 +1,118 @@
+.wl-wrap {
+  min-height: 100vh;
+  background: #f4f6ea;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* Header */
+.wl-head {
+  margin-bottom: 30px;
+}
+.wl-title {
+  font-weight: 800px;
+  font-size: 40px;
+  color: #222;
+}
+
+.logo-link{
+  display: inline-block;  
+  text-decoration: none;
+  color: inherit;
+  line-height: 0;       
+}
+.logo-link img{ display: block; } 
+.logo-link:focus-visible{
+  outline: 2px solid #008080;  
+  outline-offset: 3px;
+}
+
+
+/* Grid */
+.wl-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 200px;
+  margin-bottom: 120px;
+}
+.wl-item { text-align: center; }
+
+/* Thumb wrapper */
+.wl-thumb {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 10px;
+  border-radius: 12px;
+  background: #e5e7eb; /* placeholder xám */
+  box-shadow: inset 0 0 0 1px #d1d5db;
+  overflow: hidden; /* để bo góc ảnh */
+  position: relative;
+}
+
+/* Ảnh hiển thị full, cover */
+.wl-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;  /* fill đầy khung, cắt tràn */
+  display: block;
+}
+
+/* Fallback khung xám (khi ảnh lỗi) */
+.wl-thumb-fallback {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    45deg,
+    #e5e7eb 0 12px,
+    #f3f4f6 12px 24px
+  );
+}
+
+.wl-thumb { transition: transform .2s ease; }
+.wl-item:hover .wl-thumb { transform: translateY(-2px); }
+
+.wl-caption {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* Button */
+.wl-start {
+  background: #008080;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 50px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(52, 207, 135, 0.32);
+}
+.wl-start:hover {
+  background: #007070;
+  box-shadow: 0 6px 16px rgba(52, 207, 135, 0.32);
+}
+.wl-start:active {
+  transform: translateY(1px);
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+  .wl-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .wl-thumb {
+    width: 180px;
+    height: 180px;
+  }
+  .wl-start {
+    width: 100%;
+    max-width: 280px;
+  }
+}

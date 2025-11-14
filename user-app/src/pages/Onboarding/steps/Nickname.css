@@ -1,0 +1,216 @@
+.nk-wrap {
+  min-height: 100vh;
+  background: #f4f6ea;
+  display: flex;
+  flex-direction: column;
+}
+
+/* top bar with logo */
+.nk-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 150px;
+  background: #f4f6ea;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 40px rgba(0,0,0,.1);
+}
+.nk-logo { height: 150px; }
+/* center area */
+.nk-main {
+  flex: 1;
+  display: grid;
+  justify-items: center;  
+  align-content: start;    
+  padding-top: 20px;    
+}
+
+.nk-card {
+  max-height: 400px;
+  width: 900px; 
+  background: #fff;
+  border-radius: 8px;
+  padding: 28px 24px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  text-align: center;
+  border: 1px solid #eef1f5;
+}
+
+.nk-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 6px;
+}
+
+.nk-desc {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 60px;
+}
+
+.nk-field { margin-top: 8px; }
+
+/* Input chung */
+.nk-input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+  background: #fff;
+}
+.nk-input-large {
+  height: 52px;
+  font-size: 16px;
+}
+.nk-input::placeholder { color: #9ca3af; }
+.nk-input:focus {
+  border-color: #008080;
+  box-shadow: 0 0 0 3px rgba(25,118,210,0.12);
+}
+
+.nk-input-wrap { text-align: left; }
+
+.nk-hint {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* Hai cột: giới tính (trái) - ngày sinh (phải) */
+.nk-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 20px;
+  text-align: left;
+}
+.nk-col { display: flex; flex-direction: column; }
+
+.nk-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+/* Radio card Giới tính */
+.nk-sex-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.sex-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  color: #111827;
+  transition: border-color .2s, box-shadow .2s, background .2s, transform .05s;
+}
+.sex-card:active { transform: translateY(1px); }
+.sex-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.sex-icon { display: inline-flex; color: #6b7280; }
+.sex-text { font-weight: 500; }
+
+.sex-card:hover { border-color: #008080; }
+.sex-card.active {
+  border-color: #008080;
+  color: #0f172a;
+}
+.sex-card.active .sex-icon { color: #008080; }
+
+/* Ngày sinh đẹp hơn (icon + padding trái) */
+.dob-input {
+  position: relative;
+}
+.calendar-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
+}
+.nk-input-date {
+  padding-left: 40px; /* chừa chỗ cho icon */
+}
+
+/* actions (under card) */
+.nk-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.btn {
+  min-width: 120px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform .05s, box-shadow .2s, background .2s, border-color .2s;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-outline {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #111827;
+}
+.btn-outline:hover { border-color: #9ca3af; }
+
+.btn-primary {
+  background: #008080;
+  border: none;
+  color: #fff;
+}
+.btn-primary:hover { background: #007070;}
+
+@media (max-width: 720px) {
+  .nk-two-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .nk-card { padding: 22px 16px; }
+  .nk-actions { width: 100%; justify-content: center; }
+  .btn { flex: 1; max-width: 220px; }
+}
+
+/* Ẩn hoàn toàn dòng helper (MUI) khi rỗng để không chiếm khoảng trống */
+.nk-field .MuiFormHelperText-root:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+  height: 0;
+}
+
+/* Với DatePicker — helper của TextField lồng bên trong */
+.nk-dob .MuiFormHelperText-root:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+  height: 0;
+}
+
+/* Màu lỗi bên dưới radio giới tính */
+.nk-error {
+  margin-top: 6px;
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 1.35;
+}

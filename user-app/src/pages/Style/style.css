@@ -1,0 +1,443 @@
+:root{
+  --auth-primary: #008080;      /* teal chủ đạo (giữ lại nếu cần đổi brand) */
+  --auth-primary-2: #78BCC4;    /* teal nhạt blend */
+  --auth-blue: #78BCC4;         /* màu nút theo yêu cầu */
+  --auth-bg1: rgba(0,0,0,.25);  /* overlay tối nhẹ */
+  --auth-radius: 4px;
+  --auth-card-w: 980px;
+  --auth-card-h: 680px;
+  --auth-radius-lg:4px;
+  --field-w: 420px;
+}
+
+/* ===== Root với nền blur ảnh ===== */
+.auth-root{
+  position: relative;
+  display:flex; align-items:center; justify-content:center;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+.auth-root::before{
+  content:"";
+  position:fixed; inset:0;
+  background-position: center;
+  background: url("/images/bg-fitmatch.png") center/cover no-repeat;
+  filter: blur(8px) brightness(.92);
+  transform: scale(1.03);
+}
+.auth-root::after{
+  content:"";
+  position:absolute; inset:0;
+}
+.auth-root > *{ position: relative; z-index: 1; }
+
+/* ===== Card container + entrance animation ===== */
+.auth-container{
+  background:#fff;
+  border-radius: var(--auth-radius);
+  box-shadow: 0 14px 40px rgba(22,25,30,.16);
+  position: relative;
+  overflow: hidden;
+  width: var(--auth-card-w);
+  max-width: calc(100% - 48px);
+  min-height: var(--auth-card-h);
+  animation: auth-enter .5s cubic-bezier(.2,.75,.3,1) both;
+}
+@keyframes auth-enter{
+  from{ opacity:0; transform: translateY(12px) scale(.985); }
+  to  { opacity:1; transform: translateY(0)    scale(1);    }
+}
+
+/* Typography */
+.auth-container h1{
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1.15;
+  color:#141414;
+  margin: 0 0 10px;
+  text-align: center;
+  letter-spacing: .2px;
+}
+.auth-container p,
+.auth-container span{
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+
+.auth-container .btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  padding:12px 24px; border-radius: var(--auth-radius-lg);
+  font-weight:700; letter-spacing:.5px; text-transform:uppercase; font-size:12px;
+  border:1px solid transparent; cursor:pointer; user-select:none;
+  transition: transform .12s ease;  /* chỉ nhún lên, không đổi màu/đổ bóng */
+  position: relative;
+}
+.auth-container .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+.auth-container .btn-block{ width:100%; }
+
+/* Primary: nền #1A73E8, chữ trắng, không shadow */
+.auth-container .btn-primary,
+.auth-container .material-btn{            /* map material-btn sang primary */
+  background: #008080;
+  color:#fff;
+  padding: 8px 140px;
+  border-radius: 4px;
+}
+.auth-container .btn-primary:hover,
+.auth-container .material-btn:hover{ transform: translateY(-1px); }
+.auth-container .btn-primary:active,
+.auth-container .material-btn:active{ transform: translateY(0); }
+
+/* Text button: chữ #1A73E8, không hiệu ứng khác */
+.auth-container .btn-text{
+  background: transparent;
+  color: #fff;
+  text-transform:none;
+  border:none;
+  font-size: 14px;
+}
+.btn-resetpwd {
+  color:#002C3E;
+  display: flex; align-items: center;
+  justify-content: center;
+}
+.auth-container .btn-text:hover{ transform: translateY(-1px); }
+.auth-container .btn-text:active{ transform: translateY(0); }
+
+/* Nút trên panel bên phải: chữ trắng viền trắng, nhún nhẹ */
+.auth-container .auth-ghost{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:14px 80px; border-radius: var(--auth-radius-lg);
+  background: transparent; color:#fff; border:1px solid #fff;
+  text-transform:uppercase; letter-spacing:.5px; font-weight:700; font-size:14px;
+  transition: transform .12s ease;
+}
+.auth-container .auth-ghost:hover{ transform: translateY(-1px); }
+.auth-container .auth-ghost:active{ transform: translateY(0); }
+
+/* ===== BỎ toàn bộ loader/spinner trên nút ===== */
+.auth-container .btn .btn-loader,
+.auth-container .material-btn .btn-loader,
+.auth-container .loader-circle,
+.auth-container .loader-path{
+  display: none !important;
+}
+.auth-container .material-btn.loading .btn-text,
+.auth-container .btn.is-loading .btn-text{
+  opacity: 1 !important;
+}
+
+/* ===== Form ===== */
+.auth-form{
+  background:#fff;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  padding: 0 30px;
+  height:100%;
+  transition: transform .6s ease, opacity .6s ease;
+}
+.auth-input{
+  background:#eee;
+  border:none;
+  border-radius: 4px;
+  padding: 14px 16px;
+  font-size: 14px;
+  width: 420px;        /* rộng hơn để “đầy” như template */
+  max-width: 100%;
+  outline:none;
+  margin: 10px 0;
+  color:#111827;
+}
+.auth-input::placeholder{ color:#9ca3af; }
+
+/* Eye toggle in password fields */
+.field{
+  position: relative;
+  width: 420px;
+  max-width: 100%;
+}
+.field .auth-input{ width: 100%; padding-right: 44px; }
+.field .eye-toggle{
+  position:absolute; right:10px; top:50%; transform: translateY(-50%);
+  display:flex; align-items:center; justify-content:center;
+  width:32px; height:32px; border-radius: 4px; cursor:pointer;
+  color:#6b7280;
+  transition: background .15s ease, color .15s ease, transform .12s ease;
+}
+.field .eye-toggle:hover{ background: rgba(0,0,0,.06); color:#374151; }
+.field .eye-toggle i{ font-size: 16px; }
+
+/* Info text / links */
+.forgot-row{
+  display:flex; justify-content:center;
+  margin: 6px 0 6px;
+}
+
+/* 2 cột form 50/50 + hiệu ứng slide */
+.auth-form-container{
+  position:absolute; top:0; height:100%;
+  transition: all .6s ease-in-out; width:50%;
+}
+.auth-signin{ left:0; z-index:2; }
+.auth-active .auth-signin{ transform: translateX(100%); }
+
+.auth-signup{ left:0; opacity:0; z-index:1; }
+.auth-active .auth-signup{
+  transform: translateX(100%); opacity:1; z-index:5;
+  animation: auth-move .6s;
+}
+@keyframes auth-move{
+  0%,49.99%{ opacity:0; z-index:1; }
+  50%,100%{ opacity:1; z-index:5; }
+}
+
+/* Social icons – Google & Facebook (Font Awesome) */
+.auth-social{ margin: 14px 0 10px; display:flex; gap:12px; }
+.auth-social .icon{
+  border:1px solid #e5e7eb;
+  border-radius: 4px;
+  width: 44px; height:44px;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:#fff; color:#374151;
+  transition: transform .12s ease;
+  /* bỏ shadow để phẳng theo style button */
+  box-shadow: none;
+}
+.auth-social .icon:hover{ transform: translateY(-1px); }
+.auth-social .icon:active{ transform: translateY(0); }
+.auth-social .icon i{ font-size: 18px; }
+
+/* Toggle (panel phải) */
+.auth-toggle-wrap{
+  position:absolute; top:0; left:50%; width:50%; height:100%;
+  overflow:hidden; transition: all .6s ease-in-out;
+  border-radius: 180px 0 0 180px;
+  z-index:1000;
+}
+.auth-active .auth-toggle-wrap{
+  transform: translateX(-100%); border-radius: 0 180px 180px 0;
+}
+.auth-toggle{
+  background: linear-gradient(to right, var(--auth-primary-2), var(--auth-primary));
+  color:#fff; position:relative; left:-100%; height:100%; width:200%;
+  transform: translateX(0); transition: all .6s ease-in-out;
+}
+.auth-active .auth-toggle{ transform: translateX(50%); }
+.auth-toggle-panel{
+  position:absolute; width:50%; height:100%; top:0;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  padding: 0 20px; text-align:center;
+}
+.auth-toggle-panel h1{
+  color:#fff; font-size: 40px; font-weight:800; margin:0 0 20px; text-align: center;
+}
+.auth-toggle-panel p{
+  color:#eef2ff; font-size:18px; margin:0 0 24px;
+}
+.auth-toggle-left{ transform: translateX(-200%); }
+.auth-active .auth-toggle-left{ transform: translateX(0); }
+.auth-toggle-right{ right:0; transform: translateX(0); }
+.auth-active .auth-toggle-right{ transform: translateX(200%); }
+
+/* Divider (khi cần) */
+.divider{ width:420px; max-width:100%; text-align:center; margin:16px 0; position:relative; }
+.divider::before{ content:""; position:absolute; top:50%; left:0; right:0; height:1px; background:#e5e7eb; transform:translateY(-50%); }
+.divider span{ background:#fff; color:#6b7280; padding:0 12px; font-size: 13px; position:relative; z-index:1; }
+
+.signup-link{ width: 420px; max-width:100%; text-align:center; margin-top: 6px; }
+.signup-link p{ font-size: 13px; color:#6b7280; }
+.create-account{ background:none; border:none; color: var(--auth-blue); font-weight:700; cursor:pointer; transition: transform .12s ease; }
+.create-account:hover{ transform: translateY(-1px); }
+.create-account:active{ transform: translateY(0); }
+
+/* Error stack dùng chung */
+.error-stack{
+  width: 420px;
+  max-width: 100%;
+  min-height: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.error-stack .error-item{
+  color:#dc2626;
+  font-size: 12px;
+  line-height: 1;
+}
+
+@media (max-width: 720px){
+  :root{ --auth-card-h: 540px; }
+  .auth-container h1,
+  .auth-toggle-panel h1{ font-size: 32px; }
+  .auth-form{ padding: 0 28px; }
+  .auth-input, .field, .divider, .signup-link, .forgot-row, .error-stack{ width: 100%; }
+}
+/* Logo + tiêu đề (logo TRÊN) */
+.login-head{   
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  width: var(--field-w);      /* dùng cùng bề rộng với form */
+  max-width: 100%;
+}
+
+.login-head h1{ order: 1; margin: 0; font-weight: 700; font-size: 28px;}
+.login-head .login-logo-rect{ order: 2; height: 100px; object-fit: contain; }
+
+/* ===== Form ===== */
+.auth-form{ background:#fff; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:0 30px; height:100%; transition:transform .6s ease, opacity .6s ease; }
+
+/* Ô nhập – rộng chung */
+.auth-input{
+  background:#eee; border:none; border-radius:4px;
+  padding:14px 16px; font-size:14px; color:#111827;
+  width: var(--field-w); max-width:100%;
+  outline:none; margin:10px 0;
+}
+.field{ position:relative; width: var(--field-w); max-width:100%; }
+.field .auth-input{ width:100%; padding-right:44px; }
+.field .eye-toggle{ position:absolute; right:10px; top:50%; transform:translateY(-50%); display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:4px; cursor:pointer; color:#6b7280; transition:background .15s ease, color .15s ease, transform .12s ease; }
+.field .eye-toggle:hover{ background:rgba(0,0,0,.06); color:#374151; }
+.field .eye-toggle i{ font-size:16px; }
+
+/* Nút chính – rộng chung */
+.material-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  width: var(--field-w); max-width:100%;
+  background: var(--auth-blue); color:#fff; border:1px solid var(--auth-blue);
+   border-radius:4px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; font-size:12px;
+  cursor:pointer; user-select:none; transition:transform .12s ease;
+}
+.material-btn:hover{ transform: translateY(-1px); }
+.material-btn:active{ transform: translateY(0); }
+
+/* Link quên mật khẩu */
+.forgot-row.under-login{ display:flex; justify-content:flex-start; width: var(--field-w); max-width:100%; margin:8px 0 12px; }
+.link-blue{ color:#1A73E8; background:none; padding:0; border:0; cursor:pointer; font-size:14px; }
+
+/* Divider "HOẶC" */
+.auth-divider{
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px;
+  color:#9aa0a6; font-size:12px; letter-spacing:.08em; margin:10px 0 12px; text-transform:uppercase;
+  width: var(--field-w); max-width:100%;
+}
+.auth-divider::before,.auth-divider::after{ content:""; height:1px; background:#e5e7eb; }
+
+/* === SOCIAL (material) — cùng hàng & rộng chung === */
+.social-login{
+   margin-bottom:24px;
+}
+.social-btn{
+  position:relative; overflow:hidden; min-height:48px;
+  display:flex; align-items:center; justify-content:center;
+  background:#fff; border:1px solid #dadce0; border-radius:4px; padding:8px 100px;
+  color:#3c4043; font-size:14px; font-weight:500; white-space:nowrap;
+  box-shadow:0 1px 2px rgba(0,0,0,.1); cursor:pointer;
+  transition:box-shadow .2s, transform .2s, border-color .2s;
+}
+.social-btn:hover{ box-shadow:0 2px 4px rgba(0,0,0,.15); transform:translateY(-1px); }
+.social-btn:active{ transform:translateY(0); }
+.social-btn:focus-visible{ outline:2px solid #1A73E8; outline-offset:2px; }
+
+.social-icon{ width:20px; height:20px; display:flex; align-items:center; justify-content:center; flex:0 0 20px; }
+.social-icon svg{ width:100%; height:100%; display:block; }
+
+/* Ripple */
+.social-ripple{ position:absolute; inset:0; pointer-events:none; }
+.social-ripple::after{
+  content:""; position:absolute; left:var(--ripple-x,50%); top:var(--ripple-y,50%);
+  width:var(--ripple-size,0px); height:var(--ripple-size,0px);
+  background:rgba(0,0,0,.08); border-radius:50%; transform:scale(0); opacity:0;
+}
+.social-ripple.is-animating::after{ animation:ripple .45s ease-out forwards; }
+@keyframes ripple{ 0%{transform:scale(0);opacity:.25} 100%{transform:scale(1);opacity:0} }
+.google-material:hover{ border-color:#e1e3e7; }
+.facebook-material:hover{ border-color:#dfe7fb; }
+
+/* Error stack & các phần khác giữ nguyên… */
+.error-stack{ width: var(--field-w); max-width:100%; min-height:18px; margin-top:6px; display:flex; flex-direction:column; gap:4px; }
+.error-stack .error-item{ color:#dc2626; font-size:12px; line-height:1.35; }
+
+/* Responsive: thu về 100% */
+@media (max-width:720px){
+  :root{ --auth-card-h:540px; }
+  .auth-form{ padding:0 28px; }
+  .auth-input, .field, .material-btn, .auth-divider, .social-login, .forgot-row{ width:100%; }
+}
+
+/* === Compact fields: only show space when an error exists === */
+.auth-input{ margin-bottom:6px!important; }
+.field{ margin:0 !important; }
+
+/* Error stack: ẩn hoàn toàn khi không có lỗi, hiện ra thì chừa khoảng trống ở trên */
+.error-stack{
+  min-height: 0 !important;
+  margin-bottom: 4px !important;
+}
+.error-stack:empty{ display: none !important; }
+.error-stack:not(:empty){ margin-top: 6px !important; }
+
+/* (giữ nguyên màu & cỡ chữ lỗi như bạn đã cấu hình) */
+.auth-container .btn.btn-text.btn-resetpwd { 
+  color: #002C3E !important; 
+}
+.auth-container .btn.btn-text.btn-resetpwd:disabled {
+  color: rgba(0, 44, 62, 0.55) !important;
+  cursor: not-allowed;
+}
+
+/* Modal base (nếu chưa có) */
+.cm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+}
+.cm-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 600px;
+  height: 650px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  overflow: hidden;
+}
+
+
+/* Blocked popup styles */
+.blocked-modal { text-align: center; }
+.blocked-illu-wrap { display: flex; justify-content: center; margin-top: 8px; }
+.blocked-illu { width: 120px; height: auto; user-select: none; }
+
+.blocked-title {
+  margin: 16px 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.blocked-reason { margin: 6px auto 10px; text-align: left; max-width: 480px; }
+.blocked-reason-label { font-size: 13px; color: #6b7280; margin-bottom: 4px; }
+.blocked-reason-text {
+  background: #f9fafb;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.blocked-contact {
+  margin: 10px auto 0;
+  max-width: 480px;
+  color: #4b5563;
+  line-height: 1.55;
+}
+.blocked-mail { color: #1A73E8; text-decoration: none; }
+.blocked-mail:hover { text-decoration: underline; }
+
+.blocked-actions { margin-top: 4px; }

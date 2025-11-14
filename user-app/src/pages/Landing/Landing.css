@@ -1,0 +1,140 @@
+:root {
+  --fit-green: #45C39A;
+  --match-indigo: #3B4DA1;
+  --coral: #008080;
+  --muted: #94A3B8;
+}
+
+* { box-sizing: border-box; }
+
+.lm-wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-image: url("/images/landing-bg.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+}
+
+/* Header */
+.lm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1px 500px; /* Đưa logo & nút vào trong */
+  position: relative;
+  z-index: 1;
+}
+
+.lm-logo-img {
+  height: 120px;          /* 👈 tuỳ kích thước thật của logo */
+  cursor: pointer;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* --- CSS MỚI CHO NÚT ICON TRÒN --- */
+/* Thay thế cho .lm-login cũ */
+.lm-login-btn {
+  background: transparent;
+  border: 2px solid var(--coral); /* Viền tròn màu coral */
+  color: var(--coral); /* Màu của icon bên trong */
+  
+  /* Kích thước nút tròn */
+  width: 44px;
+  height: 44px;
+  border-radius: 50%; /* Bo tròn */
+  
+  /* Căn giữa icon bên trong */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Thay thế cho .lm-login:hover cũ */
+.lm-login-btn:hover {
+  background: var(--coral); /* Nền đổi màu khi hover */
+  color: #fff; /* Icon đổi thành màu trắng */
+  transform: scale(1.05); /* Hiệu ứng phóng to nhẹ */
+}
+/* --- KẾT THÚC THAY ĐỔI CSS --- */
+
+
+/* Hero — chỉ chứa nút */
+.lm-hero {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start; /* mặc định trái */
+  align-items: center;
+  padding: 2rem;
+}
+
+/* Dời nút sang phải */
+.lm-cta {
+  margin-left: 38%; /* 👈 chỉnh khoảng cách sang phải tại đây */
+  margin-top: 10%;
+  background: var(--coral);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.9rem 1.8rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.lm-cta:hover {
+  transform: translateY(-1px);
+
+}
+
+.lm-cta-arrow {
+  font-size: 18px;
+}
+
+/* Footer */
+.lm-footer {
+  text-align: center;
+  padding: 14px 10px 22px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .lm-cta {
+    margin-left: 0; /* căn giữa trên mobile */
+  }
+  .lm-hero {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .lm-logo-img {
+    height: 36px;
+  }
+  .lm-header {
+    padding: 14px 20px;
+  }
+  
+  /* Cập nhật kích thước nút icon trên mobile */
+  .lm-login-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .lm-login-btn svg {
+     width: 18px;
+     height: 18px;
+  }
+}
