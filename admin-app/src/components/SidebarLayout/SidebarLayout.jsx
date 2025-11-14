@@ -50,7 +50,7 @@ const buildManagementSections = (rawLevel) => {
         { to: "/exercises/cardio",   label: "Danh sách bài tập - Cardio" },
         { to: "/exercises/sport",    label: "Danh sách các môn - Sport" },
         { to: "/exercises/create",   label: "Tạo bài tập/môn thể thao mới", openCreateModal: true },
-        { to: "/exercises/plan-suggest", label: "Tạo lịch tập gợi ý" },
+        { to: "/exercises/suggest-plan/create", label: "Tạo lịch tập gợi ý" },
       ],
     },
     {

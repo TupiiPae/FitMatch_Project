@@ -26,6 +26,8 @@ import CardioEdit from "./pages/pagesExercises/Cardio_Edit/Cardio_Edit.jsx";
 import SportList from "./pages/pagesExercises/Sport_List/Sport_List.jsx";
 import SportCreate from "./pages/pagesExercises/Sport_Create/Sport_Create.jsx";
 import SportEdit from "./pages/pagesExercises/Sport_Edit/Sport_Edit.jsx";
+import SuggestPlanCreate from "./pages/pagesExercises/SuggestPlan_Create/SuggestPlan_Create.jsx";
+
 
 // ===== Users
 import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
@@ -84,6 +86,7 @@ export default function App() {
           <Route path="/exercises/sport" element={<SportList />} />
           <Route path="/exercises/sport/create" element={<SportCreate />} />
           <Route path="/exercises/sport/:id/edit" element={<SportEdit />} />
+          <Route path="/exercises/suggest-plan/create" element={<SuggestPlanCreate />} />
           
 
           {/* Người dùng */}

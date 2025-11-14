@@ -1,0 +1,142 @@
+/* admin-app/src/pages/pagesExercises/SuggestPlan_Create/SuggestPlan_Create.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
+
+.suggest-plan-create-page {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: "Roboto", sans-serif;
+}
+
+/* lỗi nhỏ dưới editor */
+.sc-err-msg {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Box buổi tập */
+.sp-session-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 16px 12px;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sp-session-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sp-session-title {
+  font-weight: 600;
+  color: #111827;
+}
+
+.sp-session-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sp-btn-small {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.sp-btn-danger {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.sp-btn-danger:hover {
+  background-color: #fee2e2;
+}
+
+/* Danh sách bài tập trong buổi */
+.sp-exercise-list-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.sp-exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sp-exercise-item {
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px 12px 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.sp-exercise-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.sp-exercise-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2933;
+}
+
+.sp-icon-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 999px;
+  color: #6b7280;
+}
+
+.sp-icon-btn:hover {
+  background: #f3f4f6;
+  color: #ef4444;
+}
+
+.sp-exercise-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.3fr);
+  gap: 10px 12px;
+}
+
+.sp-exercise-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .suggest-plan-create-page {
+    padding: 18px;
+  }
+  .sp-exercise-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .head-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

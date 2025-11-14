@@ -471,6 +471,27 @@ export const removeExerciseVideoApi = async (id) => {
 };
 
 /* =========================
+ * SUGGEST PLANS (ADMIN)
+ * ========================= */
+
+export const createSuggestPlanApi = async (formDataOrJson, isMultipart = false) => {
+  if (isMultipart) {
+    const r = await api.post("/api/admin/suggest-plans", formDataOrJson, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return r.data?.data ?? r.data;
+  } else {
+    const r = await api.post("/api/admin/suggest-plans", formDataOrJson);
+    return r.data?.data ?? r.data;
+  }
+};
+
+export const listSuggestPlansAdminOnly = async (params = {}) => {
+  const r = await api.get("/api/admin/suggest-plans", { params });
+  return r.data?.data ?? r.data;
+};
+
+/* =========================
  * USERS (ADMIN)
  * ========================= */
 export const listUsers = (params) =>

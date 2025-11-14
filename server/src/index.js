@@ -20,6 +20,8 @@ import adminExercisesRoutes from "./routes/admin.exercise.routes.js";
 import adminUsersRoutes from "./routes/admin.users.routes.js";
 import exercisePublicRoutes from "./routes/exercise.routes.js";
 import workoutRoutes from "./routes/workout.routes.js";
+import adminSuggestPlanRoutes from "./routes/admin.suggestPlan.routes.js";
+
 
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
@@ -112,6 +114,7 @@ app.use("/api/admin", adminUsersRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminFoodsRoutes);
 app.use("/api/admin", adminExercisesRoutes);
+app.use("/api/admin", adminSuggestPlanRoutes);
 
 // ===== User routes =====
 app.use("/api/user/onboarding", onboardingRoutes);
