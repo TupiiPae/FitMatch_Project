@@ -10,7 +10,6 @@ import {
 import { toast } from "react-toastify";
 
 import "./SuggestPlan_Create.css";
-// Tái sử dụng layout chung từ Strength_Create
 import "../Strength_Create/Strength_Create.css";
 
 import Box from "@mui/material/Box";
@@ -18,14 +17,30 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import FormHelperText from "@mui/material/FormHelperText";
 import Autocomplete from "@mui/material/Autocomplete";
+import MenuItem from "@mui/material/MenuItem";
 import RichTextEditorTiptap from "../../../components/Editor/RichTextEditorTiptap";
 
 const nameRegex = /^[\p{L}\p{M}\s0-9'’\-.,()\/]+$/u;
+const CATEGORY_OPTIONS = [
+  "Tại Gym",
+  "Tại nhà",
+  "Du lịch",
+  "Chỉ tạ đơn",
+  "Cardio và HIIT",
+  "Bodyweight",
+];
+
+const LEVEL_OPTIONS = ["Cơ bản", "Trung bình", "Nâng cao"];
+
+const GOAL_OPTIONS = ["Tăng cơ bắp", "Tăng sức mạnh", "Giảm cân nặng"];
 
 const initPlan = {
   name: "",
   descriptionHtml: "",
   imageUrl: "",
+  category: "", // Phân loại
+  level: "",    // Mức độ
+  goal: "",     // Mục tiêu
 };
 
 const makeEmptySession = () => ({
@@ -97,6 +112,9 @@ export default function SuggestPlanCreate() {
           name: doc?.name || "",
           descriptionHtml: doc?.descriptionHtml || "",
           imageUrl: doc?.imageUrl || "",
+          category: doc?.category || "",
+          level: doc?.level || "",
+          goal: doc?.goal || "",
         });
 
         const mappedSessions = (doc?.sessions || []).map((s) => ({
@@ -237,6 +255,16 @@ export default function SuggestPlanCreate() {
       errs.descriptionHtml = "Vui lòng nhập mô tả lịch tập";
     }
 
+    if (!plan.category) {
+      errs.category = "Vui lòng chọn Phân loại lịch tập";
+    }
+    if (!plan.level) {
+      errs.level = "Vui lòng chọn Mức độ";
+    }
+    if (!plan.goal) {
+      errs.goal = "Vui lòng chọn Mục tiêu";
+    }
+
     if (!sessions.length) {
       errs.sessionsGeneral = "Cần ít nhất 1 buổi tập trong lịch";
     }
@@ -281,6 +309,9 @@ export default function SuggestPlanCreate() {
       errs.name ||
       errs.image ||
       errs.descriptionHtml ||
+      errs.category ||
+      errs.level ||
+      errs.goal ||
       errs.sessionsGeneral;
 
     const hasSessionErr = errs.sessions.some((se) => {
@@ -326,6 +357,9 @@ export default function SuggestPlanCreate() {
       name,
       descriptionHtml: plan.descriptionHtml,
       imageUrl: imgFile ? undefined : plan.imageUrl?.trim() || undefined,
+      category: plan.category,
+      level: plan.level,
+      goal: plan.goal,
       sessions: normalizedSessions,
     };
 
@@ -537,6 +571,94 @@ export default function SuggestPlanCreate() {
                   {errors.descriptionHtml}
                 </div>
               )}
+
+              <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
+                    gap: 2,
+                    marginTop: 2,
+                    alignItems: "start",
+                  }}
+                >
+                  {/* 1. Phân loại */}
+                  <Box>
+                    <div className="sc-field-title">Phân loại *</div>
+                    <TextField
+                      select
+                      label="Phân loại *"
+                      value={plan.category}
+                      onChange={(e) => onChangePlan("category", e.target.value)}
+                      error={!!errors.category}
+                      helperText={errors.category}
+                      fullWidth
+                      SelectProps={{
+                      MenuProps: {
+                        autoFocus: false,                
+                        MenuListProps: { autoFocusItem: false }, 
+                      },
+                    }}
+                    >
+                      {CATEGORY_OPTIONS.map((opt) => (
+                        <MenuItem key={opt} value={opt}>
+                          {opt}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Box>
+
+                  {/* 2. Mức độ */}
+                  <Box>
+                    <div className="sc-field-title">Mức độ *</div>
+                    <TextField
+                      select
+                      label="Mức độ *"
+                      value={plan.level}
+                      onChange={(e) => onChangePlan("level", e.target.value)}
+                      error={!!errors.level}
+                      helperText={errors.level}
+                      fullWidth
+                      SelectProps={{
+                      MenuProps: {
+                        autoFocus: false,
+                        MenuListProps: { autoFocusItem: false },
+                      },
+                    }}
+                    >
+                      {LEVEL_OPTIONS.map((opt) => (
+                        <MenuItem key={opt} value={opt}>
+                          {opt}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Box>
+
+                  {/* 3. Mục tiêu */}
+                  <Box>
+                    <div className="sc-field-title">Mục tiêu *</div>
+                    <TextField
+                      select
+                      label="Mục tiêu *"
+                      value={plan.goal}
+                      onChange={(e) => onChangePlan("goal", e.target.value)}
+                      error={!!errors.goal}
+                      helperText={errors.goal}
+                      fullWidth
+                      SelectProps={{
+                      MenuProps: {
+                        autoFocus: false,
+                        MenuListProps: { autoFocusItem: false },
+                      },
+                    }}
+                    >
+                      {GOAL_OPTIONS.map((opt) => (
+                        <MenuItem key={opt} value={opt}>
+                          {opt}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Box>
+                </Box>
             </Box>
 
             <hr className="sc-divider" />
@@ -556,24 +678,28 @@ export default function SuggestPlanCreate() {
                 return (
                   <div key={sIdx} className="sp-session-box">
                     <div className="sp-session-head">
-                      <div className="sp-session-title">
+                      <div className="sp-session-title sc-section-title">
                         Buổi tập {sIdx + 1}
                       </div>
-                      <div className="sp-session-actions">
+                      <div className="sp-add-session-wrap">
                         <button
                           type="button"
-                          className="btn ghost sp-btn-small"
+                          className="sp-session-icon sp-session-add"
                           onClick={() => addExerciseToSession(sIdx)}
+                          title="Thêm bài tập"
                         >
-                          + Thêm bài tập
+                          <i class="fa-solid fa-plus" aria-hidden="true" />
                         </button>
+
+                        {/* Icon Xóa buổi */}
                         <button
                           type="button"
-                          className="btn ghost sp-btn-small sp-btn-danger"
+                          className="sp-session-icon sp-session-remove"
                           onClick={() => removeSession(sIdx)}
                           disabled={sessions.length <= 1}
+                          title="Xóa buổi tập"
                         >
-                          Xóa buổi
+                          <i className="fa-regular fa-trash-can" aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -641,7 +767,7 @@ export default function SuggestPlanCreate() {
                             className="sp-exercise-item"
                           >
                             <div className="sp-exercise-item-header">
-                              <div className="sp-exercise-item-title">
+                              <div className="sp-exercise-item-title sc-section-title">
                                 Bài tập {eIdx + 1}
                               </div>
                               <button

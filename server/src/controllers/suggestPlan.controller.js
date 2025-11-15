@@ -1,6 +1,10 @@
 // server/src/controllers/suggestPlan.controller.js
 import mongoose from "mongoose";
-import SuggestPlan from "../models/SuggestPlan.js";
+import SuggestPlan, {
+  SUGGEST_PLAN_CATEGORIES,
+  SUGGEST_PLAN_LEVELS,
+  SUGGEST_PLAN_GOALS,
+} from "../models/SuggestPlan.js";
 import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
 import { responseOk } from "../utils/response.js";
 
@@ -48,7 +52,14 @@ function parseSessions(raw) {
 }
 
 /* -------- Helper: validate top-level fields (giống FE) -------- */
-function validatePayload({ name, descriptionHtml, sessions }) {
+function validatePayload({
+  name,
+  descriptionHtml,
+  sessions,
+  category,
+  level,
+  goal,
+}) {
   const errs = {};
 
   const nameTrim = String(name || "").trim();
@@ -69,6 +80,22 @@ function validatePayload({ name, descriptionHtml, sessions }) {
 
   if (!Array.isArray(sessions) || sessions.length === 0) {
     errs.sessions = "Cần ít nhất 1 buổi tập trong lịch";
+  }
+
+  // ===== validate 3 field mới =====
+  const cat = String(category || "").trim();
+  if (!cat || !SUGGEST_PLAN_CATEGORIES.includes(cat)) {
+    errs.category = "Vui lòng chọn Phân loại lịch tập";
+  }
+
+  const lvl = String(level || "").trim();
+  if (!lvl || !SUGGEST_PLAN_LEVELS.includes(lvl)) {
+    errs.level = "Vui lòng chọn Mức độ lịch tập";
+  }
+
+  const gl = String(goal || "").trim();
+  if (!gl || !SUGGEST_PLAN_GOALS.includes(gl)) {
+    errs.goal = "Vui lòng chọn Mục tiêu luyện tập";
   }
 
   return errs;
@@ -141,9 +168,19 @@ export async function createSuggestPlan(req, res, next) {
     const sessions = parseSessions(body.sessions);
     const name = body.name;
     const descriptionHtml = body.descriptionHtml;
+    const category = body.category;
+    const level = body.level;
+    const goal = body.goal;
 
     // validate giống FE
-    const errs = validatePayload({ name, descriptionHtml, sessions });
+    const errs = validatePayload({
+      name,
+      descriptionHtml,
+      sessions,
+      category,
+      level,
+      goal,
+    });
     if (!req.file && !body.imageUrl) {
       errs.imageUrl = "Vui lòng chọn ảnh hoặc dán link hình ảnh";
     }
@@ -171,6 +208,9 @@ export async function createSuggestPlan(req, res, next) {
       name: String(name).trim(),
       descriptionHtml,
       imageUrl,
+      category: String(category || "").trim(),
+      level: String(level || "").trim(),
+      goal: String(goal || "").trim(),
       sessions,
       createdByAdmin,
     });
@@ -198,8 +238,18 @@ export async function updateSuggestPlan(req, res, next) {
     const sessions = parseSessions(body.sessions ?? existing.sessions);
     const name = body.name ?? existing.name;
     const descriptionHtml = body.descriptionHtml ?? existing.descriptionHtml;
+    const category = body.category ?? existing.category;
+    const level = body.level ?? existing.level;
+    const goal = body.goal ?? existing.goal;
 
-    const errs = validatePayload({ name, descriptionHtml, sessions });
+    const errs = validatePayload({
+      name,
+      descriptionHtml,
+      sessions,
+      category,
+      level,
+      goal,
+    });
     if (!req.file && !(body.imageUrl || existing.imageUrl)) {
       errs.imageUrl = "Vui lòng chọn ảnh hoặc dán link hình ảnh";
     }
@@ -231,6 +281,9 @@ export async function updateSuggestPlan(req, res, next) {
     existing.descriptionHtml = descriptionHtml;
     existing.imageUrl = imageUrl;
     existing.sessions = sessions;
+    existing.category = String(category || "").trim();
+    existing.level = String(level || "").trim();
+    existing.goal = String(goal || "").trim();
 
     await existing.save();
 

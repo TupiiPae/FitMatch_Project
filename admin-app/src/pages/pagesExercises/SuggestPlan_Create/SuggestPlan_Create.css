@@ -14,9 +14,17 @@
   font-size: 12px;
   font-weight: 600;
   color: #374151;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-top: 15px;
+  margin-bottom: 15px;
 }
+
+.sp-field-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: -100px;
+}
+
 /* lỗi nhỏ dưới editor */
 .sc-err-msg {
   color: #dc2626;
@@ -27,12 +35,13 @@
 /* Box buổi tập */
 .sp-session-box {
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 16px 16px 12px;
-  background: #f9fafb;
+  background: #fff;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background-color: #F8F9FA;
 }
 
 .sp-session-head {
@@ -47,27 +56,62 @@
   color: #111827;
 }
 
-.sp-session-actions {
-  display: flex;
-  gap: 8px;
+/* Icon thêm / xoá buổi tập (không border) */
+.sp-session-icon {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  gap: 40px;
 }
 
-.sp-btn-small {
-  height: 32px;
-  padding: 0 10px;
-  font-size: 13px;
+.sp-session-icon:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
-.sp-btn-danger {
-  border-color: #fecaca;
+/* Icon thêm buổi tập (circle-plus – xanh lá) */
+.sp-session-add {
+  color: #04AA6D; /* xanh lá */
+}
+
+.sp-session-add:hover:not(:disabled) {
+  color: #15803d;
+  background-color: rgba(22, 163, 74, 0.08);
+}
+
+/* Icon xoá buổi (trash-can – đỏ) */
+.sp-session-remove {
+  color: #dc2626; /* đỏ */
+}
+
+.sp-session-remove:hover:not(:disabled) {
   color: #b91c1c;
+  background-color: rgba(220, 38, 38, 0.08);
 }
 
-.sp-btn-danger:hover {
-  background-color: #fee2e2;
+/* Wrap icon thêm buổi ở cuối list */
+.sp-add-session-wrap {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: 4px;
 }
 
-/* Danh sách bài tập trong buổi */
+
+.suggest-plan-create-page .sp-session-title.sc-section-title::before {
+  background-color: #6C63FF !important; 
+}
+
+.sp-exercise-item .sp-exercise-item-title.sc-section-title::before {
+  background-color: #FF7043 !important; 
+}
+
 .sp-exercise-list-title {
   font-size: 13px;
   font-weight: 600;
@@ -81,10 +125,10 @@
 }
 
 .sp-exercise-item {
-  border-radius: 8px;
+  border-radius: 4px;
   background: #ffffff;
   padding: 10px 12px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #002C3E;
 }
 
 .sp-exercise-item-header {
@@ -97,7 +141,7 @@
 .sp-exercise-item-title {
   font-size: 13px;
   font-weight: 600;
-  color: #1f2933;
+  color: #111827;
 }
 
 .sp-icon-btn {
