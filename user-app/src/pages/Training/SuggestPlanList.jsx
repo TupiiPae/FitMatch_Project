@@ -48,6 +48,9 @@ export default function SuggestPlanList() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // hiển thị tối đa 20, có nút "Xem tất cả"
+  const [showAll, setShowAll] = useState(false);
+
   const baseParams = useMemo(
     () => ({
       q: q.trim() || undefined,
@@ -100,6 +103,12 @@ export default function SuggestPlanList() {
     });
     return arr;
   }, [items]);
+
+  // chỉ hiển thị tối đa 20 nếu chưa bấm "Xem tất cả"
+  const visibleItems = useMemo(
+    () => (showAll ? sortedItems : sortedItems.slice(0, 20)),
+    [sortedItems, showAll]
+  );
 
   const handleToggleSave = async (planId) => {
     try {
@@ -192,7 +201,7 @@ export default function SuggestPlanList() {
         )}
 
         {!loading &&
-          sortedItems.map((p) => {
+          visibleItems.map((p) => {
             const sessionsCount = p.sessionsCount ?? 0;
             const cate = p.category || "{Phân loại}";
             const lv = p.level || "{Mức độ}";
@@ -218,7 +227,7 @@ export default function SuggestPlanList() {
                 {/* Thông tin chính */}
                 <div className="spl-main">
                   <div className="spl-plan-title">
-                    {p.level ? `${p.level} - ` : ""}
+                    {/* Chỉ hiển thị tên, KHÔNG thêm "Cơ bản - / Trung bình - / Nâng cao -" nữa */}
                     {p.name || "(Không tên)"}
                   </div>
                   <div className="spl-plan-note">
@@ -245,6 +254,15 @@ export default function SuggestPlanList() {
               </div>
             );
           })}
+
+        {/* Nút "Xem tất cả" khi có hơn 20 lịch */}
+        {!loading && !showAll && sortedItems.length > 20 && (
+          <div className="more">
+            <button type="button" onClick={() => setShowAll(true)}>
+              Xem tất cả
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

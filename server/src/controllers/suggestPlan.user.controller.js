@@ -3,6 +3,7 @@ import SuggestPlan from "../models/SuggestPlan.js";
 import Exercise from "../models/Exercise.js";
 import { responseOk } from "../utils/response.js";
 
+/** Chuẩn hoá đường dẫn ảnh */
 function normalizeImage(u) {
   if (!u) return "";
   const s = String(u).trim();
@@ -12,9 +13,9 @@ function normalizeImage(u) {
     : `/${s}`;
 }
 
-// Đếm số buổi & số bài tập
+/** Đếm số buổi & số bài tập trong 1 plan */
 function calcStats(plan) {
-  const sessions = Array.isArray(plan.sessions) ? plan.sessions : [];
+  const sessions = Array.isArray(plan?.sessions) ? plan.sessions : [];
   const sessionsCount = sessions.length;
   const exercisesCount = sessions.reduce(
     (sum, s) => sum + ((s.exercises || s.items || []).length || 0),
@@ -25,7 +26,7 @@ function calcStats(plan) {
 
 /**
  * GET /api/user/suggest-plans
- * query: q, category, level, goal, scope=saved|all, limit, skip
+ * query: q, category, level, goal, scope=all|saved, limit, skip
  */
 export async function listSuggestPlansUser(req, res) {
   const {
@@ -37,9 +38,9 @@ export async function listSuggestPlansUser(req, res) {
     limit = 20,
     skip = 0,
   } = req.query;
-  const userId = req.userId;
 
-  const find = { status: "active" }; // nếu model bạn chưa có status thì bỏ dòng này
+  const userId = req.userId;
+  const find = { status: "active" }; // nếu model chưa có status thì xoá dòng này
 
   if (q) {
     find.name = { $regex: String(q).trim(), $options: "i" };
@@ -48,6 +49,7 @@ export async function listSuggestPlansUser(req, res) {
   if (level) find.level = level;
   if (goal) find.goal = goal;
 
+  // Chỉ lấy các plan user đã lưu
   if (scope === "saved") {
     find.savedBy = userId;
   }
@@ -103,7 +105,7 @@ export async function getSuggestPlanUser(req, res) {
     return res.status(404).json({ message: "Không tìm thấy lịch tập gợi ý" });
   }
 
-  // gom id bài tập
+  // Gom id bài tập từ tất cả các buổi
   const sessions = Array.isArray(doc.sessions) ? doc.sessions : [];
   const ids = new Set();
   sessions.forEach((s) => {
@@ -113,13 +115,17 @@ export async function getSuggestPlanUser(req, res) {
     });
   });
 
+  // Map id -> { name, imageUrl }
   let exMap = new Map();
   if (ids.size) {
     const exs = await Exercise.find({ _id: { $in: Array.from(ids) } })
       .select("_id name imageUrl")
       .lean();
     exMap = new Map(
-      exs.map((e) => [String(e._id), { name: e.name, imageUrl: normalizeImage(e.imageUrl) }])
+      exs.map((e) => [
+        String(e._id),
+        { name: e.name, imageUrl: normalizeImage(e.imageUrl || "") },
+      ])
     );
   }
 
@@ -162,7 +168,7 @@ export async function getSuggestPlanUser(req, res) {
 
 /**
  * POST /api/user/suggest-plans/:id/save
- * Toggle lưu / bỏ lưu
+ * Toggle lưu / bỏ lưu 1 lịch gợi ý cho user hiện tại
  */
 export async function toggleSaveSuggestPlanUser(req, res) {
   const { id } = req.params;
@@ -180,13 +186,17 @@ export async function toggleSaveSuggestPlanUser(req, res) {
   const idx = doc.savedBy.findIndex((u) => String(u) === String(userId));
   let saved;
   if (idx >= 0) {
+    // đang lưu -> bỏ lưu
     doc.savedBy.splice(idx, 1);
     saved = false;
   } else {
+    // chưa lưu -> thêm user vào mảng savedBy
     doc.savedBy.push(userId);
     saved = true;
   }
+
   await doc.save();
 
+  // FE dùng res.saved để đổi text & fill nút
   return res.json(responseOk({ saved }));
 }

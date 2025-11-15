@@ -30,7 +30,7 @@
 /* lưới trái – phải bên trong frame 1 */
 .spd-top-main {
   display: grid;
-  grid-template-columns: minmax(0, 2.3fr) 1.2fr;
+  grid-template-columns: minmax(0, 2fr) 1.5fr;
   gap: 16px;
 }
 
@@ -54,7 +54,6 @@
   margin: 0 0 10px;
 }
 
-/* hàng chip – căn đáy thẳng với đáy ảnh */
 .spd-meta {
   margin-top: auto;
   display: flex;
@@ -82,8 +81,8 @@
 }
 
 .spd-top-right img {
-  width: 180px;
-  height: 180px;
+  width: 250px;
+  height: 250px;
   object-fit: contain;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
@@ -107,21 +106,25 @@
 }
 
 .spd-save-btn {
-  min-width: 220px;
+  width: 100%;
   height: 44px;
   border-radius: 999px;
   border: none;
-  background: #1d4ed8;
+  background: #008080;
   color: #fff;
   font-weight: 600;
   cursor: pointer;
   font-size: 15px;
 }
 .spd-save-btn:hover {
-  background: #1e40af;
+  background: #F7F8F3;
+  color: #111827;
+  border: 1px solid #002C3E;
 }
 .spd-save-btn.saved {
-  background: #16a34a;
+  background: #F7F8F3;
+  color: #111827;
+  border: 1px solid #002C3E;
 }
 
 /* SECTION 'Lịch tập' (Frame 2) */

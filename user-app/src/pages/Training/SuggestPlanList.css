@@ -170,20 +170,21 @@
   height: 34px;
   padding: 0 16px;
   border-radius: 999px;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #1f2937;
+  background: #008080;
+  color: #fff;
   font-weight: 600;
   cursor: pointer;
   font-size: 14px;
 }
 .spl-save-btn:hover {
-  background: #eff6ff;
+  background: #F7F8F3;
+  color: #111827;
+  border: 1px solid #002C3E;
 }
 .spl-save-btn.saved {
-  background: #16a34a;
-  border-color: #15803d;
-  color: #ffffff;
+  background: #F7F8F3;
+  color: #111827;
+  border: 1px solid #002C3E;
 }
 
 /* responsive */

@@ -49,7 +49,7 @@ export default function ExerciseDetail() {
         <button type="button" className="tool-left" onClick={() => nav(-1)}>
           <i className="fa-solid fa-chevron-left"></i> Quay lại
         </button>
-        <div style={{ fontWeight: 700 }}>Chi tiết bài tập</div>
+        <div style={{ fontWeight: 600 }}>Chi tiết bài tập</div>
       </div>
 
       <div className="nm-list-frame exd-frame">

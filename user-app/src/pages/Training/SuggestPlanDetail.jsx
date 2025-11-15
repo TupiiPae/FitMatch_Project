@@ -118,7 +118,7 @@ export default function SuggestPlanDetail() {
           >
             <i className="fa-solid fa-chevron-left" /> Quay lại
           </button>
-          <div style={{ fontWeight: 700 }}>Chi tiết lịch tập gợi ý</div>
+          <div style={{ fontWeight: 600 }}>Chi tiết lịch tập gợi ý</div>
         </div>
 
         {/* ===== FRAME 1 ===== */}
@@ -127,7 +127,7 @@ export default function SuggestPlanDetail() {
             {/* LEFT: tiêu đề + mô tả + chip */}
             <div className="spd-top-left">
               <h1 className="spd-title">
-                {plan.level ? `${plan.level} - ` : ""}
+                {/* BỎ phần `${plan.level} -`, chỉ hiển thị tên */}
                 {plan.name || "(Không tên)"}
               </h1>
 
