@@ -2,101 +2,60 @@
 import mongoose from "mongoose";
 
 const { Schema } = mongoose;
+const ObjectId = Schema.Types.ObjectId;
 
-const ExerciseInSessionSchema = new Schema(
+const SuggestPlanExerciseSchema = new Schema(
   {
-    exercise: {
-      type: Schema.Types.ObjectId,
-      ref: "Exercise",
-      required: true,
-    },
-    reps: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 100, // vd: "4 hiệp x 12 lần"
-    },
+    exercise: { type: ObjectId, ref: "Exercise", required: true },
+    reps: { type: String, required: true, trim: true, maxlength: 100 },
   },
   { _id: false }
 );
 
-const SessionSchema = new Schema(
+const SuggestPlanSessionSchema = new Schema(
   {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 200,
-    },
-    description: {
-      type: String,
-      trim: true,
-      maxlength: 1000,
-    },
+    title: { type: String, required: true, trim: true, maxlength: 200 },
+    description: { type: String, trim: true, maxlength: 1000 },
     exercises: {
-      type: [ExerciseInSessionSchema],
+      type: [SuggestPlanExerciseSchema],
       validate: {
-        validator(v) {
-          return Array.isArray(v) && v.length > 0;
-        },
+        validator: (v) => Array.isArray(v) && v.length > 0,
         message: "Mỗi buổi tập cần ít nhất 1 bài tập",
       },
     },
   },
-  { _id: false }
+  { _id: true }
 );
 
 const SuggestPlanSchema = new Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 200,
-    },
-    slug: {
-      type: String,
-      trim: true,
-      unique: true,
-      sparse: true,
-    },
-    descriptionHtml: {
-      type: String,
-      required: true,
-    },
-    imageUrl: {
-      type: String,
-      required: true,
-    },
+    name: { type: String, required: true, trim: true, maxlength: 200 },
+    descriptionHtml: { type: String, required: true },
+    imageUrl: { type: String, required: true },
     sessions: {
-      type: [SessionSchema],
+      type: [SuggestPlanSessionSchema],
       validate: {
-        validator(v) {
-          return Array.isArray(v) && v.length > 0;
-        },
-        message: "Lịch tập cần có ít nhất 1 buổi tập",
+        validator: (v) => Array.isArray(v) && v.length > 0,
+        message: "Lịch tập phải có ít nhất 1 buổi tập",
       },
     },
-    status: {
-      type: String,
-      enum: ["active", "inactive"],
-      default: "active",
-    },
-    sourceType: {
-      type: String,
-      enum: ["admin_suggested"],
-      default: "admin_suggested",
-    },
-    createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: "Admin",
-    },
+    createdByAdmin: { type: ObjectId, ref: "Admin" },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-SuggestPlanSchema.index({ name: 1 });
+SuggestPlanSchema.virtual("sessionsCount").get(function () {
+  return Array.isArray(this.sessions) ? this.sessions.length : 0;
+});
 
-export default mongoose.model("SuggestPlan", SuggestPlanSchema);
+SuggestPlanSchema.virtual("exercisesCount").get(function () {
+  return (this.sessions || []).reduce(
+    (acc, s) => acc + ((s.exercises || []).length || 0),
+    0
+  );
+});
+
+export const SuggestPlan =
+  mongoose.models.SuggestPlan || mongoose.model("SuggestPlan", SuggestPlanSchema);
+
+export default SuggestPlan;

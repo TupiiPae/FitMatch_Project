@@ -13,7 +13,6 @@ import FoodsList from "./pages/pagesFoods/Food_List/Food_List.jsx";
 import FoodCreate from "./pages/pagesFoods/Food_Create/Food_Create.jsx";
 import FoodsReview from "./pages/pagesFoods/Review/Review.jsx";
 import FoodEdit from "./pages/pagesFoods/Food_Edit/Food_Edit.jsx";
-
 import ImportList from "./pages/pagesFoods/Import_List/Import_List.jsx";
 
 // ===== Exercises
@@ -27,6 +26,7 @@ import SportList from "./pages/pagesExercises/Sport_List/Sport_List.jsx";
 import SportCreate from "./pages/pagesExercises/Sport_Create/Sport_Create.jsx";
 import SportEdit from "./pages/pagesExercises/Sport_Edit/Sport_Edit.jsx";
 import SuggestPlanCreate from "./pages/pagesExercises/SuggestPlan_Create/SuggestPlan_Create.jsx";
+import SuggestPlanList from "./pages/pagesExercises/SuggestPlan_List/SuggestPlan_List.jsx";
 
 
 // ===== Users
@@ -86,7 +86,9 @@ export default function App() {
           <Route path="/exercises/sport" element={<SportList />} />
           <Route path="/exercises/sport/create" element={<SportCreate />} />
           <Route path="/exercises/sport/:id/edit" element={<SportEdit />} />
+          <Route path="/exercises/suggest-plan" element={<SuggestPlanList />} />
           <Route path="/exercises/suggest-plan/create" element={<SuggestPlanCreate />} />
+          <Route path="/exercises/suggest-plan/:id/edit" element={<SuggestPlanCreate />} />
           
 
           {/* Người dùng */}

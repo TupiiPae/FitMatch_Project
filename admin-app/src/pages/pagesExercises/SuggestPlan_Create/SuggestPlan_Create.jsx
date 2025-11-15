@@ -1,9 +1,11 @@
 // admin-app/src/pages/pagesExercises/SuggestPlan_Create/SuggestPlan_Create.jsx
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   listExercisesAdminOnly,
   createSuggestPlanApi,
+  getSuggestPlan,
+  updateSuggestPlanApi,
 } from "../../../lib/api";
 import { toast } from "react-toastify";
 
@@ -40,11 +42,14 @@ const makeEmptySession = () => ({
 
 export default function SuggestPlanCreate() {
   const nav = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
 
   const [plan, setPlan] = useState(initPlan);
   const [sessions, setSessions] = useState([makeEmptySession()]);
   const [exerciseOptions, setExerciseOptions] = useState([]);
   const [loadingExercises, setLoadingExercises] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   const [imgFile, setImgFile] = useState(null);
   const [imgPreview, setImgPreview] = useState(null);
@@ -54,14 +59,17 @@ export default function SuggestPlanCreate() {
 
   const imgInputRef = useRef(null);
   const refName = useRef(null);
-  const refDesc = useRef(null);
   const refImageBox = useRef(null);
 
+  // ---- load danh sách bài tập (dropdown) ----
   useEffect(() => {
     (async () => {
       try {
         setLoadingExercises(true);
-        const res = await listExercisesAdminOnly({ limit: 500, skip: 0 }).catch(() => null);
+        const res = await listExercisesAdminOnly({
+          limit: 500,
+          skip: 0,
+        }).catch(() => null);
         const items = res?.items || res || [];
         const opts = items.map((e) => ({
           id: e._id || e.id,
@@ -76,6 +84,48 @@ export default function SuggestPlanCreate() {
       }
     })();
   }, []);
+
+  // ---- load chi tiết lịch tập khi EDIT ----
+  useEffect(() => {
+    if (!isEdit) return;
+    (async () => {
+      try {
+        setLoadingDetail(true);
+        const doc = await getSuggestPlan(id);
+
+        setPlan({
+          name: doc?.name || "",
+          descriptionHtml: doc?.descriptionHtml || "",
+          imageUrl: doc?.imageUrl || "",
+        });
+
+        const mappedSessions = (doc?.sessions || []).map((s) => ({
+          title: s?.title || "",
+          description: s?.description || "",
+          items: (s?.exercises || s?.items || []).map((it) => ({
+            exerciseId: it?.exercise?._id || it?.exercise || "",
+            exerciseName: it?.exercise?.name || "",
+            repsText: it?.reps || "",
+          })),
+        }));
+
+        setSessions(
+          mappedSessions.length ? mappedSessions : [makeEmptySession()]
+        );
+
+        if (doc?.imageUrl) {
+          setImgFile(null);
+          setImgPreview(doc.imageUrl);
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Không tải được lịch tập gợi ý");
+        nav("/exercises/suggest-plan");
+      } finally {
+        setLoadingDetail(false);
+      }
+    })();
+  }, [isEdit, id, nav]);
 
   useEffect(() => {
     return () => {
@@ -97,7 +147,8 @@ export default function SuggestPlanCreate() {
     const file = e.target.files?.[0];
     if (!file) return;
     setImgFile(file);
-    if (imgPreview && imgPreview.startsWith("blob:")) URL.revokeObjectURL(imgPreview);
+    if (imgPreview && imgPreview.startsWith("blob:"))
+      URL.revokeObjectURL(imgPreview);
     setImgPreview(URL.createObjectURL(file));
     if (plan.imageUrl) onChangePlan("imageUrl", "");
   };
@@ -226,7 +277,6 @@ export default function SuggestPlanCreate() {
       return se;
     });
 
-    // kiểm tra có lỗi hay không
     const hasTopErr =
       errs.name ||
       errs.image ||
@@ -244,6 +294,7 @@ export default function SuggestPlanCreate() {
     return !(hasTopErr || hasSessionErr);
   };
 
+  // ------- submit (create / update) ----------
   const onSubmit = async (e) => {
     e.preventDefault();
     const ok = validate();
@@ -254,7 +305,6 @@ export default function SuggestPlanCreate() {
 
     const name = String(plan.name || "").trim();
 
-    // Chuẩn hoá sessions để gửi BE
     const normalizedSessions = sessions
       .map((s) => {
         const title = String(s.title || "").trim();
@@ -275,32 +325,59 @@ export default function SuggestPlanCreate() {
     const payload = {
       name,
       descriptionHtml: plan.descriptionHtml,
-      // nếu dùng file -> imageUrl để undefined
-      imageUrl: imgFile ? undefined : (plan.imageUrl?.trim() || undefined),
+      imageUrl: imgFile ? undefined : plan.imageUrl?.trim() || undefined,
       sessions: normalizedSessions,
     };
 
     setSaving(true);
     try {
-      let created;
-      if (imgFile) {
-        const fd = new FormData();
-        fd.append("image", imgFile);
-        Object.entries(payload).forEach(([k, v]) => {
-          if (v === undefined || v === null) return;
-          if (Array.isArray(v)) {
-            fd.append(k, JSON.stringify(v));
-          } else {
-            fd.append(k, String(v));
-          }
-        });
-        created = await createSuggestPlanApi(fd, true);
-      } else {
-        created = await createSuggestPlanApi(payload, false);
-      }
+      if (isEdit) {
+        // UPDATE
+        if (imgFile) {
+          const fd = new FormData();
+          fd.append("image", imgFile);
+          Object.entries(payload).forEach(([k, v]) => {
+            if (v === undefined || v === null) return;
+            if (Array.isArray(v)) {
+              fd.append(k, JSON.stringify(v));
+            } else {
+              fd.append(k, String(v));
+            }
+          });
+          await updateSuggestPlanApi(id, fd, true);
+        } else {
+          await updateSuggestPlanApi(id, payload, false);
+        }
 
-      toast.success("Tạo lịch tập gợi ý thành công!");
-      nav(-1); // quay lại trang trước (menu bài tập)
+        toast.success("Cập nhật lịch tập gợi ý thành công!");
+        nav("/exercises/suggest-plan", {
+          state: { justUpdated: true, updatedId: id },
+        });
+      } else {
+        // CREATE
+        let created;
+        if (imgFile) {
+          const fd = new FormData();
+          fd.append("image", imgFile);
+          Object.entries(payload).forEach(([k, v]) => {
+            if (v === undefined || v === null) return;
+            if (Array.isArray(v)) {
+              fd.append(k, JSON.stringify(v));
+            } else {
+              fd.append(k, String(v));
+            }
+          });
+          created = await createSuggestPlanApi(fd, true);
+        } else {
+          created = await createSuggestPlanApi(payload, false);
+        }
+
+        const createdId = created?._id || created?.id;
+        toast.success("Tạo lịch tập gợi ý thành công!");
+        nav("/exercises/suggest-plan", {
+          state: { justCreated: true, createdId },
+        });
+      }
     } catch (err) {
       console.error(err);
       let msg = err?.response?.data?.message;
@@ -314,6 +391,10 @@ export default function SuggestPlanCreate() {
       setSaving(false);
     }
   };
+
+  const pageTitle = isEdit
+    ? "Chỉnh sửa lịch tập gợi ý"
+    : "Tạo lịch tập gợi ý";
 
   return (
     <div className="suggest-plan-create-page">
@@ -329,17 +410,17 @@ export default function SuggestPlanCreate() {
           <span>Quản lý Bài tập</span>
         </span>
         <span className="separator">/</span>
-        <span className="current-page">Tạo lịch tập gợi ý</span>
+        <span className="current-page">{pageTitle}</span>
       </nav>
 
       <div className="card">
         <div className="page-head">
-          <h2>Tạo lịch tập gợi ý</h2>
+          <h2>{pageTitle}</h2>
           <div className="head-actions">
             <button
               type="button"
               className="btn ghost"
-              onClick={() => nav(-1)}
+              onClick={() => nav("/exercises/suggest-plan")}
             >
               Hủy
             </button>
@@ -347,12 +428,22 @@ export default function SuggestPlanCreate() {
               type="submit"
               form="suggest-plan-create-form"
               className="btn primary"
-              disabled={saving}
+              disabled={saving || loadingDetail}
             >
-              {saving ? "Đang lưu..." : "Lưu"}
+              {saving
+                ? "Đang lưu..."
+                : isEdit
+                ? "Cập nhật"
+                : "Lưu"}
             </button>
           </div>
         </div>
+
+        {isEdit && loadingDetail && (
+          <div style={{ padding: "8px 16px", fontSize: 13, color: "#6b7280" }}>
+            Đang tải dữ liệu lịch tập...
+          </div>
+        )}
 
         <form
           id="suggest-plan-create-form"
@@ -419,24 +510,26 @@ export default function SuggestPlanCreate() {
           <div className="sc-layout-right">
             <h3 className="sc-section-title">Thông tin lịch tập</h3>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: "column"}}>
               <div className="sc-field-title">Tên lịch tập gợi ý *</div>
-              <TextField
-                inputRef={refName}
-                label="Tên lịch tập gợi ý *"
-                value={plan.name}
-                onChange={(e) => onChangePlan("name", e.target.value)}
-                error={!!errors.name}
-                helperText={errors.name}
-                fullWidth
+              <TextField 
+                  inputRef={refName}
+                  label="Tên lịch tập gợi ý *"
+                  value={plan.name}
+                  onChange={(e) => onChangePlan("name", e.target.value)}
+                  error={!!errors.name}
+                  helperText={errors.name}
+                  fullWidth
               />
 
-              <div className="sc-field-title-desc">
-                Mô tả lịch tập (bắt buộc)
+              <div className="sp-field-title-desc">
+                Mô tả lịch tập *
               </div>
               <RichTextEditorTiptap
                 valueHtml={plan.descriptionHtml}
-                onChangeHtml={(html) => onChangePlan("descriptionHtml", html)}
+                onChangeHtml={(html) =>
+                  onChangePlan("descriptionHtml", html)
+                }
                 minHeight={200}
               />
               {errors.descriptionHtml && (
@@ -455,7 +548,9 @@ export default function SuggestPlanCreate() {
               </div>
             )}
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box
+              sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+            >
               {sessions.map((s, sIdx) => {
                 const sErr = errors.sessions?.[sIdx] || {};
                 return (
@@ -506,7 +601,7 @@ export default function SuggestPlanCreate() {
 
                       <Box>
                         <div className="sc-field-title">
-                          Mô tả buổi tập (tối đa 1000 ký tự)
+                          Mô tả buổi tập
                         </div>
                         <TextField
                           label="Mô tả buổi tập"
@@ -534,8 +629,7 @@ export default function SuggestPlanCreate() {
 
                     <div className="sp-exercise-list">
                       {s.items.map((it, eIdx) => {
-                        const iErr =
-                          sErr.items?.[eIdx] || {};
+                        const iErr = sErr.items?.[eIdx] || {};
                         const selectedOption =
                           exerciseOptions.find(
                             (o) => o.id === it.exerciseId
@@ -579,17 +673,10 @@ export default function SuggestPlanCreate() {
                                   }
                                   value={selectedOption}
                                   onChange={(e, val) =>
-                                    updateExerciseItem(
-                                      sIdx,
-                                      eIdx,
-                                      {
-                                        exerciseId:
-                                          val?.id || "",
-                                        exerciseName:
-                                          val?.label ||
-                                          "",
-                                      }
-                                    )
+                                    updateExerciseItem(sIdx, eIdx, {
+                                      exerciseId: val?.id || "",
+                                      exerciseName: val?.label || "",
+                                    })
                                   }
                                   renderInput={(params) => (
                                     <TextField
@@ -616,14 +703,9 @@ export default function SuggestPlanCreate() {
                                   label="Ví dụ: 4 hiệp x 12 lần"
                                   value={it.repsText}
                                   onChange={(e) =>
-                                    updateExerciseItem(
-                                      sIdx,
-                                      eIdx,
-                                      {
-                                        repsText:
-                                          e.target.value,
-                                      }
-                                    )
+                                    updateExerciseItem(sIdx, eIdx, {
+                                      repsText: e.target.value,
+                                    })
                                   }
                                   error={!!iErr.repsText}
                                   helperText={iErr.repsText}

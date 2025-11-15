@@ -10,6 +10,13 @@
   font-family: "Roboto", sans-serif;
 }
 
+.sp-field-title-desc {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
 /* lỗi nhỏ dưới editor */
 .sc-err-msg {
   color: #dc2626;

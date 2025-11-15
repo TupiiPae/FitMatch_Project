@@ -488,6 +488,28 @@ export const createSuggestPlanApi = async (formDataOrJson, isMultipart = false) 
 
 export const listSuggestPlansAdminOnly = async (params = {}) => {
   const r = await api.get("/api/admin/suggest-plans", { params });
+  return r.data?.data ?? r.data; // { items, total, limit, skip }
+};
+
+export const getSuggestPlan = async (id) => {
+  const r = await api.get(`/api/admin/suggest-plans/${id}`);
+  return r.data?.data ?? r.data;
+};
+
+export const updateSuggestPlanApi = async (id, formDataOrJson, isMultipart = false) => {
+  if (isMultipart) {
+    const r = await api.patch(`/api/admin/suggest-plans/${id}`, formDataOrJson, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return r.data?.data ?? r.data;
+  } else {
+    const r = await api.patch(`/api/admin/suggest-plans/${id}`, formDataOrJson);
+    return r.data?.data ?? r.data;
+  }
+};
+
+export const deleteSuggestPlan = async (id) => {
+  const r = await api.delete(`/api/admin/suggest-plans/${id}`);
   return r.data?.data ?? r.data;
 };
 

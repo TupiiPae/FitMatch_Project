@@ -1,154 +1,266 @@
 // server/src/controllers/suggestPlan.controller.js
+import mongoose from "mongoose";
 import SuggestPlan from "../models/SuggestPlan.js";
+import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
 import { responseOk } from "../utils/response.js";
-import { uploadImageWithResize } from "../utils/cloudinary.js";
 
-/** Tạo slug đơn giản từ name */
-function slugify(str = "") {
-  return String(str)
-    .toLowerCase()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // bỏ dấu tiếng Việt
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+const nameRegex = /^[\p{L}\p{M}\s0-9'’\-.,()\/]+$/u;
 
-/** Chuẩn hoá mảng sessions từ body FE */
-function normalizeSessions(rawSessions) {
-  let sessions = rawSessions;
+// DÙNG CHUNG FOLDER VỚI EXERCISES (giống controllers/exercise.controller.js)
+const CLOUDINARY_EXERCISE_FOLDER =
+  process.env.CLOUDINARY_EXERCISE_FOLDER || "asset/folder/exercises";
 
-  if (typeof rawSessions === "string") {
+/* -------- Helper: parse sessions từ body (JSON hoặc multipart) -------- */
+function parseSessions(raw) {
+  let arr = raw;
+  if (typeof raw === "string") {
     try {
-      sessions = JSON.parse(rawSessions);
+      arr = JSON.parse(raw);
     } catch {
-      sessions = [];
+      arr = [];
     }
   }
-  if (!Array.isArray(sessions)) sessions = [];
+  if (!Array.isArray(arr)) return [];
 
-  const result = sessions
+  return arr
     .map((s) => {
-      const title = String(s?.title || "").trim();
-      const description = String(s?.description || "").trim();
-      let exercises = s?.exercises || s?.items || [];
+      const title = String(s.title || "").trim();
+      const description = String(s.description || "").trim();
 
-      if (typeof exercises === "string") {
-        try {
-          exercises = JSON.parse(exercises);
-        } catch {
-          exercises = [];
-        }
-      }
-      if (!Array.isArray(exercises)) exercises = [];
-
-      const exMapped = exercises
-        .map((e) => {
-          const id = e?.exerciseId || e?.exercise || e?._id;
-          const reps = String(e?.reps || e?.repsText || "").trim();
-          if (!id || !reps) return null;
+      const exercisesRaw = Array.isArray(s.exercises) ? s.exercises : [];
+      const exercises = exercisesRaw
+        .map((it) => {
+          const exerciseId =
+            it.exerciseId || it.exercise || it.exercise_id || it.exerciseIdStr;
+          const reps = String(it.reps || it.repsText || "").trim();
+          if (!exerciseId || !reps) return null;
           return {
-            exercise: id,
+            exercise: new mongoose.Types.ObjectId(exerciseId),
             reps,
           };
         })
         .filter(Boolean);
 
-      if (!title || exMapped.length === 0) return null;
-
-      return {
-        title,
-        description,
-        exercises: exMapped,
-      };
+      if (!title || !exercises.length) return null;
+      return { title, description, exercises };
     })
     .filter(Boolean);
-
-  return result;
 }
 
-/** POST /api/admin/suggest-plans */
-export const createSuggestPlanAdmin = async (req, res, next) => {
+/* -------- Helper: validate top-level fields (giống FE) -------- */
+function validatePayload({ name, descriptionHtml, sessions }) {
+  const errs = {};
+
+  const nameTrim = String(name || "").trim();
+  if (!nameTrim) {
+    errs.name = "Vui lòng nhập tên lịch tập gợi ý";
+  } else if (nameTrim.length > 200) {
+    errs.name = "Tên lịch tối đa 200 ký tự";
+  } else if (!nameRegex.test(nameTrim)) {
+    errs.name =
+      "Tên chỉ gồm chữ, số, khoảng trắng và ' - . , ( ) / (không dùng ký tự đặc biệt khác)";
+  }
+
+  const descHtml = String(descriptionHtml || "");
+  const plainDesc = descHtml.replace(/<[^>]*>/g, "").trim();
+  if (!plainDesc) {
+    errs.descriptionHtml = "Vui lòng nhập mô tả lịch tập";
+  }
+
+  if (!Array.isArray(sessions) || sessions.length === 0) {
+    errs.sessions = "Cần ít nhất 1 buổi tập trong lịch";
+  }
+
+  return errs;
+}
+
+/* ===================== LIST ===================== */
+// GET /api/admin/suggest-plans
+export async function listSuggestPlans(req, res, next) {
   try {
-    const { name, descriptionHtml } = req.body;
+    const limit = Math.min(Number(req.query.limit) || 20, 100);
+    const skip = Number(req.query.skip) || 0;
+    const q = String(req.query.q || "").trim();
 
-    const cleanName = String(name || "").trim();
-    if (!cleanName) {
-      return res.status(400).json({ message: "Vui lòng nhập tên lịch tập" });
+    const filter = {};
+    if (q) {
+      filter.name = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     }
 
-    const descHtml = String(descriptionHtml || "");
-    const plainDesc = descHtml.replace(/<[^>]*>/g, "").trim();
-    if (!plainDesc) {
-      return res.status(400).json({ message: "Vui lòng nhập mô tả lịch tập" });
-    }
+    const total = await SuggestPlan.countDocuments(filter);
+    const docs = await SuggestPlan.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
-    const sessions = normalizeSessions(req.body.sessions);
-    if (!sessions.length) {
+    const items = docs.map((d) => ({
+      ...d,
+      sessionsCount: (d.sessions || []).length,
+      exercisesCount: (d.sessions || []).reduce(
+        (acc, s) => acc + ((s.exercises || []).length || 0),
+        0
+      ),
+    }));
+
+    // TRẢ RESPONSE ĐÚNG DẠNG { ok:true, data:{ items,total,limit,skip } }
+    return res.json(responseOk({ items, total, limit, skip }));
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* ===================== GET 1 ===================== */
+// GET /api/admin/suggest-plans/:id
+export async function getSuggestPlan(req, res, next) {
+  try {
+    const { id } = req.params;
+    const doc = await SuggestPlan.findById(id)
+      .populate({
+        path: "sessions.exercises.exercise",
+        select: "name imageUrl type",
+      })
+      .lean();
+    if (!doc) {
       return res
-        .status(400)
-        .json({ message: "Lịch tập cần ít nhất 1 buổi tập hợp lệ" });
+        .status(404)
+        .json({ ok: false, message: "Không tìm thấy lịch tập gợi ý" });
     }
 
-    // Ảnh: nếu có file -> upload Cloudinary, nếu không -> dùng imageUrl từ body
-    let imageUrl = (req.body.imageUrl || "").trim();
+    return res.json(responseOk(doc));
+  } catch (err) {
+    next(err);
+  }
+}
 
+/* ===================== CREATE ===================== */
+// POST /api/admin/suggest-plans
+export async function createSuggestPlan(req, res, next) {
+  try {
+    const body = req.body || {};
+    const sessions = parseSessions(body.sessions);
+    const name = body.name;
+    const descriptionHtml = body.descriptionHtml;
+
+    // validate giống FE
+    const errs = validatePayload({ name, descriptionHtml, sessions });
+    if (!req.file && !body.imageUrl) {
+      errs.imageUrl = "Vui lòng chọn ảnh hoặc dán link hình ảnh";
+    }
+    if (Object.keys(errs).length) {
+      return res
+        .status(422)
+        .json({ ok: false, message: "Dữ liệu không hợp lệ", errors: errs });
+    }
+
+    // upload ảnh: dùng CHUNG folder với exercises
+    let imageUrl = (body.imageUrl || "").trim() || undefined;
     if (req.file && req.file.buffer) {
-      // folder tuỳ bạn, mình gợi ý:
       imageUrl = await uploadImageWithResize(
         req.file.buffer,
-        "fitmatch/suggest-plans",
-        { width: 800, height: 800, fit: "cover" },
+        CLOUDINARY_EXERCISE_FOLDER,
+        { width: 800, height: 800, fit: "inside" },
         { quality: 85 }
       );
     }
 
-    if (!imageUrl) {
-      return res
-        .status(400)
-        .json({ message: "Vui lòng tải lên hoặc dán link hình ảnh" });
-    }
-
-    const slug = slugify(cleanName);
+    const createdByAdmin =
+      req.adminId || req.userId || (req.admin && req.admin._id) || undefined;
 
     const doc = await SuggestPlan.create({
-      name: cleanName,
-      slug,
-      descriptionHtml: descHtml,
+      name: String(name).trim(),
+      descriptionHtml,
       imageUrl,
       sessions,
-      createdBy:
-        req.admin?._id || req.userId || req.user?._id || undefined,
+      createdByAdmin,
     });
 
-    return responseOk(res, doc);
+    // 201 + { ok:true, data:doc } -> FE nhận doc (createSuggestPlanApi)
+    return res.status(201).json(responseOk(doc));
   } catch (err) {
     next(err);
   }
-};
+}
 
-/** GET /api/admin/suggest-plans */
-export const listSuggestPlansAdmin = async (req, res, next) => {
+/* ===================== UPDATE ===================== */
+// PATCH /api/admin/suggest-plans/:id
+export async function updateSuggestPlan(req, res, next) {
   try {
-    const { q, limit = 20, skip = 0, status } = req.query;
+    const { id } = req.params;
+    const body = req.body || {};
+    const existing = await SuggestPlan.findById(id);
+    if (!existing) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Không tìm thấy lịch tập gợi ý" });
+    }
 
-    const cond = {};
-    if (q) cond.name = { $regex: q, $options: "i" };
-    if (status) cond.status = status;
+    const sessions = parseSessions(body.sessions ?? existing.sessions);
+    const name = body.name ?? existing.name;
+    const descriptionHtml = body.descriptionHtml ?? existing.descriptionHtml;
 
-    const lim = Number(limit) || 20;
-    const sk = Number(skip) || 0;
+    const errs = validatePayload({ name, descriptionHtml, sessions });
+    if (!req.file && !(body.imageUrl || existing.imageUrl)) {
+      errs.imageUrl = "Vui lòng chọn ảnh hoặc dán link hình ảnh";
+    }
+    if (Object.keys(errs).length) {
+      return res
+        .status(422)
+        .json({ ok: false, message: "Dữ liệu không hợp lệ", errors: errs });
+    }
 
-    const [items, total] = await Promise.all([
-      SuggestPlan.find(cond)
-        .sort({ createdAt: -1 })
-        .skip(sk)
-        .limit(lim),
-      SuggestPlan.countDocuments(cond),
-    ]);
+    let imageUrl =
+      (body.imageUrl && String(body.imageUrl).trim()) || existing.imageUrl;
 
-    return responseOk(res, { items, total, limit: lim, skip: sk });
+    // Nếu có file mới -> upload, rồi (tuỳ chọn) xoá ảnh cũ
+    if (req.file && req.file.buffer) {
+      const newUrl = await uploadImageWithResize(
+        req.file.buffer,
+        CLOUDINARY_EXERCISE_FOLDER,
+        { width: 800, height: 800, fit: "inside" },
+        { quality: 85 }
+      );
+      if (existing.imageUrl && existing.imageUrl.startsWith("http")) {
+        // Không bắt buộc, nhưng tốt nếu muốn dọn Cloudinary
+        deleteFile(existing.imageUrl, "image").catch(() => {});
+      }
+      imageUrl = newUrl;
+    }
+
+    existing.name = String(name).trim();
+    existing.descriptionHtml = descriptionHtml;
+    existing.imageUrl = imageUrl;
+    existing.sessions = sessions;
+
+    await existing.save();
+
+    // Trả lại doc mới
+    return res.json(responseOk(existing));
   } catch (err) {
     next(err);
   }
-};
+}
+
+/* ===================== DELETE ===================== */
+// DELETE /api/admin/suggest-plans/:id
+export async function deleteSuggestPlan(req, res, next) {
+  try {
+    const { id } = req.params;
+    const doc = await SuggestPlan.findById(id);
+    if (!doc) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Không tìm thấy lịch tập gợi ý" });
+    }
+
+    // Xoá ảnh trên Cloudinary nếu muốn
+    if (doc.imageUrl && doc.imageUrl.startsWith("http")) {
+      deleteFile(doc.imageUrl, "image").catch(() => {});
+    }
+
+    await doc.deleteOne();
+    return res.json(responseOk({ success: true }));
+  } catch (err) {
+    next(err);
+  }
+}
