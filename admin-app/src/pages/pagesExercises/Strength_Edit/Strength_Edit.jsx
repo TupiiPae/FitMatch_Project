@@ -32,7 +32,7 @@ const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
 
 const TYPES = ["Strength", "Cardio", "Sport"];
-const EQUIPMENTS_FALLBACK = ["Không có","Tạ đòn","Tạ đơn","Máy","Banh","Dây kháng lực","Kettlebell","BOSU","TRX"];
+const EQUIPMENTS_FALLBACK = ["Không có","Tạ đòn","Tạ đơn","Dây cáp","Máy","Banh","Dây kháng lực","Kettlebell","BOSU","TRX"];
 const MUSCLES_FALLBACK = ["Ngực","Lưng","Vai","Bụng","Hông","Đùi trước","Đùi sau","Mông","Bắp chân","Tay trước","Tay sau","Cẳng tay","Cổ","Toàn thân","Core"];
 const LEVELS = ["Cơ bản", "Trung bình", "Nâng cao"];
 

@@ -7,7 +7,7 @@ export const MUSCLE_GROUPS = [
   "Bắp chân","Tay trước","Tay sau","Cẳng tay","Cổ","Toàn thân","Core"
 ];
 export const EQUIPMENTS = [
-  "Không có","Tạ đòn","Tạ đơn","Máy","Banh","Dây kháng lực","Kettlebell","BOSU","TRX"
+  "Không có","Tạ đòn","Tạ đơn","Dây cáp", "Máy","Banh","Dây kháng lực","Kettlebell","BOSU","TRX"
 ];
 export const LEVELS = ["Cơ bản","Trung bình","Nâng cao"];
 

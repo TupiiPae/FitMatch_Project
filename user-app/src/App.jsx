@@ -25,6 +25,8 @@ import SportList from "./pages/Training/SportList";
 import ExerciseDetail from "./pages/Training/ExerciseDetail";
 import WorkoutList from "./pages/Training/WorkoutList";
 import WorkoutCreate from "./pages/Training/WorkoutCreate";
+import SuggestPlanList from "./pages/Training/SuggestPlanList";   
+import SuggestPlanDetail from "./pages/Training/SuggestPlanDetail";
 
 // Layout (Navbar + Footer)
 import AppShell from "./components/layout/AppShell";
@@ -118,7 +120,9 @@ export default function App() {
           <Route path="/tap-luyen/bai-tap/cardio" element={<CardioList />} />
           <Route path="/tap-luyen/bai-tap/the-thao" element={<SportList />} /> {/* UI riêng */}
           <Route path="/tap-luyen/bai-tap/chi-tiet/:id" element={<ExerciseDetail />} />
-          <Route path="/tap-luyen/goi-y" element={<GoiYTap />} />
+          {/* Lịch tập gợi ý */}
+          <Route path="/tap-luyen/goi-y" element={<SuggestPlanList />} />
+          <Route path="/tap-luyen/goi-y/chi-tiet/:id" element={<SuggestPlanDetail />}/>
 
           {/* Tài khoản */}
           <Route path="/tai-khoan/ho-so" element={<Profile />} />

@@ -21,6 +21,7 @@ import adminUsersRoutes from "./routes/admin.users.routes.js";
 import exercisePublicRoutes from "./routes/exercise.routes.js";
 import workoutRoutes from "./routes/workout.routes.js";
 import adminSuggestPlanRoutes from "./routes/admin.suggestPlan.routes.js";
+import suggestPlanUserRoutes from "./routes/suggestPlan.user.routes.js";
 
 
 // ===== Middlewares =====
@@ -127,6 +128,7 @@ app.use("/api", exercisePublicRoutes);
 
 // ===== IMPORTANT: Workout routes under /api/user (để FE gọi /user/workouts) =====
 app.use("/api/user", workoutRoutes);
+app.use("/api/user", suggestPlanUserRoutes);
 
 // ===== Debug: list registered routes in DEV =====
 if (isDev) {

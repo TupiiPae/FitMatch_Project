@@ -1,0 +1,259 @@
+/* Nền giống các trang Nutrition/Exercise */
+.spd-wrap {
+  background: #f4f6ea;
+  min-height: 100%;
+  margin: -16px;
+  padding: 24px 28px 16px 28px;
+}
+
+.spd-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* TOP CARD (Frame 1) */
+.spd-topcard {
+  background: #fff;
+  border: 1px solid #002C3E; /* Giống .dj-main */
+  border-radius: 4px; /* Giống .dj-main */
+  padding: 20px; /* Giống .dj-main */
+  margin-top: 0;
+  
+  width: 100%;
+  max-width: 1700px; /* Yêu cầu 1700px */
+
+  /* === THAY ĐỔI: Thêm margin auto để tự căn giữa === */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* lưới trái – phải bên trong frame 1 */
+.spd-top-main {
+  display: grid;
+  grid-template-columns: minmax(0, 2.3fr) 1.2fr;
+  gap: 16px;
+}
+
+.spd-top-left {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.spd-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #002c3e;
+}
+
+.spd-desc {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+/* hàng chip – căn đáy thẳng với đáy ảnh */
+.spd-meta {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.spd-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* ảnh bên phải */
+.spd-top-right {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.spd-top-right img {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.spd-thumb-fallback {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  border: 1px dashed #d1d5db;
+  display: grid;
+  place-items: center;
+  color: #9ca3af;
+}
+
+/* Nút lưu nằm ở đáy frame 1 */
+.spd-save-row {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.spd-save-btn {
+  min-width: 220px;
+  height: 44px;
+  border-radius: 999px;
+  border: none;
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 15px;
+}
+.spd-save-btn:hover {
+  background: #1e40af;
+}
+.spd-save-btn.saved {
+  background: #16a34a;
+}
+
+/* SECTION 'Lịch tập' (Frame 2) */
+.spd-section {
+  background: #fff;
+  border-radius: 4px;
+  border: 1px solid #002c3e; /* border giống frame 1 */
+  padding: 18px 18px 12px;
+  margin-top: 10px;
+}
+
+.spd-section-title {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #002c3e;
+}
+
+/* từng buổi */
+.spd-session + .spd-session {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.spd-session-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+/* layout buổi: trái list bài tập – phải mô tả */
+.spd-session-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.2fr);
+  gap: 16px;
+}
+
+/* LEFT: danh sách bài tập */
+.spd-session-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 10px;
+  border-right: 1px solid #e5e7eb;
+}
+
+.spd-exrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* avatar tròn */
+.spd-exavatar {
+  flex: 0 0 56px;
+}
+.spd-exavatar img {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+.spd-exavatar-fallback {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 1px dashed #d1d5db;
+  display: grid;
+  place-items: center;
+  color: #9ca3af;
+}
+
+.spd-exmeta {
+  min-width: 0;
+}
+
+.spd-exname {
+  font-size: 15px;
+  font-weight: 600;
+  color: #dc2626;
+  text-decoration: none;
+}
+.spd-exname:hover {
+  text-decoration: underline;
+}
+
+.spd-exreps {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* RIGHT: mô tả buổi */
+.spd-session-right {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.45;
+}
+.spd-session-right p {
+  margin: 0;
+}
+
+/* Loading trong card */
+.spd-loading {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .spd-top-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .spd-top-right {
+    justify-content: flex-start;
+  }
+  .spd-session-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .spd-session-left {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    padding-right: 0;
+    padding-bottom: 10px;
+  }
+}
+
+@media (max-width: 760px) {
+  .spd-wrap {
+    padding: 18px 14px 14px 14px;
+  }
+}

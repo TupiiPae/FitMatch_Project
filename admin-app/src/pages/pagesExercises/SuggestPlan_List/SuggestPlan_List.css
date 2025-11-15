@@ -139,13 +139,16 @@
 }
 .spg-thead,
 .spg-trow{
-  display:grid;
+ display:grid;
   grid-template-columns:
     40px   /* cb */
     90px   /* img */
     2fr    /* name */
-    150px  /* sessions count */
-    170px  /* exercises count */
+    150px  /* category */
+    120px  /* level */
+    170px  /* goal */
+    120px  /* sessions count */
+    150px  /* exercises count */
     190px  /* created */
     110px; /* actions */
   align-items:center;
@@ -208,6 +211,9 @@
   color:#9CA3AF;
 }
 
+.spg-cell.category,
+.spg-cell.level,
+.spg-cell.goal,
 .spg-cell.sessions,
 .spg-cell.exercises,
 .spg-cell.created{
@@ -350,13 +356,12 @@
   border-top:1px dashed #e5e7eb;
 }
 
-/* ===== Responsive ===== */
 @media (max-width:980px){
   .spg-page{ padding:18px; }
   .spg-thead,
   .spg-trow{
     grid-template-columns:
-      36px 80px 2fr 130px 150px 170px 100px;
+      36px 80px 2fr 120px 110px 140px 100px 120px 150px 90px;
     column-gap:10px;
   }
 }
@@ -370,6 +375,11 @@
   .spg-cell.img{ grid-column:1; grid-row:2; }
   .spg-cell.name{ grid-column:2 / span 2; grid-row:1; }
   .spg-cell.sessions{ grid-column:2; grid-row:2; }
+  .spg-cell.category,
+  .spg-cell.level,
+  .spg-cell.goal{
+    display:none;
+  }
   .spg-cell.exercises{ display:none; }
   .spg-cell.created{ display:none; }
   .spg-cell.act{

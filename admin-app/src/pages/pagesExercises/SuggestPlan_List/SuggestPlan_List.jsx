@@ -266,6 +266,9 @@ export default function SuggestPlan_List() {
             </label>
             <div className="spg-cell img">Hình ảnh</div>
             <div className="spg-cell name">Tên lịch tập gợi ý</div>
+            <div className="spg-cell category">Phân loại</div>
+            <div className="spg-cell level">Mức độ</div>
+            <div className="spg-cell goal">Mục tiêu</div>
             <div className="spg-cell sessions">
               Số buổi tập
             </div>
@@ -326,7 +329,15 @@ export default function SuggestPlan_List() {
                     #{String(it._id).slice(-6)}
                   </div>
                 </div>
-
+                <div className="spg-cell category">
+                  {it.category || "—"}
+                </div>
+                <div className="spg-cell level">
+                  {it.level || "—"}
+                </div>
+                <div className="spg-cell goal">
+                  {it.goal || "—"}
+                </div>
                 <div className="spg-cell sessions">
                   {countSessions(it)}
                 </div>
