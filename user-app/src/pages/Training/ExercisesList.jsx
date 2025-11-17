@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getExerciseMeta, listExercises } from "../../api/exercises";
 import api from "../../lib/api";
@@ -16,7 +16,24 @@ export default function ExercisesList({ type = "Strength", title = "Các bài t�
 
   // head state
   const [q, setQ] = useState("");
-  const [filters, setFilters] = useState({ primary: "", equipment: "", level: "" });
+  // filter đã áp dụng (dùng để call API)
+  const [filters, setFilters] = useState({
+    primary: "",
+    secondary: "",
+    equipment: "",
+    level: "",
+  });
+
+  // dropdown filter
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [draftFilters, setDraftFilters] = useState({
+    primary: [],     // Nhóm cơ chính chọn tạm
+    secondary: [],   // Nhóm cơ phụ chọn tạm
+    equipment: "",   // Dụng cụ chọn tạm
+    level: "",       // Mức độ chọn tạm
+  });
+  const filterBtnRef = useRef(null);
+  const filterPanelRef = useRef(null);
 
   // list state
   const [items, setItems] = useState([]);
@@ -38,15 +55,80 @@ export default function ExercisesList({ type = "Strength", title = "Các bài t�
     })();
   }, []);
 
-  // params
-  const baseParams = useMemo(() => ({
-    type,
-    q: q.trim() || undefined,
-    primary: filters.primary || undefined,
-    equipment: filters.equipment || undefined,
-    level: filters.level || undefined,
-    sort: "name", // A->Z
-  }), [type, q, filters]);
+  // đồng bộ draftFilters từ filters khi mở dropdown
+  const syncDraftFromApplied = () => {
+    const parseList = (str) =>
+      str
+        ? str
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : [];
+    setDraftFilters({
+      primary: parseList(filters.primary),
+      secondary: parseList(filters.secondary),
+      equipment: filters.equipment || "",
+      level: filters.level || "",
+    });
+  };
+
+  // click bên ngoài để đóng dropdown
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handleClick = (e) => {
+      if (
+        filterPanelRef.current &&
+        !filterPanelRef.current.contains(e.target) &&
+        filterBtnRef.current &&
+        !filterBtnRef.current.contains(e.target)
+      ) {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [filterOpen]);
+
+  // có gì đang chọn trong draft
+  const hasDraftFilters =
+    draftFilters.primary.length > 0 ||
+    draftFilters.secondary.length > 0 ||
+    !!draftFilters.equipment ||
+    !!draftFilters.level;
+
+  // Đếm số filter đang áp dụng (mỗi nhóm cơ tính theo số mục)
+  const parseAppliedList = (str) =>
+    str
+      ? str
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean)
+      : [];
+
+  const appliedPrimaryCount = parseAppliedList(filters.primary).length;
+  const appliedSecondaryCount = parseAppliedList(filters.secondary).length;
+
+  const appliedFiltersCount =
+    appliedPrimaryCount +
+    appliedSecondaryCount +
+    (filters.equipment ? 1 : 0) +
+    (filters.level ? 1 : 0);
+
+  const hasAppliedFilters = appliedFiltersCount > 0;
+  const hasAnySelection = hasDraftFilters || hasAppliedFilters;
+
+  // params: mỗi cột lọc riêng field tương ứng
+  const baseParams = useMemo(() => {
+    return {
+      type,
+      q: q.trim() || undefined,
+      primary: filters.primary || undefined,
+      secondary: filters.secondary || undefined,
+      equipment: filters.equipment || undefined,
+      level: filters.level || undefined,
+      sort: "name", // A->Z
+    };
+  }, [type, q, filters]);
 
   // lần đầu: 40 item
   useEffect(() => {
@@ -57,7 +139,9 @@ export default function ExercisesList({ type = "Strength", title = "Các bài t�
         setItems(res.items || []);
         setSkip(res.items?.length || 0);
         setHasMore(!!res.hasMore);
-      } finally { setLoading(false); }
+      } finally {
+        setLoading(false);
+      }
     }, 250);
     return () => clearTimeout(t);
   }, [baseParams]);
@@ -71,13 +155,55 @@ export default function ExercisesList({ type = "Strength", title = "Các bài t�
       setItems((s) => [...s, ...(res.items || [])]);
       setSkip((v) => v + (res.items?.length || 0));
       setHasMore(!!res.hasMore);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
+
+  // ==== HANDLER CHO FILTER DROPDOWN ====
+  const togglePrimaryMuscle = (name) => {
+    setDraftFilters((f) => {
+      const exists = f.primary.includes(name);
+      return {
+        ...f,
+        primary: exists ? f.primary.filter((x) => x !== name) : [...f.primary, name],
+      };
+    });
+  };
+
+  const toggleSecondaryMuscle = (name) => {
+    setDraftFilters((f) => {
+      const exists = f.secondary.includes(name);
+      return {
+        ...f,
+        secondary: exists
+          ? f.secondary.filter((x) => x !== name)
+          : [...f.secondary, name],
+      };
+    });
+  };
+
+  const handleApplyFilters = () => {
+    // Áp dụng cả 4 loại filter; nếu tất cả trống -> quay về danh sách full
+    setFilters({
+      primary: draftFilters.primary.join(","),       // Nhóm cơ chính
+      secondary: draftFilters.secondary.join(","),   // Nhóm cơ phụ
+      equipment: draftFilters.equipment,
+      level: draftFilters.level,
+    });
+    setFilterOpen(false);
+  };
+
+  const handleClearDraft = () => {
+    // Xóa tất cả: reset draft + reset filter áp dụng -> trả về full list & title bình thường
+    setDraftFilters({ primary: [], secondary: [], equipment: "", level: "" });
+    setFilters({ primary: "", secondary: "", equipment: "", level: "" });
+  };
 
   return (
     <div className="nm-wrap">
-      {/* ===== HEAD (đồng bộ RecordMeal + thêm caret icon & nút tạo lịch) ===== */}
-      <div className="nm-head exh">
+      {/* ===== HEAD (search + tạo lịch + nút lọc dropdown) ===== */}
+      <div className="ex-head">
         <div className="search">
           <i className="fa-solid fa-magnifying-glass"></i>
           <input
@@ -87,53 +213,188 @@ export default function ExercisesList({ type = "Strength", title = "Các bài t�
           />
         </div>
 
-        <div className="ex-select">
-          <select
-            value={filters.primary}
-            onChange={(e) => setFilters((f) => ({ ...f, primary: e.target.value }))}
-            title="Nhóm cơ"
-          >
-            <option value="">Nhóm cơ</option>
-            {meta.MUSCLE_GROUPS.map((x) => <option key={x} value={x}>{x}</option>)}
-          </select>
-          <i className="fa-solid fa-caret-down" aria-hidden="true"></i>
-        </div>
-
-        <div className="ex-select">
-          <select
-            value={filters.equipment}
-            onChange={(e) => setFilters((f) => ({ ...f, equipment: e.target.value }))}
-            title="Dụng cụ"
-          >
-            <option value="">Dụng cụ</option>
-            {meta.EQUIPMENTS.map((x) => <option key={x} value={x}>{x}</option>)}
-          </select>
-          <i className="fa-solid fa-caret-down" aria-hidden="true"></i>
-        </div>
-
-        <div className="ex-select">
-          <select
-            value={filters.level}
-            onChange={(e) => setFilters((f) => ({ ...f, level: e.target.value }))}
-            title="Mức độ"
-          >
-            <option value="">Mức độ</option>
-            {meta.LEVELS.map((x) => <option key={x} value={x}>{x}</option>)}
-          </select>
-          <i className="fa-solid fa-caret-down" aria-hidden="true"></i>
-        </div>
-
-        {/* Nút tạo lịch tập ngoài cùng bên phải */}
-        <Link to="/tap-luyen/lich-cua-ban" className="create-btn ex-create-plan">
-          Tạo lịch tập
+        <Link to="/tap-luyen/lich-cua-ban" className="ex-wl">
+          Đến trang lịch tập
         </Link>
+
+        {/* Nút LỌC gom filter thành dropdown */}
+        <div className="ex-filter-wrap" ref={filterBtnRef}>
+          <button
+            type="button"
+            className={
+              "ex-filter-btn" +
+              (filterOpen ? " open" : "") +
+              (hasAppliedFilters ? " has-active" : "")
+            }
+            onClick={() => {
+              if (!filterOpen) {
+                syncDraftFromApplied();
+                setFilterOpen(true);
+              } else {
+                setFilterOpen(false);
+              }
+            }}
+          >
+            <i className="fa-solid fa-sliders"></i>
+            <span>Bộ lọc</span>
+            {hasAppliedFilters && (
+              <span className="ex-filter-badge">{appliedFiltersCount}</span>
+            )}
+          </button>
+
+          {filterOpen && (
+            <div
+              className="ex-filter-dd"
+              ref={filterPanelRef}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="ex-filter-cols">
+                {/* Nhóm cơ chính (multi-select) */}
+                <div className="exf-col">
+                  <div className="exf-col-title">NHÓM CƠ CHÍNH</div>
+                  <div className="exf-list">
+                    {meta.MUSCLE_GROUPS.map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        className={
+                          "exf-item" +
+                          (draftFilters.primary.includes(m) ? " active" : "")
+                        }
+                        onClick={() => togglePrimaryMuscle(m)}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="exf-divider" />
+
+                {/* Nhóm cơ phụ (multi-select) */}
+                <div className="exf-col">
+                  <div className="exf-col-title">NHÓM CƠ PHỤ</div>
+                  <div className="exf-list">
+                    {meta.MUSCLE_GROUPS.map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        className={
+                          "exf-item" +
+                          (draftFilters.secondary.includes(m) ? " active" : "")
+                        }
+                        onClick={() => toggleSecondaryMuscle(m)}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="exf-divider" />
+
+                {/* Dụng cụ (single-select) */}
+                <div className="exf-col">
+                  <div className="exf-col-title">DỤNG CỤ</div>
+                  <div className="exf-list">
+                    {meta.EQUIPMENTS.map((eq) => (
+                      <button
+                        key={eq}
+                        type="button"
+                        className={
+                          "exf-item" +
+                          (draftFilters.equipment === eq ? " active" : "")
+                        }
+                        onClick={() =>
+                          setDraftFilters((f) => ({
+                            ...f,
+                            equipment: f.equipment === eq ? "" : eq,
+                          }))
+                        }
+                      >
+                        {eq}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="exf-divider" />
+
+                {/* Mức độ (single-select) */}
+                <div className="exf-col">
+                  <div className="exf-col-title">MỨC ĐỘ</div>
+                  <div className="exf-list">
+                    {meta.LEVELS.map((lv) => (
+                      <button
+                        key={lv}
+                        type="button"
+                        className={
+                          "exf-item" +
+                          (draftFilters.level === lv ? " active" : "")
+                        }
+                        onClick={() =>
+                          setDraftFilters((f) => ({
+                            ...f,
+                            level: f.level === lv ? "" : lv,
+                          }))
+                        }
+                      >
+                        {lv}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer nút hành động */}
+              <div className="ex-filter-actions">
+                <button
+                  type="button"
+                  className="exf-clear"
+                  disabled={!hasAnySelection}
+                  onClick={handleClearDraft}
+                >
+                  Xóa tất cả dữ liệu lọc
+                </button>
+
+                <div className="exf-actions-right">
+                  <button
+                    type="button"
+                    className="exf-btn ghost"
+                    onClick={() => setFilterOpen(false)}
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    className="exf-btn primary"
+                    disabled={!hasAnySelection}
+                    onClick={handleApplyFilters}
+                  >
+                    Lọc dữ liệu
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ===== LIST-FRAME ===== */}
+      <hr className="ex-line" />
+      <div className="ex-list-title">Danh sách các bài tập</div>
+      <div className="ex-list-desc">
+        Tìm kiếm, xem thông tin chi tiết bài tập bạn muốn và xây dựng kế hoạch luyện tập cho bản thân
+      </div>
+
+      {/* ===== LIST-FRAME (giữ nguyên) ===== */}
       <div className="nm-list-frame">
         <div className="ex-grid ex-grid-4">
           {items.map((it) => (
-            <div key={it._id} className="ex-card" onClick={() => nav(`/tap-luyen/bai-tap/chi-tiet/${it._id}`)}>
+            <div
+              key={it._id}
+              className="ex-card"
+              onClick={() => nav(`/tap-luyen/bai-tap/chi-tiet/${it._id}`)}
+            >
               <div className="ex-thumb">
                 <img src={toAbs(it.imageUrl)} alt={it.name} loading="lazy" />
               </div>
@@ -149,7 +410,7 @@ export default function ExercisesList({ type = "Strength", title = "Các bài t�
           ))}
         </div>
 
-        {(!loading && items.length === 0) && (
+        {!loading && items.length === 0 && (
           <div className="ex-empty">Không tìm thấy bài tập.</div>
         )}
 

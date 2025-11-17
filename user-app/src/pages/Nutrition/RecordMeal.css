@@ -1,73 +1,71 @@
-/* ===== Khung trang (giống .dj-wrap) ===== */
 .nm-wrap {
-  background-color: #f4f6ea; /* Nền mới */
+  background-color: #F8F9FA; 
   min-height: 100%;
-  margin: -16px; /* Kéo nền ra */
-  
-  /* === THAY ĐỔI: Thêm padding để bù đắp cho .dj-container bị thiếu === */
-  /* 16px (wrap) + 8px (container) = 24px (top) */
-  /* 16px (wrap) + 12px (container) = 28px (sides) */
+  margin: -16px;
   padding: 24px 28px 16px 28px; 
-  
-  /* === THAY ĐỔI: Bỏ Flexbox, để các card tự căn giữa === */
-  /* display: flex; */
-  /* flex-direction: column; */
-  /* align-items: center; */
-}
 
-/* ===== Thanh bar trên (giống .dj-bar) ===== */
+}
 .nm-head {
   display: flex;
-  gap: 10px;
   align-items: center;
-  position: relative; /* Bỏ sticky */
-  background: #fff;
-  padding: 12px 16px; /* Giống .dj-bar */
-  border: 1px solid #002C3E; /* Giống .dj-bar */
-  border-radius: 4px; /* Giống .dj-bar */
-  box-shadow: 0 4px 10px rgba(0, 44, 62, .04); /* Giống .dj-bar */
-  margin-bottom: 24px; /* Giống .dj-bar */
+  justify-content: space-between;
+  position: relative; 
+  padding-bottom: 16px ;
   z-index: 5;
-  
   width: 100%; 
-  max-width: 1700px; /* Yêu cầu 1700px */
-
-  /* === THAY ĐỔI: Thêm margin auto để tự căn giữa === */
+  max-width: 1700px; 
   margin-left: auto;
   margin-right: auto;
 }
-
+.rm-line{ border:0; border-top:1px solid #002C3E55; margin: 10px -24px 0 -24px; }
 .search {
-  flex: 1;
   display: flex;
   align-items: center;
-  border: 1px solid #002C3E; /* Giống .dj-bar input */
-  border-radius: 4px;
+  border: 1px solid #002C3E80; 
+  border-radius: 999px;
   padding: 0 10px;
+  gap: 10px;
+  max-width: 700px;
+  width: 100%;
   height: 40px;
+  background: #fff;
 }
-.search i { margin-right: 8px; color: #555; }
+.search i { color: #555; }
 .search input { border: none; outline: none; width: 100%; height: 100%; font-size: 15px; background: transparent; }
 
+.nm-head-center {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Tạo khoảng cách giữa các nút */
+}
 .scan {
-  width: 40px; /* Giảm size */
+  font-size: 16px;
   height: 40px;
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  color: #002C3E;
+  padding: 0 10px;
   border: 1px solid #002C3E;
-  border-radius: 4px;
-  background: #fff;
+  font-weight: 500;
+}
+
+.filter { display: flex; align-items: right;}
+.rm-filter {
+  height: 40px;
   cursor: pointer;
 }
-.scan i { font-size: 20px; color: #555; }
-
-.filter { position: relative; }
-.filter-btn {
-  height: 40px;
-  border: 1px solid #002C3E;
-  background: #fff;
-  border-radius: 4px;
-  padding: 0 20px;
-  cursor: pointer;
+.rm-title i {
+  color: #555;
+}
+.rm-title span {
+  font-size: 18px;
   font-weight: 500;
+  color: #002C3E;
+}
+
+.rm-filter span:hover{
+  color: #008080;
 }
 .filter.open .filter-btn { background: #f3f4f6; }
 .filter-dd {
@@ -84,34 +82,56 @@
 }
 .filter-dd label { display: flex; align-items: center; gap: 8px; padding: 6px 4px; white-space: nowrap; }
 
-.create-btn {
+.rm-create-btn {
+  font-size: 16px;
   height: 40px;
   display: flex;
   align-items: center;
-  padding: 0 14px;
-  border-radius: 4px;
-  background: #008080; /* Màu theme */
-  color: #fff;
-  text-decoration: none;
-  margin-left: 5px;
+  border-radius: 999px;
+  color: #002C3E;
+  padding: 0 10px;
+  border: 1px solid #002C3E;
   font-weight: 500;
-  border: none;
 }
 
-/* Khung bọc riêng khu danh sách (giống .dj-main) */
-.nm-list-frame {
-  background: #fff;
-  border: 1px solid #002C3E; /* Giống .dj-main */
-  border-radius: 4px; /* Giống .dj-main */
-  padding: 20px; /* Giống .dj-main */
-  margin-top: 0;
-  
-  width: 100%;
-  max-width: 1700px; /* Yêu cầu 1700px */
-
-  /* === THAY ĐỔI: Thêm margin auto để tự căn giữa === */
+.nm-list-title {
+  max-width: 1700px;
   margin-left: auto;
   margin-right: auto;
+  padding-top: 50px;
+  color: #002C3E;
+  font-size: 24px;
+  font-weight: 500;
+}
+.nm-list-desc {
+  max-width: 1700px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 5px 0 10px 0;
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.nm-list-frame {
+  border: 1px solid #002C3E55;
+  background: #fff;
+  border-radius: 4px;
+  padding: 20px;
+  margin-top: 0;
+  width: 100%;
+  max-width: 1700px;
+  margin-left: auto;
+  margin-right: auto;
+  max-height: 600px;        
+  overflow-y: auto;        
+  cursor: grab;        
+  scrollbar-width: none;
+}
+
+.nm-list-frame.dragging {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .nm-list { 
@@ -177,12 +197,15 @@
 .more { text-align: center; margin: 20px 0 10px; }
 .more button {
   height: 40px;
-  padding: 0 18px;
-  border-radius: 4px;
-  border: 1px solid #002C3E;
+  border-radius: 999px;
+  border: 1px solid #002C3E80;
   background: #fff;
   cursor: pointer;
   font-weight: 500;
+  margin-left: auto;
+  margin-right: auto;
+  width: 1660px;
+  color: #111827;
 }
 .more button:hover { background: #f9f9f9; }
 

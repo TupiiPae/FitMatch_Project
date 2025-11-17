@@ -1,10 +1,10 @@
 :root {
   /* ===== KÍCH THƯỚC / SPACING ===== */
-  --nav-size: 80px;
+  --nav-size: 70px;
   --nav-size-mb: 68px;
-  --nav-x-pad: 12px;
+  --nav-x-pad: 0;
   --nav-max-width: 1700px;
-  --nav-gap: 50px;  /* Tăng gap lên 1 chút */
+  --nav-gap: 100px;  /* Tăng gap lên 1 chút */
   --menu-gap: 12px; /* Tăng gap menu */
 
   /* ===== MÀU SẮC ===== */
@@ -13,7 +13,8 @@
   --fm-muted: #6b7280;
 
   /* === MÀU MỚI === */
-  --nav-bg: #f4f6ea; 
+  --nav-bg: #d1e9e0; 
+  /* effaf4 */
   --nav-text: #78BCC4;
   --menu-hover-text: #008080;
 }
@@ -24,7 +25,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f4f6ea; /*#f4f6ea*/
+  background: #F8F9FA; /*#f4f6ea*/
   color: var(--fm-text);
 }
 
@@ -36,7 +37,8 @@
   top: 0;
   z-index: 50;
   background: var(--nav-bg); /* Nền mới */
-  box-shadow: 0 2px 40px rgba(0,0,0,.1);
+  /* box-shadow: 0 2px 40px rgba(0,0,0,.1); */
+  border-bottom: 1px solid #002C3E55;
 }
 
 .fm-nav {
@@ -67,7 +69,7 @@
 .fm-brand { display: inline-flex; align-items: center; text-decoration: none; }
 
 /* Logo */
-.fm-logo { height: var(--nav-size); width: auto; display: block; object-fit: contain; }
+.fm-logo { height: 30px; width: auto; display: block; object-fit: contain; }
 
 /* CENTER (menu) */
 .fm-menu__list { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: var(--menu-gap); }
@@ -228,7 +230,7 @@
   color: #FF7043;
 }
 .fm-avatar {
-  width: 60px; height: 60px; border-radius: 50%; overflow: hidden; cursor: pointer;
+  width: 55px; height: 55px; border-radius: 50%; overflow: hidden; cursor: pointer;
   border: 2px solid #fff; /* Thêm border trắng cho nổi */
   background: #fff; display: grid; place-items: center;
   box-shadow: 0 2px 4px rgba(0,0,0,.05);

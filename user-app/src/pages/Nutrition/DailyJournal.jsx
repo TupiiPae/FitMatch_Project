@@ -6,11 +6,10 @@ import "./DailyJournal.css";
 import { toast } from "react-toastify";
 import api from "../../lib/api";
 
-// === THÊM MỚI: Imports cho MUI Date Picker ===
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-// ===========================================
+// === Imports cho MUI Date Picker ===
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 // Import logic tìm kiếm và thêm món ăn
 import { searchFoods, addLog } from "../../api/foods";
@@ -19,13 +18,19 @@ const HOURS = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
 
 // ===== Helper =====
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
-const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
+const toAbs = (u) => {
+  if (!u) return u;
+  try {
+    return new URL(u, API_ORIGIN).toString();
+  } catch {
+    return u;
+  }
+};
 const PLACEHOLDER = "/images/food-placeholder.jpg";
 const round1 = (v) => Math.round(v * 10) / 10;
 const toNum = (v, def = 0) => (v == null || v === "" || isNaN(+v) ? def : +v);
 
 // Chuẩn hóa/định dạng ngày
-// const toISO = (d) => dayjs(d).format("YYYY-MM-DD"); // Đã có trong hàm parseDisplayToISO
 const fmtDisplay = (iso) => (iso ? dayjs(iso).format("DD/MM/YYYY") : "");
 const parseDisplayToISO = (str) => {
   // Cho phép nhập dd/mm/yyyy
@@ -53,8 +58,24 @@ export default function DailyJournal() {
   // logs từ DB
   const [logs, setLogs] = useState([]);
   // totals/targets từ DB
-  const [totals, setTotals] = useState({ kcal: 0, proteinG: 0, carbG: 0, fatG: 0, sugarG: 0, saltG: 0, fiberG: 0 });
-  const [targets, setTargets] = useState({ kcal: 0, proteinG: 0, carbG: 0, fatG: 0, sugarG: 0, saltG: 0, fiberG: 0 });
+  const [totals, setTotals] = useState({
+    kcal: 0,
+    proteinG: 0,
+    carbG: 0,
+    fatG: 0,
+    sugarG: 0,
+    saltG: 0,
+    fiberG: 0,
+  });
+  const [targets, setTargets] = useState({
+    kcal: 0,
+    proteinG: 0,
+    carbG: 0,
+    fatG: 0,
+    sugarG: 0,
+    saltG: 0,
+    fiberG: 0,
+  });
 
   const [waterMl, setWaterMl] = useState(0);
   const [stepMl, setStepMl] = useState(100);
@@ -64,13 +85,10 @@ export default function DailyJournal() {
   const [selectedHour, setSelectedHour] = useState(null);
 
   // ==== Logic cho Date input (top bar) ====
-  // XÓA BỎ: topDateHiddenRef, onOpenTopDatePicker, onTopDateDisplayChange
-  // GIỮ LẠI hàm xử lý state chính:
   const onTopDateHiddenChange = (e) => {
     const iso = e.target.value; // YYYY-MM-DD
     if (iso) setDate(iso);
   };
-  // ========================================
 
   function calcWeek(dISO) {
     const base = dayjs(dISO);
@@ -85,18 +103,35 @@ export default function DailyJournal() {
     const safeLogs = (data?.items || []).map((it) => {
       const food = it.food || {};
       const foodAbs = food.imageUrl ? toAbs(food.imageUrl) : PLACEHOLDER;
-      return { ...it, hour: Number(it.hour), quantity: Number(it.quantity ?? 1), massG: it.massG ?? null, food, foodAbs };
+      return {
+        ...it,
+        hour: Number(it.hour),
+        quantity: Number(it.quantity ?? 1),
+        massG: it.massG ?? null,
+        food,
+        foodAbs,
+      };
     });
     setLogs(safeLogs);
     const t = data?.totals || {};
     setTotals({
-      kcal: Number(t.kcal || 0), proteinG: Number(t.proteinG || 0), carbG: Number(t.carbG || 0), fatG: Number(t.fatG || 0),
-      sugarG: Number(t.sugarG || 0), saltG: Number(t.saltG || 0), fiberG: Number(t.fiberG || 0),
+      kcal: Number(t.kcal || 0),
+      proteinG: Number(t.proteinG || 0),
+      carbG: Number(t.carbG || 0),
+      fatG: Number(t.fatG || 0),
+      sugarG: Number(t.sugarG || 0),
+      saltG: Number(t.saltG || 0),
+      fiberG: Number(t.fiberG || 0),
     });
     const g = data?.targets || {};
     setTargets({
-      kcal: Number(g.kcal || 0), proteinG: Number(g.proteinG || 0), carbG: Number(g.carbG || 0), fatG: Number(g.fatG || 0),
-      sugarG: Number(g.sugarG || 0), saltG: Number(g.saltG || 0), fiberG: Number(g.fiberG || 0),
+      kcal: Number(g.kcal || 0),
+      proteinG: Number(g.proteinG || 0),
+      carbG: Number(g.carbG || 0),
+      fatG: Number(g.fatG || 0),
+      sugarG: Number(g.sugarG || 0),
+      saltG: Number(g.saltG || 0),
+      fiberG: Number(g.fiberG || 0),
     });
   }
 
@@ -111,9 +146,19 @@ export default function DailyJournal() {
     setWaterMl(Number(data?.amountMl || 0));
   }
 
-  useEffect(() => { calcWeek(date); }, [date]);
-  useEffect(() => { load(); loadWater(); /* eslint-disable-next-line */ }, [date]);
-  useEffect(() => { loadStreak(); }, []);
+  useEffect(() => {
+    calcWeek(date);
+  }, [date]);
+
+  useEffect(() => {
+    load();
+    loadWater();
+    // eslint-disable-next-line
+  }, [date]);
+
+  useEffect(() => {
+    loadStreak();
+  }, []);
 
   const logsByHour = useMemo(() => {
     const map = {};
@@ -135,7 +180,11 @@ export default function DailyJournal() {
     }
   }
 
-  function pct(v, t) { if (!t) return 0; const p = (v / t) * 100; return Math.max(0, Math.min(100, p)); }
+  function pct(v, t) {
+    if (!t) return 0;
+    const p = (v / t) * 100;
+    return Math.max(0, Math.min(100, p));
+  }
 
   async function waterDelta(delta) {
     const want = Math.max(0, Math.min(10000, waterMl + delta));
@@ -171,7 +220,10 @@ export default function DailyJournal() {
     setEditHour(Number(log?.hour || 12));
     setShowEdit(true);
   };
-  const closeEditLog = () => { setShowEdit(false); setEditLog(null); };
+  const closeEditLog = () => {
+    setShowEdit(false);
+    setEditLog(null);
+  };
 
   const saveEditLog = async () => {
     if (!editLog) return;
@@ -194,252 +246,363 @@ export default function DailyJournal() {
   };
 
   return (
-    <div className="dj-wrap">
-      <div className="dj-container">
-        <div className="dj-bar">
-          <div className="left">
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                format="DD/MM/YYYY"
-                // Chuyển string YYYY-MM-DD (từ state 'date') sang object dayjs
-                value={date ? dayjs(date) : null}
-                onChange={(newValue) => {
-                  // Chuyển object dayjs (từ MUI) về string YYYY-MM-DD
-                  const newDateString = newValue ? newValue.format('YYYY-MM-DD') : '';
-                  // Tạo event giả để gọi hàm logic gốc của bạn
-                  onTopDateHiddenChange({ target: { value: newDateString } });
-                }}
-                slotProps={{
-                  textField: {
-                    placeholder: "DD/MM/YYYY",
-                    style: { width: 150 },
-                    size: "small" // Thêm size small cho gọn
-                  }
-                }}
-              />
-            </LocalizationProvider>
-          </div>
-          <div className="week">
-            {weekDays.map((d, i) => (
-              <button
-                key={i}
-                className={`wbtn ${dayjs(date).isSame(d, "day") ? "on" : ""}`}
-                onClick={() => setDate(d.format("YYYY-MM-DD"))}
-              >
-                {["CN", "T2", "T3", "T4", "T5", "T6", "T7"][d.day()]}
-              </button>
-            ))}
-          </div>
+    <div className="dj-page">
+      {/* Banner full width */}
+      <div className="dj-banner">
+        <img
+          src="/images/dailyjournal-banner.png"
+          alt="Daily Journal"
+        />
+      </div>
 
-          <div className="right">
-            <i className={`fa-solid fa-fire ${hot ? "hot" : "cold"}`} />
-            <span className="streak-num">{streak}</span>
-          </div>
-        </div>
-
-        {/* BODY */}
-        <div className="dj-grid">
-          {/* LEFT main (2/3) */}
-          <div className="dj-main">
-            <div className="col-title">Nhật ký dinh dưỡng</div>
-
-            {/* Grid header */}
-            <div className="dj-grid-header">
-              <div className="h-col-1">Thời gian</div>
-              <div className="h-col-2">Món ăn</div>
-              <div className="h-col-3">Thêm</div>
+      <div className="dj-wrap">
+        <div className="dj-container">
+          {/* Thanh bar nằm trên dj-grid */}
+          <div className="dj-bar">
+            <div className="left">
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  format="DD/MM/YYYY"
+                  value={date ? dayjs(date) : null}
+                  onChange={(newValue) => {
+                    const newDateString = newValue
+                      ? newValue.format("YYYY-MM-DD")
+                      : "";
+                    onTopDateHiddenChange({ target: { value: newDateString } });
+                  }}
+                  slotProps={{
+                    textField: {
+                      placeholder: "DD/MM/YYYY",
+                      style: { width: 150 },
+                      size: "small",
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            </div>
+            <div className="week">
+              {weekDays.map((d, i) => (
+                <button
+                  key={i}
+                  className={`wbtn ${
+                    dayjs(date).isSame(d, "day") ? "on" : ""
+                  }`}
+                  onClick={() => setDate(d.format("YYYY-MM-DD"))}
+                >
+                  {["CN", "T2", "T3", "T4", "T5", "T6", "T7"][d.day()]}
+                </button>
+              ))}
             </div>
 
-            <div className="hour-grid">
-              {HOURS.map((h) => (
-                <div key={h} className="hour-row" style={{ minHeight: logsByHour[h]?.length ? "auto" : "50px" }}>
-                  <div className="hh">{h}:00</div>
-                  <div className="entries">
-                    {logsByHour[h].map((item) => {
-                      const q = toNum(item.quantity, 1);
-                      const unit = item.food?.unit || "g";
-                      const baseMass = item.massG ?? item.food?.massG;
-                      const massShow = baseMass != null ? Math.round(toNum(baseMass, 0) * q) : null;
-                      const kcalBase = toNum(item.food?.kcal, NaN);
-                      const kcalShow = isNaN(kcalBase) ? null : Math.round(kcalBase * q);
+            <div className="right">
+              <i className={`fa-solid fa-fire ${hot ? "hot" : "cold"}`} />
+              <span className="streak-num">{streak}</span>
+            </div>
+          </div>
 
-                      return (
-                        <div key={item._id} className="entry" onClick={() => openEditLog(item)}>
-                          <img src={item.foodAbs || PLACEHOLDER} alt={item.food?.name} />
-                          <div className="einfo">
-                            <div className="etitle">{item.food?.name}</div>
-                            <div className="esub">
-                              {massShow != null ? `${massShow} ${unit}` : "-"} ·{" "}
-                              {kcalShow != null ? `${kcalShow} cal` : "- cal"} · x{q}
-                            </div>
-                          </div>
-                          <button
-                            className="edel"
-                            title="Xoá"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete(item._id);
-                            }}
+          {/* GRID 2/3 : 1/3 */}
+          <div className="dj-grid">
+            {/* LEFT main (2/3) */}
+            <div className="dj-main">
+              <div className="col-title">Nhật ký dinh dưỡng</div>
+
+              {/* Grid header */}
+              <div className="dj-grid-header">
+                <div className="h-col-1">Thời gian</div>
+                <div className="h-col-2">Món ăn</div>
+                <div className="h-col-3">Thêm</div>
+              </div>
+
+              <div className="hour-grid">
+                {HOURS.map((h) => (
+                  <div
+                    key={h}
+                    className="hour-row"
+                    style={{
+                      minHeight: logsByHour[h]?.length ? "auto" : "50px",
+                    }}
+                  >
+                    <div className="hh">{h}:00</div>
+                    <div className="entries">
+                      {logsByHour[h].map((item) => {
+                        const q = toNum(item.quantity, 1);
+                        const unit = item.food?.unit || "g";
+                        const baseMass = item.massG ?? item.food?.massG;
+                        const massShow =
+                          baseMass != null
+                            ? Math.round(toNum(baseMass, 0) * q)
+                            : null;
+                        const kcalBase = toNum(item.food?.kcal, NaN);
+                        const kcalShow = isNaN(kcalBase)
+                          ? null
+                          : Math.round(kcalBase * q);
+
+                        return (
+                          <div
+                            key={item._id}
+                            className="entry"
+                            onClick={() => openEditLog(item)}
                           >
-                            <i className="fa-regular fa-trash-can" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                            <img
+                              src={item.foodAbs || PLACEHOLDER}
+                              alt={item.food?.name}
+                            />
+                            <div className="einfo">
+                              <div className="etitle">{item.food?.name}</div>
+                              <div className="esub">
+                                {massShow != null
+                                  ? `${massShow} ${unit}`
+                                  : "-"}{" "}
+                                ·{" "}
+                                {kcalShow != null
+                                  ? `${kcalShow} cal`
+                                  : "- cal"}{" "}
+                                · x{q}
+                              </div>
+                            </div>
+                            <button
+                              className="edel"
+                              title="Xoá"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(item._id);
+                              }}
+                            >
+                              <i className="fa-regular fa-trash-can" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Nút thêm */}
+                    <div className="hour-add">
+                      <button
+                        title={`Thêm món ăn lúc ${h}:00`}
+                        onClick={() => handleOpenAddModal(h)}
+                      >
+                        <i className="fa-solid fa-plus" />
+                      </button>
+                    </div>
                   </div>
-                  {/* Nút thêm */}
-                  <div className="hour-add">
-                    <button title={`Thêm món ăn lúc ${h}:00`} onClick={() => handleOpenAddModal(h)}>
-                      <i className="fa-solid fa-plus" />
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT sidebar (1/3) */}
+            <div className="dj-side">
+              {/* Macro panel */}
+              <div className="panel macro">
+                <div className="cal-wrapper">
+                  <div className="cal-ring">
+                    {(() => {
+                      const size = 132;
+                      const stroke = 10;
+                      const r = (size - stroke) / 2;
+                      const C = 2 * Math.PI * r;
+                      const ratio =
+                        (targets.kcal || 0) > 0
+                          ? (totals.kcal || 0) / targets.kcal
+                          : 0;
+                      const progress = Math.max(0, Math.min(1, ratio));
+                      const dashOffset = C * (1 - progress);
+                      return (
+                        <svg
+                          width={size}
+                          height={size}
+                          viewBox={`0 0 ${size} ${size}`}
+                        >
+                          <circle
+                            cx={size / 2}
+                            cy={size / 2}
+                            r={r}
+                            className="ring-bg"
+                            strokeWidth={stroke}
+                            fill="none"
+                          />
+                          <circle
+                            cx={size / 2}
+                            cy={size / 2}
+                            r={r}
+                            className="ring-fg"
+                            strokeWidth={stroke}
+                            fill="none"
+                            strokeDasharray={C}
+                            strokeDashoffset={dashOffset}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      );
+                    })()}
+                    <div className="cal-center">
+                      <div className="cc-label">Calorie</div>
+                      <div className="cc-val">
+                        {Math.round(totals.kcal || 0)}
+                        <span className="cc-unit">
+                          /{Math.round(targets.kcal || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="macro-grid">
+                  <div className="col">
+                    <div className="mitem">
+                      <div className="mhead">
+                        <span>Chất đạm</span>
+                        <span className="mval">
+                          {round1(totals.proteinG || 0)}/
+                          {Math.round(targets.proteinG || 0)}g
+                        </span>
+                      </div>
+                      <div className="mbar red">
+                        <span
+                          style={{
+                            width: `${pct(
+                              totals.proteinG,
+                              targets.proteinG
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="mitem">
+                      <div className="mhead">
+                        <span>Đường bột</span>
+                        <span className="mval">
+                          {round1(totals.carbG || 0)}/
+                          {Math.round(targets.carbG || 0)}g
+                        </span>
+                      </div>
+                      <div className="mbar purple">
+                        <span
+                          style={{
+                            width: `${pct(totals.carbG, targets.carbG)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="mitem">
+                      <div className="mhead">
+                        <span>Chất béo</span>
+                        <span className="mval">
+                          {round1(totals.fatG || 0)}/
+                          {Math.round(targets.fatG || 0)}g
+                        </span>
+                      </div>
+                      <div className="mbar green">
+                        <span
+                          style={{
+                            width: `${pct(totals.fatG, targets.fatG)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col">
+                    <div className="mitem">
+                      <div className="mhead">
+                        <span>Muối</span>
+                        <span className="mval">
+                          {round1(totals.saltG || 0)}/
+                          {Math.round(targets.saltG || 0)}g
+                        </span>
+                      </div>
+                      <div className="mbar gray">
+                        <span
+                          style={{
+                            width: `${pct(totals.saltG, targets.saltG)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="mitem">
+                      <div className="mhead">
+                        <span>Đường</span>
+                        <span className="mval">
+                          {round1(totals.sugarG || 0)}/
+                          {Math.round(targets.sugarG || 0)}g
+                        </span>
+                      </div>
+                      <div className="mbar orange">
+                        <span
+                          style={{
+                            width: `${pct(
+                              totals.sugarG,
+                              targets.sugarG
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="mitem">
+                      <div className="mhead">
+                        <span>Chất xơ</span>
+                        <span className="mval">
+                          {round1(totals.fiberG || 0)}/
+                          {Math.round(targets.fiberG || 0)}g
+                        </span>
+                      </div>
+                      <div className="mbar teal">
+                        <span
+                          style={{
+                            width: `${pct(
+                              totals.fiberG,
+                              targets.fiberG
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nước uống */}
+              <div className="panel water">
+                <div className="wtop">
+                  <div className="wleft">
+                    <i className="fa-solid fa-glass-water" />
+                    <div>
+                      <div className="wlabel">Lượng nước</div>
+                      <div className="wval">{waterMl} ml</div>
+                    </div>
+                  </div>
+
+                  <div className="wctl">
+                    <button type="button" onClick={() => waterDelta(-stepMl)}>
+                      –
+                    </button>
+                    <div className="input-unit-wrapper">
+                      <input
+                        type="number"
+                        min="50"
+                        max="10000"
+                        step="50"
+                        value={stepMl}
+                        onChange={(e) =>
+                          setStepMl(
+                            Math.max(
+                              50,
+                              Math.min(10000, +e.target.value || 100)
+                            )
+                          )
+                        }
+                        className="input-with-unit"
+                      />
+                      <span className="input-unit">ml</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => waterDelta(+stepMl)}
+                    >
+                      +
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* RIGHT sidebar (1/3) */}
-          <div className="dj-side">
-            {/* Macro panel */}
-            <div className="panel macro">
-              <div className="cal-wrapper">
-                <div className="cal-ring">
-                  {(() => {
-                    const size = 132;
-                    const stroke = 10;
-                    const r = (size - stroke) / 2;
-                    const C = 2 * Math.PI * r;
-                    const ratio = (targets.kcal || 0) > 0 ? (totals.kcal || 0) / targets.kcal : 0;
-                    const progress = Math.max(0, Math.min(1, ratio));
-                    const dashOffset = C * (1 - progress);
-                    return (
-                      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-                        <circle cx={size / 2} cy={size / 2} r={r} className="ring-bg" strokeWidth={stroke} fill="none" />
-                        <circle
-                          cx={size / 2}
-                          cy={size / 2}
-                          r={r}
-                          className="ring-fg"
-                          strokeWidth={stroke}
-                          fill="none"
-                          strokeDasharray={C}
-                          strokeDashoffset={dashOffset}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    );
-                  })()}
-                  <div className="cal-center">
-                    <div className="cc-label">Calorie</div>
-                    <div className="cc-val">
-                      {Math.round(totals.kcal || 0)}
-                      <span className="cc-unit">/{Math.round(targets.kcal || 0)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="macro-grid">
-                <div className="col">
-                  <div className="mitem">
-                    <div className="mhead">
-                      <span>Chất đạm</span>
-                      <span className="mval">
-                        {round1(totals.proteinG || 0)}/{Math.round(targets.proteinG || 0)}g
-                      </span>
-                    </div>
-                    <div className="mbar red">
-                      <span style={{ width: `${pct(totals.proteinG, targets.proteinG)}%` }} />
-                    </div>
-                  </div>
-                  <div className="mitem">
-                    <div className="mhead">
-                      <span>Đường bột</span>
-                      <span className="mval">
-                        {round1(totals.carbG || 0)}/{Math.round(targets.carbG || 0)}g
-                      </span>
-                    </div>
-                    <div className="mbar purple">
-                      <span style={{ width: `${pct(totals.carbG, targets.carbG)}%` }} />
-                    </div>
-                  </div>
-                  <div className="mitem">
-                    <div className="mhead">
-                      <span>Chất béo</span>
-                      <span className="mval">
-                        {round1(totals.fatG || 0)}/{Math.round(targets.fatG || 0)}g
-                      </span>
-                    </div>
-                    <div className="mbar green">
-                      <span style={{ width: `${pct(totals.fatG, targets.fatG)}%` }} />
-                    </div>
-                  </div>
-                </div>
-                <div className="col">
-                  <div className="mitem">
-                    <div className="mhead">
-                      <span>Muối</span>
-                      <span className="mval">
-                        {round1(totals.saltG || 0)}/{Math.round(targets.saltG || 0)}g
-                      </span>
-                    </div>
-                    <div className="mbar gray">
-                      <span style={{ width: `${pct(totals.saltG, targets.saltG)}%` }} />
-                    </div>
-                  </div>
-                  <div className="mitem">
-                    <div className="mhead">
-                      <span>Đường</span>
-                      <span className="mval">
-                        {round1(totals.sugarG || 0)}/{Math.round(targets.sugarG || 0)}g
-                      </span>
-                    </div>
-                    <div className="mbar orange">
-                      <span style={{ width: `${pct(totals.sugarG, targets.sugarG)}%` }} />
-                    </div>
-                  </div>
-                  <div className="mitem">
-                    <div className="mhead">
-                      <span>Chất xơ</span>
-                      <span className="mval">
-                        {round1(totals.fiberG || 0)}/{Math.round(targets.fiberG || 0)}g
-                      </span>
-                    </div>
-                    <div className="mbar teal">
-                      <span style={{ width: `${pct(totals.fiberG, targets.fiberG)}%` }} />
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
-
-            {/* Nước uống */}
-            <div className="panel water">
-              <div className="wtop">
-                <div className="wleft">
-                  <i className="fa-solid fa-glass-water" />
-                  <div>
-                    <div className="wlabel">Lượng nước</div>
-                    <div className="wval">{waterMl} ml</div>
-                  </div>
-                </div>
-
-                <div className="wctl">
-                  <button type="button" onClick={() => waterDelta(-stepMl)}>–</button>                 
-                  <div className="input-unit-wrapper">
-                    <input
-                      type="number"
-                      min="50" max="10000" step="50"
-                      value={stepMl}
-                      onChange={(e) => setStepMl(Math.max(50, Math.min(10000, +e.target.value || 100)))}
-                      className="input-with-unit" 
-                    />
-                    <span className="input-unit">ml</span> 
-                  </div>
-                  <button type="button" onClick={() => waterDelta(+stepMl)}>+</button>
-                </div>
-              </div>
-            </div>
+            {/* end dj-side */}
           </div>
         </div>
       </div>
@@ -460,7 +623,9 @@ export default function DailyJournal() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">
               Chỉnh sửa món trong nhật ký
-              <button className="modal-close" onClick={closeEditLog}>&times;</button>
+              <button className="modal-close" onClick={closeEditLog}>
+                &times;
+              </button>
             </h3>
 
             {/* --- Ảnh và tên món --- */}
@@ -486,7 +651,6 @@ export default function DailyJournal() {
                 <i className="fa-regular fa-calendar" />
                 <div className="am-field">
                   <label>Ngày</label>
-                  {/* Dùng input text readOnly vì ngày này không cho đổi ở popup này */}
                   <input type="text" value={fmtDisplay(date)} readOnly />
                 </div>
               </div>
@@ -494,9 +658,14 @@ export default function DailyJournal() {
                 <i className="fa-regular fa-clock" />
                 <div className="am-field">
                   <label>Thời gian</label>
-                  <select value={editHour} onChange={(e) => setEditHour(+e.target.value)}>
+                  <select
+                    value={editHour}
+                    onChange={(e) => setEditHour(+e.target.value)}
+                  >
                     {HOURS.map((h) => (
-                      <option key={h} value={h}>{h}:00</option>
+                      <option key={h} value={h}>
+                        {h}:00
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -511,7 +680,9 @@ export default function DailyJournal() {
                   <button
                     type="button"
                     onClick={() =>
-                      setEditQty((q) => Math.max(0.1, Math.round((q - 0.5) * 10) / 10))
+                      setEditQty((q) =>
+                        Math.max(0.1, Math.round((q - 0.5) * 10) / 10)
+                      )
                     }
                   >
                     –
@@ -528,7 +699,9 @@ export default function DailyJournal() {
                   <button
                     type="button"
                     onClick={() =>
-                      setEditQty((q) => Math.round((q + 0.5) * 10) / 10)
+                      setEditQty((q) =>
+                        Math.round((q + 0.5) * 10) / 10
+                      )
                     }
                   >
                     +
@@ -547,7 +720,9 @@ export default function DailyJournal() {
                   readOnly
                   className="readonly"
                 />
-                <div className="am-note">* Khối lượng mặc định theo món</div>
+                <div className="am-note">
+                  * Khối lượng mặc định theo món
+                </div>
               </div>
             </div>
 
@@ -563,21 +738,27 @@ export default function DailyJournal() {
               <div className="am-macro protein">
                 <div className="m-label">Đạm</div>
                 <div className="m-val">
-                  {Math.round((editLog.food?.proteinG || 0) * editQty * 10) / 10}{" "}
+                  {Math.round(
+                    (editLog.food?.proteinG || 0) * editQty * 10
+                  ) / 10}{" "}
                   <span>g</span>
                 </div>
               </div>
               <div className="am-macro carb">
                 <div className="m-label">Đường bột</div>
                 <div className="m-val">
-                  {Math.round((editLog.food?.carbG || 0) * editQty * 10) / 10}{" "}
+                  {Math.round(
+                    (editLog.food?.carbG || 0) * editQty * 10
+                  ) / 10}{" "}
                   <span>g</span>
                 </div>
               </div>
               <div className="am-macro fat">
                 <div className="m-label">Béo</div>
                 <div className="m-val">
-                  {Math.round((editLog.food?.fatG || 0) * editQty * 10) / 10}{" "}
+                  {Math.round(
+                    (editLog.food?.fatG || 0) * editQty * 10
+                  ) / 10}{" "}
                   <span>g</span>
                 </div>
               </div>
@@ -585,8 +766,12 @@ export default function DailyJournal() {
 
             {/* --- Nút hành động --- */}
             <div className="am-actions">
-              <button className="btn ghost" onClick={closeEditLog}>Đóng</button>
-              <button className="btn primary" onClick={saveEditLog}>Cập nhật</button>
+              <button className="btn ghost" onClick={closeEditLog}>
+                Đóng
+              </button>
+              <button className="btn primary" onClick={saveEditLog}>
+                Cập nhật
+              </button>
             </div>
           </div>
         </div>
@@ -617,13 +802,10 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
   const [hour, setHour] = useState(initialHour);
 
   // === Logic cho Date input (trong modal) ===
-  // XÓA BỎ: addHiddenDateRef, openAddDatePicker, onAddDisplayDateChange
-  // GIỮ LẠI hàm xử lý state chính:
   const onAddHiddenDateChange = (e) => {
     const iso = e.target.value;
     if (iso) setDateISO(iso);
   };
-  // ========================================
 
   // --- Logic Tìm kiếm ---
   async function load(reset = false) {
@@ -645,11 +827,16 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
     }
   }
 
-  useEffect(() => { load(true); /* eslint-disable-next-line */ }, []);
+  useEffect(() => {
+    load(true);
+    // eslint-disable-next-line
+  }, []);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => { load(true); }, 300);
+    searchTimer.current = setTimeout(() => {
+      load(true);
+    }, 300);
     return () => clearTimeout(searchTimer.current);
     // eslint-disable-next-line
   }, [q]);
@@ -663,8 +850,14 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
   // POPUP CHI TIẾT TRONG SEARCH
   const [showDetail, setShowDetail] = useState(false);
   const [detail, setDetail] = useState(null);
-  const openDetail = (it) => { setDetail(it); setShowDetail(true); };
-  const closeDetail = () => { setShowDetail(false); setDetail(null); };
+  const openDetail = (it) => {
+    setDetail(it);
+    setShowDetail(true);
+  };
+  const closeDetail = () => {
+    setShowDetail(false);
+    setDetail(null);
+  };
 
   // Mở modal Xác nhận thêm
   async function openAdd(it) {
@@ -704,7 +897,9 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
           <>
             <h3 className="modal-title">
               Thêm món ăn {fmtDisplay(dateISO)} lúc {hour}:00
-              <button className="modal-close" onClick={onClose}>&times;</button>
+              <button className="modal-close" onClick={onClose}>
+                &times;
+              </button>
             </h3>
 
             <div className="modal-search-bar">
@@ -719,21 +914,39 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
 
             <div className="modal-nm-list">
               {filteredItems.map((it) => (
-                <div key={it._id} className="modal-nm-item" onClick={() => openDetail(it)}>
+                <div
+                  key={it._id}
+                  className="modal-nm-item"
+                  onClick={() => openDetail(it)}
+                >
                   <img src={toAbs(it.imageUrl) || PLACEHOLDER} alt={it.name} />
                   <div className="info">
                     <div className="title">{it.name}</div>
                     <div className="sub">
-                      {it.portionName || "Khẩu phần"} · {it.massG ?? "-"} {it.unit || "g"} · {it.kcal ?? "-"} cal
+                      {it.portionName || "Khẩu phần"} · {it.massG ?? "-"}{" "}
+                      {it.unit || "g"} · {it.kcal ?? "-"} cal
                     </div>
                     <div className="macro">
-                      <span className="protein"><i className="fa-solid fa-drumstick-bite"></i> {it.proteinG ?? "-"} g</span>
-                      <span className="carb"><i className="fa-solid fa-bread-slice"></i> {it.carbG ?? "-"} g</span>
-                      <span className="fat"><i className="fa-solid fa-bacon"></i> {it.fatG ?? "-"} g</span>
+                      <span className="protein">
+                        <i className="fa-solid fa-drumstick-bite"></i>{" "}
+                        {it.proteinG ?? "-"} g
+                      </span>
+                      <span className="carb">
+                        <i className="fa-solid fa-bread-slice"></i>{" "}
+                        {it.carbG ?? "-"} g
+                      </span>
+                      <span className="fat">
+                        <i className="fa-solid fa-bacon"></i>{" "}
+                        {it.fatG ?? "-"} g
+                      </span>
                     </div>
                   </div>
                   <div className="act" onClick={(e) => e.stopPropagation()}>
-                    <button className="add add-round" title="Thêm vào nhật ký"  onClick={() => openAdd(it)}>
+                    <button
+                      className="add add-round"
+                      title="Thêm vào nhật ký"
+                      onClick={() => openAdd(it)}
+                    >
                       <i className="fa-solid fa-plus"></i>
                     </button>
                   </div>
@@ -750,11 +963,20 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
           </>
         )}
 
-        {/* Modal Chi tiết món trong Tìm kiếm (class mới, tránh xung đột) */}
+        {/* Modal Chi tiết món trong Tìm kiếm */}
         {showDetail && detail && !showAdd && (
           <div className="djd-detail-backdrop" onClick={closeDetail}>
-            <div className="djd-detail-card djd--small" onClick={(e) => e.stopPropagation()}>
-              <button className="djd-detail-close" onClick={closeDetail} aria-label="Đóng">×</button>
+            <div
+              className="djd-detail-card djd--small"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="djd-detail-close"
+                onClick={closeDetail}
+                aria-label="Đóng"
+              >
+                ×
+              </button>
 
               <div className="djd-detail-head">
                 <img
@@ -765,28 +987,65 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
                 <div className="djd-detail-titlebox">
                   <h3 className="djd-detail-title">{detail.name}</h3>
                   <div className="djd-detail-sub">
-                    {(detail.portionName || "Khẩu phần tiêu chuẩn")} · {(detail.massG ?? "-")} {detail.unit || "g"} · {(detail.kcal ?? "-")} cal
+                    {(detail.portionName || "Khẩu phần tiêu chuẩn")} ·{" "}
+                    {detail.massG ?? "-"} {detail.unit || "g"} ·{" "}
+                    {detail.kcal ?? "-"} cal
                   </div>
                   <div className="djd-detail-chips">
-                    <span className="djd-chip red"><i className="fa-solid fa-drumstick-bite"></i> Đạm {(detail.proteinG ?? "-")}g</span>
-                    <span className="djd-chip purple"><i className="fa-solid fa-bread-slice"></i> Carb {(detail.carbG ?? "-")}g</span>
-                    <span className="djd-chip green"><i className="fa-solid fa-bacon"></i> Béo {(detail.fatG ?? "-")}g</span>
+                    <span className="djd-chip red">
+                      <i className="fa-solid fa-drumstick-bite"></i> Đạm{" "}
+                      {detail.proteinG ?? "-"}g
+                    </span>
+                    <span className="djd-chip purple">
+                      <i className="fa-solid fa-bread-slice"></i> Carb{" "}
+                      {detail.carbG ?? "-"}g
+                    </span>
+                    <span className="djd-chip green">
+                      <i className="fa-solid fa-bacon"></i> Béo{" "}
+                      {detail.fatG ?? "-"}g
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="djd-detail-grid">
                 <div className="djd-detail-kv">
-                  <div><span>Khối lượng</span><b>{detail.massG ?? "-"} {detail.unit || "g"}</b></div>
-                  <div><span>Calo</span><b>{detail.kcal ?? "-"} cal</b></div>
-                  <div><span>Đạm</span><b>{detail.proteinG ?? "-"} g</b></div>
-                  <div><span>Đường bột</span><b>{detail.carbG ?? "-"} g</b></div>
+                  <div>
+                    <span>Khối lượng</span>
+                    <b>
+                      {detail.massG ?? "-"} {detail.unit || "g"}
+                    </b>
+                  </div>
+                  <div>
+                    <span>Calo</span>
+                    <b>{detail.kcal ?? "-"} cal</b>
+                  </div>
+                  <div>
+                    <span>Đạm</span>
+                    <b>{detail.proteinG ?? "-"} g</b>
+                  </div>
+                  <div>
+                    <span>Đường bột</span>
+                    <b>{detail.carbG ?? "-"} g</b>
+                  </div>
                 </div>
                 <div className="djd-detail-kv">
-                  <div><span>Chất béo</span><b>{detail.fatG ?? "-"} g</b></div>
-                  <div><span>Muối (NaCl)</span><b>{detail.saltG ?? "-"} g</b></div>
-                  <div><span>Đường</span><b>{detail.sugarG ?? "-"} g</b></div>
-                  <div><span>Chất xơ</span><b>{detail.fiberG ?? "-"} g</b></div>
+                  <div>
+                    <span>Chất béo</span>
+                    <b>{detail.fatG ?? "-"} g</b>
+                  </div>
+                  <div>
+                    <span>Muối (NaCl)</span>
+                    <b>{detail.saltG ?? "-"} g</b>
+                  </div>
+                  <div>
+                    <span>Đường</span>
+                    <b>{detail.sugarG ?? "-"} g</b>
+                  </div>
+                  <div>
+                    <span>Chất xơ</span>
+                    <b>{detail.fiberG ?? "-"} g</b>
+                  </div>
                 </div>
               </div>
 
@@ -807,7 +1066,11 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
                 <i className="fa-solid fa-arrow-left" /> Quay lại
               </button>
               <div className="am-thumb-wrap">
-                <img className="am-thumb" src={toAbs(addFood?.imageUrl) || PLACEHOLDER} alt={addFood?.name || "food"} />
+                <img
+                  className="am-thumb"
+                  src={toAbs(addFood?.imageUrl) || PLACEHOLDER}
+                  alt={addFood?.name || "food"}
+                />
               </div>
               <div className="am-hmeta">
                 <h3 className="am-title">Thêm vào nhật ký</h3>
@@ -818,8 +1081,7 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
             <div className="am-when">
               <div className="am-when-item">
                 <i className="fa-regular fa-calendar" />
-                
-                {/* === THAY THẾ: Sử dụng MUI DatePicker cho Modal Add === */}
+
                 <div className="am-field">
                   <label>Ngày</label>
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -827,15 +1089,17 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
                       format="DD/MM/YYYY"
                       value={dateISO ? dayjs(dateISO) : null}
                       onChange={(newValue) => {
-                        const newDateString = newValue ? newValue.format('YYYY-MM-DD') : '';
+                        const newDateString = newValue
+                          ? newValue.format("YYYY-MM-DD")
+                          : "";
                         onAddHiddenDateChange({ target: { value: newDateString } });
                       }}
                       slotProps={{
                         textField: {
                           placeholder: "DD/MM/YYYY",
                           style: { width: 170 },
-                          size: "small" // Đồng bộ style
-                        }
+                          size: "small",
+                        },
                       }}
                     />
                   </LocalizationProvider>
@@ -858,15 +1122,31 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
               <div className="am-qty">
                 <label>Số lượng khẩu phần</label>
                 <div className="am-qty-ctl">
-                  <button type="button" onClick={() => setQuantity((q) => Math.max(0.1, round1((q || 1) - 0.5)))}>–</button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuantity((q) => Math.max(0.1, round1((q || 1) - 0.5)))
+                    }
+                  >
+                    –
+                  </button>
                   <input
                     type="number"
                     min="0.1"
                     step="0.1"
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(0.1, +e.target.value || 1))}
+                    onChange={(e) =>
+                      setQuantity(Math.max(0.1, +e.target.value || 1))
+                    }
                   />
-                  <button type="button" onClick={() => setQuantity((q) => round1((q || 1) + 0.5))}>+</button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuantity((q) => round1((q || 1) + 0.5))
+                    }
+                  >
+                    +
+                  </button>
                 </div>
               </div>
               <div className="am-portion">
@@ -882,15 +1162,39 @@ function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodA
             </div>
 
             <div className="am-macros">
-              <div className="am-macro calo"><div className="m-label">Calo</div><div className="m-val">{fmt(f.kcal)} <span>cal</span></div></div>
-              <div className="am-macro protein"><div className="m-label">Đạm</div><div className="m-val">{fmt(f.proteinG)} <span>g</span></div></div>
-              <div className="am-macro carb"><div className="m-label">Đường bột</div><div className="m-val">{fmt(f.carbG)} <span>g</span></div></div>
-              <div className="am-macro fat"><div className="m-label">Béo</div><div className="m-val">{fmt(f.fatG)} <span>g</span></div></div>
+              <div className="am-macro calo">
+                <div className="m-label">Calo</div>
+                <div className="m-val">
+                  {fmt(f.kcal)} <span>cal</span>
+                </div>
+              </div>
+              <div className="am-macro protein">
+                <div className="m-label">Đạm</div>
+                <div className="m-val">
+                  {fmt(f.proteinG)} <span>g</span>
+                </div>
+              </div>
+              <div className="am-macro carb">
+                <div className="m-label">Đường bột</div>
+                <div className="m-val">
+                  {fmt(f.carbG)} <span>g</span>
+                </div>
+              </div>
+              <div className="am-macro fat">
+                <div className="m-label">Béo</div>
+                <div className="m-val">
+                  {fmt(f.fatG)} <span>g</span>
+                </div>
+              </div>
             </div>
 
             <div className="am-actions">
-              <button className="btn ghost" onClick={onClose}>Hủy</button>
-              <button className="btn primary" onClick={confirmAdd}>Xác nhận thêm</button>
+              <button className="btn ghost" onClick={onClose}>
+                Hủy
+              </button>
+              <button className="btn primary" onClick={confirmAdd}>
+                Xác nhận thêm
+              </button>
             </div>
           </>
         )}

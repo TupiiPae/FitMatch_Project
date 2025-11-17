@@ -1,17 +1,12 @@
-/* ===== Khung trang (đồng bộ với RecordMeal) ===== */
 .dj-wrap {
-  /* === THAY ĐỔI: Sửa min-height === */
-  min-height: 100%; /* Thay vì calc(100vh - 80px) */
-  /* === HẾT THAY ĐỔI === */
-  background-color: #f4f6ea;
-  /* === THAY ĐỔI: Kéo nền ra fill padding của layout cha === */
-  margin: -16px; /* Giả sử layout cha có padding: 16px */
-  padding: 16px; /* Bù lại 16px margin cho nội dung bên trong */
+  min-height: 100%;
+  background-color: #F8F9FA;
+  padding: 16px; 
 }
 .dj-container {
-  max-width: 1700px; /* Giới hạn chiều rộng */
+  max-width: 1700px; 
   margin: 0 auto;
-  padding: 8px 0; /* THAY ĐỔI: Thêm padding top/bottom vào đây */
+  padding: 8px 0; 
 }
 
 /* ===== Thanh bar trên (đồng bộ nm-head) ===== */
@@ -20,15 +15,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  /* === THAY ĐỔI: Biến thành card nổi === */
-  background: #fff;
-  padding: 12px 16px;
-  border: 1px solid #002C3E;
-  border-radius: 4px;
-  box-shadow: 0 4px 10px rgba(0, 44, 62, .04);
-  margin-bottom: 24px; /* Khoảng cách với grid bên dưới */
-  /* === HẾT THAY ĐỔI === */
+  padding: 12px 30px;
+  border: 1px solid #002C3E55;
+  border-radius: 999px;
+  margin: 0 400px 24px 400px;
   z-index: 5;
+  box-shadow: 0 2px 10px rgba(47, 67, 143, 0.32);
+  background-color: #fff;
 }
 .dj-bar .left {
   display: flex;
@@ -51,7 +44,7 @@
 
 .week {
   display: flex;
-  gap: 8px;
+  gap: 15px;
   justify-content: center;
   flex-grow: 1;
 }
@@ -61,7 +54,7 @@
   padding: 0 16px;
   border: 1px solid #002C3E;
   border-radius: 4px; /* Border mới */
-  background: #fff;
+
   cursor: pointer;
   font-weight: 500;
   color: #333;
@@ -99,17 +92,17 @@
 /* ===== Khung chính bên trái (card) ===== */
 .dj-main {
   background: #fff;
-  border: 1px solid #002C3E; /* Border nhạt hơn */
   border-radius: 4px; /* Border mới */
   padding: 20px;
 }
 .col-title {
-  font-weight: 700;
+  font-weight: 600;
   padding: 20px 20px;
   margin-bottom: 20px;
   text-align: left; /* THAY ĐỔI: Căn lề trái */
-  font-size: 26px;
+  font-size: 28px;
   color: #002C3E;
+  border: 1px solid #002C3E;
   background-color: #F7F8F3;
   border-radius: 4px;
 }
@@ -167,7 +160,7 @@
   grid-template-columns: 40px 1fr auto;
   gap: 8px;
   align-items: center;
-  border: 1px solid #eee;
+  border: 1px solid #002C3E55;
   background: #fff;
   border-radius: 4px; /* Border mới */
   padding: 6px 8px;
@@ -218,16 +211,15 @@
 /* ===== Khung bên phải (card) ===== */
 .dj-side { display: flex; flex-direction: column; gap: 24px; }
 .panel {
-  border: 1px solid #002C3E;
   background: #fff;
-  border-radius: 4px; /* Border mới */
+  border-radius: 12px; /* Border mới */
   padding: 12px;
 }
 
 .panel.water {
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 44, 62, .04);
+  box-shadow: 0 2px 4px rgba(47, 67, 143, 0.32);
 }
 .panel.water .wtop {
   display: flex;
@@ -279,7 +271,7 @@
 /* ===== Macro panel mới ===== */
 .panel.macro {
   padding: 20px;
-  box-shadow: 0 4px 10px rgba(0, 44, 62, .04);
+  box-shadow: 0 2px 4px rgba(47, 67, 143, 0.32);
 }
 .cal-wrapper { display: flex; justify-content: center; margin-bottom: 20px; }
 .cal-ring { position: relative; width: 132px; height: 132px; }
@@ -365,11 +357,6 @@
   .panel.water .wctl { width: 100%; }
   .panel.water .wctl input { flex-grow: 1; width: auto; }
 }
-
-
-/* #################################################################### */
-/* #####          CSS CHO MODAL THÊM MÓN ĂN (MỚI)                 ##### */
-/* #################################################################### */
 
 .modal-backdrop {
   position: fixed;
@@ -737,3 +724,18 @@
   pointer-events: none; 
 }
 
+.dj-page {
+  margin: -16px;
+}
+
+/* Banner full width, không chừa viền */
+.dj-banner {
+  width: 100%;
+}
+
+.dj-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
