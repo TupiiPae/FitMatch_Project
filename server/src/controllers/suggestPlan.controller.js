@@ -7,8 +7,16 @@ import SuggestPlan, {
 } from "../models/SuggestPlan.js";
 import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
 import { responseOk } from "../utils/response.js";
+import { User } from "../models/User.js";
 
 const nameRegex = /^[\p{L}\p{M}\s0-9'’\-.,()\/]+$/u;
+
+// ----- Cửa sổ "user còn hoạt động" (7 ngày) -----
+const ACTIVE_WINDOW_DAYS = 7;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+function getActiveSinceDate() {
+  return new Date(Date.now() - ACTIVE_WINDOW_DAYS * MS_PER_DAY);
+}
 
 // DÙNG CHUNG FOLDER VỚI EXERCISES (giống controllers/exercise.controller.js)
 const CLOUDINARY_EXERCISE_FOLDER =
@@ -111,7 +119,10 @@ export async function listSuggestPlans(req, res, next) {
 
     const filter = {};
     if (q) {
-      filter.name = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      filter.name = new RegExp(
+        q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "i"
+      );
     }
 
     const total = await SuggestPlan.countDocuments(filter);
@@ -130,7 +141,6 @@ export async function listSuggestPlans(req, res, next) {
       ),
     }));
 
-    // TRẢ RESPONSE ĐÚNG DẠNG { ok:true, data:{ items,total,limit,skip } }
     return res.json(responseOk({ items, total, limit, skip }));
   } catch (err) {
     next(err);
@@ -190,7 +200,7 @@ export async function createSuggestPlan(req, res, next) {
         .json({ ok: false, message: "Dữ liệu không hợp lệ", errors: errs });
     }
 
-    // upload ảnh: dùng CHUNG folder với exercises
+    // upload ảnh
     let imageUrl = (body.imageUrl || "").trim() || undefined;
     if (req.file && req.file.buffer) {
       imageUrl = await uploadImageWithResize(
@@ -215,7 +225,6 @@ export async function createSuggestPlan(req, res, next) {
       createdByAdmin,
     });
 
-    // 201 + { ok:true, data:doc } -> FE nhận doc (createSuggestPlanApi)
     return res.status(201).json(responseOk(doc));
   } catch (err) {
     next(err);
@@ -262,7 +271,6 @@ export async function updateSuggestPlan(req, res, next) {
     let imageUrl =
       (body.imageUrl && String(body.imageUrl).trim()) || existing.imageUrl;
 
-    // Nếu có file mới -> upload, rồi (tuỳ chọn) xoá ảnh cũ
     if (req.file && req.file.buffer) {
       const newUrl = await uploadImageWithResize(
         req.file.buffer,
@@ -271,7 +279,6 @@ export async function updateSuggestPlan(req, res, next) {
         { quality: 85 }
       );
       if (existing.imageUrl && existing.imageUrl.startsWith("http")) {
-        // Không bắt buộc, nhưng tốt nếu muốn dọn Cloudinary
         deleteFile(existing.imageUrl, "image").catch(() => {});
       }
       imageUrl = newUrl;
@@ -287,7 +294,6 @@ export async function updateSuggestPlan(req, res, next) {
 
     await existing.save();
 
-    // Trả lại doc mới
     return res.json(responseOk(existing));
   } catch (err) {
     next(err);
@@ -306,7 +312,31 @@ export async function deleteSuggestPlan(req, res, next) {
         .json({ ok: false, message: "Không tìm thấy lịch tập gợi ý" });
     }
 
-    // Xoá ảnh trên Cloudinary nếu muốn
+    // ---- RÀNG BUỘC: còn user active < 7 ngày đang lưu lịch tập? ----
+    const activeSince = getActiveSinceDate();
+
+    if (Array.isArray(doc.savedBy) && doc.savedBy.length > 0) {
+      const activeUsersCount = await User.countDocuments({
+        _id: { $in: doc.savedBy },
+        blocked: { $ne: true },
+        $or: [
+          { lastLoginAt: { $gte: activeSince } }, // nếu bạn có field này
+          { lastActiveAt: { $gte: activeSince } }, // hoặc field này
+          { updatedAt: { $gte: activeSince } }, // fallback: user vừa có hoạt động gần đây
+        ],
+      });
+
+      if (activeUsersCount > 0) {
+        return res.status(409).json({
+          ok: false,
+          code: "SUGGEST_PLAN_IN_USE_ACTIVE_USERS",
+          message:
+            "Lịch tập gợi ý này vẫn đang được người dùng hoạt động lưu lại trong 7 ngày gần đây, không thể xoá.",
+        });
+      }
+    }
+
+    // Không còn user active giữ -> cho xoá như cũ
     if (doc.imageUrl && doc.imageUrl.startsWith("http")) {
       deleteFile(doc.imageUrl, "image").catch(() => {});
     }

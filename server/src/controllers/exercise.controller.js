@@ -14,11 +14,21 @@ import {
   EXERCISE_VID_DIR as EX_VID_DIR,
 } from "../middleware/upload.js";
 import { uploadImageWithResize, uploadVideo, deleteFile } from "../utils/cloudinary.js";
+import WorkoutPlan from "../models/WorkoutPlan.js";
+import { User } from "../models/User.js";
+import SuggestPlan from "../models/SuggestPlan.js"; // 🔴 THÊM: để check bài tập đang dùng trong Lịch tập gợi ý
 
 /* ========= Helpers ========= */
 const toNum = (v) => (v === "" || v == null ? null : Number(v));
 const isJsonArray = (s) => typeof s === "string" && /^\s*\[/.test(s);
 const ensureDir = (d) => { try { fs.mkdirSync(d, { recursive: true }); } catch {} };
+
+// Cửa sổ 7 ngày
+const ACTIVE_WINDOW_DAYS = 7;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+function getActiveSinceDate() {
+  return new Date(Date.now() - ACTIVE_WINDOW_DAYS * MS_PER_DAY);
+}
 
 /** Upload ảnh từ buffer lên Cloudinary, trả về URL */
 async function saveImageFromBuffer(file) {
@@ -139,7 +149,7 @@ export async function getExercise(req, res, next) {
   }
 }
 
-// POST /api/admin/exercises  (ảnh gửi field "image"; KHÔNG nhận video ở đây)
+// POST /api/admin/exercises
 export async function createExercise(req, res, next) {
   try {
     const imgFile = (req.files?.image && req.files.image[0]) || req.file || null;
@@ -175,7 +185,6 @@ export async function updateExercise(req, res, next) {
     if (isRemoveVideo) {
       const existing = await Exercise.findById(id).lean();
       
-      // Xóa video từ Cloudinary nếu có
       if (existing?.videoUrl && existing.videoUrl.includes("cloudinary.com")) {
         await deleteFile(existing.videoUrl, "video").catch(() => {});
       }
@@ -185,7 +194,7 @@ export async function updateExercise(req, res, next) {
         { $unset: { videoUrl: 1 } },
         {
           new: true,
-          runValidators: false,     // << quan trọng: không validate primaryMuscles...
+          runValidators: false,
         }
       ).lean();
 
@@ -193,12 +202,11 @@ export async function updateExercise(req, res, next) {
       return res.json({ ok: true, videoUrl: it.videoUrl || "" });
     }
 
-    // --- Nhánh update thông thường (ảnh/link/thông tin) ---
+    // --- Nhánh update thông thường ---
     const imgFile = (req.files?.image && req.files.image[0]) || req.file || null;
     const upd = normalizeBody(req.body);
 
     if (imgFile?.buffer && !upd.imageUrl) {
-      // Xóa ảnh cũ từ Cloudinary nếu có
       const existing = await Exercise.findById(id).lean();
       if (existing?.imageUrl && existing.imageUrl.includes("cloudinary.com")) {
         await deleteFile(existing.imageUrl, "image").catch(() => {});
@@ -212,9 +220,6 @@ export async function updateExercise(req, res, next) {
       new: true,
       runValidators: true,
       context: "query",
-      // validateModifiedOnly không tác dụng đáng kể trên update validators,
-      // nhưng cứ để đây cho path khác:
-      // validateModifiedOnly: true,
     }).lean();
 
     if (!it) return res.status(404).json({ message: "Not found" });
@@ -238,7 +243,6 @@ export async function uploadExerciseVideo(req, res, next) {
     const vidFile = (req.files?.video && req.files.video[0]) || req.file || null;
     if (!vidFile?.buffer) return res.status(400).json({ message: "Không có file video" });
 
-    // Xóa video cũ từ Cloudinary nếu có
     const existing = await Exercise.findById(id).lean();
     if (existing?.videoUrl && existing.videoUrl.includes("cloudinary.com")) {
       await deleteFile(existing.videoUrl, "video").catch(() => {});
@@ -260,20 +264,67 @@ export async function uploadExerciseVideo(req, res, next) {
 export async function deleteExercise(req, res, next) {
   try {
     const { id } = req.params;
+
     const exercise = await Exercise.findById(id).lean();
-    
-    if (exercise) {
-      // Xóa ảnh từ Cloudinary nếu có
-      if (exercise.imageUrl && exercise.imageUrl.includes("cloudinary.com")) {
-        await deleteFile(exercise.imageUrl, "image").catch(() => {});
-      }
-      
-      // Xóa video từ Cloudinary nếu có
-      if (exercise.videoUrl && exercise.videoUrl.includes("cloudinary.com")) {
-        await deleteFile(exercise.videoUrl, "video").catch(() => {});
+
+    // Nếu không tồn tại: giữ behavior cũ (coi như xoá xong)
+    if (!exercise) {
+      await Exercise.findByIdAndDelete(id);
+      return res.json(responseOk());
+    }
+
+    /* --------- 1. RÀNG BUỘC: đang dùng trong Lịch tập gợi ý --------- */
+    const usedInSuggestPlan = await SuggestPlan.exists({
+      "sessions.exercises.exercise": exercise._id,
+    });
+
+    if (usedInSuggestPlan) {
+      return res.status(409).json({
+        ok: false,
+        code: "EXERCISE_IN_USE_SUGGEST_PLAN",
+        message:
+          "Không thể xoá bài tập này vì đang được sử dụng trong một hoặc nhiều Lịch tập gợi ý. " +
+          "Vui lòng chỉnh sửa hoặc xoá các lịch tập gợi ý liên quan trước.",
+      });
+    }
+
+    /* --------- 2. RÀNG BUỘC: còn user active < 7 ngày dùng trong WorkoutPlan? --------- */
+    const activeSince = getActiveSinceDate();
+
+    const userIds = await WorkoutPlan.distinct("user", {
+      status: "active",
+      "items.exercise": exercise._id,
+    });
+
+    if (userIds.length) {
+      const activeUsersCount = await User.countDocuments({
+        _id: { $in: userIds },
+        blocked: { $ne: true },
+        $or: [
+          { lastLoginAt: { $gte: activeSince } },
+          { lastActiveAt: { $gte: activeSince } },
+          { updatedAt: { $gte: activeSince } },
+        ],
+      });
+
+      if (activeUsersCount > 0) {
+        return res.status(409).json({
+          ok: false,
+          code: "EXERCISE_IN_USE_ACTIVE_USERS",
+          message:
+            "Bài tập này đang được người dùng hoạt động sử dụng trong lịch tập cá nhân 7 ngày gần đây, không thể xoá.",
+        });
       }
     }
-    
+
+    /* --------- 3. Không còn ràng buộc -> xoá Cloudinary + document --------- */
+    if (exercise.imageUrl && exercise.imageUrl.includes("cloudinary.com")) {
+      await deleteFile(exercise.imageUrl, "image").catch(() => {});
+    }
+    if (exercise.videoUrl && exercise.videoUrl.includes("cloudinary.com")) {
+      await deleteFile(exercise.videoUrl, "video").catch(() => {});
+    }
+
     await Exercise.findByIdAndDelete(id);
     return res.json(responseOk());
   } catch (err) {

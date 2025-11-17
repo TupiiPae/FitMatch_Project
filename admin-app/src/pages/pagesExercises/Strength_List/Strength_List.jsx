@@ -1,12 +1,25 @@
 // admin-app/src/pages/pagesExercises/Strength_List/Strength_List.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { api, listExercisesAdminOnly, deleteExercise, getExerciseMeta } from "../../../lib/api";
+import {
+  api,
+  listExercisesAdminOnly,
+  deleteExercise,
+  getExerciseMeta,
+} from "../../../lib/api";
 import { toast } from "react-toastify";
+import CannotDeleteModal from "../../../components/CannotDeleteModal";
 import "./Strength_List.css";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
-const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
+const toAbs = (u) => {
+  if (!u) return u;
+  try {
+    return new URL(u, API_ORIGIN).toString();
+  } catch {
+    return u;
+  }
+};
 
 export default function Strength_List() {
   const nav = useNavigate();
@@ -34,15 +47,21 @@ export default function Strength_List() {
   /* ------------------ Selection ------------------ */
   const [selectedIds, setSelectedIds] = useState([]);
   const allChecked = items.length > 0 && selectedIds.length === items.length;
-  const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
+  const someChecked =
+    selectedIds.length > 0 && selectedIds.length < items.length;
 
   /* ------------------ Delete states ------------------ */
   // confirm modal dùng chung cho single & bulk
   // { mode: 'single'|'bulk', ids: string[] } | null
   const [confirm, setConfirm] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);      // đang xóa 1
+  const [deletingId, setDeletingId] = useState(null); // đang xóa 1
   const [bulkDeleting, setBulkDeleting] = useState(false); // đang xóa nhiều
-  const [flashId, setFlashId] = useState(null);            // highlight hàng mới tạo
+  const [flashId, setFlashId] = useState(null); // highlight hàng mới tạo
+
+  const [cannotDelete, setCannotDelete] = useState({
+    open: false,
+    message: "",
+  });
 
   useEffect(() => {
     (async () => {
@@ -80,11 +99,17 @@ export default function Strength_List() {
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [limit, skip]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line
+  }, [limit, skip]);
 
   // thay đổi filter -> debounce 250ms
   useEffect(() => {
-    const t = setTimeout(() => { if (skip !== 0) setSkip(0); else load(); }, 250);
+    const t = setTimeout(() => {
+      if (skip !== 0) setSkip(0);
+      else load();
+    }, 250);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, muscle, muscle2, equipment, level]);
@@ -113,8 +138,13 @@ export default function Strength_List() {
 
   const fmtDate = (v) => (v ? new Date(v).toLocaleString() : "—");
 
-  const toggleAll = () => { setSelectedIds(allChecked ? [] : items.map(x => x._id)); };
-  const toggleOne = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleAll = () => {
+    setSelectedIds(allChecked ? [] : items.map((x) => x._id));
+  };
+  const toggleOne = (id) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
 
   /* ------------------ Delete: single ------------------ */
   const onDeleteOne = async (id) => {
@@ -125,15 +155,26 @@ export default function Strength_List() {
       if (items.length === 1 && skip > 0) {
         setSkip(Math.max(0, skip - limit)); // lùi trang
       } else {
-        setItems(prev => prev.filter(x => x._id !== id));
-        setTotal(t => Math.max(0, Number(t || 0) - 1));
-        setSelectedIds(sel => sel.filter(x => x !== id));
+        setItems((prev) => prev.filter((x) => x._id !== id));
+        setTotal((t) => Math.max(0, Number(t || 0) - 1));
+        setSelectedIds((sel) => sel.filter((x) => x !== id));
       }
 
       toast.success("Đã xóa bài tập");
     } catch (e) {
       console.error(e);
-      toast.error(e?.response?.data?.message || "Xóa thất bại");
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.message;
+      if (status === 409) {
+        setCannotDelete({
+          open: true,
+          message:
+            msg ||
+            "Bài tập này đang được người dùng hoạt động sử dụng trong lịch tập cá nhân 7 ngày gần đây, nên không thể xoá.",
+        });
+      } else {
+        toast.error(msg || "Xóa thất bại");
+      }
     } finally {
       setDeletingId(null);
     }
@@ -145,9 +186,19 @@ export default function Strength_List() {
     try {
       setBulkDeleting(true);
       // Xóa song song nhưng an toàn
-      const results = await Promise.allSettled(ids.map(id => deleteExercise(id)));
-      const okCount = results.filter(r => r.status === "fulfilled").length;
-      const failCount = results.length - okCount;
+      const results = await Promise.allSettled(
+        ids.map((id) => deleteExercise(id))
+      );
+      const okCount = results.filter(
+        (r) => r.status === "fulfilled"
+      ).length;
+      const fails = results.filter(
+        (r) => r.status === "rejected"
+      );
+      const blocked = fails.filter(
+        (r) => r.reason?.response?.status === 409
+      );
+      const otherFailCount = fails.length - blocked.length;
 
       // Điều chỉnh phân trang nếu xóa hết trang hiện tại
       const deletingAllOnPage = ids.length >= items.length;
@@ -156,13 +207,27 @@ export default function Strength_List() {
         // useEffect(load) sẽ tự tải lại
       } else {
         // Xóa lạc quan trong trang hiện tại
-        setItems(prev => prev.filter(x => !ids.includes(x._id)));
-        setTotal(t => Math.max(0, Number(t || 0) - okCount));
+        setItems((prev) => prev.filter((x) => !ids.includes(x._id)));
+        setTotal((t) => Math.max(0, Number(t || 0) - okCount));
         setSelectedIds([]);
       }
 
-      if (okCount > 0) toast.success(`Đã xóa ${okCount} bài tập`);
-      if (failCount > 0) toast.error(`${failCount} bài tập xóa thất bại`);
+      if (okCount > 0) {
+        toast.success(`Đã xóa ${okCount} bài tập`);
+      }
+      if (otherFailCount > 0) {
+        toast.error(`${otherFailCount} bài tập xóa thất bại`);
+      }
+      if (blocked.length > 0) {
+        const msg =
+          blocked[0].reason?.response?.data?.message;
+        setCannotDelete({
+          open: true,
+          message:
+            msg ||
+            "Một số bài tập không thể xoá vì đang được người dùng hoạt động sử dụng trong lịch tập cá nhân 7 ngày gần đây.",
+        });
+      }
     } catch (e) {
       console.error(e);
       toast.error("Xóa thất bại");
@@ -174,12 +239,29 @@ export default function Strength_List() {
   /* ------------------ CSV (trang hiện tại) ------------------ */
   const csv = useMemo(() => {
     const head = [
-      "name","type","primaryMuscles","secondaryMuscles","equipment","level","caloriePerRep","createdAt"
+      "name",
+      "type",
+      "primaryMuscles",
+      "secondaryMuscles",
+      "equipment",
+      "level",
+      "caloriePerRep",
+      "createdAt",
     ].join(",");
-    const rows = items.map(x => ([
-      x.name, x.type, (x.primaryMuscles||[]).join("|"), (x.secondaryMuscles||[]).join("|"),
-      x.equipment, x.level, x.caloriePerRep ?? "", x.createdAt || ""
-    ].map(v => v ?? "").join(",")));
+    const rows = items.map((x) =>
+      [
+        x.name,
+        x.type,
+        (x.primaryMuscles || []).join("|"),
+        (x.secondaryMuscles || []).join("|"),
+        x.equipment,
+        x.level,
+        x.caloriePerRep ?? "",
+        x.createdAt || "",
+      ]
+        .map((v) => v ?? "")
+        .join(",")
+    );
     return [head, ...rows].join("\n");
   }, [items]);
 
@@ -194,16 +276,26 @@ export default function Strength_List() {
   /* ------------------ Pagination ------------------ */
   const page = Math.floor(skip / limit);
   const pageCount = Math.max(1, Math.ceil((total || 0) / limit));
-  const handleLimitChange = (e) => { setLimit(Number(e.target.value)); setSkip(0); };
-  const handlePageChange = (newSkip) => { if (newSkip >= 0 && newSkip < Math.max(total, 1)) setSkip(newSkip); };
+  const handleLimitChange = (e) => {
+    setLimit(Number(e.target.value));
+    setSkip(0);
+  };
+  const handlePageChange = (newSkip) => {
+    if (newSkip >= 0 && newSkip < Math.max(total, 1)) setSkip(newSkip);
+  };
 
   return (
     <div className="ex-page">
       {/* breadcrumb */}
       <nav className="ex-breadcrumb" aria-label="breadcrumb">
-        <Link to="/"><i className="fa-solid fa-house" /> <span>Trang chủ</span></Link>
+        <Link to="/">
+          <i className="fa-solid fa-house" /> <span>Trang chủ</span>
+        </Link>
         <span className="sep">/</span>
-        <span className="grp"><i className="fa-solid fa-dumbbell" /> <span>Quản lý Bài tập</span></span>
+        <span className="grp">
+          <i className="fa-solid fa-dumbbell" />{" "}
+          <span>Quản lý Bài tập</span>
+        </span>
         <span className="sep">/</span>
         <span className="cur">Danh sách bài tập - Strength</span>
       </nav>
@@ -212,17 +304,34 @@ export default function Strength_List() {
         <div className="ex-head">
           <h2>Danh sách bài tập - Strength ({total})</h2>
           <div className="ex-actions">
-            <button className="btn ghost" type="button" onClick={() => alert("Tính năng nhập danh sách sẽ thêm sau")}>
-              <i className="fa-solid fa-file-import" /> <span>Nhập danh sách</span>
+            <button
+              className="btn ghost"
+              type="button"
+              onClick={() =>
+                alert("Tính năng nhập danh sách sẽ thêm sau")
+              }
+            >
+              <i className="fa-solid fa-file-import" />{" "}
+              <span>Nhập danh sách</span>
             </button>
-            <button className="btn ghost" type="button" onClick={downloadCSV}>
-              <i className="fa-solid fa-file-export" /> <span>Xuất danh sách</span>
+            <button
+              className="btn ghost"
+              type="button"
+              onClick={downloadCSV}
+            >
+              <i className="fa-solid fa-file-export" />{" "}
+              <span>Xuất danh sách</span>
             </button>
             <button
               className="btn danger"
               type="button"
               disabled={!selectedIds.length || bulkDeleting}
-              onClick={() => setConfirm({ mode: "bulk", ids: selectedIds.slice() })}
+              onClick={() =>
+                setConfirm({
+                  mode: "bulk",
+                  ids: selectedIds.slice(),
+                })
+              }
             >
               <i className="fa-regular fa-trash-can" />{" "}
               <span>{bulkDeleting ? "Đang xóa..." : "Xóa"}</span>
@@ -237,24 +346,56 @@ export default function Strength_List() {
         <div className="ex-filters">
           <div className="ex-search">
             <i className="fa-solid fa-magnifying-glass" />
-            <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Tìm theo tên bài tập..." />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tìm theo tên bài tập..."
+            />
           </div>
           <div className="ex-filter-row">
-            <select value={muscle} onChange={(e)=>setMuscle(e.target.value)}>
+            <select
+              value={muscle}
+              onChange={(e) => setMuscle(e.target.value)}
+            >
               <option value="">Phân loại cơ chính</option>
-              {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+              {MUSCLES.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
             </select>
-            <select value={muscle2} onChange={(e)=>setMuscle2(e.target.value)}>
+            <select
+              value={muscle2}
+              onChange={(e) => setMuscle2(e.target.value)}
+            >
               <option value="">Nhóm cơ phụ</option>
-              {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+              {MUSCLES.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
             </select>
-            <select value={equipment} onChange={(e)=>setEquipment(e.target.value)}>
+            <select
+              value={equipment}
+              onChange={(e) => setEquipment(e.target.value)}
+            >
               <option value="">Dụng cụ</option>
-              {EQUIPMENTS.map(eq => <option key={eq} value={eq}>{eq}</option>)}
+              {EQUIPMENTS.map((eq) => (
+                <option key={eq} value={eq}>
+                  {eq}
+                </option>
+              ))}
             </select>
-            <select value={level} onChange={(e)=>setLevel(e.target.value)}>
+            <select
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+            >
               <option value="">Mức độ</option>
-              {LEVELS.map(lv => <option key={lv} value={lv}>{lv}</option>)}
+              {LEVELS.map((lv) => (
+                <option key={lv} value={lv}>
+                  {lv}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -266,7 +407,9 @@ export default function Strength_List() {
               <input
                 type="checkbox"
                 checked={allChecked}
-                ref={(el) => { if (el) el.indeterminate = someChecked; }}
+                ref={(el) => {
+                  if (el) el.indeterminate = someChecked;
+                }}
                 onChange={toggleAll}
               />
             </label>
@@ -283,77 +426,139 @@ export default function Strength_List() {
           </div>
 
           {loading && <div className="ex-empty">Đang tải...</div>}
-          {!loading && items.length === 0 && <div className="ex-empty">Chưa có bài tập.</div>}
+          {!loading && items.length === 0 && (
+            <div className="ex-empty">Chưa có bài tập.</div>
+          )}
 
-          {!loading && items.map(it => (
-            <div
-              key={it._id}
-              className={`ex-trow ${flashId === it._id ? "ex-row--flash" : ""}`}
-            >
-              <label className="cell cb">
-                <input type="checkbox" checked={selectedIds.includes(it._id)} onChange={()=>toggleOne(it._id)} />
-              </label>
+          {!loading &&
+            items.map((it) => (
+              <div
+                key={it._id}
+                className={`ex-trow ${
+                  flashId === it._id ? "ex-row--flash" : ""
+                }`}
+              >
+                <label className="cell cb">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(it._id)}
+                    onChange={() => toggleOne(it._id)}
+                  />
+                </label>
 
-              <div className="cell img">
-                {it.imageUrl
-                  ? <img src={toAbs(it.imageUrl)} alt={it.name} onError={(e)=>{e.currentTarget.src="/images/food-placeholder.jpg"}} />
-                  : <div className="img-fallback"><i className="fa-regular fa-image" /></div>}
-              </div>
+                <div className="cell img">
+                  {it.imageUrl ? (
+                    <img
+                      src={toAbs(it.imageUrl)}
+                      alt={it.name}
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          "/images/food-placeholder.jpg";
+                      }}
+                    />
+                  ) : (
+                    <div className="img-fallback">
+                      <i className="fa-regular fa-image" />
+                    </div>
+                  )}
+                </div>
 
-              <div className="cell name">
-                <div className="ex-title">{it.name || "—"}</div>
-                <div className="ex-sub">#{String(it._id).slice(-6)}</div>
-              </div>
+                <div className="cell name">
+                  <div className="ex-title">{it.name || "—"}</div>
+                  <div className="ex-sub">
+                    #{String(it._id).slice(-6)}
+                  </div>
+                </div>
 
-              <div className="cell type">{it.type || "—"}</div>
-              <div className="cell pmus">
-                {(it.primaryMuscles && it.primaryMuscles.length > 0)
-                  ? it.primaryMuscles.map(m => <span key={m} className="mchip primary">{m}</span>)
-                  : "—"}
-              </div>
-              <div className="cell smus">
-                {(it.secondaryMuscles && it.secondaryMuscles.length > 0)
-                  ? it.secondaryMuscles.map(m => <span key={m} className="mchip">{m}</span>)
-                  : "—"}
-              </div>
-              <div className="cell equip">{it.equipment || "—"}</div>
-              <div className="cell lvl">{it.level || "—"}</div>
-              <div className="cell cal">{it.caloriePerRep ?? "—"}</div>
-              <div className="cell created">{fmtDate(it.createdAt)}</div>
+                <div className="cell type">{it.type || "—"}</div>
+                <div className="cell pmus">
+                  {it.primaryMuscles &&
+                  it.primaryMuscles.length > 0
+                    ? it.primaryMuscles.map((m) => (
+                        <span
+                          key={m}
+                          className="mchip primary"
+                        >
+                          {m}
+                        </span>
+                      ))
+                    : "—"}
+                </div>
+                <div className="cell smus">
+                  {it.secondaryMuscles &&
+                  it.secondaryMuscles.length > 0
+                    ? it.secondaryMuscles.map((m) => (
+                        <span key={m} className="mchip">
+                          {m}
+                        </span>
+                      ))
+                    : "—"}
+                </div>
+                <div className="cell equip">{it.equipment || "—"}</div>
+                <div className="cell lvl">{it.level || "—"}</div>
+                <div className="cell cal">
+                  {it.caloriePerRep ?? "—"}
+                </div>
+                <div className="cell created">{fmtDate(it.createdAt)}</div>
 
-              <div className="cell act">
-                <button className="iconbtn" title="Chỉnh sửa" onClick={() => nav(`/exercises/strength/${it._id}/edit`)}>
-                  <i className="fa-regular fa-pen-to-square" />
-                </button>
-                <button
-                  className="iconbtn danger"
-                  title="Xóa"
-                  disabled={deletingId === it._id}
-                  onClick={()=>setConfirm({ mode: "single", ids: [it._id] })}
-                >
-                  <i className="fa-solid fa-trash-can" />
-                </button>
+                <div className="cell act">
+                  <button
+                    className="iconbtn"
+                    title="Chỉnh sửa"
+                    onClick={() =>
+                      nav(`/exercises/strength/${it._id}/edit`)
+                    }
+                  >
+                    <i className="fa-regular fa-pen-to-square" />
+                  </button>
+                  <button
+                    className="iconbtn danger"
+                    title="Xóa"
+                    disabled={deletingId === it._id}
+                    onClick={() =>
+                      setConfirm({
+                        mode: "single",
+                        ids: [it._id],
+                      })
+                    }
+                  >
+                    <i className="fa-solid fa-trash-can" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
 
         {/* Pagination */}
         <div className="ex-pagination">
           <div className="per-page">
             <span>Hiển thị:</span>
-            <select value={limit} onChange={handleLimitChange}>
+            <select
+              value={limit}
+              onChange={handleLimitChange}
+            >
               <option value="10">10 hàng</option>
               <option value="25">25 hàng</option>
               <option value="50">50 hàng</option>
             </select>
           </div>
           <div className="page-nav">
-            <span className="page-info">Trang {page + 1} / {Math.max(pageCount,1)} (Tổng: {total})</span>
-            <button className="btn-page" onClick={()=>handlePageChange(skip - limit)} disabled={skip===0}>
+            <span className="page-info">
+              Trang {page + 1} / {Math.max(pageCount, 1)} (Tổng:{" "}
+              {total})
+            </span>
+            <button
+              className="btn-page"
+              onClick={() => handlePageChange(skip - limit)}
+              disabled={skip === 0}
+            >
               <i className="fa-solid fa-chevron-left" />
             </button>
-            <button className="btn-page" onClick={()=>handlePageChange(skip + limit)} disabled={skip + limit >= total}>
+            <button
+              className="btn-page"
+              onClick={() => handlePageChange(skip + limit)}
+              disabled={skip + limit >= total}
+            >
               <i className="fa-solid fa-chevron-right" />
             </button>
           </div>
@@ -362,8 +567,14 @@ export default function Strength_List() {
 
       {/* Confirm Delete (dùng chung cho single & bulk; giữ nguyên className .cm-*) */}
       {confirm && (
-        <div className="cm-backdrop" onClick={()=>setConfirm(null)}>
-          <div className="cm-modal" onClick={(e)=>e.stopPropagation()}>
+        <div
+          className="cm-backdrop"
+          onClick={() => setConfirm(null)}
+        >
+          <div
+            className="cm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="cm-head">
               <h1 className="cm-title">
                 {confirm.mode === "bulk"
@@ -375,35 +586,54 @@ export default function Strength_List() {
               Thao tác không thể hoàn tác.
             </div>
             <div className="cm-foot">
-              <button className="btn ghost" onClick={()=>setConfirm(null)}>Hủy</button>
+              <button
+                className="btn ghost"
+                onClick={() => setConfirm(null)}
+              >
+                Hủy
+              </button>
               {confirm.mode === "single" ? (
                 <button
                   className="btn danger"
                   disabled={deletingId === confirm.ids[0]}
-                  onClick={async ()=>{
+                  onClick={async () => {
                     const id = confirm.ids[0];
                     await onDeleteOne(id);
                     setConfirm(null);
                   }}
                 >
-                  {deletingId === confirm.ids[0] ? "Đang xóa..." : "Xóa"}
+                  {deletingId === confirm.ids[0]
+                    ? "Đang xóa..."
+                    : "Xóa"}
                 </button>
               ) : (
                 <button
                   className="btn danger"
                   disabled={bulkDeleting || !confirm.ids.length}
-                  onClick={async ()=>{
+                  onClick={async () => {
                     await onBulkDelete(confirm.ids);
                     setConfirm(null);
                   }}
                 >
-                  {bulkDeleting ? "Đang xóa..." : `Xóa ${confirm.ids.length}`}
+                  {bulkDeleting
+                    ? "Đang xóa..."
+                    : `Xóa ${confirm.ids.length}`}
                 </button>
               )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Modal thông báo không thể xoá (ràng buộc 7 ngày) */}
+      <CannotDeleteModal
+        open={cannotDelete.open}
+        title="Không thể xoá bài tập"
+        message={cannotDelete.message}
+        onClose={() =>
+          setCannotDelete({ open: false, message: "" })
+        }
+      />
     </div>
   );
 }

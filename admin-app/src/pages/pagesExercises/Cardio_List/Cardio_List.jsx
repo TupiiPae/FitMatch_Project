@@ -1,11 +1,24 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { api, listExercisesAdminOnly, deleteExercise, getExerciseMeta } from "../../../lib/api";
+import {
+  api,
+  listExercisesAdminOnly,
+  deleteExercise,
+  getExerciseMeta,
+} from "../../../lib/api";
 import "./Cardio_List.css";
 import { toast } from "react-toastify";
+import CannotDeleteModal from "../../../components/CannotDeleteModal";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
-const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
+const toAbs = (u) => {
+  if (!u) return u;
+  try {
+    return new URL(u, API_ORIGIN).toString();
+  } catch {
+    return u;
+  }
+};
 
 export default function Cardio_List() {
   const nav = useNavigate();
@@ -29,12 +42,18 @@ export default function Cardio_List() {
 
   const [selectedIds, setSelectedIds] = useState([]);
   const allChecked = items.length > 0 && selectedIds.length === items.length;
-  const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
+  const someChecked =
+    selectedIds.length > 0 && selectedIds.length < items.length;
 
   const [confirm, setConfirm] = useState(null); // {mode:'single'|'bulk', ids:[]}
   const [flashId, setFlashId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const [cannotDelete, setCannotDelete] = useState({
+    open: false,
+    message: "",
+  });
 
   useEffect(() => {
     (async () => {
@@ -65,16 +84,23 @@ export default function Cardio_List() {
       setTotal(typeof res?.total === "number" ? res.total : arr.length);
     } catch (e) {
       console.error(e);
-      setItems([]); setTotal(0);
+      setItems([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [limit, skip]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line
+  }, [limit, skip]);
 
   useEffect(() => {
-    const t = setTimeout(() => { if (skip !== 0) setSkip(0); else load(); }, 250);
+    const t = setTimeout(() => {
+      if (skip !== 0) setSkip(0);
+      else load();
+    }, 250);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, muscle, muscle2, equipment, level]);
@@ -100,22 +126,39 @@ export default function Cardio_List() {
   }, []);
 
   const fmtDate = (v) => (v ? new Date(v).toLocaleString() : "—");
-  const toggleAll = () => setSelectedIds(allChecked ? [] : items.map(x => x._id));
-  const toggleOne = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleAll = () =>
+    setSelectedIds(allChecked ? [] : items.map((x) => x._id));
+  const toggleOne = (id) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
 
   const onDeleteOne = async (id) => {
     try {
       setDeletingId(id);
       await deleteExercise(id);
-      if (items.length === 1 && skip > 0) setSkip(Math.max(0, skip - limit));
+      if (items.length === 1 && skip > 0)
+        setSkip(Math.max(0, skip - limit));
       else {
-        setItems(prev => prev.filter(x => x._id !== id));
-        setTotal(t => Math.max(0, (t || 0) - 1));
-        setSelectedIds(sel => sel.filter(x => x !== id));
+        setItems((prev) => prev.filter((x) => x._id !== id));
+        setTotal((t) => Math.max(0, (t || 0) - 1));
+        setSelectedIds((sel) => sel.filter((x) => x !== id));
       }
       toast.success("Đã xóa bài tập");
     } catch (e) {
-      console.error(e); toast.error("Xóa thất bại");
+      console.error(e);
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.message;
+      if (status === 409) {
+        setCannotDelete({
+          open: true,
+          message:
+            msg ||
+            "Bài tập này đang được người dùng hoạt động sử dụng trong lịch tập cá nhân 7 ngày gần đây, nên không thể xoá.",
+        });
+      } else {
+        toast.error(msg || "Xóa thất bại");
+      }
     } finally {
       setDeletingId(null);
     }
@@ -125,31 +168,74 @@ export default function Cardio_List() {
     if (!ids?.length) return;
     try {
       setBulkDeleting(true);
-      const results = await Promise.allSettled(ids.map(id => deleteExercise(id)));
-      const ok = results.filter(r => r.status === "fulfilled").length;
-      const fail = results.length - ok;
+      const results = await Promise.allSettled(
+        ids.map((id) => deleteExercise(id))
+      );
+      const ok = results.filter(
+        (r) => r.status === "fulfilled"
+      ).length;
+      const fails = results.filter(
+        (r) => r.status === "rejected"
+      );
+      const blocked = fails.filter(
+        (r) => r.reason?.response?.status === 409
+      );
+      const otherFail = fails.length - blocked.length;
 
       const deletingAll = ids.length >= items.length;
-      if (deletingAll && skip > 0) setSkip(Math.max(0, skip - limit));
+      if (deletingAll && skip > 0)
+        setSkip(Math.max(0, skip - limit));
       else {
-        setItems(prev => prev.filter(x => !ids.includes(x._id)));
-        setTotal(t => Math.max(0, (t || 0) - ok));
+        setItems((prev) => prev.filter((x) => !ids.includes(x._id)));
+        setTotal((t) => Math.max(0, (t || 0) - ok));
         setSelectedIds([]);
       }
-      if (ok) toast.success(`Đã xóa ${ok} bài tập`);
-      if (fail) toast.error(`${fail} bài tập xóa thất bại`);
+      if (ok)
+        toast.success(`Đã xóa ${ok} bài tập`);
+      if (otherFail)
+        toast.error(
+          `${otherFail} bài tập xóa thất bại`
+        );
+      if (blocked.length > 0) {
+        const msg =
+          blocked[0].reason?.response?.data?.message;
+        setCannotDelete({
+          open: true,
+          message:
+            msg ||
+            "Một số bài tập không thể xoá vì đang được người dùng hoạt động sử dụng trong lịch tập cá nhân 7 ngày gần đây.",
+        });
+      }
     } finally {
       setBulkDeleting(false);
     }
   };
 
   const csv = useMemo(() => {
-    const head = ["name","type","primaryMuscles","secondaryMuscles","equipment","level","caloriePerRep","createdAt"].join(",");
-    const rows = items.map(x => ([
-      x.name, x.type,
-      (x.primaryMuscles||[]).join("|"), (x.secondaryMuscles||[]).join("|"),
-      x.equipment, x.level, x.caloriePerRep ?? "", x.createdAt || ""
-    ].map(v => v ?? "").join(",")));
+    const head = [
+      "name",
+      "type",
+      "primaryMuscles",
+      "secondaryMuscles",
+      "equipment",
+      "level",
+      "caloriePerRep",
+      "createdAt",
+    ].join(",");
+    const rows = items.map((x) =>
+      [
+        x.name,
+        x.type,
+        (x.primaryMuscles || []).join("|"),
+        (x.secondaryMuscles || []).join("|"),
+        x.equipment,
+        x.level,
+        x.caloriePerRep ?? "",
+        x.createdAt || "",
+      ]
+        .map((v) => v ?? "")
+        .join(",")
+    );
     return [head, ...rows].join("\n");
   }, [items]);
 
@@ -163,15 +249,26 @@ export default function Cardio_List() {
 
   const page = Math.floor(skip / limit);
   const pageCount = Math.max(1, Math.ceil((total || 0) / limit));
-  const handleLimitChange = (e) => { setLimit(Number(e.target.value)); setSkip(0); };
-  const handlePageChange = (newSkip) => { if (newSkip >= 0 && newSkip < Math.max(total, 1)) setSkip(newSkip); };
+  const handleLimitChange = (e) => {
+    setLimit(Number(e.target.value));
+    setSkip(0);
+  };
+  const handlePageChange = (newSkip) => {
+    if (newSkip >= 0 && newSkip < Math.max(total, 1)) setSkip(newSkip);
+  };
 
   return (
     <div className="ex-page">
       <nav className="ex-breadcrumb" aria-label="breadcrumb">
-        <Link to="/"><i className="fa-solid fa-house" /> <span>Trang chủ</span></Link>
+        <Link to="/">
+          <i className="fa-solid fa-house" />{" "}
+          <span>Trang chủ</span>
+        </Link>
         <span className="sep">/</span>
-        <span className="grp"><i className="fa-solid fa-person-running" /> <span>Quản lý Bài tập</span></span>
+        <span className="grp">
+          <i className="fa-solid fa-person-running" />{" "}
+          <span>Quản lý Bài tập</span>
+        </span>
         <span className="sep">/</span>
         <span className="cur">Danh sách bài tập - Cardio</span>
       </nav>
@@ -180,18 +277,34 @@ export default function Cardio_List() {
         <div className="ex-head">
           <h2>Danh sách bài tập - Cardio ({total})</h2>
           <div className="ex-actions">
-            <button className="btn ghost" type="button" onClick={downloadCSV}>
-              <i className="fa-solid fa-file-export" /> <span>Xuất danh sách</span>
+            <button
+              className="btn ghost"
+              type="button"
+              onClick={downloadCSV}
+            >
+              <i className="fa-solid fa-file-export" />{" "}
+              <span>Xuất danh sách</span>
             </button>
             <button
               className="btn danger"
               type="button"
               disabled={!selectedIds.length || bulkDeleting}
-              onClick={() => setConfirm({ mode: "bulk", ids: selectedIds.slice() })}
+              onClick={() =>
+                setConfirm({
+                  mode: "bulk",
+                  ids: selectedIds.slice(),
+                })
+              }
             >
-              <i className="fa-regular fa-trash-can" /> <span>{bulkDeleting ? "Đang xóa..." : "Xóa"}</span>
+              <i className="fa-regular fa-trash-can" />{" "}
+              <span>
+                {bulkDeleting ? "Đang xóa..." : "Xóa"}
+              </span>
             </button>
-            <Link className="btn primary" to="/exercises/cardio/create">
+            <Link
+              className="btn primary"
+              to="/exercises/cardio/create"
+            >
               <span>Tạo bài tập</span>
             </Link>
           </div>
@@ -200,24 +313,56 @@ export default function Cardio_List() {
         <div className="ex-filters">
           <div className="ex-search">
             <i className="fa-solid fa-magnifying-glass" />
-            <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Tìm theo tên bài tập..." />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tìm theo tên bài tập..."
+            />
           </div>
           <div className="ex-filter-row">
-            <select value={muscle} onChange={(e)=>setMuscle(e.target.value)}>
+            <select
+              value={muscle}
+              onChange={(e) => setMuscle(e.target.value)}
+            >
               <option value="">Nhóm cơ chính</option>
-              {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+              {MUSCLES.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
             </select>
-            <select value={muscle2} onChange={(e)=>setMuscle2(e.target.value)}>
+            <select
+              value={muscle2}
+              onChange={(e) => setMuscle2(e.target.value)}
+            >
               <option value="">Nhóm cơ phụ</option>
-              {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+              {MUSCLES.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
             </select>
-            <select value={equipment} onChange={(e)=>setEquipment(e.target.value)}>
+            <select
+              value={equipment}
+              onChange={(e) => setEquipment(e.target.value)}
+            >
               <option value="">Dụng cụ</option>
-              {EQUIPMENTS.map(eq => <option key={eq} value={eq}>{eq}</option>)}
+              {EQUIPMENTS.map((eq) => (
+                <option key={eq} value={eq}>
+                  {eq}
+                </option>
+              ))}
             </select>
-            <select value={level} onChange={(e)=>setLevel(e.target.value)}>
+            <select
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+            >
               <option value="">Mức độ</option>
-              {LEVELS.map(lv => <option key={lv} value={lv}>{lv}</option>)}
+              {LEVELS.map((lv) => (
+                <option key={lv} value={lv}>
+                  {lv}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -228,7 +373,9 @@ export default function Cardio_List() {
               <input
                 type="checkbox"
                 checked={allChecked}
-                ref={(el) => { if (el) el.indeterminate = someChecked; }}
+                ref={(el) => {
+                  if (el) el.indeterminate = someChecked;
+                }}
                 onChange={toggleAll}
               />
             </label>
@@ -244,70 +391,149 @@ export default function Cardio_List() {
             <div className="cell act">Thao tác</div>
           </div>
 
-          {loading && <div className="ex-empty">Đang tải...</div>}
-          {!loading && items.length === 0 && <div className="ex-empty">Chưa có bài tập.</div>}
+          {loading && (
+            <div className="ex-empty">Đang tải...</div>
+          )}
+          {!loading && items.length === 0 && (
+            <div className="ex-empty">Chưa có bài tập.</div>
+          )}
 
-          {!loading && items.map(it => (
-            <div key={it._id} className={`ex-trow ${flashId === it._id ? "ex-row--flash" : ""}`}>
-              <label className="cell cb">
-                <input type="checkbox" checked={selectedIds.includes(it._id)} onChange={()=>toggleOne(it._id)} />
-              </label>
+          {!loading &&
+            items.map((it) => (
+              <div
+                key={it._id}
+                className={`ex-trow ${
+                  flashId === it._id ? "ex-row--flash" : ""
+                }`}
+              >
+                <label className="cell cb">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(it._id)}
+                    onChange={() => toggleOne(it._id)}
+                  />
+                </label>
 
-              <div className="cell img">
-                {it.imageUrl
-                  ? <img src={toAbs(it.imageUrl)} alt={it.name} onError={(e)=>{e.currentTarget.src="/images/food-placeholder.jpg"}} />
-                  : <div className="img-fallback"><i className="fa-regular fa-image" /></div>}
-              </div>
+                <div className="cell img">
+                  {it.imageUrl ? (
+                    <img
+                      src={toAbs(it.imageUrl)}
+                      alt={it.name}
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          "/images/food-placeholder.jpg";
+                      }}
+                    />
+                  ) : (
+                    <div className="img-fallback">
+                      <i className="fa-regular fa-image" />
+                    </div>
+                  )}
+                </div>
 
-              <div className="cell name">
-                <div className="ex-title">{it.name || "—"}</div>
-                <div className="ex-sub">#{String(it._id).slice(-6)}</div>
-              </div>
+                <div className="cell name">
+                  <div className="ex-title">
+                    {it.name || "—"}
+                  </div>
+                  <div className="ex-sub">
+                    #{String(it._id).slice(-6)}
+                  </div>
+                </div>
 
-              <div className="cell type">{it.type || "—"}</div>
-              <div className="cell pmus">
-                {(it.primaryMuscles?.length ? it.primaryMuscles : []).map(m => <span key={m} className="mchip primary">{m}</span>) || "—"}
-              </div>
-              <div className="cell smus">
-                {(it.secondaryMuscles?.length ? it.secondaryMuscles : []).map(m => <span key={m} className="mchip">{m}</span>) || "—"}
-              </div>
-              <div className="cell equip">{it.equipment || "—"}</div>
-              <div className="cell lvl">{it.level || "—"}</div>
-              <div className="cell cal">{it.caloriePerRep ?? "—"}</div>
-              <div className="cell created">{fmtDate(it.createdAt)}</div>
+                <div className="cell type">{it.type || "—"}</div>
+                <div className="cell pmus">
+                  {(it.primaryMuscles?.length
+                    ? it.primaryMuscles
+                    : []
+                  ).map((m) => (
+                    <span
+                      key={m}
+                      className="mchip primary"
+                    >
+                      {m}
+                    </span>
+                  )) || "—"}
+                </div>
+                <div className="cell smus">
+                  {(it.secondaryMuscles?.length
+                    ? it.secondaryMuscles
+                    : []
+                  ).map((m) => (
+                    <span key={m} className="mchip">
+                      {m}
+                    </span>
+                  )) || "—"}
+                </div>
+                <div className="cell equip">
+                  {it.equipment || "—"}
+                </div>
+                <div className="cell lvl">
+                  {it.level || "—"}
+                </div>
+                <div className="cell cal">
+                  {it.caloriePerRep ?? "—"}
+                </div>
+                <div className="cell created">
+                  {fmtDate(it.createdAt)}
+                </div>
 
-              <div className="cell act">
-                <button className="iconbtn" title="Chỉnh sửa" onClick={() => nav(`/exercises/cardio/${it._id}/edit`)}>
-                  <i className="fa-regular fa-pen-to-square" />
-                </button>
-                <button
-                  className="iconbtn danger"
-                  title="Xóa"
-                  onClick={() => setConfirm({ mode: "single", ids: [it._id] })}
-                  disabled={deletingId === it._id}
-                >
-                  <i className="fa-solid fa-trash-can" />
-                </button>
+                <div className="cell act">
+                  <button
+                    className="iconbtn"
+                    title="Chỉnh sửa"
+                    onClick={() =>
+                      nav(`/exercises/cardio/${it._id}/edit`)
+                    }
+                  >
+                    <i className="fa-regular fa-pen-to-square" />
+                  </button>
+                  <button
+                    className="iconbtn danger"
+                    title="Xóa"
+                    onClick={() =>
+                      setConfirm({
+                        mode: "single",
+                        ids: [it._id],
+                      })
+                    }
+                    disabled={deletingId === it._id}
+                  >
+                    <i className="fa-solid fa-trash-can" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
 
         <div className="ex-pagination">
           <div className="per-page">
             <span>Hiển thị:</span>
-            <select value={limit} onChange={handleLimitChange}>
+            <select
+              value={limit}
+              onChange={handleLimitChange}
+            >
               <option value="10">10 hàng</option>
               <option value="25">25 hàng</option>
               <option value="50">50 hàng</option>
             </select>
           </div>
           <div className="page-nav">
-            <span className="page-info">Trang {page + 1} / {Math.max(pageCount,1)} (Tổng: {total})</span>
-            <button className="btn-page" onClick={()=>handlePageChange(skip - limit)} disabled={skip===0}>
+            <span className="page-info">
+              Trang {page + 1} / {Math.max(pageCount, 1)} (Tổng:{" "}
+              {total})
+            </span>
+            <button
+              className="btn-page"
+              onClick={() => handlePageChange(skip - limit)}
+              disabled={skip === 0}
+            >
               <i className="fa-solid fa-chevron-left" />
             </button>
-            <button className="btn-page" onClick={()=>handlePageChange(skip + limit)} disabled={skip + limit >= total}>
+            <button
+              className="btn-page"
+              onClick={() => handlePageChange(skip + limit)}
+              disabled={skip + limit >= total}
+            >
               <i className="fa-solid fa-chevron-right" />
             </button>
           </div>
@@ -316,29 +542,72 @@ export default function Cardio_List() {
 
       {/* Confirm Delete (dùng chung single/bulk) */}
       {confirm && (
-        <div className="cm-backdrop" onClick={()=>setConfirm(null)}>
-          <div className="cm-modal" onClick={(e)=>e.stopPropagation()}>
+        <div
+          className="cm-backdrop"
+          onClick={() => setConfirm(null)}
+        >
+          <div
+            className="cm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="cm-head">
               <h1 className="cm-title">
-                {confirm.mode === "bulk" ? `Xóa ${confirm.ids.length} bài tập đã chọn?` : "Xóa bài tập?"}
+                {confirm.mode === "bulk"
+                  ? `Xóa ${confirm.ids.length} bài tập đã chọn?`
+                  : "Xóa bài tập?"}
               </h1>
             </div>
-            <div className="cm-body">Thao tác không thể hoàn tác.</div>
+            <div className="cm-body">
+              Thao tác không thể hoàn tác.
+            </div>
             <div className="cm-foot">
-              <button className="btn ghost" onClick={()=>setConfirm(null)}>Hủy</button>
+              <button
+                className="btn ghost"
+                onClick={() => setConfirm(null)}
+              >
+                Hủy
+              </button>
               {confirm.mode === "bulk" ? (
-                <button className="btn danger" disabled={bulkDeleting} onClick={async ()=>{ await onBulkDelete(confirm.ids); setConfirm(null); }}>
-                  {bulkDeleting ? "Đang xóa..." : `Xóa ${confirm.ids.length}`}
+                <button
+                  className="btn danger"
+                  disabled={bulkDeleting}
+                  onClick={async () => {
+                    await onBulkDelete(confirm.ids);
+                    setConfirm(null);
+                  }}
+                >
+                  {bulkDeleting
+                    ? "Đang xóa..."
+                    : `Xóa ${confirm.ids.length}`}
                 </button>
               ) : (
-                <button className="btn danger" disabled={deletingId===confirm.ids[0]} onClick={async ()=>{ await onDeleteOne(confirm.ids[0]); setConfirm(null); }}>
-                  {deletingId===confirm.ids[0] ? "Đang xóa..." : "Xóa"}
+                <button
+                  className="btn danger"
+                  disabled={deletingId === confirm.ids[0]}
+                  onClick={async () => {
+                    await onDeleteOne(confirm.ids[0]);
+                    setConfirm(null);
+                  }}
+                >
+                  {deletingId === confirm.ids[0]
+                    ? "Đang xóa..."
+                    : "Xóa"}
                 </button>
               )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Modal thông báo không thể xoá (ràng buộc 7 ngày) */}
+      <CannotDeleteModal
+        open={cannotDelete.open}
+        title="Không thể xoá bài tập"
+        message={cannotDelete.message}
+        onClose={() =>
+          setCannotDelete({ open: false, message: "" })
+        }
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
 } from "../../../lib/api";
 import { toast } from "react-toastify";
 
+import CannotDeleteModal from "../../../components/CannotDeleteModal";
 import "./SuggestPlan_List.css";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
@@ -37,13 +38,20 @@ export default function SuggestPlan_List() {
   // ---- Selection ----
   const [selectedIds, setSelectedIds] = useState([]);
   const allChecked = items.length > 0 && selectedIds.length === items.length;
-  const someChecked = selectedIds.length > 0 && selectedIds.length < items.length;
+  const someChecked =
+    selectedIds.length > 0 && selectedIds.length < items.length;
 
   // ---- Delete / modal ----
   // { mode: 'single'|'bulk', ids: string[] } | null
   const [confirm, setConfirm] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // Modal thông báo không thể xoá (ràng buộc 7 ngày)
+  const [cannotDelete, setCannotDelete] = useState({
+    open: false,
+    message: "",
+  });
 
   // ---- Highlight row (sau khi create / update) ----
   const [flashId, setFlashId] = useState(null);
@@ -144,7 +152,18 @@ export default function SuggestPlan_List() {
       toast.success("Đã xóa lịch tập gợi ý");
     } catch (err) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Xóa lịch tập thất bại");
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message;
+      if (status === 409) {
+        setCannotDelete({
+          open: true,
+          message:
+            msg ||
+            "Lịch tập gợi ý này vẫn đang được người dùng hoạt động lưu lại trong 7 ngày gần đây, nên không thể xoá.",
+        });
+      } else {
+        toast.error(msg || "Xóa lịch tập thất bại");
+      }
     } finally {
       setDeletingId(null);
     }
@@ -158,22 +177,43 @@ export default function SuggestPlan_List() {
       const results = await Promise.allSettled(
         ids.map((id) => deleteSuggestPlan(id))
       );
-      const okCount = results.filter((r) => r.status === "fulfilled").length;
-      const failCount = results.length - okCount;
+
+      const okCount = results.filter(
+        (r) => r.status === "fulfilled"
+      ).length;
+      const fails = results.filter((r) => r.status === "rejected");
+      const blocked = fails.filter(
+        (r) => r.reason?.response?.status === 409
+      );
+      const otherFailCount = fails.length - blocked.length;
 
       const deletingAllOnPage = ids.length >= items.length;
       if (deletingAllOnPage && skip > 0) {
         setSkip(Math.max(0, skip - limit));
       } else {
         setItems((prev) => prev.filter((x) => !ids.includes(x._id)));
-        setTotal((t) => Math.max(0, Number(t || 0) - okCount));
+        setTotal((t) =>
+          Math.max(0, Number(t || 0) - okCount)
+        );
         setSelectedIds([]);
       }
 
-      if (okCount > 0)
+      if (okCount > 0) {
         toast.success(`Đã xóa ${okCount} lịch tập gợi ý`);
-      if (failCount > 0)
-        toast.error(`${failCount} lịch tập xóa thất bại`);
+      }
+      if (otherFailCount > 0) {
+        toast.error(`${otherFailCount} lịch tập xóa thất bại`);
+      }
+      if (blocked.length > 0) {
+        const msg =
+          blocked[0].reason?.response?.data?.message;
+        setCannotDelete({
+          open: true,
+          message:
+            msg ||
+            "Một số lịch tập gợi ý không thể xoá vì vẫn đang được người dùng hoạt động lưu lại trong 7 ngày gần đây.",
+        });
+      }
     } catch (err) {
       console.error(err);
       toast.error("Xóa lịch tập thất bại");
@@ -470,6 +510,16 @@ export default function SuggestPlan_List() {
           </div>
         </div>
       )}
+
+      {/* Modal thông báo không thể xoá (ràng buộc 7 ngày) */}
+      <CannotDeleteModal
+        open={cannotDelete.open}
+        title="Không thể xoá lịch tập gợi ý"
+        message={cannotDelete.message}
+        onClose={() =>
+          setCannotDelete({ open: false, message: "" })
+        }
+      />
     </div>
   );
 }
