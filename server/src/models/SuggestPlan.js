@@ -68,6 +68,15 @@ const SuggestPlanSchema = new Schema(
       },
     },
     createdByAdmin: { type: ObjectId, ref: "Admin" },
+
+    // 💡 Thêm 2 trường để phục vụ "đã lưu" & trạng thái
+    savedBy: [{ type: ObjectId, ref: "User", index: true }],
+    status: {
+      type: String,
+      enum: ["active", "archived"],
+      default: "active",
+      index: true,
+    },
   },
   { timestamps: true }
 );

@@ -322,10 +322,10 @@ export default function WorkoutCreate() {
                     <table className="wc-sets">
                       <thead>
                         <tr>
-                          <th>Set</th>
-                          <th>Kg</th>
-                          <th>Reps</th>
-                          <th>Nghỉ (s)</th>
+                          <th>Hiệp <span>(Set)</span></th>
+                          <th>Mức tạ <span>(Kg)</span></th>
+                          <th>Số lần <span>(Reps)</span></th>
+                          <th>Nghỉ <span>(s)</span></th>
                           <th></th>
                         </tr>
                       </thead>

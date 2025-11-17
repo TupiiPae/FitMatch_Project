@@ -40,7 +40,10 @@ export async function listSuggestPlansUser(req, res) {
   } = req.query;
 
   const userId = req.userId;
-  const find = { status: "active" }; // nếu model chưa có status thì xoá dòng này
+
+  // Quan trọng: cho phép doc cũ (chưa có status) + doc mới (status="active"),
+  // chỉ loại những cái đã archived.
+  const find = { status: { $ne: "archived" } };
 
   if (q) {
     find.name = { $regex: String(q).trim(), $options: "i" };
@@ -51,7 +54,7 @@ export async function listSuggestPlansUser(req, res) {
 
   // Chỉ lấy các plan user đã lưu
   if (scope === "saved") {
-    find.savedBy = userId;
+    find.savedBy = req.userId;
   }
 
   const [docs, total] = await Promise.all([

@@ -156,22 +156,17 @@ export default function WorkoutList() {
   const confirmUnsaveNow = async () => {
     if (!confirmUnsave.id) return;
     try {
-      const res = await toggleSaveSuggestPlan(confirmUnsave.id);
-      const savedFlag = !!res.saved;
-      if (!savedFlag) {
-        setSaved((prev) =>
-          prev.filter((p) => p._id !== confirmUnsave.id)
-        );
-        toast.success("Đã bỏ lưu lịch tập gợi ý");
-      } else {
-        // trường hợp hiếm: vẫn còn saved
-        toast.error("Không thể bỏ lưu lịch tập gợi ý");
-      }
+      // Gọi API toggle để bỏ lưu trên BE
+      await toggleSaveSuggestPlan(confirmUnsave.id);
+
+      toast.success("Đã bỏ lưu lịch tập gợi ý");
+
+      closeConfirmUnsave();
+
+      loadAll();
     } catch (err) {
       console.error(err);
       toast.error("Không thể bỏ lưu lịch tập gợi ý");
-    } finally {
-      closeConfirmUnsave();
     }
   };
 

@@ -286,18 +286,18 @@ export default function Navbar({
                           <span>Xem kế hoạch tập luyện của bạn</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/tap-luyen/lich-cua-ban/tao" className="fm-megamenu-link" role="menuitem">
-                        <FontAwesomeIcon icon={faClipboardList} />
-                        <div>
-                          <strong>Tạo lịch tập của bạn</strong>
-                          <span>Xây dựng kế hoạch tập luyện của bạn</span>
-                        </div>
-                      </NavLink>
                       <NavLink to="/tap-luyen/bai-tap/khang-luc" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faDumbbell} />
                         <div>
                           <strong>Các bài tập kháng lực</strong>
                           <span>Danh sách bài tập xây dựng và phát triển cơ bắp</span>
+                        </div>
+                      </NavLink>
+                      <NavLink to="/tap-luyen/lich-cua-ban/tao" className="fm-megamenu-link" role="menuitem">
+                        <FontAwesomeIcon icon={faClipboardList} />
+                        <div>
+                          <strong>Tạo lịch tập của bạn</strong>
+                          <span>Xây dựng kế hoạch tập luyện của bạn</span>
                         </div>
                       </NavLink>
                       <NavLink to="/tap-luyen/bai-tap/cardio" className="fm-megamenu-link" role="menuitem">
@@ -307,13 +307,6 @@ export default function Navbar({
                           <span>Danh sách bài tập tăng cường sức bền tim mạch</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/tap-luyen/bai-tap/the-thao" className="fm-megamenu-link" role="menuitem">
-                        <FontAwesomeIcon icon={faVolleyball} />
-                        <div>
-                          <strong>Các môn thể thao</strong>
-                          <span>Danh sách các môn thể thao </span>
-                        </div>
-                      </NavLink>
                       <NavLink to="/tap-luyen/goi-y" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faLightbulb} />
                         <div>
@@ -321,6 +314,13 @@ export default function Navbar({
                           <span>Các kế hoạch tập luyện mẫu</span>
                         </div>
                       </NavLink>
+                      <NavLink to="/tap-luyen/bai-tap/the-thao" className="fm-megamenu-link" role="menuitem">
+                        <FontAwesomeIcon icon={faVolleyball} />
+                        <div>
+                          <strong>Các môn thể thao</strong>
+                          <span>Danh sách các môn thể thao </span>
+                        </div>
+                      </NavLink>                     
                     </div>
                   </div>
                 </div>

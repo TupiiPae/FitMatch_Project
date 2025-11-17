@@ -206,9 +206,9 @@ export function blockMinutesFromSets(sets = []) {
   return (workSec + restSec) / 60;
 }
 
-/**
+/*** Cong thuc tuong doi --------------------------------------------
  * Kcal theo MET (caloriePerRep ~ MET):
- * (MET * 3.5 * weightKg * minutes) / 200
+ * (MET * 3.5 * weightKg (user) * minutes) / 200
  */
 export function kcalByMETMinutes(met = 0, weightKg = 0, minutes = 0) {
   const m = Math.max(0, Number(met || 0));
@@ -219,7 +219,6 @@ export function kcalByMETMinutes(met = 0, weightKg = 0, minutes = 0) {
 }
 
 /**
- * Tính tổng kcal cho cả kế hoạch:
  * items[] cần có { caloriePerRep, sets[] }
  * weightKg: cân nặng hiện tại (kg)
  */
