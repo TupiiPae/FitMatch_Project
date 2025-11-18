@@ -16,9 +16,9 @@ const STEPS = [
 ];
 
 function StepProgress({ currentSlug }) {
-  const currentIndex = Math.max(0, STEPS.findIndex(s => s.slug === currentSlug));
+  const currentIndex = Math.max(0, STEPS.findIndex((s) => s.slug === currentSlug));
   const totalSegs = Math.max(1, STEPS.length - 1);
-  const doneRatio = currentIndex / totalSegs; // tô line tới trước circle hiện tại
+  const doneRatio = currentIndex / totalSegs;
 
   return (
     <div className="sp">
@@ -27,11 +27,23 @@ function StepProgress({ currentSlug }) {
           const completed = idx < currentIndex;
           const active = idx === currentIndex;
           return (
-            <li key={s.slug} className={`sp-step ${completed ? "is-complete" : ""} ${active ? "is-active" : ""}`}>
+            <li
+              key={s.slug}
+              className={`sp-step ${completed ? "is-complete" : ""} ${
+                active ? "is-active" : ""
+              }`}
+            >
               <span className="sp-dot">
                 {completed ? (
                   <svg viewBox="0 0 24 24" className="sp-check" aria-hidden="true">
-                    <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M20 6L9 17l-5-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 ) : (
                   <span className="sp-num">{idx + 1}</span>
@@ -45,7 +57,6 @@ function StepProgress({ currentSlug }) {
     </div>
   );
 }
-
 
 /* ===== Thước cuộn ~35 vạch; vạch = 0.1 nếu step < 1; kéo trái = tăng, kéo phải = giảm ===== */
 /* majorEvery: khoảng giữa các vạch lớn/nhãn (vd: kg=0.5, cm=5) */
@@ -61,16 +72,28 @@ function RulerSliderWindow({
 }) {
   const val = Number(value);
   const TICKS = 35;
-  const tickStep = step >= 1 ? 1 : 0.1;
   const eps = 1e-9;
 
-  // làm tròn về bội số tickStep (để selected tick khớp)
-  const rounded = useMemo(
-    () => Number((Math.round(val / tickStep) * tickStep).toFixed(step >= 1 ? 0 : 1)),
-    [val, tickStep, step]
-  );
+  // tickStep để vẽ vạch: 1 cho step>=1, hoặc chính step (0.1)
+  const tickStep = step >= 1 ? 1 : step;
 
-  // tính cửa sổ hiển thị
+  // scale nội bộ: nếu step < 1 (vd 0.1) thì scale = 10, domain slider là số nguyên
+  const isSubUnit = step < 1;
+  const scale = isSubUnit ? Math.round(1 / step) : 1; // 0.1 -> 10
+  const decimals = step >= 1 ? 0 : Math.ceil(-Math.log10(step)); // 0.1 -> 1, 0.01 -> 2
+
+  const scaledMin = Math.round(min * scale);
+  const scaledMax = Math.round(max * scale);
+  const scaledVal = Math.round(val * scale);
+
+  // làm tròn giá trị đang có theo đúng step
+  const rounded = useMemo(() => {
+    const snappedScaled = Math.round(scaledVal / 1) * 1; // luôn là int
+    const snapped = snappedScaled / scale;
+    return Number(snapped.toFixed(decimals));
+  }, [scaledVal, scale, decimals]);
+
+  // tính cửa sổ hiển thị quanh rounded
   const { start, end } = useMemo(() => {
     const half = Math.floor(TICKS / 2);
     const minIdx = Math.ceil(min / tickStep);
@@ -87,15 +110,14 @@ function RulerSliderWindow({
   const span = end - start || tickStep;
   const pctInWindow = ((val - start) / span) * 100;
 
-  // sinh vạch: major theo majorEvery (hỗ trợ thập phân, vd 0.5)
+  // sinh vạch
   const ticks = useMemo(() => {
     const arr = [];
-    const fix = (x) => Number(x.toFixed(step >= 1 ? 0 : 1));
+    const fix = (x) => Number(x.toFixed(decimals));
 
     for (let v = start; v <= end + eps; v += tickStep) {
       const fv = fix(v);
 
-      // là bội số của majorEvery nếu (fv/majorEvery) gần số nguyên
       const ratio = fv / majorEvery;
       const isMajor = Math.abs(ratio - Math.round(ratio)) < 1e-9;
 
@@ -105,31 +127,42 @@ function RulerSliderWindow({
       arr.push({ fv, isMajor, isSelected, left });
     }
     return arr;
-  }, [start, end, tickStep, rounded, span, step, majorEvery]);
+  }, [start, end, tickStep, rounded, span, majorEvery, decimals]);
 
-  // đảo chiều kéo: kéo phải = giảm
-  const proxyValue = min + max - val;
+  // ==== RANGE THẬT (ẩn thumb) – scale về số nguyên & đảo chiều: kéo phải = giảm ====
+  const sliderMin = scaledMin;
+  const sliderMax = scaledMax;
+  const sliderValue = sliderMin + sliderMax - scaledVal; // đảo chiều
+
   const handleChange = (e) => {
-    const proxy = Number(e.target.value);
-    const actual = min + max - proxy;
-    const fixed = step >= 1 ? Math.round(actual) : Number(actual.toFixed(1));
-    onChange(fixed);
+    const proxy = Number(e.target.value); // int trong [sliderMin, sliderMax]
+    const scaledNew = sliderMin + sliderMax - proxy; // đảo chiều lại
+    let actual = scaledNew / scale; // về đơn vị thật (kg/cm)
+
+    // snap về đúng step, giới hạn trong [min,max]
+    const factor = Math.pow(10, decimals);
+    actual = Math.round(actual * factor) / factor;
+    actual = Math.min(max, Math.max(min, actual));
+
+    onChange(actual);
   };
 
-  // format nhãn theo context
   const formatLabel = (v) => {
     if (step >= 1) return v.toFixed(0);
-    // nếu majorEvery thập phân (vd 0.5) thì hiển thị 1 số lẻ
     const hasDecimalMajor = Math.abs(majorEvery - Math.round(majorEvery)) > eps;
-    return v.toFixed(hasDecimalMajor ? 1 : 0);
+    return v.toFixed(hasDecimalMajor ? decimals : 0);
   };
 
   return (
     <div className="rs-wrap">
       {/* số nổi theo vị trí */}
-      <div className="rs-value" style={{ left: `${pctInWindow}%` }} aria-hidden="true">
+      <div
+        className="rs-value"
+        style={{ left: `${pctInWindow}%` }}
+        aria-hidden="true"
+      >
         <span>
-          {Number(value).toFixed(step >= 1 ? 0 : 1)} {unit}
+          {Number(value).toFixed(decimals)} {unit}
         </span>
       </div>
 
@@ -137,12 +170,16 @@ function RulerSliderWindow({
       <div className="rs-ruler rs-ruler-window" role="presentation">
         {ticks.map((t, idx) => (
           <div
-            key={`${unit}-${start}-${idx}`} // key ổn định theo instance
-            className={`rs-tick ${t.isMajor ? "major" : "minor"} ${t.isSelected ? "selected" : ""}`}
+            key={`${unit}-${start}-${idx}`}
+            className={`rs-tick ${t.isMajor ? "major" : "minor"} ${
+              t.isSelected ? "selected" : ""
+            }`}
             style={{ left: `${t.left}%` }}
             title={t.isMajor ? `${t.fv} ${unit}` : undefined}
           >
-            {t.isMajor && <div className="rs-tick-label">{formatLabel(t.fv)}</div>}
+            {t.isMajor && (
+              <div className="rs-tick-label">{formatLabel(t.fv)}</div>
+            )}
           </div>
         ))}
         <div className="rs-fade left" />
@@ -153,15 +190,15 @@ function RulerSliderWindow({
       <input
         className="rs-range invisible-thumb"
         type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={proxyValue}
+        min={sliderMin}
+        max={sliderMax}
+        step={isSubUnit ? 1 : step}
+        value={sliderValue}
         onChange={handleChange}
         disabled={disabled}
-        aria-valuemin={min}
-        aria-valuemax={max}
-        aria-valuenow={proxyValue}
+        aria-valuemin={sliderMin}
+        aria-valuemax={sliderMax}
+        aria-valuenow={sliderValue}
       />
     </div>
   );
@@ -224,8 +261,11 @@ export default function BasicMetrics() {
             Cân nặng và chiều cao hiện tại của {nickname || "bạn"} là …
           </h3>
           <p className="bm-desc">
-            Kéo trên thước để chọn số liệu (<b>kéo trái: tăng</b>, <b>kéo phải: giảm</b>)
+            Kéo trên thước để chọn số liệu (<b>kéo trái: tăng</b>,{" "}
+            <b>kéo phải: giảm</b>)
+            <p className="bm-desc"><b>Có thể dùng nút mũi tên "trái/phải" trên bàn phím để điều chỉnh chính xác</b></p>
           </p>
+          
 
           {/* Cân nặng */}
           <div className="bm-block">

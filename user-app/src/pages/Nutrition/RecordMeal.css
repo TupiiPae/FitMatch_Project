@@ -44,10 +44,15 @@
   display: flex;
   align-items: center;
   border-radius: 999px;
-  color: #002C3E;
+  color: #fff;
+  background-color: #008080;
   padding: 0 10px;
   border: 1px solid #002C3E;
   font-weight: 500;
+}
+.scan:hover {
+  color: #002C3E;
+  background-color: #F8F9FA;
 }
 
 .filter { display: flex; align-items: right;}
@@ -88,10 +93,15 @@
   display: flex;
   align-items: center;
   border-radius: 999px;
-  color: #002C3E;
+  color: #fff;
+  background-color: #008080;
   padding: 0 10px;
   border: 1px solid #002C3E;
   font-weight: 500;
+}
+.rm-create-btn:hover {
+  color: #002C3E;
+  background-color: #F8F9FA;
 }
 
 .nm-list-title {

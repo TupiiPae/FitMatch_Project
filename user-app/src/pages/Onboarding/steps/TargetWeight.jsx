@@ -229,7 +229,8 @@ export default function TargetWeight() {
         <div className="tw-card">
           <h3 className="tw-title">{title}</h3>
           <p className="tw-desc">
-            Kéo trên thước để chọn số cân — <b>kéo trái: tăng</b>, <b>kéo phải: giảm</b>
+            Kéo trên thước để chọn số cân: (<b>kéo trái: tăng</b>, <b>kéo phải: giảm</b>)
+            <p className="bm-desc"><b>Có thể dùng nút mũi tên "trái/phải" trên bàn phím để điều chỉnh chính xác</b></p>
           </p>
 
           <div className="tw-subtitle">Cân nặng mục tiêu của bạn</div>

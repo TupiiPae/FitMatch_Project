@@ -67,6 +67,7 @@
 .nk-input-large {
   height: 52px;
   font-size: 16px;
+  border-color: #008080;
 }
 .nk-input::placeholder { color: #9ca3af; }
 .nk-input:focus {

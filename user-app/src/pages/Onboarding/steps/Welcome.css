@@ -17,6 +17,7 @@
   font-weight: 800px;
   font-size: 40px;
   color: #222;
+  padding: 30px;
 }
 
 .logo-link{
@@ -25,7 +26,7 @@
   color: inherit;
   line-height: 0;       
 }
-.logo-link img{ display: block; } 
+.logo-link img{ display: block; height: 40px;} 
 .logo-link:focus-visible{
   outline: 2px solid #008080;  
   outline-offset: 3px;
@@ -91,11 +92,11 @@
   font-size: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(52, 207, 135, 0.32);
+  box-shadow: 0 2px 8px rgba(52, 207, 135, 0.32);
 }
 .wel-start:hover {
   background: #007070;
-  box-shadow: 0 6px 16px rgba(52, 207, 135, 0.32);
+  box-shadow: 0 2px 8px rgba(52, 207, 135, 0.32);
 }
 .wel-start:active {
   transform: translateY(1px);

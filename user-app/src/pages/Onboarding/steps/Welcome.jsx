@@ -5,7 +5,7 @@ import { useState } from "react";
 const FEATURES = [
   {
     img: "/images/welcome1.png",       // đặt ảnh vào public/images/welcome/*
-    caption: <>Đồng hành cùng nhau <br /> để tạo nên giá trị</>,
+    caption: <>Đồng hành cùng nhau <br /> và hướng đến mục tiêu</>,
   },
   {
     img: "/images/welcome2.png",
