@@ -284,7 +284,7 @@
 }
 
 .login-head h1{ order: 1; margin: 0; font-weight: 700; font-size: 28px;}
-.login-head .login-logo-rect{ order: 2; height: 100px; object-fit: contain; }
+.login-head .login-logo-rect{ order: 2; height: 100px; object-fit: contain; width: 150px;}
 
 /* ===== Form ===== */
 .auth-form{ background:#fff; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:0 30px; height:100%; transition:transform .6s ease, opacity .6s ease; }

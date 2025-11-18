@@ -387,7 +387,7 @@ export default function ExercisesList({ type = "Strength", title = "Các bài t�
       </div>
 
       {/* ===== LIST-FRAME (giữ nguyên) ===== */}
-      <div className="nm-list-frame">
+      <div className="exl-list-frame">
         <div className="ex-grid ex-grid-4">
           {items.map((it) => (
             <div

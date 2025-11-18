@@ -28,7 +28,7 @@ const Indent = Extension.create({
             if (!level) return {};
             return {
               "data-indent": String(level),
-              style: `margin-left:${level * 24}px;`, // 24px mỗi cấp, inline để không cần CSS class
+              style: `margin-left:${level * 10}px;`, // 24px mỗi cấp, inline để không cần CSS class
             };
           },
         },

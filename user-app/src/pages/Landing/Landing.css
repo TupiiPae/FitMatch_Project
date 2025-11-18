@@ -23,13 +23,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1px 500px; /* Đưa logo & nút vào trong */
+  padding: 20px 500px; /* Đưa logo & nút vào trong */
   position: relative;
   z-index: 1;
 }
 
 .lm-logo-img {
-  height: 120px;          /* 👈 tuỳ kích thước thật của logo */
+  height: 50px;          /* 👈 tuỳ kích thước thật của logo */
   cursor: pointer;
   object-fit: contain;
   user-select: none;

@@ -186,19 +186,22 @@ export default function FoodForm() {
           <button type="button" className="tool-left" onClick={() => nav(-1)}>
             <i className="fa-solid fa-chevron-left"></i> Quay lại
           </button>
+          <div className="tool-mid">
+            {isEdit ? "Chỉnh sửa món ăn" : "Tạo món ăn"}
+          </div>
           <div className="tool-right">
             {isEdit && (
-              <button type="button" className="btn ghost danger" onClick={openConfirmDelete}>
+              <button type="button" className="ff-delete-btn" onClick={openConfirmDelete}>
                 Xóa
               </button>
             )}
-            <button type="button" className="btn primary" onClick={submit}>
+            <button type="button" className="ff-btn" onClick={submit}>
               {isEdit ? "Lưu" : "Tạo món"}
             </button>
           </div>
         </div>
       </div>
-
+      <hr className="ff-line" />
       {/* ===== (THAY ĐỔI) Layout Form Mới (Giống admin) ===== */}
       <form className="ff-grid-card" onSubmit={submit}>
         

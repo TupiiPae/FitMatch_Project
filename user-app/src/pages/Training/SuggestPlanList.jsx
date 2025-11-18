@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import "./SuggestPlanList.css";
 import { listSuggestPlans, toggleSaveSuggestPlan } from "../../api/suggestPlans";
 import { toast } from "react-toastify";
@@ -44,7 +44,68 @@ export default function SuggestPlanList() {
   const [level, setLevel] = useState("");
   const [goal, setGoal] = useState("");
 
-  // list state
+  // ===== DROPDOWN FILTER (giống ExercisesList) =====
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [draftFilters, setDraftFilters] = useState({
+    category: "",
+    level: "",
+    goal: "",
+  });
+  const filterBtnRef = useRef(null);
+  const filterPanelRef = useRef(null);
+
+  // đồng bộ draft từ filter đang áp dụng (khi mở dropdown)
+  const syncDraftFromApplied = () => {
+    setDraftFilters({
+      category: category || "",
+      level: level || "",
+      goal: goal || "",
+    });
+  };
+
+  // click ngoài để đóng dropdown
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handleClick = (e) => {
+      if (
+        filterPanelRef.current &&
+        !filterPanelRef.current.contains(e.target) &&
+        filterBtnRef.current &&
+        !filterBtnRef.current.contains(e.target)
+      ) {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [filterOpen]);
+
+  const hasDraftFilters =
+    !!draftFilters.category || !!draftFilters.level || !!draftFilters.goal;
+
+  const appliedFiltersCount =
+    (category ? 1 : 0) + (level ? 1 : 0) + (goal ? 1 : 0);
+
+  const hasAppliedFilters = appliedFiltersCount > 0;
+  const hasAnySelection = hasDraftFilters || hasAppliedFilters;
+
+  const handleApplyFilters = () => {
+    // áp dụng filter đang chọn tạm
+    setCategory(draftFilters.category || "");
+    setLevel(draftFilters.level || "");
+    setGoal(draftFilters.goal || "");
+    setFilterOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    // xóa hết: reset cả draft & filter thật -> trả về full list & title bình thường
+    setDraftFilters({ category: "", level: "", goal: "" });
+    setCategory("");
+    setLevel("");
+    setGoal("");
+  };
+
+  // ===== LIST STATE =====
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -126,70 +187,174 @@ export default function SuggestPlanList() {
 
   return (
     <div className="spl-wrap">
-      {/* ===== HEAD: search + 3 nút lọc (giống ExercisesList) ===== */}
-      <div className="spl-head">
-        <div className="spl-search">
+      {/* ===== HEAD: search (trái) + nút đến lịch tập (giữa) + dropdown Bộ lọc (phải) ===== */}
+      <div className="ex-head">
+        {/* Search bên trái */}
+        <div className="search">
           <i className="fa-solid fa-magnifying-glass" />
           <input
-            placeholder="Tìm lịch tập gợi ý"
+            placeholder="Tìm kiếm lịch tập gợi ý"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
 
-        {/* Phân loại */}
-        <div className="spl-select">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            title="Phân loại"
-          >
-            <option value="">Phân loại</option>
-            {CATEGORY_OPTIONS.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-          <i className="fa-solid fa-caret-down" aria-hidden="true" />
-        </div>
+        {/* Nút đi đến trang lịch tập ở giữa */}
+        <Link to="/tap-luyen/lich-cua-ban" className="ex-wl">
+          Đến trang lịch tập
+        </Link>
 
-        {/* Mức độ */}
-        <div className="spl-select">
-          <select
-            value={level}
-            onChange={(e) => setLevel(e.target.value)}
-            title="Mức độ"
+        {/* Bộ lọc bên phải */}
+        <div className="ex-filter-wrap" ref={filterBtnRef}>
+          <button
+            type="button"
+            className={
+              "ex-filter-btn" +
+              (filterOpen ? " open" : "") +
+              (hasAppliedFilters ? " has-active" : "")
+            }
+            onClick={() => {
+              if (!filterOpen) {
+                syncDraftFromApplied();
+                setFilterOpen(true);
+              } else {
+                setFilterOpen(false);
+              }
+            }}
           >
-            <option value="">Mức độ</option>
-            {LEVEL_OPTIONS.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-          <i className="fa-solid fa-caret-down" aria-hidden="true" />
-        </div>
+            <i className="fa-solid fa-sliders"></i>
+            <span>Bộ lọc</span>
+            {hasAppliedFilters && (
+              <span className="ex-filter-badge">{appliedFiltersCount}</span>
+            )}
+          </button>
 
-        {/* Mục tiêu */}
-        <div className="spl-select">
-          <select
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            title="Mục tiêu"
-          >
-            <option value="">Mục tiêu</option>
-            {GOAL_OPTIONS.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-          <i className="fa-solid fa-caret-down" aria-hidden="true" />
+          {filterOpen && (
+            <div
+              className="ex-filter-dd"
+              ref={filterPanelRef}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="spl-filter-cols">
+                {/* Phân loại – single select */}
+                <div className="exf-col">
+                  <div className="exf-col-title">PHÂN LOẠI</div>
+                  <div className="exf-list">
+                    {CATEGORY_OPTIONS.map((x) => (
+                      <button
+                        key={x}
+                        type="button"
+                        className={
+                          "exf-item" +
+                          (draftFilters.category === x ? " active" : "")
+                        }
+                        onClick={() =>
+                          setDraftFilters((f) => ({
+                            ...f,
+                            category: f.category === x ? "" : x,
+                          }))
+                        }
+                      >
+                        {x}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="exf-divider" />
+
+                {/* Mức độ – single select */}
+                <div className="exf-col">
+                  <div className="exf-col-title">MỨC ĐỘ</div>
+                  <div className="exf-list">
+                    {LEVEL_OPTIONS.map((x) => (
+                      <button
+                        key={x}
+                        type="button"
+                        className={
+                          "exf-item" +
+                          (draftFilters.level === x ? " active" : "")
+                        }
+                        onClick={() =>
+                          setDraftFilters((f) => ({
+                            ...f,
+                            level: f.level === x ? "" : x,
+                          }))
+                        }
+                      >
+                        {x}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="exf-divider" />
+
+                {/* Mục tiêu – single select */}
+                <div className="exf-col">
+                  <div className="exf-col-title">MỤC TIÊU</div>
+                  <div className="exf-list">
+                    {GOAL_OPTIONS.map((x) => (
+                      <button
+                        key={x}
+                        type="button"
+                        className={
+                          "exf-item" +
+                          (draftFilters.goal === x ? " active" : "")
+                        }
+                        onClick={() =>
+                          setDraftFilters((f) => ({
+                            ...f,
+                            goal: f.goal === x ? "" : x,
+                          }))
+                        }
+                      >
+                        {x}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer nút hành động */}
+              <div className="ex-filter-actions">
+                <button
+                  type="button"
+                  className="exf-clear"
+                  disabled={!hasAnySelection}
+                  onClick={handleClearFilters}
+                >
+                  Xóa tất cả dữ liệu lọc
+                </button>
+
+                <div className="exf-actions-right">
+                  <button
+                    type="button"
+                    className="exf-btn ghost"
+                    onClick={() => setFilterOpen(false)}
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    className="exf-btn primary"
+                    disabled={!hasAnySelection}
+                    onClick={handleApplyFilters}
+                  >
+                    Lọc dữ liệu
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ===== LIST ===== */}
+      <hr className="spl-line" />
+
+      <div className="spl-list-title">Danh sách lịch tập gợi ý</div>
+      <div className="spl-list-desc">Lưu lại lịch tập gợi ý phù hợp với mục tiêu của bạn</div>
+      {/* ===== LIST (GIỮ NGUYÊN) ===== */}
       <div className="spl-list-frame">
         {loading && (
           <div className="spl-empty">Đang tải lịch tập gợi ý...</div>
@@ -227,7 +392,6 @@ export default function SuggestPlanList() {
                 {/* Thông tin chính */}
                 <div className="spl-main">
                   <div className="spl-plan-title">
-                    {/* Chỉ hiển thị tên, KHÔNG thêm "Cơ bản - / Trung bình - / Nâng cao -" nữa */}
                     {p.name || "(Không tên)"}
                   </div>
                   <div className="spl-plan-note">
@@ -255,7 +419,6 @@ export default function SuggestPlanList() {
             );
           })}
 
-        {/* Nút "Xem tất cả" khi có hơn 20 lịch */}
         {!loading && !showAll && sortedItems.length > 20 && (
           <div className="more">
             <button type="button" onClick={() => setShowAll(true)}>

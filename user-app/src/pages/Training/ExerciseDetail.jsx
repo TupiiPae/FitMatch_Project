@@ -45,16 +45,16 @@ export default function ExerciseDetail() {
 
   return (
     <div className="nm-wrap">
-      <div className="nm-head" style={{ justifyContent: "space-between" }}>
+      <div className="nm-head" >
         <button type="button" className="tool-left" onClick={() => nav(-1)}>
           <i className="fa-solid fa-chevron-left"></i> Quay lại
         </button>
-        <div style={{ fontWeight: 600 }}>Chi tiết bài tập</div>
       </div>
 
-      <div className="nm-list-frame exd-frame">
-        <h1 className="exd-title">{it.name}</h1>
+      <hr className="exd-line" />
 
+      <div className="exd-frame">
+        <h1 className="exd-title">{it.name}</h1>
         {it.videoUrl && (
           <div className="exd-video">
             <div className="exd-video-box">
@@ -69,9 +69,8 @@ export default function ExerciseDetail() {
           </div>
         )}
 
-        <div className="exd-cols">
           {/* Hồ sơ bài tập */}
-          <div className="exd-left">
+          <div className="exd-profile">
             <div className="exdp-card">
               <div className="exdp-strip" />
               <div className="exdp-head">Tổng quan bài tập</div>
@@ -112,8 +111,8 @@ export default function ExerciseDetail() {
               <img src={toAbs(it.imageUrl)} alt={it.name} />
             </div>
           </div>
-        </div>
-        <div className="exd-cols">
+        
+        <div className="exd-desc">
           {guideHtml && (
             <section className="exd-section exd-centered">
               <h2>Hướng dẫn bài tập</h2>

@@ -131,8 +131,7 @@
 
 /* Khi đã có filter: bọc trong box đen + chữ trắng + badge số */
 .ex-filter-btn.has-active{
-  background:#111827;
-  border-color:#111827;
+  background:#008080;
 }
 
 .ex-filter-btn.has-active i,
@@ -171,8 +170,8 @@
   border:1px solid #e5e7eb;
   box-shadow:0 16px 40px rgba(15,23,42,.18);
   padding:16px 18px 14px;
-  min-width:720px;
-  max-width:900px;
+  min-width:820px;
+  max-width:1000px;
   z-index:30;
 }
 @media (max-width: 900px){
@@ -182,6 +181,21 @@
     min-width:0;
     width:min(100vw - 32px, 720px);
   }
+}
+.exl-list-frame {
+    border: 1px solid #002C3E55;
+  background: #fff;
+  border-radius: 4px;
+  padding: 20px;
+  margin-top: 0;
+  width: 100%;
+  max-width: 1700px;
+  margin-left: auto;
+  margin-right: auto;
+  max-height: 900px;        
+  overflow-y: auto;        
+  cursor: grab;        
+  scrollbar-width: none;
 }
 
 .ex-filter-cols{
@@ -226,8 +240,10 @@
   background:#f3f4f6;
 }
 .exf-item.active{
-  background:#f0f9ff;
-  color:#0b5066;
+  background:#78BCC4;
+  color:#fff;
+  border: 1px solid #002C3E55;
+  border-radius: 999px;
 }
 .exf-item.active::after{
   content:"✓";
@@ -274,9 +290,9 @@
 }
 .exf-btn.ghost{ background:#fff; }
 .exf-btn.primary{
-  background:#111827;
+  background:#008080;
   color:#fff;
-  border-color:#111827;
+  border-color:#002C3E;
 }
 .exf-btn:disabled{
   opacity:.4;

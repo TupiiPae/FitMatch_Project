@@ -97,7 +97,7 @@
 .tt-editor .tiptap ul ol,
 .tt-editor .tiptap ol ul,
 .tt-editor .tiptap ol ol {
-  margin-left: 24px; /* Đồng bộ với indent level 24px */
+  margin-left: 10px; /* Đồng bộ với indent level 24px */
 }
 .tt-editor .tiptap li {
   margin: 4px 0;
