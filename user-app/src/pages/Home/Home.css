@@ -1,7 +1,8 @@
 /* Container chính, đồng bộ 1700px với các trang khác */
 .home-container-fill {
     min-height: 100%;
-    margin: -140px -16px -40px -16px; /* Kéo rộng ra fill padding của layout cha */
+    margin-top: -16px;
+    margin-bottom: -150px;
 }
 
 /* Card chứa ảnh banner, đồng bộ style */
@@ -10,6 +11,7 @@
   /* Quan trọng: Cho phép ảnh fill */
   line-height: 0; /* Bỏ khoảng trống dưới ảnh */
   overflow: hidden; /* Đảm bảo ảnh bo góc */
+  border-bottom: 1px solid #9ca3af;
 }
 
 .home-image-banner img {

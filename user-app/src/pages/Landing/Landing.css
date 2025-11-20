@@ -1,140 +1,455 @@
 :root {
-  --fit-green: #45C39A;
-  --match-indigo: #3B4DA1;
-  --coral: #008080;
-  --muted: #94A3B8;
+  --fit-green: #45c39a;
+  --match-indigo: #3b4da1;
+  --coral: #ef4444;
+  --muted: #94a3b8;
+  --dark-bg: #020617;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 .lm-wrap {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-image: url("/images/landing-bg.jpg");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  position: relative;
+  background: var(--dark-bg);
+  color: #e2e8f0;
 }
 
-/* Header */
+/* HEADER */
+
 .lm-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 20px 500px; /* Đưa logo & nút vào trong */
-  position: relative;
-  z-index: 1;
+  justify-content: space-between;
+  padding: 18px 56px;
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 23, 42, 0.9),
+    rgba(15, 23, 42, 0.25),
+    transparent
+  );
+}
+
+.lm-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
 }
 
 .lm-logo-img {
-  height: 50px;          /* 👈 tuỳ kích thước thật của logo */
-  cursor: pointer;
+  height: 42px;
   object-fit: contain;
-  user-select: none;
 }
 
-/* --- CSS MỚI CHO NÚT ICON TRÒN --- */
-/* Thay thế cho .lm-login cũ */
-.lm-login-btn {
+.lm-header-login {
+  border-radius: 999px;
+  border: 1px solid rgba(248, 250, 252, 0.7);
   background: transparent;
-  border: 2px solid var(--coral); /* Viền tròn màu coral */
-  color: var(--coral); /* Màu của icon bên trong */
-  
-  /* Kích thước nút tròn */
-  width: 44px;
-  height: 44px;
-  border-radius: 50%; /* Bo tròn */
-  
-  /* Căn giữa icon bên trong */
+  color: #f9fafb;
+  padding: 8px 18px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lm-header-login:hover {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: #f9fafb;
+}
+
+/* HERO VIDEO */
+
+.lm-hero {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;      /* căn giữa theo chiều dọc */
+  justify-content: center;  /* căn giữa theo chiều ngang */
+}
+
+.lm-bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.lm-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+      120deg,
+      rgba(127, 29, 29, 0.75),
+      rgba(15, 23, 42, 0.92)
+    ),
+    radial-gradient(circle at top, rgba(248, 250, 252, 0.25), transparent 60%);
+  mix-blend-mode: multiply;
+  z-index: 1;
+}
+
+/* Toàn bộ content được căn giữa khối hero */
+
+.lm-hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 96px 24px 72px; /* giữ khoảng cho header nhưng vẫn center */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+  text-align: center;
+}
+
+.lm-hero-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.lm-hero-logo {
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.5));
+}
+
+.lm-hero-title {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+/* NOTE mới – 2 dòng */
+
+.lm-hero-slogan {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #FFF;
+  font-size: 54px;
+}
+
+
+/* BOXES */
+
+.lm-hero-boxes {
+  width: 100%;
+  max-width: 780px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 0.5fr));
+  gap: 24px;
+}
+
+.lm-box {
+  position: relative;
+  padding: 20px 22px 18px;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* hàng đầu: icon + title trên cùng một dòng */
+
+.lm-box-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lm-box-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
 }
 
-/* Thay thế cho .lm-login:hover cũ */
-.lm-login-btn:hover {
-  background: var(--coral); /* Nền đổi màu khi hover */
-  color: #fff; /* Icon đổi thành màu trắng */
-  transform: scale(1.05); /* Hiệu ứng phóng to nhẹ */
-}
-/* --- KẾT THÚC THAY ĐỔI CSS --- */
+.lm-box-icon svg {
+  color: #f9fafb;
 
-
-/* Hero — chỉ chứa nút */
-.lm-hero {
-  flex: 1;
-  display: flex;
-  justify-content: flex-start; /* mặc định trái */
-  align-items: center;
-  padding: 2rem;
 }
 
-/* Dời nút sang phải */
-.lm-cta {
-  margin-left: 38%; /* 👈 chỉnh khoảng cách sang phải tại đây */
-  margin-top: 10%;
-  background: var(--coral);
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  padding: 0.9rem 1.8rem;
+.lm-box-title {
   font-size: 1.05rem;
-  font-weight: 700;
-  cursor: pointer;
+  font-weight: 600;
+  color: #DA0B3E;
+  font-size: 24px;
+}
 
+.lm-box-text {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* nút auto-width theo chữ */
+
+.lm-box-btn {
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--coral);
+  color: #f9fafb;
+  box-shadow: 0 2px 10px rgba(248, 113, 113, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  align-self: flex-start; /* không kéo full chiều ngang box */
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transition: transform 0.1s ease, box-shadow 0.2s ease;
+  justify-content: center;
+  width: 100%;
 }
 
-.lm-cta:hover {
+.lm-box-btn-outline {
+  background: transparent;
+  border: 1px solid rgba(248, 250, 252, 0.8);
+  box-shadow: none;
+}
+
+.lm-box:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 55px rgba(15, 23, 42, 0.95);
+}
+
+.lm-box-login:hover {
+  border-color: var(--fit-green);
+}
+
+.lm-box-register:hover {
+  border-color: var(--coral);
+.lm-box:hover .lm-box-btn {
   transform: translateY(-1px);
+  box-shadow: 0 16px 40px rgba(248, 113, 113, 0.6);
+}
+}
+/* ========== NỘI DUNG PHÍA DƯỚI ========== */
 
+.lm-main {
+  background: radial-gradient(circle at top, #0f172a, #020617 55%);
+  color: #e2e8f0;
 }
 
-.lm-cta-arrow {
-  font-size: 18px;
+.lm-section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 24px;
 }
 
-/* Footer */
+.lm-section h2 {
+  font-size: 1.7rem;
+  margin-bottom: 16px;
+}
+
+.lm-section p {
+  font-size: 0.98rem;
+  color: #cbd5f5;
+}
+
+/* Intro */
+
+.lm-section-intro {
+  text-align: center;
+}
+
+.lm-section-intro p {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* Features */
+
+.lm-section-features {
+  text-align: center;
+}
+
+.lm-feature-grid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.lm-feature-card {
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  padding: 18px 16px 20px;
+  text-align: left;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.6);
+}
+
+.lm-feature-card h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.lm-feature-card p {
+  font-size: 0.9rem;
+  color: #cbd5f5;
+}
+
+/* Benefits */
+
+.lm-section-benefits {
+  text-align: center;
+}
+
+.lm-benefit-grid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.lm-benefit-card {
+  background: radial-gradient(circle at top left, #111827, #020617);
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+  padding: 18px 18px 22px;
+  text-align: left;
+}
+
+.lm-benefit-card h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+/* CTA cuối */
+
+.lm-section-cta {
+  display: flex;
+  justify-content: center;
+}
+
+.lm-cta-box {
+  width: 100%;
+  border-radius: 12px;
+  padding: 32px 24px;
+  background: linear-gradient(90deg, #b91c1c, #f97316);
+  color: #fefce8;
+  text-align: center;
+  box-shadow: 0 18px 45px rgba(127, 29, 29, 0.7);
+}
+
+.lm-cta-box h2 {
+  font-size: 1.6rem;
+  margin-bottom: 10px;
+}
+
+.lm-cta-box p {
+  max-width: 560px;
+  margin: 0 auto 18px;
+  font-size: 0.98rem;
+}
+
+.lm-cta-main {
+  border-radius: 999px;
+  border: none;
+  padding: 10px 26px;
+  font-size: 0.96rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f9fafb;
+  color: #b91c1c;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.lm-cta-main:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.7);
+}
+
+/* ========== FOOTER ========== */
+
 .lm-footer {
   text-align: center;
-  padding: 14px 10px 22px;
-  font-size: 12px;
+  padding: 18px 10px 26px;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .lm-cta {
-    margin-left: 0; /* căn giữa trên mobile */
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 1024px) {
+  .lm-header {
+    padding: 14px 20px;
   }
-  .lm-hero {
-    justify-content: center;
+
+  .lm-hero-content {
+    padding: 96px 18px 64px;
+  }
+
+  .lm-hero-slogan {
+    font-size: 1.4rem;
+  }
+
+  .lm-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lm-benefit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 768px) {
-  .lm-logo-img {
-    height: 36px;
+  .lm-hero {
+    min-height: 90vh;
   }
-  .lm-header {
-    padding: 14px 20px;
+
+  .lm-hero-content {
+    padding: 96px 16px 60px;
   }
-  
-  /* Cập nhật kích thước nút icon trên mobile */
-  .lm-login-btn {
-    width: 38px;
-    height: 38px;
+
+  .lm-hero-boxes {
+    grid-template-columns: 1fr;
   }
-  .lm-login-btn svg {
-     width: 18px;
-     height: 18px;
+
+  .lm-section {
+    padding: 60px 18px;
+  }
+
+  .lm-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lm-benefit-grid {
+    grid-template-columns: 1fr;
   }
 }

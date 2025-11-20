@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 
 const logoHref =
   (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") +
-  "images/logo-fitmatch.png";
+  "images/fm-logo-iconname.png";
 
 // Helpers (KHÔNG THAY ĐỔI)
 const fmtDate = (iso) => {
@@ -193,7 +193,7 @@ export default function Navbar({
               {/* DINH DƯỠNG (Mega-menu) */}
               <li className={`fm-menu__item has-dropdown ${isDinhDuongActive ? 'is-active-parent' : ''}`}>
                 <NavLink to="/dinh-duong/nhat-ky" className="fm-link">
-                  Dinh dưỡng <i className="fa-solid fa-chevron-down fm-caret"></i>
+                  Dinh dưỡng<i className="fa-solid fa-caret-down"></i>
                 </NavLink>
                 <button
                   className="fm-dd-toggle"
@@ -261,7 +261,7 @@ export default function Navbar({
               {/* TẬP LUYỆN (Mega-menu) */}
               <li className={`fm-menu__item has-dropdown ${isTapLuyenActive ? 'is-active-parent' : ''}`}>
                 <NavLink to="/tap-luyen/lich-cua-ban" className="fm-link">
-                  Tập luyện <i className="fa-solid fa-chevron-down fm-caret"></i>
+                  Tập luyện<i className="fa-solid fa-caret-down"></i>
                 </NavLink>
                 <button
                   className="fm-dd-toggle"

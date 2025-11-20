@@ -1,7 +1,13 @@
 // src/pages/Nutrition/DailyJournal.jsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-import { getDayLogs, deleteLog, getStreak, getWater, incWater } from "../../api/nutrition";
+import {
+  getDayLogs,
+  deleteLog,
+  getStreak,
+  getWater,
+  incWater,
+} from "../../api/nutrition";
 import "./DailyJournal.css";
 import { toast } from "react-toastify";
 import api from "../../lib/api";
@@ -11,8 +17,12 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
-// Import logic tìm kiếm và thêm món ăn
-import { searchFoods, addLog } from "../../api/foods";
+// Import logic thêm món ăn (dùng cho Edit)
+import { addLog } from "../../api/foods";
+
+// Modal tách riêng
+import SearchModal from "./components/SearchModal/SearchModal";
+import EditModal from "./components/EditModal/EditModal";
 
 const HOURS = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
 
@@ -29,25 +39,6 @@ const toAbs = (u) => {
 const PLACEHOLDER = "/images/food-placeholder.jpg";
 const round1 = (v) => Math.round(v * 10) / 10;
 const toNum = (v, def = 0) => (v == null || v === "" || isNaN(+v) ? def : +v);
-
-// Chuẩn hóa/định dạng ngày
-const fmtDisplay = (iso) => (iso ? dayjs(iso).format("DD/MM/YYYY") : "");
-const parseDisplayToISO = (str) => {
-  // Cho phép nhập dd/mm/yyyy
-  const m = String(str || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!m) return null;
-  const [_, dd, mm, yyyy] = m;
-  const iso = dayjs(`${yyyy}-${mm}-${dd}`, "YYYY-MM-DD", true);
-  return iso.isValid() ? iso.format("YYYY-MM-DD") : null;
-};
-
-// --- Helper tìm kiếm (từ RecordMeal) ---
-const vnNorm = (s) =>
-  String(s || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
 
 export default function DailyJournal() {
   const [date, setDate] = useState(() => dayjs().format("YYYY-MM-DD")); // ISO
@@ -80,7 +71,7 @@ export default function DailyJournal() {
   const [waterMl, setWaterMl] = useState(0);
   const [stepMl, setStepMl] = useState(100);
 
-  // === State cho Modal Thêm Món Ăn ===
+  // === State cho Modal Danh sách tìm kiếm (SearchModal) ===
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [selectedHour, setSelectedHour] = useState(null);
 
@@ -194,7 +185,7 @@ export default function DailyJournal() {
     setWaterMl(want);
   }
 
-  // === Modal Add ===
+  // === Modal Search (danh sách tìm kiếm + AddModal bên trong) ===
   const handleOpenAddModal = (hour) => {
     setSelectedHour(hour);
     setAddModalOpen(true);
@@ -208,7 +199,7 @@ export default function DailyJournal() {
     load();
   };
 
-  // ====== Popup CHỈNH LOG trên timeline ======
+  // ====== Modal CHỈNH LOG trên timeline (EditModal) ======
   const [showEdit, setShowEdit] = useState(false);
   const [editLog, setEditLog] = useState(null);
   const [editQty, setEditQty] = useState(1);
@@ -247,66 +238,64 @@ export default function DailyJournal() {
 
   return (
     <div className="dj-page">
-      {/* Banner full width */}
-      <div className="dj-banner">
-        <img
-          src="/images/dailyjournal-banner.png"
-          alt="Daily Journal"
-        />
-      </div>
-
       <div className="dj-wrap">
-        <div className="dj-container">
-          {/* Thanh bar nằm trên dj-grid */}
-          <div className="dj-bar">
-            <div className="left">
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  format="DD/MM/YYYY"
-                  value={date ? dayjs(date) : null}
-                  onChange={(newValue) => {
-                    const newDateString = newValue
-                      ? newValue.format("YYYY-MM-DD")
-                      : "";
-                    onTopDateHiddenChange({ target: { value: newDateString } });
-                  }}
-                  slotProps={{
-                    textField: {
-                      placeholder: "DD/MM/YYYY",
-                      style: { width: 150 },
-                      size: "small",
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-            </div>
-            <div className="week">
-              {weekDays.map((d, i) => (
-                <button
-                  key={i}
-                  className={`wbtn ${
-                    dayjs(date).isSame(d, "day") ? "on" : ""
-                  }`}
-                  onClick={() => setDate(d.format("YYYY-MM-DD"))}
-                >
-                  {["CN", "T2", "T3", "T4", "T5", "T6", "T7"][d.day()]}
-                </button>
-              ))}
-            </div>
+        <div className="dj-bar">
+          <div className="left">
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                format="DD/MM/YYYY"
+                value={date ? dayjs(date) : null}
+                onChange={(newValue) => {
+                  const newDateString = newValue
+                    ? newValue.format("YYYY-MM-DD")
+                    : "";
+                  onTopDateHiddenChange({ target: { value: newDateString } });
+                }}
+                slotProps={{
+                  textField: {
+                    placeholder: "DD/MM/YYYY",
+                    style: { width: 150 },
+                    size: "small",
+                  },
+                }}
+              />
+            </LocalizationProvider>
+          </div>
+          <div className="week">
+            {weekDays.map((d, i) => (
+              <button
+                key={i}
+                className={`wbtn ${
+                  dayjs(date).isSame(d, "day") ? "on" : ""
+                }`}
+                onClick={() => setDate(d.format("YYYY-MM-DD"))}
+              >
+                {["CN", "T2", "T3", "T4", "T5", "T6", "T7"][d.day()]}
+              </button>
+            ))}
+          </div>
+          <div className="right">
+            <i className={`fa-solid fa-fire ${hot ? "hot" : "cold"}`} />
+            <span className="streak-num">{streak}</span>
+          </div>
+        </div>
 
-            <div className="right">
-              <i className={`fa-solid fa-fire ${hot ? "hot" : "cold"}`} />
-              <span className="streak-num">{streak}</span>
+        <div className="dj-container">
+          {/* ===== HÀNG HEAD: 2/3 TRÁI (TITLE + DESC) ===== */}
+          <div className="dj-head">
+            <div className="dj-head-left">
+              <h1 className="dj-title">Nhật ký dinh dưỡng</h1>
+              <p className="dj-desc">
+                Tiếp tục theo dõi chế độ dinh dưỡng và lưu lại nhật ký dinh dưỡng
+              </p>
             </div>
           </div>
 
-          {/* GRID 2/3 : 1/3 */}
+          {/* ===== BODY: DƯỚI HEAD – 2/3 TRÁI dj-main, 1/3 PHẢI dj-side ===== */}
           <div className="dj-grid">
             {/* LEFT main (2/3) */}
             <div className="dj-main">
-              <div className="col-title">Nhật ký dinh dưỡng</div>
-
-              {/* Grid header */}
+              {/* Header nhỏ cho timeline */}
               <div className="dj-grid-header">
                 <div className="h-col-1">Thời gian</div>
                 <div className="h-col-2">Món ăn</div>
@@ -388,7 +377,7 @@ export default function DailyJournal() {
               </div>
             </div>
 
-            {/* RIGHT sidebar (1/3) */}
+            {/* RIGHT sidebar (1/3) – phía dưới dj-bar */}
             <div className="dj-side">
               {/* Macro panel */}
               <div className="panel macro">
@@ -607,9 +596,9 @@ export default function DailyJournal() {
         </div>
       </div>
 
-      {/* === MODAL THÊM MÓN ĂN === */}
+      {/* === MODAL DANH SÁCH TÌM KIẾM (SearchModal) === */}
       {isAddModalOpen && (
-        <FoodSearchModal
+        <SearchModal
           date={date}
           hour={selectedHour}
           onClose={handleCloseAddModal}
@@ -617,588 +606,21 @@ export default function DailyJournal() {
         />
       )}
 
-      {/* === MODAL CHỈNH LOG TRÊN TIMELINE === */}
+      {/* === MODAL CHỈNH LOG TRÊN TIMELINE (EditModal) === */}
       {showEdit && editLog && (
-        <div className="modal-backdrop" onClick={closeEditLog}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">
-              Chỉnh sửa món trong nhật ký
-              <button className="modal-close" onClick={closeEditLog}>
-                &times;
-              </button>
-            </h3>
-
-            {/* --- Ảnh và tên món --- */}
-            <div className="am-head">
-              <img
-                className="am-thumb2"
-                src={toAbs(editLog.food?.imageUrl) || PLACEHOLDER}
-                alt={editLog.food?.name || "food"}
-              />
-              <div className="am-info">
-                <div className="am-name">{editLog.food?.name}</div>
-                <div className="am-sub">
-                  {(editLog.food?.portionName || "Khẩu phần tiêu chuẩn")} ·{" "}
-                  {editLog.food?.massG ?? "-"} {editLog.food?.unit || "g"} ·{" "}
-                  {editLog.food?.kcal ?? "-"} cal
-                </div>
-              </div>
-            </div>
-
-            {/* --- Ngày + giờ --- */}
-            <div className="am-when">
-              <div className="am-when-item">
-                <i className="fa-regular fa-calendar" />
-                <div className="am-field">
-                  <label>Ngày</label>
-                  <input type="text" value={fmtDisplay(date)} readOnly />
-                </div>
-              </div>
-              <div className="am-when-item">
-                <i className="fa-regular fa-clock" />
-                <div className="am-field">
-                  <label>Thời gian</label>
-                  <select
-                    value={editHour}
-                    onChange={(e) => setEditHour(+e.target.value)}
-                  >
-                    {HOURS.map((h) => (
-                      <option key={h} value={h}>
-                        {h}:00
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* --- Số lượng khẩu phần --- */}
-            <div className="am-qtygrid">
-              <div className="am-qty">
-                <label>Số lượng khẩu phần</label>
-                <div className="am-qty-ctl">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditQty((q) =>
-                        Math.max(0.1, Math.round((q - 0.5) * 10) / 10)
-                      )
-                    }
-                  >
-                    –
-                  </button>
-                  <input
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    value={editQty}
-                    onChange={(e) =>
-                      setEditQty(Math.max(0.1, +e.target.value || 1))
-                    }
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditQty((q) =>
-                        Math.round((q + 0.5) * 10) / 10
-                      )
-                    }
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <div className="am-portion">
-                <label>Khẩu phần (g)</label>
-                <input
-                  type="text"
-                  value={
-                    editLog.food?.massG != null
-                      ? `${Math.round(editLog.food.massG * editQty)} g`
-                      : "-"
-                  }
-                  readOnly
-                  className="readonly"
-                />
-                <div className="am-note">
-                  * Khối lượng mặc định theo món
-                </div>
-              </div>
-            </div>
-
-            {/* --- Macro hiển thị theo số lượng --- */}
-            <div className="am-macros">
-              <div className="am-macro calo">
-                <div className="m-label">Calo</div>
-                <div className="m-val">
-                  {Math.round((editLog.food?.kcal || 0) * editQty)}{" "}
-                  <span>cal</span>
-                </div>
-              </div>
-              <div className="am-macro protein">
-                <div className="m-label">Đạm</div>
-                <div className="m-val">
-                  {Math.round(
-                    (editLog.food?.proteinG || 0) * editQty * 10
-                  ) / 10}{" "}
-                  <span>g</span>
-                </div>
-              </div>
-              <div className="am-macro carb">
-                <div className="m-label">Đường bột</div>
-                <div className="m-val">
-                  {Math.round(
-                    (editLog.food?.carbG || 0) * editQty * 10
-                  ) / 10}{" "}
-                  <span>g</span>
-                </div>
-              </div>
-              <div className="am-macro fat">
-                <div className="m-label">Béo</div>
-                <div className="m-val">
-                  {Math.round(
-                    (editLog.food?.fatG || 0) * editQty * 10
-                  ) / 10}{" "}
-                  <span>g</span>
-                </div>
-              </div>
-            </div>
-
-            {/* --- Nút hành động --- */}
-            <div className="am-actions">
-              <button className="btn ghost" onClick={closeEditLog}>
-                Đóng
-              </button>
-              <button className="btn primary" onClick={saveEditLog}>
-                Cập nhật
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditModal
+          open={showEdit}
+          date={date}
+          log={editLog}
+          quantity={editQty}
+          hour={editHour}
+          hoursOptions={HOURS}
+          onChangeQuantity={setEditQty}
+          onChangeHour={setEditHour}
+          onClose={closeEditLog}
+          onSave={saveEditLog}
+        />
       )}
-    </div>
-  );
-}
-
-// #####     COMPONENT MODAL TÌM KIẾM & THÊM MÓN ĂN               #####
-
-const HOUR_OPTIONS_MODAL = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
-
-function FoodSearchModal({ date: initialISO, hour: initialHour, onClose, onFoodAdded }) {
-  // === State của Tìm kiếm ===
-  const [q, setQ] = useState("");
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [skip, setSkip] = useState(0);
-  const [limit] = useState(20);
-  const [hasMore, setHasMore] = useState(false);
-  const searchTimer = useRef(null);
-
-  // === State của Modal "Thêm" ===
-  const [showAdd, setShowAdd] = useState(false);
-  const [addFood, setAddFood] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [dateISO, setDateISO] = useState(initialISO); // ISO
-  const [hour, setHour] = useState(initialHour);
-
-  // === Logic cho Date input (trong modal) ===
-  const onAddHiddenDateChange = (e) => {
-    const iso = e.target.value;
-    if (iso) setDateISO(iso);
-  };
-
-  // --- Logic Tìm kiếm ---
-  async function load(reset = false) {
-    setLoading(true);
-    try {
-      const params = {
-        q: q || undefined,
-        scope: "all",
-        limit,
-        skip: reset ? 0 : skip,
-      };
-      const { data } = await searchFoods(params);
-      const list = data?.items || [];
-      setHasMore(!!data?.hasMore);
-      setItems(reset ? list : [...items, ...list]);
-      setSkip(reset ? list.length : skip + list.length);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load(true);
-    // eslint-disable-next-line
-  }, []);
-
-  useEffect(() => {
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      load(true);
-    }, 300);
-    return () => clearTimeout(searchTimer.current);
-    // eslint-disable-next-line
-  }, [q]);
-
-  const filteredItems = useMemo(() => {
-    const key = vnNorm(q);
-    if (!key) return items;
-    return items.filter((it) => vnNorm(it.name).includes(key));
-  }, [items, q]);
-
-  // POPUP CHI TIẾT TRONG SEARCH
-  const [showDetail, setShowDetail] = useState(false);
-  const [detail, setDetail] = useState(null);
-  const openDetail = (it) => {
-    setDetail(it);
-    setShowDetail(true);
-  };
-  const closeDetail = () => {
-    setShowDetail(false);
-    setDetail(null);
-  };
-
-  // Mở modal Xác nhận thêm
-  async function openAdd(it) {
-    setAddFood(it);
-    setQuantity(1);
-    setShowAdd(true);
-  }
-
-  // Xác nhận thêm
-  async function confirmAdd() {
-    try {
-      await addLog({
-        foodId: addFood._id,
-        date: dateISO,
-        hour,
-        quantity,
-        massG: null,
-      });
-      setShowAdd(false);
-      onFoodAdded();
-      toast.success("Thêm vào nhật ký thành công");
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Thêm vào nhật ký thất bại");
-    }
-  }
-
-  const gStr = (x) => x ?? "-";
-  const f = addFood || {};
-  const qNum = Number(quantity || 1);
-  const fmt = (v) => (v == null ? "-" : Math.round(v * qNum * 10) / 10);
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        {/* Bước 1: Tìm kiếm */}
-        {!showAdd && (
-          <>
-            <h3 className="modal-title">
-              Thêm món ăn {fmtDisplay(dateISO)} lúc {hour}:00
-              <button className="modal-close" onClick={onClose}>
-                &times;
-              </button>
-            </h3>
-
-            <div className="modal-search-bar">
-              <i className="fa-solid fa-magnifying-glass" />
-              <input
-                placeholder="Tìm kiếm thực phẩm hoặc món ăn"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                autoFocus
-              />
-            </div>
-
-            <div className="modal-nm-list">
-              {filteredItems.map((it) => (
-                <div
-                  key={it._id}
-                  className="modal-nm-item"
-                  onClick={() => openDetail(it)}
-                >
-                  <img src={toAbs(it.imageUrl) || PLACEHOLDER} alt={it.name} />
-                  <div className="info">
-                    <div className="title">{it.name}</div>
-                    <div className="sub">
-                      {it.portionName || "Khẩu phần"} · {it.massG ?? "-"}{" "}
-                      {it.unit || "g"} · {it.kcal ?? "-"} cal
-                    </div>
-                    <div className="macro">
-                      <span className="protein">
-                        <i className="fa-solid fa-drumstick-bite"></i>{" "}
-                        {it.proteinG ?? "-"} g
-                      </span>
-                      <span className="carb">
-                        <i className="fa-solid fa-bread-slice"></i>{" "}
-                        {it.carbG ?? "-"} g
-                      </span>
-                      <span className="fat">
-                        <i className="fa-solid fa-bacon"></i>{" "}
-                        {it.fatG ?? "-"} g
-                      </span>
-                    </div>
-                  </div>
-                  <div className="act" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      className="add add-round"
-                      title="Thêm vào nhật ký"
-                      onClick={() => openAdd(it)}
-                    >
-                      <i className="fa-solid fa-plus"></i>
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {hasMore && (
-                <div className="modal-more">
-                  <button disabled={loading} onClick={() => load(false)}>
-                    {loading ? "Đang tải..." : "Xem thêm"}
-                  </button>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Modal Chi tiết món trong Tìm kiếm */}
-        {showDetail && detail && !showAdd && (
-          <div className="djd-detail-backdrop" onClick={closeDetail}>
-            <div
-              className="djd-detail-card djd--small"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="djd-detail-close"
-                onClick={closeDetail}
-                aria-label="Đóng"
-              >
-                ×
-              </button>
-
-              <div className="djd-detail-head">
-                <img
-                  className="djd-detail-thumb"
-                  src={toAbs(detail.imageUrl) || PLACEHOLDER}
-                  alt={detail.name}
-                />
-                <div className="djd-detail-titlebox">
-                  <h3 className="djd-detail-title">{detail.name}</h3>
-                  <div className="djd-detail-sub">
-                    {(detail.portionName || "Khẩu phần tiêu chuẩn")} ·{" "}
-                    {detail.massG ?? "-"} {detail.unit || "g"} ·{" "}
-                    {detail.kcal ?? "-"} cal
-                  </div>
-                  <div className="djd-detail-chips">
-                    <span className="djd-chip red">
-                      <i className="fa-solid fa-drumstick-bite"></i> Đạm{" "}
-                      {detail.proteinG ?? "-"}g
-                    </span>
-                    <span className="djd-chip purple">
-                      <i className="fa-solid fa-bread-slice"></i> Carb{" "}
-                      {detail.carbG ?? "-"}g
-                    </span>
-                    <span className="djd-chip green">
-                      <i className="fa-solid fa-bacon"></i> Béo{" "}
-                      {detail.fatG ?? "-"}g
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="djd-detail-grid">
-                <div className="djd-detail-kv">
-                  <div>
-                    <span>Khối lượng</span>
-                    <b>
-                      {detail.massG ?? "-"} {detail.unit || "g"}
-                    </b>
-                  </div>
-                  <div>
-                    <span>Calo</span>
-                    <b>{detail.kcal ?? "-"} cal</b>
-                  </div>
-                  <div>
-                    <span>Đạm</span>
-                    <b>{detail.proteinG ?? "-"} g</b>
-                  </div>
-                  <div>
-                    <span>Đường bột</span>
-                    <b>{detail.carbG ?? "-"} g</b>
-                  </div>
-                </div>
-                <div className="djd-detail-kv">
-                  <div>
-                    <span>Chất béo</span>
-                    <b>{detail.fatG ?? "-"} g</b>
-                  </div>
-                  <div>
-                    <span>Muối (NaCl)</span>
-                    <b>{detail.saltG ?? "-"} g</b>
-                  </div>
-                  <div>
-                    <span>Đường</span>
-                    <b>{detail.sugarG ?? "-"} g</b>
-                  </div>
-                  <div>
-                    <span>Chất xơ</span>
-                    <b>{detail.fiberG ?? "-"} g</b>
-                  </div>
-                </div>
-              </div>
-
-              {detail.sourceType && (
-                <div className="djd-detail-note">
-                  <span className="badge">{detail.sourceType}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Bước 2: Xác nhận thêm */}
-        {showAdd && addFood && (
-          <>
-            <div className="am-head">
-              <button className="am-back" onClick={() => setShowAdd(false)}>
-                <i className="fa-solid fa-arrow-left" /> Quay lại
-              </button>
-              <div className="am-thumb-wrap">
-                <img
-                  className="am-thumb"
-                  src={toAbs(addFood?.imageUrl) || PLACEHOLDER}
-                  alt={addFood?.name || "food"}
-                />
-              </div>
-              <div className="am-hmeta">
-                <h3 className="am-title">Thêm vào nhật ký</h3>
-                <div className="am-sub">{addFood?.name}</div>
-              </div>
-            </div>
-
-            <div className="am-when">
-              <div className="am-when-item">
-                <i className="fa-regular fa-calendar" />
-
-                <div className="am-field">
-                  <label>Ngày</label>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      format="DD/MM/YYYY"
-                      value={dateISO ? dayjs(dateISO) : null}
-                      onChange={(newValue) => {
-                        const newDateString = newValue
-                          ? newValue.format("YYYY-MM-DD")
-                          : "";
-                        onAddHiddenDateChange({ target: { value: newDateString } });
-                      }}
-                      slotProps={{
-                        textField: {
-                          placeholder: "DD/MM/YYYY",
-                          style: { width: 170 },
-                          size: "small",
-                        },
-                      }}
-                    />
-                  </LocalizationProvider>
-                </div>
-              </div>
-              <div className="am-when-item">
-                <i className="fa-regular fa-clock" />
-                <div className="am-field">
-                  <label>Thời gian</label>
-                  <select value={hour} onChange={(e) => setHour(+e.target.value)}>
-                    {HOUR_OPTIONS_MODAL.map((h) => (
-                      <option key={h} value={h}>{`${h}:00`}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="am-qtygrid">
-              <div className="am-qty">
-                <label>Số lượng khẩu phần</label>
-                <div className="am-qty-ctl">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setQuantity((q) => Math.max(0.1, round1((q || 1) - 0.5)))
-                    }
-                  >
-                    –
-                  </button>
-                  <input
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    value={quantity}
-                    onChange={(e) =>
-                      setQuantity(Math.max(0.1, +e.target.value || 1))
-                    }
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setQuantity((q) => round1((q || 1) + 0.5))
-                    }
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <div className="am-portion">
-                <label>Khẩu phần (g)</label>
-                <input
-                  type="text"
-                  value={addFood?.massG != null ? `${addFood.massG} g` : "-"}
-                  readOnly
-                  className="readonly"
-                />
-                <div className="am-note">* Khối lượng mặc định theo món</div>
-              </div>
-            </div>
-
-            <div className="am-macros">
-              <div className="am-macro calo">
-                <div className="m-label">Calo</div>
-                <div className="m-val">
-                  {fmt(f.kcal)} <span>cal</span>
-                </div>
-              </div>
-              <div className="am-macro protein">
-                <div className="m-label">Đạm</div>
-                <div className="m-val">
-                  {fmt(f.proteinG)} <span>g</span>
-                </div>
-              </div>
-              <div className="am-macro carb">
-                <div className="m-label">Đường bột</div>
-                <div className="m-val">
-                  {fmt(f.carbG)} <span>g</span>
-                </div>
-              </div>
-              <div className="am-macro fat">
-                <div className="m-label">Béo</div>
-                <div className="m-val">
-                  {fmt(f.fatG)} <span>g</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="am-actions">
-              <button className="btn ghost" onClick={onClose}>
-                Hủy
-              </button>
-              <button className="btn primary" onClick={confirmAdd}>
-                Xác nhận thêm
-              </button>
-            </div>
-          </>
-        )}
-      </div>
     </div>
   );
 }

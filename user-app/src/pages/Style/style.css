@@ -1,7 +1,6 @@
 :root{
-  --auth-primary: #008080;      /* teal chủ đạo (giữ lại nếu cần đổi brand) */
-  --auth-primary-2: #78BCC4;    /* teal nhạt blend */
-  --auth-blue: #78BCC4;         /* màu nút theo yêu cầu */
+  --auth-primary: #1F4068;      /* teal chủ đạo (giữ lại nếu cần đổi brand) */
+  --auth-primary-2: #ef4444;    /* teal nhạt blend */
   --auth-bg1: rgba(0,0,0,.25);  /* overlay tối nhẹ */
   --auth-radius: 4px;
   --auth-card-w: 980px;
@@ -21,7 +20,7 @@
   content:"";
   position:fixed; inset:0;
   background-position: center;
-  background: url("/images/bg-fitmatch.png") center/cover no-repeat;
+  background: url("/images/login-bg.png") center/cover no-repeat;
   filter: blur(8px) brightness(.92);
   transform: scale(1.03);
 }
@@ -80,7 +79,7 @@
 /* Primary: nền #1A73E8, chữ trắng, không shadow */
 .auth-container .btn-primary,
 .auth-container .material-btn{            /* map material-btn sang primary */
-  background: #008080;
+  background: #ef4444;
   color:#fff;
   padding: 8px 140px;
   border-radius: 4px;
@@ -131,7 +130,7 @@
 
 /* ===== Form ===== */
 .auth-form{
-  background:#fff;
+  background:#f9fafb;
   display:flex; align-items:center; justify-content:center; flex-direction:column;
   padding: 0 30px;
   height:100%;

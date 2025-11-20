@@ -12,12 +12,9 @@ import api from "../../lib/api";
 import "./RecordMeal.css";
 import { toast } from "react-toastify";
 
-// === THÊM MỚI: Imports cho MUI Date Picker ===
-import dayjs from "dayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { useColorScheme } from "@mui/material/styles";
+// ==== NEW: modal components dùng chung ====
+import DetailModal from "./components/DetailModal/DetailModal";
+import AddModal from "./components/AddModal/AddModal";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => {
@@ -29,7 +26,6 @@ const toAbs = (u) => {
   }
 };
 
-const HOUR_OPTIONS = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
 const statusLabel = (s) =>
   s === "approved" ? "Thành công" : s === "rejected" ? "Từ chối" : "Đang duyệt";
 
@@ -56,22 +52,23 @@ export default function RecordMeal() {
   // Số lượng item hiển thị trên UI
   const [visibleCount, setVisibleCount] = useState(30);
 
-  // popups
+  // VIEW MODE: list / grid
+  const [viewMode, setViewMode] = useState("list");
+
+  // popups thêm nhật ký
   const [showAdd, setShowAdd] = useState(false);
   const [addFood, setAddFood] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [massG, setMassG] = useState("");
-  const [date, setDate] = useState(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [hour, setHour] = useState(12);
 
+  // popup xem chi tiết
   const [showDetail, setShowDetail] = useState(false);
   const [detail, setDetail] = useState(null);
 
   // overlays
   const [menuId, setMenuId] = useState(null);
-  const [filterOpen, setFilterOpen] = useState(false);
   const headRef = useRef(null);
 
   // Drag-to-scroll cho nm-list-frame
@@ -167,9 +164,7 @@ export default function RecordMeal() {
       setShowAdd(false);
       toast.success("Thêm vào nhật ký thành công");
     } catch (err) {
-      toast.error(
-        err?.response?.data?.message || "Thêm vào nhật ký thất bại"
-      );
+      toast.error(err?.response?.data?.message || "Thêm vào nhật ký thất bại");
     }
   }
 
@@ -180,20 +175,19 @@ export default function RecordMeal() {
     viewFood(it._id).catch(() => {});
   }
 
-  // click outside: đóng dropdown & menu
+  // click outside: đóng menu 3 chấm
   useEffect(() => {
     const onDocClick = (e) => {
-      if (!headRef.current || !headRef.current.contains(e.target))
-        setFilterOpen(false);
-      setMenuId(null);
+      if (!headRef.current) return;
+      if (!headRef.current.contains(e.target)) {
+        setMenuId(null);
+      }
     };
     document.addEventListener("click", onDocClick);
     return () => document.removeEventListener("click", onDocClick);
   }, []);
 
-  const onDeleteFood = async (id) => {};
-  const onEditFood = (id) =>
-    nav(`/dinh-duong/ghi-lai/sua-mon/${id}`);
+  const onEditFood = (id) => nav(`/dinh-duong/ghi-lai/sua-mon/${id}`);
 
   const [confirmDel, setConfirmDel] = useState({
     open: false,
@@ -226,8 +220,7 @@ export default function RecordMeal() {
       setRejectInfo({
         name: data?.name || it.name || "",
         reason:
-          (data?.rejectionReason || "").trim() ||
-          "Admin chưa cung cấp lý do.",
+          (data?.rejectionReason || "").trim() || "Admin chưa cung cấp lý do."
       });
       setShowReject(true);
     } catch {
@@ -253,8 +246,7 @@ export default function RecordMeal() {
     }
   };
 
-  const canShowMore =
-    filteredItems.length > visibleCount || hasMore;
+  const canShowMore = filteredItems.length > visibleCount || hasMore;
 
   // Drag-to-scroll handlers cho nm-list-frame
   const handleListMouseDown = (e) => {
@@ -283,30 +275,31 @@ export default function RecordMeal() {
     if (el) el.classList.remove("dragging");
   };
 
+  const handleTabAll = () => {
+    setOnlyMine(false);
+    setFavorites(false);
+  };
+  const handleTabMine = () => {
+    setOnlyMine(true);
+    setFavorites(false);
+  };
+  const handleTabFav = () => {
+    setOnlyMine(false);
+    setFavorites(true);
+  };
+
   return (
     <div className="nm-wrap">
+      {/* ===== HEADER: Title + desc + search + tabs + view toggle ===== */}
       <div
         className="nm-head"
         ref={headRef}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ===== PHẦN 1: BÊN TRÁI ===== */}
-        <div className="search">
-          <i className="fa-solid fa-magnifying-glass"></i>
-          <input
-            placeholder="Tìm kiếm thực phẩm hoặc món ăn"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-
-        {/* ===== PHẦN 2: Ở GIỮA ===== */}
-        <div className="nm-head-center">
+        <div className="nm-head-btn">
           <button
             className="scan"
-            onClick={() =>
-              nav("/dinh-duong/ghi-lai/tinh-calo-ai")
-            }
+            onClick={() => nav("/dinh-duong/ghi-lai/tinh-calo-ai")}
           >
             <i className="fa-brands fa-openai"></i>&nbsp;
             <span>Tính toán Calo với AI</span>
@@ -314,9 +307,7 @@ export default function RecordMeal() {
 
           <button
             className="rm-create-btn"
-            onClick={() =>
-              nav("/dinh-duong/ghi-lai/tao-mon")
-            }
+            onClick={() => nav("/dinh-duong/ghi-lai/tao-mon")}
           >
             <i className="fa-brands fa-openai"></i>&nbsp;
             <span>Tạo món ăn với AI</span>
@@ -324,62 +315,83 @@ export default function RecordMeal() {
 
           <button
             className="rm-create-btn"
-            onClick={() =>
-              nav("/dinh-duong/ghi-lai/tao-mon")
-            }
+            onClick={() => nav("/dinh-duong/ghi-lai/tao-mon")}
           >
             <span>Tạo món ăn</span>
           </button>
         </div>
 
-        <div
-          className={`filter ${filterOpen ? "open" : ""}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            className="rm-filter"
-            aria-expanded={filterOpen}
-            onClick={() => setFilterOpen((v) => !v)}
-          >
-            <div className="rm-title">
-              <i className="fa-solid fa-filter"></i>
-              <span> Lọc</span>
-            </div>
-          </button>
+        <hr className="rm-line" />
 
-          {filterOpen && (
-            <div className="filter-dd">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={onlyMine}
-                  onChange={(e) =>
-                    setOnlyMine(e.target.checked)
-                  }
-                />
-                Tạo bởi tôi
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={favorites}
-                  onChange={(e) =>
-                    setFavorites(e.target.checked)
-                  }
-                />
-                Yêu thích
-              </label>
+        <div className="nm-head-top">
+          <div className="nm-head-text">
+            <div className="nm-list-title">Thư viện món ăn</div>
+            <div className="nm-list-desc">
+              Khám phá và quản lý các bữa ăn yêu thích của bạn
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* Toolbar chứa Search - Filter - View */}
+        <div className="nm-toolbar">
+          {/* 1. Thanh tìm kiếm */}
+          <div className="search">
+            <i className="fa-solid fa-magnifying-glass"></i>
+            <input
+              placeholder="Tìm kiếm món ăn theo tên..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+
+          {/* 2. Box chứa 3 Tab lọc */}
+          <div className="rm-tabs">
+            <button
+              type="button"
+              className={`rm-tab ${!onlyMine && !favorites ? "on" : ""}`}
+              onClick={handleTabAll}
+            >
+              Tất cả
+            </button>
+            <button
+              type="button"
+              className={`rm-tab ${onlyMine && !favorites ? "on" : ""}`}
+              onClick={handleTabMine}
+            >
+              Món của tôi
+            </button>
+            <button
+              type="button"
+              className={`rm-tab ${favorites ? "on" : ""}`}
+              onClick={handleTabFav}
+            >
+              Yêu thích
+            </button>
+          </div>
+
+          {/* 3. Box chứa 2 Tab view */}
+          <div className="rm-view-toggle">
+            <button
+              type="button"
+              className={`view-btn ${viewMode === "grid" ? "on" : ""}`}
+              onClick={() => setViewMode("grid")}
+              title="Hiển thị dạng lưới"
+            >
+              <i className="fa-solid fa-table-cells-large"></i>
+            </button>
+            <button
+              type="button"
+              className={`view-btn ${viewMode === "list" ? "on" : ""}`}
+              onClick={() => setViewMode("list")}
+              title="Hiển thị dạng danh sách"
+            >
+              <i className="fa-solid fa-list"></i>
+            </button>
+          </div>
         </div>
       </div>
 
-      <hr className="rm-line" />
-
-      {/* ===== LIST ===== */}
-      <div className="nm-list-title">Danh sách thực phẩm</div>
-      <div className="nm-list-desc">Tìm kiếm và chọn thực phẩm để ghi vào nhật ký dinh dưỡng của bạn</div>
+      {/* ===== LIST / GRID ===== */}
       <div
         className="nm-list-frame"
         ref={listFrameRef}
@@ -388,488 +400,279 @@ export default function RecordMeal() {
         onMouseUp={handleListMouseUpOrLeave}
         onMouseLeave={handleListMouseUpOrLeave}
       >
-        <div className="nm-list">
-          {visibleItems.map((it) => (
-            <div
-              key={it._id}
-              className="nm-item"
-              onClick={() => openDetail(it)}
-            >
-              <img
-                src={
-                  toAbs(it.imageUrl) ||
-                  "/images/food-placeholder.jpg"
-                }
-                alt={it.name}
-              />
-              <div className="info">
-                <div className="title">{it.name}</div>
-                <div className="sub">
-                  {it.portionName || "Khẩu phần tiêu chuẩn"} ·{" "}
-                  {it.massG ?? "-"} {it.unit || "g"} ·{" "}
-                  {kcalStr(it.kcal)} cal
-                </div>
-                <div className="macro">
-                  <span className="protein">
-                    <i className="fa-solid fa-drumstick-bite"></i>{" "}
-                    {gStr(it.proteinG)} g
-                  </span>
-                  <span className="carb">
-                    <i className="fa-solid fa-bread-slice"></i>{" "}
-                    {gStr(it.carbG)} g
-                  </span>
-                  <span className="fat">
-                    <i className="fa-solid fa-bacon"></i>{" "}
-                    {gStr(it.fatG)} g
-                  </span>
-                </div>
-              </div>
-
+        <div
+          className={`nm-list ${
+            viewMode === "grid" ? "is-grid" : "is-list"
+          }`}
+        >
+          {visibleItems.map((it) =>
+            viewMode === "list" ? (
               <div
-                className="act"
-                onClick={(e) => e.stopPropagation()}
+                key={it._id}
+                className="nm-item"
+                onClick={() => openDetail(it)}
               >
-                {onlyMine &&
-                  (it.status === "rejected" ? (
-                    <button
-                      type="button"
-                      className={`status-pill ${it.status}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openRejectReason(it);
-                      }}
-                      title="Xem lý do từ chối"
-                    >
-                      {statusLabel(it.status)}
-                    </button>
-                  ) : (
-                    <span
-                      className={`status-pill ${
-                        it.status || "pending"
-                      }`}
-                    >
-                      {statusLabel(it.status)}
-                    </span>
-                  ))}
-
-                <button
-                  className={`heart ${
-                    it.isFavorite ? "on" : ""
-                  }`}
-                  aria-pressed={!!it.isFavorite}
-                  title={
-                    it.isFavorite
-                      ? "Bỏ yêu thích"
-                      : "Thêm vào yêu thích"
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onFav(it._id);
-                  }}
-                >
-                  <i
-                    className={`${
-                      it.isFavorite
-                        ? "fa-solid"
-                        : "fa-regular"
-                    } fa-heart`}
-                  ></i>
-                </button>
-
-                <button
-                  className="add add-round"
-                  title="Thêm vào nhật ký"
-                  onClick={() => openAdd(it)}
-                >
-                  <i className="fa-solid fa-plus"></i>
-                </button>
-
-                {onlyMine && (
-                  <div className="more-wrap">
-                    <button
-                      className="more-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuId(
-                          menuId === it._id ? null : it._id
-                        );
-                      }}
-                    >
-                      <i className="fa-solid fa-ellipsis-vertical"></i>
-                    </button>
-                    {menuId === it._id && (
-                      <div
-                        className="menu"
-                        onClick={(e) =>
-                          e.stopPropagation()
-                        }
-                      >
-                        <button
-                          className="menu-item danger"
-                          onClick={() =>
-                            openConfirmDelete(it)
-                          }
-                        >
-                          Xóa
-                        </button>
-                        <button
-                          className="menu-item"
-                          onClick={() =>
-                            onEditFood(it._id)
-                          }
-                        >
-                          Chỉnh sửa
-                        </button>
-                      </div>
-                    )}
+                <img
+                  src={toAbs(it.imageUrl) || "/images/food-placeholder.jpg"}
+                  alt={it.name}
+                />
+                <div className="info">
+                  <div className="title">{it.name}</div>
+                  <div className="sub">
+                    {it.portionName || "Khẩu phần tiêu chuẩn"} ·{" "}
+                    {it.massG ?? "-"} {it.unit || "g"} ·{" "}
+                    {kcalStr(it.kcal)} cal
                   </div>
-                )}
+                  <div className="macro">
+                    <span className="protein">
+                      <i className="fa-solid fa-drumstick-bite"></i>{" "}
+                      {gStr(it.proteinG)} g
+                    </span>
+                    <span className="carb">
+                      <i className="fa-solid fa-bread-slice"></i>{" "}
+                      {gStr(it.carbG)} g
+                    </span>
+                    <span className="fat">
+                      <i className="fa-solid fa-bacon"></i>{" "}
+                      {gStr(it.fatG)} g
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  className="act"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {onlyMine &&
+                    (it.status === "rejected" ? (
+                      <button
+                        type="button"
+                        className={`status-pill ${it.status}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRejectReason(it);
+                        }}
+                        title="Xem lý do từ chối"
+                      >
+                        {statusLabel(it.status)}
+                      </button>
+                    ) : (
+                      <span
+                        className={`status-pill ${
+                          it.status || "pending"
+                        }`}
+                      >
+                        {statusLabel(it.status)}
+                      </span>
+                    ))}
+
+                  <button
+                    className={`heart ${it.isFavorite ? "on" : ""}`}
+                    aria-pressed={!!it.isFavorite}
+                    title={
+                      it.isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onFav(it._id);
+                    }}
+                  >
+                    <i
+                      className={`${
+                        it.isFavorite ? "fa-solid" : "fa-regular"
+                      } fa-heart`}
+                    ></i>
+                  </button>
+
+                  <button
+                    className="add add-round"
+                    title="Thêm vào nhật ký"
+                    onClick={() => openAdd(it)}
+                  >
+                    <i className="fa-solid fa-plus"></i>
+                  </button>
+
+                  {onlyMine && (
+                    <div className="more-wrap">
+                      <button
+                        className="more-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuId(menuId === it._id ? null : it._id);
+                        }}
+                      >
+                        <i className="fa-solid fa-ellipsis-vertical"></i>
+                      </button>
+                      {menuId === it._id && (
+                        <div
+                          className="menu"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            className="menu-item danger"
+                            onClick={() => openConfirmDelete(it)}
+                          >
+                            Xóa
+                          </button>
+                          <button
+                            className="menu-item"
+                            onClick={() => onEditFood(it._id)}
+                          >
+                            Chỉnh sửa
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ) : (
+              // ===== GRID CARD =====
+              <div
+                key={it._id}
+                className="nm-card"
+                onClick={() => openDetail(it)}
+              >
+                <div className="nm-card-thumb">
+                  <img
+                    src={toAbs(it.imageUrl) || "/images/food-placeholder.jpg"}
+                    alt={it.name}
+                  />
+                  <div
+                    className="nm-card-cta"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      className={`heart ${it.isFavorite ? "on" : ""}`}
+                      aria-pressed={!!it.isFavorite}
+                      title={
+                        it.isFavorite
+                          ? "Bỏ yêu thích"
+                          : "Thêm vào yêu thích"
+                      }
+                      onClick={() => onFav(it._id)}
+                    >
+                      <i
+                        className={`${
+                          it.isFavorite ? "fa-solid" : "fa-regular"
+                        } fa-heart`}
+                      ></i>
+                    </button>
+                    <button
+                      className="add add-round"
+                      title="Thêm vào nhật ký"
+                      onClick={() => openAdd(it)}
+                    >
+                      <i className="fa-solid fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+                <div className="nm-card-body">
+                  <div className="nm-card-title-row">
+                    <div className="title">{it.name}</div>
+                    {onlyMine &&
+                      (it.status === "rejected" ? (
+                        <button
+                          type="button"
+                          className={`status-pill ${it.status}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openRejectReason(it);
+                          }}
+                          title="Xem lý do từ chối"
+                        >
+                          {statusLabel(it.status)}
+                        </button>
+                      ) : (
+                        <span
+                          className={`status-pill ${
+                            it.status || "pending"
+                          }`}
+                        >
+                          {statusLabel(it.status)}
+                        </span>
+                      ))}
+                  </div>
+                  <div className="nm-card-macroline">
+                    {kcalStr(it.kcal)} kcal | {gStr(it.proteinG)}g Protein |{" "}
+                    {gStr(it.carbG)}g Carb | {gStr(it.fatG)}g Fat
+                  </div>
+                  {onlyMine && (
+                    <div
+                      className="nm-card-menu-row"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="more-wrap">
+                        <button
+                          className="more-btn"
+                          onClick={() =>
+                            setMenuId(menuId === it._id ? null : it._id)
+                          }
+                        >
+                          <i className="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                        {menuId === it._id && (
+                          <div
+                            className="menu"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              className="menu-item danger"
+                              onClick={() => openConfirmDelete(it)}
+                            >
+                              Xóa
+                            </button>
+                            <button
+                              className="menu-item"
+                              onClick={() => onEditFood(it._id)}
+                            >
+                              Chỉnh sửa
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          )}
         </div>
 
         {canShowMore && (
           <div className="more">
-            <button
-              disabled={loading}
-              onClick={handleShowMore}
-            >
+            <button disabled={loading} onClick={handleShowMore}>
               {loading ? "Đang tải..." : "Xem thêm"}
             </button>
           </div>
         )}
-
-        {/* ====== ADD MODAL ====== */}
-        {showAdd && (
-          <div
-            className="modal"
-            onClick={() => setShowAdd(false)}
-          >
-            <div
-              className="modal-card add-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="am-head">
-                <div className="am-thumb-wrap">
-                  <img
-                    className="am-thumb"
-                    src={
-                      toAbs(addFood?.imageUrl) ||
-                      "/images/food-placeholder.jpg"
-                    }
-                    alt={addFood?.name || "food"}
-                  />
-                </div>
-                <div className="am-hmeta">
-                  <h3 className="am-title">
-                    Thêm vào nhật ký
-                  </h3>
-                  <div className="am-sub">
-                    {addFood?.name}
-                  </div>
-                </div>
-              </div>
-
-              <div className="am-when">
-                <div className="am-when-item">
-                  <i className="fa-regular fa-calendar"></i>
-                  <div className="am-field">
-                    <label>Ngày</label>
-                    <LocalizationProvider
-                      dateAdapter={AdapterDayjs}
-                    >
-                      <DatePicker
-                        format="DD/MM/YYYY"
-                        value={date ? dayjs(date) : null}
-                        onChange={(newValue) => {
-                          const newDateString = newValue
-                            ? newValue.format(
-                                "YYYY-MM-DD"
-                              )
-                            : "";
-                          setDate(newDateString);
-                        }}
-                        slotProps={{
-                          textField: {
-                            placeholder: "DD/MM/YYYY",
-                            style: { width: 170 },
-                            size: "small"
-                          }
-                        }}
-                      />
-                    </LocalizationProvider>
-                  </div>
-                </div>
-
-                <div className="am-when-item">
-                  <i className="fa-regular fa-clock"></i>
-                  <div className="am-field">
-                    <label>Thời gian</label>
-                    <select
-                      value={hour}
-                      onChange={(e) =>
-                        setHour(+e.target.value)
-                      }
-                    >
-                      {HOUR_OPTIONS.map((h) => (
-                        <option key={h} value={h}>
-                          {`${h}:00`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="am-qtygrid">
-                <div className="am-qty">
-                  <label>Số lượng khẩu phần</label>
-                  <div className="am-qty-ctl">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setQuantity((q) =>
-                          Math.max(
-                            1,
-                            Math.round((q || 1) - 1)
-                          )
-                        )
-                      }
-                    >
-                      –
-                    </button>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={quantity}
-                      onChange={(e) =>
-                        setQuantity(
-                          Math.max(
-                            1,
-                            Math.round(
-                              +e.target.value || 1
-                            )
-                          )
-                        )
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setQuantity((q) =>
-                          Math.max(
-                            1,
-                            Math.round((q || 1) + 1)
-                          )
-                        )
-                      }
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="am-portion">
-                  <label>Khẩu phần (g)</label>
-                  <input
-                    type="text"
-                    value={
-                      addFood?.massG != null
-                        ? `${addFood.massG} g`
-                        : "-"
-                    }
-                    readOnly
-                    className="readonly"
-                  />
-                  <div className="am-note">
-                    * Khối lượng mặc định theo món, không
-                    thể chỉnh
-                  </div>
-                </div>
-              </div>
-
-              {(() => {
-                const qNum = Number(quantity || 1);
-                const f = addFood || {};
-                const fmt = (v) =>
-                  v == null
-                    ? "-"
-                    : Math.round(v * qNum * 10) / 10;
-                return (
-                  <div className="am-macros">
-                    <div className="am-macro calo">
-                      <div className="m-label">
-                        Calo
-                      </div>
-                      <div className="m-val">
-                        {fmt(f.kcal)} <span>cal</span>
-                      </div>
-                    </div>
-                    <div className="am-macro protein">
-                      <div className="m-label">
-                        Đạm
-                      </div>
-                      <div className="m-val">
-                        {fmt(f.proteinG)} <span>g</span>
-                      </div>
-                    </div>
-                    <div className="am-macro carb">
-                      <div className="m-label">
-                        Đường bột
-                      </div>
-                      <div className="m-val">
-                        {fmt(f.carbG)} <span>g</span>
-                      </div>
-                    </div>
-                    <div className="am-macro fat">
-                      <div className="m-label">
-                        Béo
-                      </div>
-                      <div className="m-val">
-                        {fmt(f.fatG)} <span>g</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              <div className="am-actions">
-                <button
-                  className="btn ghost"
-                  onClick={() => setShowAdd(false)}
-                >
-                  Hủy
-                </button>
-                <button
-                  className="btn primary"
-                  onClick={confirmAdd}
-                >
-                  Thêm
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ====== DETAIL MODAL ====== */}
-        {showDetail && !!detail && (
-          <div
-            className="modal"
-            onClick={() => setShowDetail(false)}
-          >
-            <div
-              className="modal-card food-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="fm-head">
-                <img
-                  className="fm-thumb"
-                  src={
-                    toAbs(detail.imageUrl) ||
-                    "/images/food-placeholder.jpg"
-                  }
-                  alt={detail.name}
-                />
-                <div className="fm-titlebox">
-                  <h3 className="fm-title">
-                    {detail.name}
-                  </h3>
-                  <div className="fm-sub">
-                    {(detail.portionName ||
-                      "Khẩu phần tiêu chuẩn")}{" "}
-                    · {detail.massG ?? "-"}{" "}
-                    {detail.unit || "g"} ·{" "}
-                    {detail.kcal ?? "-"} cal
-                  </div>
-                  <div className="fm-chips">
-                    <span className="chip chip-red">
-                      <i className="fa-solid fa-drumstick-bite"></i>{" "}
-                      Đạm {detail.proteinG ?? "-"}g
-                    </span>
-                    <span className="chip chip-purple">
-                      <i className="fa-solid fa-bread-slice"></i>{" "}
-                      Carb {detail.carbG ?? "-"}g
-                    </span>
-                    <span className="chip chip-green">
-                      <i className="fa-solid fa-bacon"></i>{" "}
-                      Béo {detail.fatG ?? "-"}g
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="fm-grid">
-                <div className="fm-kv">
-                  <div>
-                    <span>Khối lượng</span>
-                    <b>
-                      {detail.massG ?? "-"}{" "}
-                      {detail.unit || "g"}
-                    </b>
-                  </div>
-                  <div>
-                    <span>Calo</span>
-                    <b>{detail.kcal ?? "-"} cal</b>
-                  </div>
-                  <div>
-                    <span>Đạm</span>
-                    <b>{detail.proteinG ?? "-"} g</b>
-                  </div>
-                  <div>
-                    <span>Đường bột</span>
-                    <b>{detail.carbG ?? "-"} g</b>
-                  </div>
-                </div>
-
-                <div className="fm-kv">
-                  <div>
-                    <span>Chất béo</span>
-                    <b>{detail.fatG ?? "-"} g</b>
-                  </div>
-                  <div>
-                    <span>Muối (NaCl)</span>
-                    <b>{detail.saltG ?? "-"} g</b>
-                  </div>
-                  <div>
-                    <span>Đường</span>
-                    <b>{detail.sugarG ?? "-"} g</b>
-                  </div>
-                  <div>
-                    <span>Chất xơ</span>
-                    <b>{detail.fiberG ?? "-"} g</b>
-                  </div>
-                </div>
-              </div>
-
-              <div className="fm-note">
-                <span className="badge">
-                  {detail.sourceType || "khác"}
-                </span>
-              </div>
-
-              <div className="fm-actions">
-                <button
-                  className="btn ghost"
-                  onClick={() => setShowDetail(false)}
-                >
-                  Đóng
-                </button>
-                <button
-                  className="btn primary"
-                  onClick={() => {
-                    setShowDetail(false);
-                    openAdd(detail);
-                  }}
-                >
-                  Thêm vào nhật ký
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* ====== ADD MODAL (dùng chung) ====== */}
+      <AddModal
+        open={showAdd}
+        food={addFood}
+        date={date}
+        hour={hour}
+        quantity={quantity}
+        massG={massG}
+        onChangeDate={setDate}
+        onChangeHour={setHour}
+        onChangeQuantity={setQuantity}
+        onClose={() => setShowAdd(false)}
+        onConfirm={confirmAdd}
+      />
+
+      {/* ====== DETAIL MODAL (dùng chung) ====== */}
+      <DetailModal
+        open={showDetail}
+        food={detail}
+        onClose={() => setShowDetail(false)}
+        onAddToLog={(food) => {
+          setShowDetail(false);
+          openAdd(food);
+        }}
+      />
 
       {/* ====== REJECT REASON MODAL ====== */}
       {showReject && (
@@ -894,19 +697,13 @@ export default function RecordMeal() {
             </div>
             <div className="ur-body">
               <div className="ur-row">
-                <span className="ur-label">
-                  Món ăn:
-                </span>
-                <b className="ur-val">
-                  {rejectInfo.name}
-                </b>
+                <span className="ur-label">Món ăn:</span>
+                <b className="ur-val">{rejectInfo.name}</b>
               </div>
               <div className="ur-row">
                 <span className="ur-label">Lý do:</span>
               </div>
-              <div className="ur-reason">
-                {rejectInfo.reason}
-              </div>
+              <div className="ur-reason">{rejectInfo.reason}</div>
             </div>
             <div className="ur-foot">
               <button
@@ -922,10 +719,7 @@ export default function RecordMeal() {
 
       {/* ====== CONFIRM DELETE MODAL ====== */}
       {confirmDel.open && (
-        <div
-          className="modal"
-          onClick={closeConfirmDelete}
-        >
+        <div className="modal" onClick={closeConfirmDelete}>
           <div
             className="modal-card confirm-modal"
             onClick={(e) => e.stopPropagation()}
@@ -935,28 +729,22 @@ export default function RecordMeal() {
           >
             <div className="cm-head">
               <div className="cm-icon">
-                <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                <i
+                  className="fa-solid fa-triangle-exclamation"
+                  aria-hidden="true"
+                ></i>
               </div>
-              <h3 id="confirm-del-title">
-                Xóa món ăn?
-              </h3>
+              <h3 id="confirm-del-title">Xóa món ăn?</h3>
             </div>
             <div className="cm-body">
-              Bạn chắc chắn muốn xóa{" "}
-              <b>{confirmDel.name}</b>?<br />
+              Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?<br />
               Thao tác này không thể hoàn tác.
             </div>
             <div className="cm-foot">
-              <button
-                className="btn ghost"
-                onClick={closeConfirmDelete}
-              >
+              <button className="btn ghost" onClick={closeConfirmDelete}>
                 Hủy
               </button>
-              <button
-                className="btn bad"
-                onClick={confirmDeleteNow}
-              >
+              <button className="btn bad" onClick={confirmDeleteNow}>
                 Xóa
               </button>
             </div>

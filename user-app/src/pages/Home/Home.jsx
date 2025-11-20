@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import './Home.css';
 
-const helloImg = (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") + "images/hello-user.png";
+const helloImg = (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") + "images/home-bg.png";
 
 export default function Home() {
   return (

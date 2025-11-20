@@ -1,0 +1,231 @@
+// src/pages/Nutrition/components/EditModal/EditModal.jsx
+import React from "react";
+import dayjs from "dayjs";
+import api from "../../../../lib/api";
+import "../AddModal/AddModal.css";
+
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
+const toAbs = (u) => {
+  if (!u) return u;
+  try {
+    return new URL(u, API_ORIGIN).toString();
+  } catch {
+    return u;
+  }
+};
+
+const fmtDisplay = (iso) => (iso ? dayjs(iso).format("DD/MM/YYYY") : "");
+
+/**
+ * Modal chỉnh log trên timeline (sửa giờ, số khẩu phần)
+ * Giao diện giống AddModal, chỉ khác text & callback
+ */
+export default function EditModal({
+  open,
+  date,
+  log,
+  quantity,
+  hour,
+  hoursOptions,
+  onChangeQuantity,
+  onChangeHour,
+  onClose,
+  onSave,
+}) {
+  if (!open || !log) return null;
+
+  const q = Number(quantity || 1);
+  const food = log.food || {};
+
+  // Macros theo số lượng
+  const fmt = (v) =>
+    v == null ? "-" : Math.round(v * q * 10) / 10;
+
+  // Khối lượng khẩu phần theo số lượng
+  let massText = "-";
+  if (food.massG != null && food.massG !== "") {
+    const base = Number(food.massG);
+    if (!Number.isNaN(base)) {
+      massText = `${Math.round(base * q)} g`;
+    }
+  }
+
+  const handleDecQty = () => {
+    onChangeQuantity(Math.max(0.1, Math.round((q - 0.5) * 10) / 10));
+  };
+
+  const handleIncQty = () => {
+    onChangeQuantity(Math.round((q + 0.5) * 10) / 10);
+  };
+
+  return (
+    <div className="add-modal-backdrop" onClick={onClose}>
+      <div
+        className="add-modal-card add-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* HEADER: Ảnh + tên món + nút X (giống AddModal) */}
+        <div className="am-head">
+          <div className="am-thumb-wrap">
+            <img
+              className="am-thumb"
+              src={
+                log.foodAbs ||
+                toAbs(food.imageUrl) ||
+                "/images/food-placeholder.jpg"
+              }
+              alt={food.name || "food"}
+            />
+
+            <button className="am-close-btn" onClick={onClose}>
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+
+            <div className="am-hmeta">
+              <h3 className="am-food-name">{food.name}</h3>
+            </div>
+          </div>
+        </div>
+
+        {/* BODY SCROLLABLE (giống AddModal layout) */}
+        <div className="am-body">
+          {/* Ngày / giờ */}
+          <div className="am-when">
+            <div className="am-when-item">
+
+              <div className="am-field">
+                <label>Ngày <i className="fa-regular fa-calendar"></i></label>
+                {/* Ngày chỉ hiển thị, không cho sửa */}
+                <input
+                  type="text"
+                  className="am-input readonly"
+                  value={fmtDisplay(date)}
+                  readOnly
+                />
+              </div>
+            </div>
+
+            <div className="am-when-item">
+              <div className="am-field">
+                <label>Giờ <i className="fa-regular fa-clock"></i></label>
+                <select
+                  value={hour}
+                  onChange={(e) => onChangeHour(+e.target.value)}
+                >
+                  {hoursOptions.map((h) => (
+                    <option key={h} value={h}>
+                      {`${h}:00`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Khối lượng khẩu phần */}
+          <div className="am-portion-block">
+            <label>Khối lượng khẩu phần (g)</label>
+            <input
+              type="text"
+              value={massText}
+              readOnly
+              className="am-input readonly"
+            />
+            <div className="am-note">
+              Khối lượng mặc định theo món, tự động thay đổi theo số lượng
+            </div>
+          </div>
+
+          {/* Số lượng khẩu phần */}
+          <div className="am-qty-block">
+            <div className="am-qty-label-row">
+              <div className="am-qty-icon">
+                <i className="fa-solid fa-utensils"></i>
+              </div>
+              <div className="am-qty-text">
+                <div className="am-qty-title">Số lượng</div>
+                <div className="am-qty-sub">(khẩu phần)</div>
+              </div>
+            </div>
+
+            <div className="am-qty-ctl">
+              <button type="button" onClick={handleDecQty}>
+                –
+              </button>
+              <input
+                type="number"
+                min="0.1"
+                step="0.1"
+                value={quantity}
+                onChange={(e) =>
+                  onChangeQuantity(Math.max(0.1, +e.target.value || 1))
+                }
+              />
+              <button type="button" onClick={handleIncQty}>
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Giá trị dinh dưỡng */}
+          <div className="am-macro-section">
+            <div className="am-macro-title">
+              Giá trị dinh dưỡng <span>(ước tính)</span>
+            </div>
+            <div className="am-macro-box">
+              <div className="am-macro-row calories">
+                <span className="lbl">Calories</span>
+                <span className="val">
+                  {fmt(food.kcal)} kcal
+                </span>
+              </div>
+              <div className="am-macro-row">
+                <span className="lbl">Protein</span>
+                <span className="val">
+                  {fmt(food.proteinG)} g
+                </span>
+              </div>
+              <div className="am-macro-row">
+                <span className="lbl">Carbs</span>
+                <span className="val">
+                  {fmt(food.carbG)} g
+                </span>
+              </div>
+              <div className="am-macro-row">
+                <span className="lbl">Fat</span>
+                <span className="val">
+                  {fmt(food.fatG)} g
+                </span>
+              </div>
+              <div className="am-macro-row">
+                <span className="lbl">Salt</span>
+                <span className="val">
+                  {fmt(food.saltG)} g
+                </span>
+              </div>
+              <div className="am-macro-row">
+                <span className="lbl">Sugar</span>
+                <span className="val">
+                  {fmt(food.sugarG)} g
+                </span>
+              </div>
+              <div className="am-macro-row">
+                <span className="lbl">Fiber</span>
+                <span className="val">
+                  {fmt(food.fiberG)} g
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Nút CTA đáy – đỏ full width */}
+        <div className="am-actions">
+          <button className="am-submit-btn" onClick={onSave}>
+            Cập nhật món ăn
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

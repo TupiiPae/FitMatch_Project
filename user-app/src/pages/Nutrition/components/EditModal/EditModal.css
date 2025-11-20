@@ -1,0 +1,241 @@
+/* ===== EDIT MODAL (DailyJournal timeline) ===== */
+
+.dj-edit-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.dj-edit-modal {
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dj-edit-title {
+  font-size: 18px;
+  font-weight: 600;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dj-edit-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  font-weight: 300;
+  color: #888;
+  cursor: pointer;
+}
+
+/* Header món ăn */
+.dj-edit-head {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #eee;
+}
+.dj-edit-thumb {
+  width: 90px;
+  height: 90px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+}
+.dj-edit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dj-edit-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+}
+.dj-edit-sub {
+  font-size: 13px;
+  color: #666;
+}
+
+/* Ngày + giờ */
+.dj-edit-when {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px 20px;
+}
+.dj-edit-when-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dj-edit-when-item i {
+  font-size: 18px;
+  color: #666;
+}
+.dj-edit-field {
+  flex-grow: 1;
+}
+.dj-edit-field label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+.dj-edit-field input,
+.dj-edit-field select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 14px;
+}
+
+/* Số lượng / khẩu phần */
+.dj-edit-qtygrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 0 20px 16px;
+  background: #fdfdfd;
+}
+.dj-edit-qty label,
+.dj-edit-portion label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+.dj-edit-qty-ctl {
+  display: flex;
+}
+.dj-edit-qty-ctl button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  font-size: 20px;
+  cursor: pointer;
+}
+.dj-edit-qty-ctl button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+.dj-edit-qty-ctl button:last-child {
+  border-radius: 0 4px 4px 0;
+}
+.dj-edit-qty-ctl input {
+  width: 60px;
+  height: 38px;
+  border: 1px solid #ccc;
+  border-left: 0;
+  border-right: 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+}
+.dj-edit-readonly {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0 8px;
+  background: #f5f5f5;
+  color: #777;
+}
+.dj-edit-note {
+  font-size: 11px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* Macros */
+.dj-edit-macros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: #eee;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  padding: 1px 0;
+}
+.dj-edit-macro {
+  text-align: center;
+  padding: 8px;
+  background: #fff;
+}
+.dj-edit-macro .m-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 2px;
+}
+.dj-edit-macro .m-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+.dj-edit-macro .m-val span {
+  font-size: 12px;
+  font-weight: 400;
+  color: #777;
+}
+.dj-edit-macro.calo .m-val {
+  color: #1a73e8;
+}
+.dj-edit-macro.protein .m-val {
+  color: #ff4602;
+}
+.dj-edit-macro.carb .m-val {
+  color: #6c63ff;
+}
+.dj-edit-macro.fat .m-val {
+  color: #a1a100;
+}
+
+/* Actions */
+.dj-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  background: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+/* Button style chung cho modal */
+.btn.ghost {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn.primary {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #008080;
+  color: #fff;
+}
+.btn.primary:hover {
+  background: #78bcc4;
+}
