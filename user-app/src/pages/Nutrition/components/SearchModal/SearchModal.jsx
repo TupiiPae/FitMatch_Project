@@ -143,12 +143,12 @@ export default function SearchModal({ date: initialISO, hour: initialHour, onClo
         {/* Bước 1: Tìm kiếm */}
         {!showAdd && (
           <>
-            <h3 className="dj-search-title">
+            <div className="dj-search-title">
               Thêm món ăn {fmtDisplay(dateISO)} lúc {hour}:00
               <button className="dj-search-close" onClick={onClose}>
                 &times;
               </button>
-            </h3>
+            </div>
 
             <div className="dj-search-bar">
               <i className="fa-solid fa-magnifying-glass" />

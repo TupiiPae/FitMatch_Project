@@ -1,149 +1,198 @@
-.exd-line {
-  border:0; border-top:1px solid #002C3E55; margin: 10px -28px 0 -28px; 
-}
 
-.exd-frame{ margin: 0 -28px -30px -28px; background-color: #fff;}
-.exd-title{ 
-  max-width: 1700px;
-  margin-left: 250px;
-  margin-right: auto;
-  padding-top: 20px;
-  color: #002C3E;
-  font-size: 50px;
-  font-weight: 800;
-}
-
-/* ===== VIDEO (tuỳ chỉnh kích thước) =====
-   Đổi kích thước bằng: style={{'--exd-video-w':'680px'}} trên .exd-video  */
-.exd-video{
-  --exd-video-w: 1400px;       /* chiều rộng tối đa mặc định */
-  --exd-video-ratio: 16/9;    /* tỉ lệ video */
-  display:flex; justify-content:center;
-  margin:30px 0 16px;
-}
-.exd-video-box{
-  width: min(var(--exd-video-w), 100%);
-  aspect-ratio: var(--exd-video-ratio);
-  background:#0b0f19;
-  border-radius:4px;
-  overflow:hidden;
-}
-.exd-video-box video{ width:100%; height:100%; display:block; }
-
-/* ===== 2 CỘT (chia đôi) ===== */
-.exd-cols{ display:grid; grid-template-columns:2fr 1fr; gap:30px; padding: 30px 135px 0 135px;}
-@media (max-width: 980px){ .exd-cols{ grid-template-columns: 1fr; } }
-
-.exd-profile{
-  width: 1000px;
+.exd-inner {
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 30px 0 50px 0;
-}
-.exdp-card{
-  --exdp-blue: #008080;       
-  background: #f6f7f9;       
-  border: 2px solid #002C3E55;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: none;       
-  cursor: pointer; 
-}
-.exdp-card:hover{
-  transform: translateY(-10px);
 }
 
-.exdp-strip{
-  height: 6px;                /* thanh xanh trên */
-  background: var(--exdp-blue);
+/* Loading / error */
+
+.exd-state {
+  padding: 40px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
 }
 
-.exdp-head{
-  font-weight: 800;
-  font-size: 24px;
-  letter-spacing: .01em;
-  color: #002C3E;
-  padding: 14px 18px 10px 18px;
-  background: #f4f6ea;
-  text-transform: uppercase;
+.exd-error {
+  color: #f97373;
 }
 
-.exdp-table{
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;         /* kế thừa nền card */
-}
+/* ===== BACK BUTTON ===== */
 
-.exdp-table th,
-.exdp-table td{
-  padding: 22px 22px;
-  border-bottom: 1px solid #002C3E55;  /* đường kẻ nhạt giữa các hàng */
-  vertical-align: middle;
-  font-size: 20px;
-}
-
-.exdp-table tr:last-child th,
-.exdp-table tr:last-child td{
-  border-bottom: 0;
-}
-
-.exdp-table th{
-  width: 38%;
-  font-weight: 600;
-  color: #008080;            /* xám nhãn */
-}
-
-.exdp-table td{
-  color: #111827;            /* giá trị */
-  font-weight: 500;
-}
-
-.exdp-link{
-  color: var(--exdp-blue);   /* giống dòng “Chest” màu xanh trong ảnh */
-  font-weight: 600;
-}
-
-
-.exd-img{
-  --exd-img-w: 600px;
-  display: flex;
-  justify-content: center;
+.exd-back {
+  border: none;
+  background: transparent;
+  display: inline-flex;
   align-items: center;
-  padding-bottom: 50px;
+  gap: 6px;
+  font-size: 14px;
+  color: #e5e7eb;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 18px;
 }
 
-.exd-img img{
-  width: min(var(--exd-img-w), 100%);
-  height: auto;
-  object-fit: contain;
+.exd-back i {
+  font-size: 12px;
 }
 
-/* ===== SECTION “Hướng dẫn/Mô tả” ===== */
-.exd-centered{
-  width: 1000px;
-  text-align: left;     /* nội dung canh trái */
-  border-radius: 4px;
-  margin: 0 auto;
-  padding-bottom: 50px;
-  background-color: #fff;
+.exd-back:hover {
+  color: #ffffff;
 }
 
-.exd-section h2{ margin:0 0 8px 0; font-size: 28px; font-weight: 800;   letter-spacing: .01em;   color: #002C3E;   text-transform: uppercase;}
-.exd-html :where(p,li){ line-height:1.7; font-size: 22px; color: #111827;}
-.exd-html img{ max-width:100%; height:auto; border-radius:6px; }
+/* ===== MAIN LAYOUT 2/3 - 1/3 ===== */
 
-/* Loading */
-.exd-wrap{ padding:24px; }
-.exd-loading{ color:#64748b; }
+.exd-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(320px, 1fr);
+  gap: 28px;
+  align-items: flex-start;
+}
 
-/* Khối HTML render từ editor */
+@media (max-width: 1024px) {
+  .exd-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== LEFT SIDE ===== */
+
+.exd-left {
+  min-width: 0;
+}
+
+/* Video */
+
+.exd-video-wrap {
+  overflow: hidden;
+  background: #020617;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+.exd-video-box {
+  position: relative;
+  width: 100%;
+  padding-top: calc(9 / 16 * 100%);
+}
+
+.exd-video-box video,
+.exd-video-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Title */
+
+.exd-title {
+  margin: 18px 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #f9fafb;
+}
+
+/* Tags (nhóm cơ) */
+
+.exd-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.exd-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid #4b5563;
+  color: #e5e7eb;
+  background: #111827;
+}
+
+.exd-tag-main {
+  border-color: #ef4444;
+  background: #1f2937;
+  color: #fecaca;
+}
+
+.exd-tag-sub {
+  opacity: 0.9;
+}
+
+/* Tabs */
+
+.exd-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #27272f;
+}
+
+.exd-tab {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 0 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.exd-tab.active {
+  color: #f9fafb;
+}
+
+.exd-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 40px;
+  height: 2px;
+  border-radius: 999px;
+  background: #f00519;
+}
+
+/* Tab content — KHÔNG còn box */
+
+.exd-tab-panel {
+  margin-top: 18px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+}
+
+.exd-empty {
+  margin: 0;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* Rich HTML */
+
+.exd-html p,
+.exd-html li {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #e5e7eb;
+}
+
+.exd-html p + p {
+  margin-top: 8px;
+}
+
 .exd-html ol,
 .exd-html ul {
-  /* ép hiển thị list lại nếu bị reset */
   list-style-position: outside;
   margin: 8px 0;
   padding-left: 1.25rem;
-  font-size: 22px;
-  color: #111827;
 }
 
 .exd-html ol {
@@ -155,12 +204,300 @@
 }
 
 .exd-html li {
-  margin: 5px 0;
+  margin: 4px 0;
 }
 
-/* (tuỳ chọn) hỗ trợ list lồng nhau đẹp hơn */
-.exd-html ol ol { list-style-type: lower-alpha !important; }
-.exd-html ol ul { list-style-type: disc !important; }
-.exd-html ul ul { list-style-type: circle !important; }
-.exd-html ul ol { list-style-type: decimal !important; }
+.exd-html ol ol {
+  list-style-type: lower-alpha !important;
+}
 
+.exd-html ol ul {
+  list-style-type: disc !important;
+}
+
+.exd-html ul ul {
+  list-style-type: circle !important;
+}
+
+.exd-html ul ol {
+  list-style-type: decimal !important;
+}
+
+/* ===== MUSCLE CARD ===== */
+
+.exd-muscle-card {
+  margin-top: 24px;
+  padding: 18px 18px 20px;
+  border-radius: 4px;
+  background: #0b0b0f;
+  border: 1px solid #27272f;
+}
+
+.exd-muscle-title {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.exd-muscle-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr);
+  gap: 18px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .exd-muscle-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.exd-muscle-left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exd-muscle-img-frame {
+  padding: 6px;
+  border-radius: 8px;
+  background: radial-gradient(circle at top, #f00519 0, #0b0b0f 45%);
+}
+
+.exd-muscle-img-frame img {
+  display: block;
+  width: 340px;          /* to hơn so với bản trước */
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Right text */
+
+.exd-muscle-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+
+.exd-muscle-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exd-muscle-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.exd-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.exd-dot-main {
+  background: #f00519;
+}
+
+.exd-dot-sub {
+  background: #6b7280;
+}
+
+.exd-muscle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exd-muscle-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+  gap: 30px;
+}
+.exd-muscle-label-primary{
+  font-size: 18px;
+  font-weight: 500;
+  color: #fff;
+  gap: 30px;
+}
+.exd-muscle-label-primary span{
+  color: #d30016;
+
+}
+
+
+
+/* ===== RIGHT SIDE ===== */
+
+.exd-right {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  .exd-right {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+  }
+}
+
+/* Summary card */
+
+.exd-summary-card {
+  padding: 18px 18px 20px;
+  border-radius: 4px;
+  background: #0b0b0f;
+  border: 1px solid #27272f;
+}
+
+.exd-summary-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.exd-summary-sub {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.exd-summary-sub span {
+  color: #fff;
+  font-weight: 500;
+}
+
+.exd-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.exd-summary-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 10px 0;
+  border-bottom: 1px solid #1f2937;
+}
+
+.exd-summary-item:last-child {
+  border-bottom: none;
+}
+
+.exd-summary-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111827;
+  color: #fff;
+  font-size: 24px;
+}
+
+.exd-summary-icon.met {
+  color: #f20d0d;
+}
+
+.exd-summary-icon.type {
+  color: #f20d0d;
+}
+
+.exd-summary-icon.level {
+  color: #f20d0d;
+}
+
+.exd-summary-icon.equip {
+  color: #f20d0d;
+}
+
+.exd-summary-text .label {
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.exd-summary-text .value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+}
+
+/* ===== Các bài tập khác ===== */
+
+.exd-related {
+  padding: 16px 18px 18px;
+  border-radius: 4px;
+  background: #0b0b0f;
+  border: 1px solid #27272f;
+}
+
+.exd-related-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exd-related-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 8px;
+  background: #1e1e1e;
+  border: 4px solid #1f2937;
+  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
+  cursor: pointer;
+}
+
+.exd-related-item:hover {
+  border:1px solid #f00519;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(240, 5, 25, 0.15);
+}
+
+.exd-related-thumb img {
+  display: block;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.exd-related-meta .title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.exd-related-meta .sub {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.exd-related-arrow {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.exd-related-empty {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+}

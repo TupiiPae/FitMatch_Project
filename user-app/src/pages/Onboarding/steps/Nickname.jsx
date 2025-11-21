@@ -223,25 +223,46 @@ export default function Nickname() {
 
             <div className="nk-col nk-dob">
               <div className="nk-group-title">Ngày sinh</div>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  format="DD/MM/YYYY"
-                  value={ngaySinh ? dayjs(ngaySinh) : null}
-                  onChange={(newValue) => {
-                    setNgaySinh(newValue ? newValue.format("YYYY-MM-DD") : "");
-                  }}
-                  maxDate={dayjs(new Date())}
-                  disabled={loading}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      className: "nk-input-large",
-                      error: !!errDOB,
-                      helperText: errDOB || "", // không chừa khoảng trống
-                    },
-                  }}
-                />
-              </LocalizationProvider>
+<LocalizationProvider dateAdapter={AdapterDayjs}>
+  <DatePicker
+    format="DD/MM/YYYY"
+    value={ngaySinh ? dayjs(ngaySinh) : null}
+    onChange={(newValue) => {
+      setNgaySinh(newValue ? newValue.format("YYYY-MM-DD") : "");
+    }}
+    maxDate={dayjs(new Date())}
+    disabled={loading}
+    slotProps={{
+      textField: {
+        fullWidth: true,
+        // vẫn có thể giữ className nếu bạn muốn reuse CSS khác
+        className: "nk-input-large",
+        error: !!errDOB,
+        helperText: errDOB || "",
+        sx: {
+          "& .MuiOutlinedInput-root": {
+            height: 52,
+            borderRadius: 2,
+            backgroundColor: "#ffffff",
+            "& fieldset": {
+              borderColor: "#008080",
+            },
+            "&:hover fieldset": {
+              borderColor: "#008080",
+            },
+            "&.Mui-focused fieldset": {
+              borderColor: "#008080",
+              boxShadow: "0 0 0 3px rgba(0,128,128,0.16)",
+            },
+          },
+          "& .MuiInputBase-input": {
+            fontSize: 16,
+          },
+        },
+      },
+    }}
+  />
+</LocalizationProvider>
               {tuoi !== null && !errDOB && (
                 <div className="nk-hint">
                   Tuổi của bạn: <b>{tuoi}</b>

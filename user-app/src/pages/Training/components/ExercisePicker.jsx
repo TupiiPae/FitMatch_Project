@@ -130,9 +130,9 @@ export default function ExercisePicker({
 
               {/* Right: Profile table (rút gọn từ ExerciseDetail) */}
               <div className="epd-right">
-                <h3 className="epd-title">{detail.name}</h3>
+                <div className="epd-title">{detail.name}</div>
                 <div className="epd-sub">
-                  {TYPE_VI[detail.type] || detail.type || "—"} · {detail.level || "—"}
+                  #{TYPE_VI[detail.type] || detail.type || "—"}
                 </div>
 
                 <table className="epd-table">
@@ -144,6 +144,10 @@ export default function ExercisePicker({
                     <tr>
                       <th>Nhóm cơ phụ</th>
                       <td>{(detail.secondaryMuscles || []).join(", ") || "—"}</td>
+                    </tr>
+                    <tr>
+                      <th>Mức độ</th>
+                      <td>{detail.level || "—"}</td>
                     </tr>
                     <tr>
                       <th>Dụng cụ</th>

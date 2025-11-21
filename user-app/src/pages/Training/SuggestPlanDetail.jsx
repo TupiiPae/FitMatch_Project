@@ -73,18 +73,9 @@ export default function SuggestPlanDetail() {
     return (
       <div className="spd-wrap">
         <div className="spd-inner">
-          {/* Head giống ExerciseDetail */}
-          <div className="nm-head" style={{ justifyContent: "space-between" }}>
-            <button
-              type="button"
-              className="tool-left"
-              onClick={() => nav(-1)}
-            >
-              <i className="fa-solid fa-chevron-left" /> Quay lại
-            </button>
-            <div style={{ fontWeight: 700 }}>Chi tiết lịch tập gợi ý</div>
-          </div>
-
+          <button type="button" className="spd-back" onClick={() => nav(-1)}>
+            <i className="fa-solid fa-chevron-left" /> <span>Quay lại</span>
+          </button>
           <div className="spd-topcard">
             <div className="spd-loading">Đang tải lịch tập gợi ý...</div>
           </div>
@@ -110,16 +101,9 @@ export default function SuggestPlanDetail() {
     <div className="spd-wrap">
       <div className="spd-inner">
         {/* HEAD giống ExerciseDetail */}
-        <div className="nm-head" style={{ justifyContent: "space-between" }}>
-          <button
-            type="button"
-            className="tool-left"
-            onClick={() => nav(-1)}
-          >
-            <i className="fa-solid fa-chevron-left" /> Quay lại
-          </button>
-          <div style={{ fontWeight: 600 }}>Chi tiết lịch tập gợi ý</div>
-        </div>
+        <button type="button" className="spd-back" onClick={() => nav(-1)}>
+          <i className="fa-solid fa-arrow-left-long"></i><span>Quay lại</span>
+        </button>
 
         {/* ===== FRAME 1 ===== */}
         <div className="spd-topcard">

@@ -31,7 +31,7 @@
   height: 40px;
   display: flex;
   align-items: center;
-  border-radius: 8px;
+  border-radius: 4px;
   color: #fff;
   background-color: #f00519;
   padding: 0 10px;
@@ -46,7 +46,7 @@
   height: 40px;
   display: flex;
   align-items: center;
-  border-radius: 8px;
+  border-radius: 4px;
   color: #fff;
   background-color: #f00519;
   padding: 0 10px;
@@ -89,6 +89,7 @@
   font-size: 34px;
   font-weight: 700;
   padding-top: 30px;
+  margin-top: 10px;
 }
 
 .nm-list-desc {
@@ -118,24 +119,23 @@
   background-color: #d30016;
 }
 
-
 .nm-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px; 
+  gap: 12px;
   width: 100%;
 }
 
-.search, 
-.rm-tabs, 
+.search,
+.rm-tabs,
 .rm-view-toggle {
   background-color: #333333; /* Màu nền xám của box chứa */
-  height: 44px;              /* Chiều cao cố định để bằng nhau tăm tắp */
-  border-radius: 8px;        /* Bo góc cả khối */
+  height: 44px; /* Chiều cao cố định để bằng nhau tăm tắp */
+  border-radius: 8px; /* Bo góc cả khối */
   display: flex;
   align-items: center;
-  border: none;              /* Xóa border cũ */
+  border: none; /* Xóa border cũ */
   box-sizing: border-box;
 }
 
@@ -165,28 +165,28 @@
 /* --- 2. BOX TAB LỌC (.rm-tabs) --- */
 .rm-tabs {
   padding: 4px; /* Padding bên trong để tạo khoảng hở cho nút active */
-  gap: 2px;     /* Khoảng cách nhỏ giữa các nút text */
+  gap: 2px; /* Khoảng cách nhỏ giữa các nút text */
   flex-shrink: 0;
 }
 
 .rm-tab {
   background: transparent; /* Mặc định trong suốt */
   border: none;
-  color: #aaa;             /* Màu chữ khi chưa chọn */
+  color: #aaa; /* Màu chữ khi chưa chọn */
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  padding: 0 20px;         /* Độ rộng của nút */
-  height: 100%;            /* Cao bằng box cha trừ đi padding */
-  border-radius: 6px;      /* Bo góc nút con bé hơn box cha một chút */
+  padding: 0 20px; /* Độ rộng của nút */
+  height: 100%; /* Cao bằng box cha trừ đi padding */
+  border-radius: 6px; /* Bo góc nút con bé hơn box cha một chút */
   transition: all 0.2s ease;
 }
 
 /* Trạng thái Active của Tab Filter */
 .rm-tab.on {
   background-color: #121212; /* Màu đen (hoặc rất tối) giống hình */
-  color: #fff;               /* Chữ trắng */
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3); /* Tạo độ nổi nhẹ */
+  color: #fff; /* Chữ trắng */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Tạo độ nổi nhẹ */
 }
 .rm-tab:hover:not(.on) {
   color: #fff; /* Hover nhẹ lên màu trắng nhưng không đổi nền */
@@ -203,7 +203,7 @@
   background: transparent;
   border: none;
   color: #aaa;
-  width: 36px;       /* Nút hình vuông */
+  width: 36px; /* Nút hình vuông */
   height: 100%;
   border-radius: 6px;
   display: flex;
@@ -218,7 +218,7 @@
 .view-btn.on {
   background-color: #121212; /* Màu đen active */
   color: #fff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 .view-btn:hover:not(.on) {
   color: #fff;
@@ -266,6 +266,7 @@
   align-items: center;
   gap: 12px;
   border: 4px solid #1f2937;
+  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
   border-radius: 8px;
   padding: 10px;
   cursor: pointer;
@@ -359,18 +360,21 @@
 .nm-card {
   background: #221010;
   border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #002c3e55;
+  border: 4px solid #1f2937;
   box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: visible; /* Cho phép menu xổ xuống không bị cắt */
 }
 .nm-card-thumb {
   position: relative;
   width: 100%;
-  height: 180px;
+  height: 250px;
   overflow: hidden;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
 }
 .nm-card-thumb img {
   width: 100%;
@@ -397,7 +401,7 @@
   background: #f00519;
 }
 .nm-card-cta .add.add-round:hover {
-  background: #78bcc4;
+  background: #f97373;
 }
 
 .nm-card-body {
@@ -421,20 +425,24 @@
   font-size: 13px;
   color: #e5e7eb;
 }
+
+/* Hàng chứa status + more trong GRID */
 .nm-card-menu-row {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 4px;
+  align-items: center;
+  justify-content: space-between; /* status bên trái, 3 chấm bên phải */
+  margin-top: 6px;
+  gap: 8px;
 }
 
-/* More & status giữ nguyên style gốc */
+/* More & status */
 .status-pill {
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
   line-height: 1;
   border: 1px solid transparent;
-  margin-right: 8px;
+  margin-right: 0;
   user-select: none;
 }
 .status-pill.pending {
@@ -453,28 +461,43 @@
   border-color: #ef4444;
 }
 
+/* More icon: chỉ là icon, không còn box trắng to */
 .more-wrap {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .more-btn {
-  width: 40px;
-  height: 40px;
-  background: #fff;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.more-btn i {
+  font-size: 18px;
+}
+.more-btn:hover {
+  background: rgba(15, 23, 42, 0.7);
+  color: #f9fafb;
+  transform: scale(1.06);
 }
 .menu {
   position: absolute;
   right: 0;
-  top: 40px;
+  top: 36px;
   min-width: 140px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
   padding: 6px;
-  z-index: 10;
+  z-index: 40;
   border: 1px solid #e5e7eb;
-  background: #fff;
+  background: #ffffff;
+  border-radius: 8px;
 }
 .menu-item {
   display: block;
@@ -485,34 +508,14 @@
   padding: 8px 10px;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 13px;
+  color: #000;
 }
 .menu-item:hover {
   background: #f3f4f6;
 }
 .menu-item.danger {
   color: #dc2626;
-}
-
-/* More button */
-.more {
-  text-align: center;
-  margin: 20px 0 10px;
-}
-.more button {
-  height: 40px;
-  border-radius: 999px;
-  border: 1px solid #002c3e80;
-  background: #fff;
-  cursor: pointer;
-  font-weight: 500;
-  margin-left: auto;
-  margin-right: auto;
-  width: 100%;
-  max-width: 100%;
-  color: #111827;
-}
-.more button:hover {
-  background: #f9f9f9;
 }
 
 /* Macros màu */
@@ -523,128 +526,162 @@
   opacity: 0.95;
 }
 .nm-item .macro .protein {
-  color: #ff4602;
+  color: #F34F2A;
 }
 .nm-item .macro .carb {
-  color: #6c63ff;
+  color: #183C7C;
 }
 .nm-item .macro .fat {
-  color: #a1a100;
+  color: #C1F722;
 }
-
-/* Pill trạng thái (giữ nguyên) */
-.status-pill { padding: 6px 10px; border-radius: 999px; font-size: 12px; line-height: 1; border: 1px solid transparent; margin-right: 8px; user-select: none }
-.status-pill.pending { background: #f3f4f6; color: #6b7280; border-color: #e5e7eb }
-.status-pill.approved { background: #ecfdf5; color: #065f46; border-color: #10b981 }
-.status-pill.rejected { background: #fef2f2; color: #991b1b; border-color: #ef4444 }
-
-/* Menu 3 chấm */
-.more-wrap { position: relative; }
-.more-btn { width: 40px; height: 40px; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.menu { position: absolute; right: 0; top: 40px; min-width: 140px;box-shadow: 0 8px 20px rgba(0, 0, 0, .08); padding: 6px; z-index: 10;  border: 1px solid #e5e7eb}
-.menu-item { display: block; width: 100%; text-align: left; background: #fff; border: none; padding: 8px 10px; border-radius: 4px; cursor: pointer }
-.menu-item:hover { background: #f3f4f6 }
-.menu-item.danger { color: #dc2626 }
 
 /* ===== Confirm Delete Modal ===== */
-.confirm-modal{
+.confirm-modal {
   width: min(440px, 92vw);
   padding: 0;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 12px; /* đồng bộ với ur-modal */
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.18);
   overflow: hidden;
 }
-.cm-head{
+.cm-head {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #f1f5f9; /* giống ur-head */
 }
-.cm-icon{
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  display: grid; place-items: center;
+.cm-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
   background: #fef2f2;
   color: #b91c1c;
+  border: 1px solid #fecaca;
 }
-.cm-head h3{
-  margin: 0; font-size: 18px; font-weight: 700; color: #111827;
+.cm-head h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
 }
-.cm-body{
+.cm-body {
   padding: 14px 16px;
   color: #374151;
 }
 
-.cm-foot{
+.cm-foot {
   padding: 12px 16px;
-  border-top: 1px solid #e5e7eb;
-  display: flex; justify-content: flex-end; gap: 10px;
+  border-top: 1px dashed #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 /* Bổ sung nút màu “Xóa” dùng chung */
-.btn.bad{
-  background:#fef2f2;
-  color:#b91c1c;
-  border:1px solid #f4d0d0;
+.btn.bad {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #f4d0d0;
 }
-.btn.bad:hover{ background:#fee2e2; }
+.btn.bad:hover {
+  background: #fee2e2;
+}
 
 /* ===== USER Reject Reason Modal (scoped .ur-*) ===== */
-.ur-backdrop{
-  position: fixed; inset: 0;
-  background: rgba(15,23,42,.45);
+.ur-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(2px);
-  display: grid; place-items: center;
+  display: grid;
+  place-items: center;
   z-index: 1100; /* cao hơn .modal cũ để chắc chắn không xung đột */
   padding: 16px;
 }
-.ur-modal{
+.ur-modal {
   width: min(520px, 94vw);
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(2,6,23,.18);
-  animation: ur-pop .16s ease-out;
-  display: flex; flex-direction: column;
+  background: #1a1a1a;
+  border: 1px solid #fff;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.18);
+  animation: ur-pop 0.16s ease-out;
+  display: flex;
+  flex-direction: column;
 }
-@keyframes ur-pop{
-  from { transform: scale(.96); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
+@keyframes ur-pop {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
-.ur-head{
-  display: grid; grid-template-columns: auto 1fr;
-  align-items: center; gap: 12px;
+.ur-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
   padding: 16px 16px 12px 16px;
   border-bottom: 1px solid #f1f5f9;
 }
-.ur-icon{
-  width: 40px; height: 40px; border-radius: 12px;
-  display: grid; place-items: center;
+.ur-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
   font-size: 18px;
-  background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
-.ur-title{
-  margin: 0; font-size: 18px; font-weight: 600; color: #111827;
+.ur-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #d30016;
 }
-.ur-body{
-  padding: 12px 16px; color: #475569; line-height: 1.5;
-  display: grid; gap: 8px;
+.ur-body {
+  padding: 12px 16px;
+  color: #475569;
+  line-height: 1.5;
+  display: grid;
+  gap: 8px;
 }
-.ur-row{ display: flex; align-items: center; gap: 8px; }
-.ur-label{ min-width: 64px; font-weight: 600; color: #374151; font-size: 13px; }
-.ur-val{ color: #0b5066; }
-.ur-reason{
+.ur-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ur-label {
+  min-width: 64px;
+  font-weight: 600;
+  color: #e5e7eb;
+  font-size: 13px;
+}
+.ur-val {
+  color: #fff;
+}
+.ur-reason {
   margin-top: 2px;
   border: 1px dashed #e5e7eb;
   border-radius: 10px;
   padding: 10px 12px;
-  background: #fff;
-  color: #0f172a; font-weight: 700;
+  background: #020617;
+  color: #fff;
+  font-weight: 700;
   white-space: pre-wrap;
 }
-.ur-foot{
-  display: flex; justify-content: flex-end; gap: 8px;
+.ur-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
   padding: 12px 16px 16px 16px;
   border-top: 1px dashed #e5e7eb;
 }

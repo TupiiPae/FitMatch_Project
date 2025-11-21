@@ -58,9 +58,6 @@ export default function WorkoutList() {
   const nav = useNavigate();
 
   const [q, setQ] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [showMine, setShowMine] = useState(true);
-  const [showSaved, setShowSaved] = useState(true);
 
   const [mine, setMine] = useState([]);
   const [saved, setSaved] = useState([]); // Lịch tập gợi ý đã lưu
@@ -85,14 +82,13 @@ export default function WorkoutList() {
   const [planDetail, setPlanDetail] = useState(null);
   const [detailKind, setDetailKind] = useState("workout"); // "workout" | "suggest"
 
-  const headRef = useRef(null);
   const nf = new Intl.NumberFormat("vi-VN");
 
-  // NEW: state hiển thị tất cả / 10 bản ghi
+  // state hiển thị tất cả / 10 bản ghi
   const [showAllMine, setShowAllMine] = useState(false);
   const [showAllSaved, setShowAllSaved] = useState(false);
 
-  // NEW: refs + state cho drag-to-scroll
+  // refs + state cho drag-to-scroll
   const mineFrameRef = useRef(null);
   const savedFrameRef = useRef(null);
   const mineDrag = useRef({
@@ -136,9 +132,9 @@ export default function WorkoutList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
+  // Lắng nghe click ngoài để đóng menu 3 chấm
   useEffect(() => {
-    const fn = (e) => {
-      if (!headRef.current?.contains(e.target)) setFilterOpen(false);
+    const fn = () => {
       setMenuId(null);
     };
     document.addEventListener("click", fn);
@@ -148,7 +144,7 @@ export default function WorkoutList() {
   const listMine = useMemo(() => mine, [mine]);
   const listSaved = useMemo(() => saved, [saved]);
 
-  // NEW: giới hạn 10 dòng, có thể mở rộng
+  // giới hạn 10 dòng, có thể mở rộng
   const visibleMine = useMemo(
     () => (showAllMine ? listMine : listMine.slice(0, 10)),
     [listMine, showAllMine]
@@ -158,7 +154,7 @@ export default function WorkoutList() {
     [listSaved, showAllSaved]
   );
 
-  // NEW: khóa scroll nền khi có bất kỳ modal nào mở
+  // khóa scroll nền khi có bất kỳ modal nào mở
   const anyModalOpen = confirmDel.open || confirmUnsave.open || showPlanDetail;
   useEffect(() => {
     if (anyModalOpen) {
@@ -256,7 +252,7 @@ export default function WorkoutList() {
     };
   };
 
-  // ==== NEW: helper drag-to-scroll cho 2 frame ====
+  // ==== helper drag-to-scroll cho 2 frame ====
   const startDrag = (ref, dragRef, e) => {
     if (e.button !== 0) return; // chỉ chuột trái
     const el = ref.current;
@@ -304,7 +300,7 @@ export default function WorkoutList() {
   return (
     <div className="wl-wrap">
       {/* ===== HEAD ===== */}
-      <div className="wl-head" ref={headRef} onClick={(e) => e.stopPropagation()}>
+      <div className="wl-head">
         <div className="search">
           <i className="fa-solid fa-magnifying-glass"></i>
           <input
@@ -317,43 +313,6 @@ export default function WorkoutList() {
         <Link to="/tap-luyen/lich-cua-ban/tao" className="wl-create-btn">
           Tạo lịch tập mới
         </Link>
-
-        <div
-          className={`filter ${filterOpen ? "open" : ""}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            className="wl-filter"
-            aria-expanded={filterOpen}
-            onClick={() => setFilterOpen((v) => !v)}
-          >
-            <div className="wl-filter-title">
-              <i className="fa-solid fa-filter"></i>
-              <span> Lọc</span>
-            </div>
-          </button>
-          {filterOpen && (
-            <div className="filter-dd">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={showMine}
-                  onChange={(e) => setShowMine(e.target.checked)}
-                />{" "}
-                Tạo bởi bạn
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={showSaved}
-                  onChange={(e) => setShowSaved(e.target.checked)}
-                />{" "}
-                Lịch tập gợi ý đã lưu
-              </label>
-            </div>
-          )}
-        </div>
       </div>
 
       <hr className="wl-linee" />
@@ -373,52 +332,46 @@ export default function WorkoutList() {
           onMouseLeave={handleMineMouseLeave}
         >
           <div className="wl-section">
-            {showMine ? (
-              <>
-                <div className="wl-list">
-                  {listMine.length === 0 ? (
-                    <div className="wl-empty">
-                      {loading ? "Đang tải..." : "Chưa có lịch tập nào do bạn tạo."}
-                    </div>
-                  ) : (
-                    visibleMine.map((w) => (
-                      <WorkoutItem
-                        key={w._id}
-                        item={w}
-                        mine
-                        menuOpen={menuId === w._id}
-                        onToggleMenu={() =>
-                          setMenuId(menuId === w._id ? null : w._id)
-                        }
-                        onDelete={() => openConfirmDelete(w)}
-                        onEdit={() => {
-                          setMenuId(null);
-                          nav(`/tap-luyen/lich-cua-ban/tao?id=${w._id}`);
-                        }}
-                        onOpenDetail={() => openPlanDetailWorkout(w._id)}
-                        onMarkDone={() => {
-                          toast.success("Đã đánh dấu là đã thực hiện");
-                          setMenuId(null);
-                        }}
-                      />
-                    ))
-                  )}
+            <div className="wl-list">
+              {listMine.length === 0 ? (
+                <div className="wl-empty">
+                  {loading
+                    ? "Đang tải..."
+                    : "Không tím thấy lịch tập nào do bạn tạo."}
                 </div>
+              ) : (
+                visibleMine.map((w) => (
+                  <WorkoutItem
+                    key={w._id}
+                    item={w}
+                    mine
+                    menuOpen={menuId === w._id}
+                    onToggleMenu={() =>
+                      setMenuId(menuId === w._id ? null : w._id)
+                    }
+                    onDelete={() => openConfirmDelete(w)}
+                    onEdit={() => {
+                      setMenuId(null);
+                      nav(`/tap-luyen/lich-cua-ban/tao?id=${w._id}`);
+                    }}
+                    onOpenDetail={() => openPlanDetailWorkout(w._id)}
+                    onMarkDone={() => {
+                      toast.success("Đã đánh dấu là đã thực hiện");
+                      setMenuId(null);
+                    }}
+                  />
+                ))
+              )}
+            </div>
 
-                {listMine.length > 10 && (
-                  <div className="wl-more">
-                    <button
-                      type="button"
-                      onClick={() => setShowAllMine((v) => !v)}
-                    >
-                      {showAllMine ? "Thu gọn" : "Xem tất cả lịch tập"}
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="wl-muted">
-                Đang ẩn danh sách này (bỏ lọc để xem).
+            {listMine.length > 10 && (
+              <div className="wl-more">
+                <button
+                  type="button"
+                  onClick={() => setShowAllMine((v) => !v)}
+                >
+                  {showAllMine ? "Thu gọn" : "Xem tất cả lịch tập"}
+                </button>
               </div>
             )}
           </div>
@@ -440,39 +393,31 @@ export default function WorkoutList() {
           onMouseLeave={handleSavedMouseLeave}
         >
           <div className="wl-section">
-            {showSaved ? (
-              <>
-                <div className="wl-list">
-                  {listSaved.length === 0 ? (
-                    <div className="wl-empty">
-                      {loading ? "Đang tải..." : "Chưa lưu lịch tập gợi ý nào."}
-                    </div>
-                  ) : (
-                    visibleSaved.map((p) => (
-                      <SavedSuggestItem
-                        key={p._id}
-                        plan={p}
-                        onOpenDetail={() => openPlanDetailSuggest(p._id)}
-                        onAskUnsave={() => openConfirmUnsave(p)}
-                      />
-                    ))
-                  )}
+            <div className="wl-list">
+              {listSaved.length === 0 ? (
+                <div className="wl-empty">
+                  {loading ? "Đang tải..." : "Không tìm thấy lịch tập gợi ý nào."}
                 </div>
+              ) : (
+                visibleSaved.map((p) => (
+                  <SavedSuggestItem
+                    key={p._id}
+                    plan={p}
+                    onOpenDetail={() => openPlanDetailSuggest(p._id)}
+                    onAskUnsave={() => openConfirmUnsave(p)}
+                  />
+                ))
+              )}
+            </div>
 
-                {listSaved.length > 10 && (
-                  <div className="wl-more">
-                    <button
-                      type="button"
-                      onClick={() => setShowAllSaved((v) => !v)}
-                    >
-                      {showAllSaved ? "Thu gọn" : "Xem tất cả lịch tập"}
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="wl-muted">
-                Đang ẩn danh sách này (bỏ lọc để xem).
+            {listSaved.length > 10 && (
+              <div className="wl-more">
+                <button
+                  type="button"
+                  onClick={() => setShowAllSaved((v) => !v)}
+                >
+                  {showAllSaved ? "Thu gọn" : "Xem tất cả lịch tập"}
+                </button>
               </div>
             )}
           </div>

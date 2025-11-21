@@ -10,13 +10,6 @@ html {
   scrollbar-gutter: stable;
 }
 
-h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
-  font-family: Oswald, sans-serif;
-  font-weight: 600;
-  line-height: 1.2;
-  color: #333;
-  text-transform: uppercase;
-}
 
 @supports not (scrollbar-gutter: stable) {
   body {

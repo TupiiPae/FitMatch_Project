@@ -7,10 +7,10 @@ export default function Landing() {
   return (
     <div className="lm-wrap">
       {/* HEADER trong suốt nằm trên video */}
-      <header className="lm-header">
+      {/* <header className="lm-header">
         <div className="lm-header-left" onClick={() => nav("/")}>
           <img
-            src="/images/logo-fitmatch.png"
+            src="/images/fm-logo-iconname.png"
             alt="FitMatch Logo"
             className="lm-logo-img"
           />
@@ -19,7 +19,7 @@ export default function Landing() {
         <button className="lm-header-login" onClick={() => nav("/login")}>
           Đăng nhập
         </button>
-      </header>
+      </header> */}
 
       {/* HERO – VIDEO BACKGROUND */}
       <section className="lm-hero">
@@ -39,7 +39,7 @@ export default function Landing() {
           {/* Logo + tên + slogan + note */}
           <div className="lm-hero-head">
             <img
-              src="/images/logo-fitmatch.png"
+              src="/images/fm-logo-iconname.png"
               alt="FitMatch"
               className="lm-hero-logo"
             />
@@ -141,7 +141,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Phần scroll xuống phía dưới giữ nguyên như trước */}
+      {/* Phần scroll xuống phía dưới */}
       <main className="lm-main">
         <section className="lm-section lm-section-intro" id="about">
           <h2>FITMATCH là gì?</h2>

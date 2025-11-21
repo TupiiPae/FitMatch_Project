@@ -32,7 +32,7 @@ import {
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
-const formatDobDMY = (dob, fallback = "") => { if (typeof dob !== "string") return fallback; if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) return fallback; const [y, mo, d] = dob.split("-"); return `${d}/${mo}/${y}`; };
+const formatDobDMY = (dob, fallback = "") => { if (typeof dob !== "string") return fallback; if (!/^\d{4}-\d{2}-\d2$/.test(dob)) return fallback; const [y, mo, d] = dob.split("-"); return `${d}/${mo}/${y}`; };
 
 export default function AccountInfo() {
   const [user, setUser] = useState(null);
@@ -322,16 +322,41 @@ export default function AccountInfo() {
                       onChange={(newValue) => {
                         onChange({
                           target: {
-                            name: 'dob',
-                            value: newValue ? newValue.format('YYYY-MM-DD') : ''
-                          }
+                            name: "dob",
+                            value: newValue ? newValue.format("YYYY-MM-DD") : "",
+                          },
                         });
                       }}
+                      maxDate={dayjs(new Date())}
                       slotProps={{
                         textField: {
-                          size: 'small',
-                          fullWidth: true
-                        }
+                          size: "small",
+                          fullWidth: true,
+                          sx: {
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 1.5,
+                              backgroundColor: "#020617",     // nền tối cho hợp acc-card
+                              "& fieldset": {
+                                borderColor: "#4b5563",        // border mặc định
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "#008080",        // hover
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "#008080",        // focus
+                                boxShadow: "0 0 0 1px rgba(0,128,128,0.45)",
+                              },
+                            },
+                            "& .MuiInputBase-input": {
+                              padding: "8px 10px",
+                              fontSize: 14,
+                              color: "#f9fafb",
+                            },
+                            "& .MuiSvgIcon-root": {
+                              color: "#9ca3af",
+                            },
+                          },
+                        },
                       }}
                     />
                   </LocalizationProvider>

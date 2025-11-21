@@ -69,7 +69,7 @@ export default function DailyJournal() {
   });
 
   const [waterMl, setWaterMl] = useState(0);
-  const [stepMl, setStepMl] = useState(100);
+  const [stepMl, setStepMl] = useState(0);
 
   // === State cho Modal Danh sách tìm kiếm (SearchModal) ===
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -242,24 +242,52 @@ export default function DailyJournal() {
         <div className="dj-bar">
           <div className="left">
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                format="DD/MM/YYYY"
-                value={date ? dayjs(date) : null}
-                onChange={(newValue) => {
-                  const newDateString = newValue
-                    ? newValue.format("YYYY-MM-DD")
-                    : "";
-                  onTopDateHiddenChange({ target: { value: newDateString } });
-                }}
-                slotProps={{
-                  textField: {
-                    placeholder: "DD/MM/YYYY",
-                    style: { width: 150 },
-                    size: "small",
-                  },
-                }}
-              />
-            </LocalizationProvider>
+  <DatePicker
+    format="DD/MM/YYYY"
+    value={date ? dayjs(date) : null}
+    onChange={(newValue) => {
+      const newDateString = newValue
+        ? newValue.format("YYYY-MM-DD")
+        : "";
+      onTopDateHiddenChange({ target: { value: newDateString } });
+    }}
+    slotProps={{
+      textField: {
+        placeholder: "DD/MM/YYYY",
+        size: "small",
+        sx: {
+          width: 150,
+          // Root của OutlinedInput
+          "& .MuiOutlinedInput-root": {
+            height: 34,
+            borderRadius: "999px",
+            backgroundColor: "#020617",
+            "& fieldset": {
+              borderColor: "#ef4444",
+            },
+            "&:hover fieldset": {
+              borderColor: "#f97373",
+            },
+            "&.Mui-focused fieldset": {
+              borderColor: "#ef4444",
+              boxShadow: "0 0 0 1px #f97373",
+            },
+          },
+          // Input text
+          "& .MuiInputBase-input": {
+            padding: "6px 12px",
+            fontSize: 14,
+            color: "#f9fafb",
+          },
+          // Icon lịch
+          "& .MuiSvgIcon-root": {
+            color: "#f9fafb",
+          },
+        },
+      },
+    }}
+  />
+</LocalizationProvider>
           </div>
           <div className="week">
             {weekDays.map((d, i) => (
@@ -565,15 +593,15 @@ export default function DailyJournal() {
                     <div className="input-unit-wrapper">
                       <input
                         type="number"
-                        min="50"
+                        min="0"
                         max="10000"
-                        step="50"
+                        step="500"
                         value={stepMl}
                         onChange={(e) =>
                           setStepMl(
                             Math.max(
-                              50,
-                              Math.min(10000, +e.target.value || 100)
+                              0,
+                              Math.min(10000, +e.target.value || 0)
                             )
                           )
                         }

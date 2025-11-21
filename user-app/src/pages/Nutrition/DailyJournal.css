@@ -33,15 +33,18 @@
 
 
 .dj-title {
-  font-size: 28px;
+  color: #d30016;
+  font-size: 34px;
   font-weight: 700;
-  color: #ef4444; /* text lớn màu đỏ */
+  margin: 0;
+  padding-top: 0;
 }
 
 .dj-desc {
-  font-size: 14px;
-  color: #e5e7eb; /* text thường trắng nhạt */
-  max-width: 480px;
+  margin-top: 4px;
+  color: #e5e7eb;
+  font-size: 16px;
+  font-weight: 400;
 }
 
 .dj-head-right {
@@ -54,7 +57,7 @@
 
 .dj-bar {
   max-width: 1400px;
-  margin: 0 auto 20px auto;
+  margin: 0 auto 40px auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -83,11 +86,11 @@
   height: 34px;
   min-width: 48px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1px solid #111827;
   cursor: pointer;
-  font-weight: 500;
-  font-size: 13px;
+  font-weight: 600;
+  font-size: 14px;
   color: #e5e7eb;
   background: #020617;
   transition: all 0.16s ease;
@@ -450,7 +453,7 @@
 }
 
 .panel.water .wctl input {
-  width: 100px;
+  width: 120px;
   height: 36px;
   border-radius: 8px;
   border: 1px solid #111827;
@@ -473,7 +476,7 @@
 }
 .input-unit {
   position: absolute;
-  right: 23px;
+  right: 30px;
   top: 50%;
   transform: translateY(-50%);
   color: #9ca3af;
@@ -548,3 +551,4 @@
   height: auto;
   object-fit: cover;
 }
+

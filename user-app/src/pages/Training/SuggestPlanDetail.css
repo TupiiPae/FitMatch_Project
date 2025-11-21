@@ -1,31 +1,43 @@
-/* Nền giống các trang Nutrition/Exercise */
-.spd-wrap {
-  background: #f4f6ea;
-  min-height: 100%;
-  margin: -16px;
-  padding: 24px 28px 16px 28px;
-}
-
 .spd-inner {
-  max-width: 1200px;
   margin: 0 auto;
+  max-width: 1400px;
 }
 
-/* TOP CARD (Frame 1) */
 .spd-topcard {
-  background: #fff;
-  border: 1px solid #002C3E; /* Giống .dj-main */
-  border-radius: 4px; /* Giống .dj-main */
-  padding: 20px; /* Giống .dj-main */
+  background: #1e1e1e;
+  border: 1px solid #fff;  
+  border-radius: 4px;
+  padding: 20px;
   margin-top: 0;
-  
   width: 100%;
-  max-width: 1700px; /* Yêu cầu 1700px */
-
-  /* === THAY ĐỔI: Thêm margin auto để tự căn giữa === */
+  max-width: 1700px;
   margin-left: auto;
   margin-right: auto;
+  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
+  color: #e5e7eb;
 }
+
+.spd-back{
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #e5e7eb;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 18px;
+}
+
+.spd-back i {
+  font-size: 12px;
+}
+
+.spd-back:hover {
+  color: #ffffff;
+}
+
 
 /* lưới trái – phải bên trong frame 1 */
 .spd-top-main {
@@ -40,20 +52,22 @@
   flex-direction: column;
 }
 
+/* Tiêu đề & mô tả trên nền tối */
 .spd-title {
   margin: 0 0 8px;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
-  color: #002c3e;
+  color: #ffffff;
 }
 
 .spd-desc {
   font-size: 14px;
-  color: #4b5563;
+  color: #d1d5db;
   line-height: 1.45;
   margin: 0 0 10px;
 }
 
+/* Chips meta – giống các chip/status trên nền tối */
 .spd-meta {
   margin-top: auto;
   display: flex;
@@ -68,9 +82,9 @@
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 13px;
-  border: 1px solid #e5e7eb;
-  background: #f3f4f6;
-  color: #374151;
+  border: 1px solid #4b5563;
+  background: rgba(15, 23, 42, 0.85);
+  color: #e5e7eb;
 }
 
 /* ảnh bên phải */
@@ -83,22 +97,24 @@
 .spd-top-right img {
   width: 250px;
   height: 250px;
-  object-fit: contain;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 4px solid #1f2937;
+  background: #000;
 }
 
 .spd-thumb-fallback {
   width: 180px;
   height: 180px;
-  border-radius: 12px;
-  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  border: 1px dashed #4b5563;
   display: grid;
   place-items: center;
   color: #9ca3af;
+  background: #111827;
 }
 
-/* Nút lưu nằm ở đáy frame 1 */
+/* Nút lưu nằm ở đáy frame 1 – đồng bộ nút đỏ của RecordMeal / DetailModal */
 .spd-save-row {
   margin-top: 8px;
   display: flex;
@@ -110,50 +126,55 @@
   height: 44px;
   border-radius: 999px;
   border: none;
-  background: #008080;
+  background: #f00519;              /* đỏ chủ đạo */
   color: #fff;
   font-weight: 600;
   cursor: pointer;
   font-size: 15px;
-}
-.spd-save-btn:hover {
-  background: #F7F8F3;
-  color: #111827;
-  border: 1px solid #002C3E;
-}
-.spd-save-btn.saved {
-  background: #F7F8F3;
-  color: #111827;
-  border: 1px solid #002C3E;
+  box-shadow: 0 2px 4px rgba(47, 67, 143, 0.32);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-/* SECTION 'Lịch tập' (Frame 2) */
+.spd-save-btn:hover {
+  background: #f97373;
+  color: #fff;
+}
+
+.spd-save-btn.saved {
+  background: #121212;
+  color: #e5e7eb;
+  border: 1px solid #e5e7eb;
+}
+
+/* SECTION 'Lịch tập' (Frame 2) – card tối giống frame 1 / nm-list-frame */
 .spd-section {
-  background: #fff;
+  background: #1e1e1e;
   border-radius: 4px;
-  border: 1px solid #002c3e; /* border giống frame 1 */
+  border: 1px solid #fff;
   padding: 18px 18px 12px;
   margin-top: 10px;
+  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
 }
 
 .spd-section-title {
   margin: 0 0 10px;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
-  color: #002c3e;
+  color: #fff;
+  padding-bottom: 10px;
 }
 
 /* từng buổi */
 .spd-session + .spd-session {
-  border-top: 1px solid #e5e7eb;
-  margin-top: 12px;
-  padding-top: 12px;
+  border-top: 1px solid #374151;
+  margin-top: 30px;
+  padding-top: 30px;
 }
 
 .spd-session-name {
   font-weight: 700;
-  font-size: 16px;
-  color: #111827;
+  font-size: 18px;
+  color: #9ca3af;                    /* accent đỏ cho tên buổi */
   margin-bottom: 6px;
 }
 
@@ -170,9 +191,10 @@
   flex-direction: column;
   gap: 8px;
   padding-right: 10px;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid #374151;
 }
 
+/* dòng bài tập */
 .spd-exrow {
   display: flex;
   align-items: center;
@@ -183,48 +205,55 @@
 .spd-exavatar {
   flex: 0 0 56px;
 }
+
 .spd-exavatar img {
   width: 56px;
   height: 56px;
   border-radius: 999px;
   object-fit: cover;
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
+  border: 1px solid #374151;
+  background: #111827;
 }
+
 .spd-exavatar-fallback {
   width: 56px;
   height: 56px;
   border-radius: 999px;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed #4b5563;
   display: grid;
   place-items: center;
   color: #9ca3af;
+  background: #111827;
 }
 
 .spd-exmeta {
   min-width: 0;
 }
 
+/* Tên bài tập – màu nổi trên nền tối, gần với link trong RecordMeal */
 .spd-exname {
   font-size: 15px;
   font-weight: 600;
-  color: #dc2626;
+  color: #f97373;
   text-decoration: none;
 }
 .spd-exname:hover {
   text-decoration: underline;
 }
 
+/* reps text */
 .spd-exreps {
   font-size: 14px;
-  color: #6b7280;
+  color: #e5e7eb;
 }
 
 /* RIGHT: mô tả buổi */
 .spd-session-right {
   font-size: 14px;
-  color: #4b5563;
+  color: #d1d5db;
   line-height: 1.45;
+  display: flex;
+  align-items: center;
 }
 .spd-session-right p {
   margin: 0;
@@ -233,7 +262,7 @@
 /* Loading trong card */
 .spd-loading {
   font-size: 14px;
-  color: #64748b;
+  color: #9ca3af;
 }
 
 /* Responsive */
@@ -249,7 +278,7 @@
   }
   .spd-session-left {
     border-right: none;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #374151;
     padding-right: 0;
     padding-bottom: 10px;
   }

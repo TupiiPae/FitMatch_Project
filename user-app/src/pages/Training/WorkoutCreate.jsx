@@ -202,11 +202,20 @@ export default function WorkoutCreate() {
     <div className="wc-wrap" onClick={() => setMenuIdx(-1)}>
       {/* ===== HEAD ===== */}
       <div className="wc-head" onClick={(e) => e.stopPropagation()}>
+        {/* Phần 1: Trái */}
         <button type="button" className="wc-tool-left" onClick={() => nav(-1)}>
           <i className="fa-solid fa-chevron-left"></i> Quay lại
         </button>
-        <div className="title">{editingId ? "Chỉnh sửa lịch tập" : "Xây dựng lịch tập"}</div>
-        <button className="create" onClick={onSave}>{editingId ? "Cập nhật" : "Tạo lịch"}</button>
+
+        {/* Phần 2: Giữa */}
+        <div className="title">
+          {editingId ? "Chỉnh sửa lịch tập" : "Xây dựng lịch tập"}
+        </div>
+
+        {/* Phần 3: Phải */}
+        <button className="create" onClick={onSave}>
+          {editingId ? "Cập nhật" : "Tạo lịch"}
+        </button>
       </div>
       <hr className="wc-line" />
       <div className="wc-frame" onClick={(e) => e.stopPropagation()}>

@@ -6,7 +6,7 @@ import {
   addLog,
   getFood,
   viewFood,
-  deleteFood
+  deleteFood,
 } from "../../api/foods";
 import api from "../../lib/api";
 import "./RecordMeal.css";
@@ -86,7 +86,7 @@ export default function RecordMeal() {
         onlyMine: onlyMine || undefined,
         favorites: favorites || undefined,
         limit,
-        skip: reset ? 0 : skip
+        skip: reset ? 0 : skip,
       };
       const { data } = await searchFoods(params);
       const list = data?.items || [];
@@ -159,7 +159,7 @@ export default function RecordMeal() {
         date,
         hour,
         quantity,
-        massG: massG === "" ? null : Number(massG)
+        massG: massG === "" ? null : Number(massG),
       });
       setShowAdd(false);
       toast.success("Thêm vào nhật ký thành công");
@@ -192,7 +192,7 @@ export default function RecordMeal() {
   const [confirmDel, setConfirmDel] = useState({
     open: false,
     id: null,
-    name: ""
+    name: "",
   });
   const openConfirmDelete = (it) =>
     setConfirmDel({ open: true, id: it._id, name: it.name });
@@ -220,13 +220,13 @@ export default function RecordMeal() {
       setRejectInfo({
         name: data?.name || it.name || "",
         reason:
-          (data?.rejectionReason || "").trim() || "Admin chưa cung cấp lý do."
+          (data?.rejectionReason || "").trim() || "Admin chưa cung cấp lý do.",
       });
       setShowReject(true);
     } catch {
       setRejectInfo({
         name: it.name || "",
-        reason: "Không lấy được lý do từ chối."
+        reason: "Không lấy được lý do từ chối.",
       });
       setShowReject(true);
     }
@@ -325,7 +325,7 @@ export default function RecordMeal() {
 
         <div className="nm-head-top">
           <div className="nm-head-text">
-            <div className="nm-list-title">Thư viện món ăn</div>
+            <div className="nm-list-title">Danh sách món ăn</div>
             <div className="nm-list-desc">
               Khám phá và quản lý các bữa ăn yêu thích của bạn
             </div>
@@ -406,7 +406,8 @@ export default function RecordMeal() {
           }`}
         >
           {visibleItems.map((it) =>
-            viewMode === "list" ? (
+            viewMode === "list"
+              ? (
               <div
                 key={it._id}
                 className="nm-item"
@@ -420,8 +421,7 @@ export default function RecordMeal() {
                   <div className="title">{it.name}</div>
                   <div className="sub">
                     {it.portionName || "Khẩu phần tiêu chuẩn"} ·{" "}
-                    {it.massG ?? "-"} {it.unit || "g"} ·{" "}
-                    {kcalStr(it.kcal)} cal
+                    {it.massG ?? "-"} {it.unit || "g"} · {kcalStr(it.kcal)} cal
                   </div>
                   <div className="macro">
                     <span className="protein">
@@ -439,10 +439,7 @@ export default function RecordMeal() {
                   </div>
                 </div>
 
-                <div
-                  className="act"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="act" onClick={(e) => e.stopPropagation()}>
                   {onlyMine &&
                     (it.status === "rejected" ? (
                       <button
@@ -494,15 +491,10 @@ export default function RecordMeal() {
 
                   {onlyMine && (
                     <div className="more-wrap">
-                      <button
-                        className="more-btn"
-                        onClick={(e) => {
+                        <i className="fa-solid fa-ellipsis-vertical"onClick={(e) => {
                           e.stopPropagation();
                           setMenuId(menuId === it._id ? null : it._id);
-                        }}
-                      >
-                        <i className="fa-solid fa-ellipsis-vertical"></i>
-                      </button>
+                        }}></i>
                       {menuId === it._id && (
                         <div
                           className="menu"
@@ -526,7 +518,8 @@ export default function RecordMeal() {
                   )}
                 </div>
               </div>
-            ) : (
+                )
+              : (
               // ===== GRID CARD =====
               <div
                 key={it._id}
@@ -570,8 +563,20 @@ export default function RecordMeal() {
                 <div className="nm-card-body">
                   <div className="nm-card-title-row">
                     <div className="title">{it.name}</div>
-                    {onlyMine &&
-                      (it.status === "rejected" ? (
+                  </div>
+
+                  <div className="nm-card-macroline">
+                    {kcalStr(it.kcal)} kcal | {gStr(it.proteinG)}g Protein |{" "}
+                    {gStr(it.carbG)}g Carb | {gStr(it.fatG)}g Fat
+                  </div>
+
+                  {onlyMine && (
+                    <div
+                      className="nm-card-menu-row"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* Status pill bên trái, cùng hàng với 3 chấm */}
+                      {it.status === "rejected" ? (
                         <button
                           type="button"
                           className={`status-pill ${it.status}`}
@@ -591,27 +596,14 @@ export default function RecordMeal() {
                         >
                           {statusLabel(it.status)}
                         </span>
-                      ))}
-                  </div>
-                  <div className="nm-card-macroline">
-                    {kcalStr(it.kcal)} kcal | {gStr(it.proteinG)}g Protein |{" "}
-                    {gStr(it.carbG)}g Carb | {gStr(it.fatG)}g Fat
-                  </div>
-                  {onlyMine && (
-                    <div
-                      className="nm-card-menu-row"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                      )}
+
+                      {/* More icon bên phải */}
                       <div className="more-wrap">
-                        <button
-                          className="more-btn"
-                          onClick={() =>
-                            setMenuId(menuId === it._id ? null : it._id)
-                          }
-                        >
-                          <i className="fa-solid fa-ellipsis-vertical"></i>
-                        </button>
-                        {menuId === it._id && (
+                          <i className="fa-solid fa-ellipsis-vertical" 
+                          onClick={(e) => { e.stopPropagation(); setMenuId( menuId === it._id ? null : it._id ); }}></i> 
+                          
+                          {menuId === it._id && (
                           <div
                             className="menu"
                             onClick={(e) => e.stopPropagation()}
@@ -635,7 +627,7 @@ export default function RecordMeal() {
                   )}
                 </div>
               </div>
-            )
+                )
           )}
         </div>
 
@@ -676,10 +668,7 @@ export default function RecordMeal() {
 
       {/* ====== REJECT REASON MODAL ====== */}
       {showReject && (
-        <div
-          className="ur-backdrop"
-          onClick={() => setShowReject(false)}
-        >
+        <div className="ur-backdrop" onClick={() => setShowReject(false)}>
           <div
             className="ur-modal"
             onClick={(e) => e.stopPropagation()}
