@@ -76,8 +76,8 @@
   min-height: 100vh;
   overflow: hidden;
   display: flex;
-  align-items: center;      /* căn giữa theo chiều dọc */
-  justify-content: center;  /* căn giữa theo chiều ngang */
+  align-items: center;
+  justify-content: center;
 }
 
 .lm-bg-video {
@@ -110,7 +110,7 @@
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 60px 24px 72px; /* giữ khoảng cho header nhưng vẫn center */
+  padding: 60px 24px 72px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -129,7 +129,6 @@
   height: 100px;
   object-fit: contain;
   filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.5));
-  
 }
 
 .lm-hero-title {
@@ -140,16 +139,14 @@
   font-weight: 600;
 }
 
-/* NOTE mới – 2 dòng */
+/* NOTE – slogan */
 
 .lm-hero-slogan {
-  font-size: 1.6rem;
+  font-size: 54px;
   font-weight: 800;
   line-height: 1.35;
-  color: #FFF;
-  font-size: 54px;
+  color: #ffffff;
 }
-
 
 /* BOXES */
 
@@ -157,34 +154,56 @@
   width: 100%;
   max-width: 780px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 0.5fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* Sửa 0.5fr thành 1fr cho chuẩn grid */
   gap: 24px;
 }
 
 .lm-box {
   position: relative;
-  padding: 20px 22px 18px;
+  padding: 24px 22px 20px; /* Tăng padding chút cho thoáng */
   border-radius: 4px;
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.55);
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  
+  /* Flex settings */
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center; /* Căn giữa các phần tử con theo chiều ngang */
+  text-align: center;  /* Căn giữa nội dung văn bản */
+  
+  /* Quan trọng: Tạo chiều cao tối thiểu để box vuông vức và footer đẩy xuống đáy */
+  min-height: 180px; 
+  
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease,
     box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-/* hàng đầu: icon + title trên cùng một dòng */
+.lm-box:hover {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: #da0b3e; /* Hiệu ứng hover viền đỏ */
+}
 
+/* Phần text mô tả */
+.lm-box-text {
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  line-height: 1.5;
+  margin-top: 4px;
+  margin-bottom: 16px; 
+}
+
+/* Container chứa Icon + Title */
 .lm-box-header {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: auto;     
+  justify-content: center; 
+  width: 100%;
 }
 
 .lm-box-icon {
@@ -199,14 +218,22 @@
 
 .lm-box-icon svg {
   color: #f9fafb;
-
 }
 
 .lm-box-title {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #DA0B3E;
-  font-size: 24px;
+  font-size: 28px; 
+  font-weight: 700;
+  color: #da0b3e;
+  display: flex;
+  text-transform: uppercase; 
+}
+
+.lm-box-login .lm-box-title {
+  font-size: 24px; 
+  font-weight: 700;
+  color: #e5e7eb;
+  display: flex;
+  text-transform: uppercase; 
 }
 
 .lm-box-text {
@@ -230,11 +257,10 @@
   color: #f9fafb;
   box-shadow: 0 2px 10px rgba(248, 113, 113, 0.5);
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-  align-self: flex-start; /* không kéo full chiều ngang box */
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
 }
 
 .lm-box-btn-outline {
@@ -249,151 +275,332 @@
 }
 
 .lm-box-login:hover {
-  border-color: var(--fit-green);
+  border-color: #002C3E;
 }
 
 .lm-box-register:hover {
-  border-color: var(--coral);
+  border-color: #ef4444;
+}
+
 .lm-box:hover .lm-box-btn {
   transform: translateY(-1px);
   box-shadow: 0 16px 40px rgba(248, 113, 113, 0.6);
 }
-}
-/* ========== NỘI DUNG PHÍA DƯỚI ========== */
+
+/* ========== NỘI DUNG PHÍA DƯỚI (giống thiết kế) ========== */
 
 .lm-main {
-  background: radial-gradient(circle at top, #0f172a, #020617 55%);
-  color: #e2e8f0;
+  background: #121212; /* nền tối đồng nhất */
+  color: #f4f4f5;
 }
 
-.lm-section {
-  max-width: 1100px;
+/* Hero banner trong phần main: ảnh nền + card bo tròn */
+
+.lm-main-hero {
+  max-width: 1300px;
+  margin: 80px auto 80px;
+  padding: 240px 32px 240px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(
+      rgba(5, 5, 5, 0.88),
+      rgba(5, 5, 5, 0.7)
+    ),
+    url("/images/bg-landing.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+}
+
+.lm-main-hero-inner {
+  max-width: 640px;
   margin: 0 auto;
-  padding: 80px 24px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lm-main-hero-title {
+  font-size: 2.75rem;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.lm-main-hero-text {
+  font-size: 1rem;
+  color: rgba(228, 228, 231, 0.9);
+  max-width: 540px;
+}
+
+.lm-main-hero-btn {
+  margin-top: 40px;
+  border-radius: 4px;
+  border: none;
+  padding: 12px 28px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #f20d0d;
+  color: #f9fafb;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lm-main-hero-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Section chung */
+
+.lm-section {
+  margin: 0 auto;
+  padding: 80px 24px 80px;
 }
 
 .lm-section h2 {
-  font-size: 1.7rem;
+  font-size: 1.9rem;
   margin-bottom: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
 }
 
 .lm-section p {
   font-size: 0.98rem;
-  color: #cbd5f5;
+  color: #a1a1aa;
 }
 
-/* Intro */
+/* Intro: FITMATCH là gì? */
 
 .lm-section-intro {
   text-align: center;
+  background-color: #F8F9FA;
+  width: 100%;
 }
 
 .lm-section-intro p {
-  max-width: 680px;
+  max-width: 1000px;
+  font-size: 20px;
   margin: 0 auto;
+  color: #212427;
+}
+.lm-section-intro h2 {
+  max-width: 700px;
+  font-size: 38px;
+  margin: 0 auto;
+  padding-bottom: 14px;
+  color: #000;
 }
 
-/* Features */
+/* Header chung cho section có title + desc */
+
+.lm-section-header {
+  text-align: center;
+  max-width: 1200px;
+  margin: 0 auto 32px;
+}
+
+
+/* Features – Các tính năng chính */
 
 .lm-section-features {
   text-align: center;
+  width: 100%;
+  background-color: #121212;
+  max-width: 1200px;
 }
 
 .lm-feature-grid {
   margin-top: 28px;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
+  gap: 18px;
 }
 
 .lm-feature-card {
-  background: #020617;
-  border-radius: 8px;
-  border: 1px solid #1f2937;
-  padding: 18px 16px 20px;
+  background: #111317;
+  border-radius: 14px;
+  border: 1px solid #27272f;
+  padding: 20px 18px 22px;
   text-align: left;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.6);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.lm-feature-card:hover {
+  transform: translateY(-5px);
+}
+
+
+.lm-feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(248, 113, 113, 0.08);
+  color: #f20d0d;
+  margin-bottom: 2px;
 }
 
 .lm-feature-card h3 {
-  font-size: 1rem;
-  margin-bottom: 8px;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
 }
 
 .lm-feature-card p {
   font-size: 0.9rem;
-  color: #cbd5f5;
+  color: #d4d4d8;
 }
 
-/* Benefits */
+/* Benefits – Lợi ích vượt trội */
 
 .lm-section-benefits {
   text-align: center;
+  width: 100%;
+  background-color: #fff;
+  margin: 0 auto;
+}
+
+.lm-section-benefits h2{
+  color: #000;
+}
+
+.lm-section-benefits p {
+  color: #212427;
 }
 
 .lm-benefit-grid {
+  margin: 0 auto;
+  max-width: 1000px;
   margin-top: 28px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
 .lm-benefit-card {
-  background: radial-gradient(circle at top left, #111827, #020617);
+  background: #111317;
   border-radius: 8px;
-  border: 1px solid #1e293b;
-  padding: 18px 18px 22px;
+  border: 1px solid #27272f;
+  padding: 18px;
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   text-align: left;
+  gap: 20px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8);
+  height: 100%;
 }
 
-.lm-benefit-card h3 {
-  font-size: 1rem;
-  margin-bottom: 8px;
+.lm-benefit-card-mid {
+  background: #111317;
+  border-radius: 14px;
+  border: 1px solid #27272f;
+  padding: 18px;
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: left;
+  gap: 12px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8);
+  grid-column: 1 / -1;
+  width: calc(50% - 10px);
+  margin: 0 auto;
+}
+.lm-benefit-img {
+width: 140px;    
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
 }
 
-/* CTA cuối */
+.lm-benefit-body {
+flex: 1;
+}
+
+.lm-benefit-body h3 {
+  font-size: 1.4rem;
+  margin-bottom: 6px;
+}
+
+.lm-benefit-body p {
+  font-size: 0.9rem;
+  color: #d4d4d8;
+}
+
+/* CTA cuối – khối đỏ lớn */
 
 .lm-section-cta {
-  display: flex;
-  justify-content: center;
+  padding-top: 150px;
+  padding-bottom: 150px;
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)),
+              url('/images/section5.png');
+  background-size: cover;    
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100%;
 }
 
 .lm-cta-box {
-  width: 100%;
-  border-radius: 12px;
-  padding: 32px 24px;
-  background: linear-gradient(90deg, #b91c1c, #f97316);
-  color: #fefce8;
+  max-width: 900px;
+  margin: 0 auto;
+  border-radius: 18px;
+  padding: 40px 32px;
+  background: rgba(34, 16, 16, 0.6); 
+  backdrop-filter: blur(8px); 
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fef2f2;
   text-align: center;
-  box-shadow: 0 18px 45px rgba(127, 29, 29, 0.7);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
 }
 
 .lm-cta-box h2 {
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   margin-bottom: 10px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5); 
 }
 
 .lm-cta-box p {
   max-width: 560px;
-  margin: 0 auto 18px;
+  margin: 0 auto 20px;
   font-size: 0.98rem;
+  color: #e5e7eb; 
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 .lm-cta-main {
   border-radius: 999px;
   border: none;
-  padding: 10px 26px;
-  font-size: 0.96rem;
-  font-weight: 600;
+  padding: 12px 30px; /* Tăng kích thước nút một chút cho đẹp */
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
-  background: #f9fafb;
-  color: #b91c1c;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  
+  /* Đổi nút thành màu đỏ chủ đạo để nổi bật trên nền tối */
+  background: #f00519; 
+  color: #fff;
+  
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(240, 5, 25, 0.4);
 }
 
 .lm-cta-main:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.7);
+  transform: translateY(-2px);
+  background: #d30016;
+  box-shadow: 0 6px 20px rgba(240, 5, 25, 0.6);
 }
 
 /* ========== FOOTER ========== */
@@ -403,21 +610,27 @@
   padding: 18px 10px 26px;
   font-size: 0.8rem;
   color: var(--muted);
+  border-top: 1px solid #27272f;
 }
 
 /* ========== RESPONSIVE ========== */
 
 @media (max-width: 1024px) {
-  .lm-header {
-    padding: 14px 20px;
-  }
-
   .lm-hero-content {
     padding: 96px 18px 64px;
   }
 
   .lm-hero-slogan {
-    font-size: 1.4rem;
+    font-size: 1.9rem;
+  }
+
+  .lm-main-hero {
+    padding: 52px 28px 60px;
+    margin-top: 32px;
+  }
+
+  .lm-main-hero-title {
+    font-size: 2.2rem;
   }
 
   .lm-feature-grid {
@@ -425,7 +638,7 @@
   }
 
   .lm-benefit-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }
 
@@ -440,6 +653,24 @@
 
   .lm-hero-boxes {
     grid-template-columns: 1fr;
+  }
+
+  .lm-main-hero {
+    margin-top: 28px;
+    padding: 40px 22px 48px;
+  }
+
+  .lm-main-hero-inner {
+    text-align: center;
+    align-items: center;
+  }
+
+  .lm-main-hero-title {
+    font-size: 1.9rem;
+  }
+
+  .lm-main-hero-text {
+    max-width: 100%;
   }
 
   .lm-section {

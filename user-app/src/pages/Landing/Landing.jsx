@@ -6,7 +6,7 @@ export default function Landing() {
 
   return (
     <div className="lm-wrap">
-      {/* HEADER trong suốt nằm trên video */}
+      {/* HEADER trong suốt nằm trên video (nếu cần dùng thì mở lại) */}
       {/* <header className="lm-header">
         <div className="lm-header-left" onClick={() => nav("/")}>
           <img
@@ -36,27 +36,26 @@ export default function Landing() {
 
         {/* Nội dung chính – căn giữa màn hình */}
         <div className="lm-hero-content">
-          {/* Logo + tên + slogan + note */}
+          {/* Logo + slogan */}
           <div className="lm-hero-head">
             <img
               src="/images/fm-logo-iconname.png"
               alt="FitMatch"
               className="lm-hero-logo"
             />
-
-            {/* NOTE mới – 2 dòng */}
-            <p className="lm-hero-slogan">
-              CỘNG SỰ SỨC KHỎE CỦA BẠN
-            </p>
+            <p className="lm-hero-slogan">CỘNG SỰ SỨC KHỎE CỦA BẠN</p>
           </div>
 
-          {/* Hai box Đăng ký & Đăng nhập */}
+          {/* Hai box Đăng ký & Đăng nhập – vuông */}
           <div className="lm-hero-boxes">
             {/* BOX ĐĂNG KÝ */}
             <div
               className="lm-box lm-box-register"
               onClick={() => nav("/register")}
             >
+              <p className="lm-box-text">
+                Tạo tài khoản và bắt đầu hành trình cải thiện sức khỏe của bạn.
+              </p>
               <div className="lm-box-header">
                 <div className="lm-box-icon">
                   {/* icon tờ giấy + dấu + */}
@@ -80,20 +79,7 @@ export default function Landing() {
                 <div className="lm-box-title">Đăng ký ngay</div>
               </div>
 
-              <p className="lm-box-text">
-                Tạo tài khoản và bắt đầu hành trình cải thiện sức khỏe của bạn.
-              </p>
 
-              {/* nút vừa với dòng chữ, không full box */}
-              <button
-                className="lm-box-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  nav("/register");
-                }}
-              >
-                Đăng ký ngay
-              </button>
             </div>
 
             {/* BOX ĐĂNG NHẬP */}
@@ -101,6 +87,9 @@ export default function Landing() {
               className="lm-box lm-box-login"
               onClick={() => nav("/login")}
             >
+              <p className="lm-box-text">
+                Quay lại theo dõi dinh dưỡng, luyện tập và tiến độ mỗi ngày.
+              </p>
               <div className="lm-box-header">
                 <div className="lm-box-icon">
                   {/* icon login */}
@@ -122,113 +111,232 @@ export default function Landing() {
                 </div>
                 <div className="lm-box-title">Đăng nhập</div>
               </div>
-
-              <p className="lm-box-text">
-                Quay lại theo dõi dinh dưỡng, luyện tập và tiến độ mỗi ngày.
-              </p>
-
-              <button
-                className="lm-box-btn lm-box-btn-outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  nav("/login");
-                }}
-              >
-                Đăng nhập
-              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Phần scroll xuống phía dưới */}
+      {/* ========== Phần scroll xuống phía dưới ========== */}
       <main className="lm-main">
+        {/* SECTION 1: Banner Tìm Partner (ảnh nền + CTA) */}
+        <section className="lm-main-hero">
+          <div className="lm-main-hero-inner">
+            <h1 className="lm-main-hero-title">
+              Đừng tập một mình. Tìm ngay &apos;Partner&apos; hoàn hảo.
+            </h1>
+            <p className="lm-main-hero-text">
+              FITMATCH giúp bạn kết nối với những người cùng mục tiêu, tạo động
+              lực và đạt kết quả nhanh hơn.
+            </p>
+            <button
+              className="lm-main-hero-btn"
+              onClick={() => nav("/register")}
+            >
+              Tìm bạn tập ngay
+            </button>
+          </div>
+        </section>
+
+        {/* SECTION 2: FITMATCH là gì? */}
         <section className="lm-section lm-section-intro" id="about">
           <h2>FITMATCH là gì?</h2>
           <p>
-            FitMatch là &quot;cộng sự sức khỏe&quot; giúp bạn theo dõi dinh
-            dưỡng, xây dựng lịch tập luyện khoa học và kết nối với người bạn
-            đồng hành phù hợp.
+            Chúng tôi kết nối những người đam mê thể thao, giúp bạn tìm được
+            người bạn đồng hành lý tưởng để cùng nhau chinh phục mọi mục tiêu
+            tập luyện và dinh dưỡng. Không còn những buổi tập đơn độc, hãy cùng
+            nhau tạo nên sự khác biệt.
           </p>
         </section>
 
+        {/* SECTION 3: Các tính năng chính */}
         <section className="lm-section lm-section-features">
-          <h2>Các tính năng chính</h2>
-          <div className="lm-feature-grid">
-            <div className="lm-feature-card">
-              <h3>Kết nối thông minh</h3>
+            <div className="lm-section-header">
+              <h2>Các tính năng chính</h2>
               <p>
-                Gợi ý &quot;Partner&quot; luyện tập dựa trên mục tiêu, lịch
-                trình và phong cách tập.
+                Khám phá những công cụ mạnh mẽ giúp bạn tối ưu hóa hành trình sức
+                khỏe của mình.
               </p>
             </div>
-            <div className="lm-feature-card">
-              <h3>Quản lý dinh dưỡng</h3>
-              <p>
-                Ghi nhật ký ăn uống, theo dõi calorie &amp; macro mỗi ngày, hỗ
-                trợ cơ sở dữ liệu món ăn phong phú.
-              </p>
+
+            <div className="lm-feature-grid">
+              <div className="lm-feature-card">
+                <div className="lm-feature-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="26"
+                    height="26"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="8.5" cy="7" r="4" />
+                    <line x1="20" y1="8" x2="20" y2="14" />
+                    <line x1="23" y1="11" x2="17" y2="11" />
+                  </svg>
+                </div>
+                <h3>Kết nối thông minh</h3>
+                <p>
+                  Tìm bạn tập dựa trên mục tiêu, lịch trình và địa điểm phù hợp
+                  nhất với bạn.
+                </p>
+              </div>
+
+              <div className="lm-feature-card">
+                <div className="lm-feature-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="26"
+                    height="26"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M4 12h16" />
+                    <path d="M12 2a8 8 0 0 1 0 16" />
+                  </svg>
+                </div>
+                <h3>Quản lý dinh dưỡng</h3>
+                <p>
+                  Xây dựng và theo dõi kế hoạch ăn uống được cá nhân hóa để đạt
+                  hiệu quả tối đa.
+                </p>
+              </div>
+
+              <div className="lm-feature-card">
+                <div className="lm-feature-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="26"
+                    height="26"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                  </svg>
+                </div>
+                <h3>Quản lý tập luyện</h3>
+                <p>
+                  Xây dựng và theo dõi kế hoạch ăn uống được cá nhân hóa để đạt
+                  hiệu quả tối đa.
+                </p>
+              </div>
+
+              <div className="lm-feature-card">
+                <div className="lm-feature-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="26"
+                    height="26"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="3 17 9 11 13 15 21 7" />
+                    <polyline points="14 7 21 7 21 14" />
+                  </svg>
+                </div>
+                <h3>Theo dõi tiến độ</h3>
+                <p>
+                  Ghi lại kế hoạch và thống kê quá trình thực hiện
+                  mục tiêu của bạn.
+                </p>
+              </div>
             </div>
-            <div className="lm-feature-card">
-              <h3>Lịch tập &amp; bài tập</h3>
-              <p>
-                Thư viện bài tập Strength, Cardio &amp; Sport chi tiết, dễ đưa
-                vào lịch tập cá nhân.
-              </p>
-            </div>
-            <div className="lm-feature-card">
-              <h3>Theo dõi tiến độ</h3>
-              <p>
-                Ghi nhận cân nặng, số đo, mức tạ và thống kê trực quan, giúp
-                bạn nhìn rõ hành trình thay đổi.
-              </p>
-            </div>
-          </div>
         </section>
 
+        {/* SECTION 4: Lợi ích vượt trội */}
         <section className="lm-section lm-section-benefits">
-          <h2>Lợi ích vượt trội</h2>
+          <div className="lm-section-header">
+            <h2>Lợi ích vượt trội</h2>
+            <p>
+              FITMATCH không chỉ là một ứng dụng, mà là người bạn đồng hành
+              trên con đường chinh phục sức khỏe.
+            </p>
+          </div>
+
           <div className="lm-benefit-grid">
             <div className="lm-benefit-card">
-              <h3>Không còn tập một mình</h3>
-              <p>
-                Kết nối cộng đồng người dùng có cùng mục tiêu để tạo động lực
-                mỗi ngày.
-              </p>
+              <img
+                className="lm-benefit-img"
+                src="/images/thumb1.png"
+                alt="Hai người high-five trong phòng gym"
+              />
+              <div className="lm-benefit-body">
+                <h3>Nhân đôi động lực</h3>
+                <p>
+                  Tập luyện cùng bạn bè luôn vui và hiệu quả hơn. Cùng nhau
+                  chia sẻ, cạnh tranh và vượt qua mọi giới hạn.
+                </p>
+              </div>
             </div>
+
             <div className="lm-benefit-card">
-              <h3>Cá nhân hoá sâu</h3>
-              <p>
-                Từ onboarding đến lịch tập, thực đơn đều xoay quanh mục tiêu
-                của bạn.
-              </p>
+              <img
+                className="lm-benefit-img"
+                src="/images/thumb2.png"
+                alt="Sổ kế hoạch luyện tập và đồ ăn lành mạnh"
+              />
+              <div className="lm-benefit-body">
+                <h3>Kiến thức chuyên sâu</h3>
+                <p>
+                  Tiếp cận các kế hoạch dinh dưỡng và bài tập được thiết kế bởi
+                  chuyên gia, phù hợp với mục tiêu của bạn.
+                </p>
+              </div>
             </div>
-            <div className="lm-benefit-card">
-              <h3>Dễ dùng trên mọi thiết bị</h3>
-              <p>
-                Giao diện tối ưu cho mobile &amp; desktop, phù hợp cho cả người
-                mới lẫn người tập lâu năm.
-              </p>
+
+            <div className="lm-benefit-card-mid">
+              <img
+                className="lm-benefit-img"
+                src="/images/thumb3.png"
+                alt="Sổ kế hoạch luyện tập và đồ ăn lành mạnh"
+              />
+              <div className="lm-benefit-body">
+                <h3>Kiến thức chuyên sâu</h3>
+                <p>
+                  Tiếp cận các kế hoạch dinh dưỡng và bài tập được thiết kế bởi
+                  chuyên gia, phù hợp với mục tiêu của bạn.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
+        {/* SECTION 5: CTA cuối */}
         <section className="lm-section lm-section-cta">
           <div className="lm-cta-box">
             <h2>Sẵn sàng thay đổi?</h2>
             <p>
-              Tạo tài khoản FitMatch miễn phí, đặt mục tiêu rõ ràng và để chúng
-              tôi đồng hành trên hành trình đó.
+              Bắt đầu hành trình của bạn với FITMATCH ngay hôm nay. Tìm bạn
+              tập, lên kế hoạch và chinh phục mục tiêu của bạn.
             </p>
-            <button className="lm-cta-main" onClick={() => nav("/register")}>
-              Đăng ký ngay
+            <button
+              className="lm-cta-main"
+              onClick={() => nav("/register")}
+            >
+              Đăng ký miễn phí
             </button>
           </div>
         </section>
       </main>
 
       <footer className="lm-footer">
-        © {new Date().getFullYear()} FitMatch. All rights reserved.
+        © {new Date().getFullYear()} FITMATCH. All rights reserved.
       </footer>
     </div>
   );
