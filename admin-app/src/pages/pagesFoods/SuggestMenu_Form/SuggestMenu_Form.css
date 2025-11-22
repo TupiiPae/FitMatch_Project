@@ -1,3 +1,4 @@
+/* admin-app/src/pages/pagesFoods/SuggestMenu_Form/SuggestMenu_Form.css */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
 
 .smf-page {
@@ -14,80 +15,115 @@
   margin-top: 4px;
 }
 
-/* layout */
+/* ===== Layout 2 cột giống SuggestPlan_Create (Ảnh / Thông tin / Bố cục) ===== */
 .smf-form-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr);
-  gap: 24px;
+  grid-template-columns: 300px 1fr;
+  gap: 0;
+  padding: 12px;
 }
 
-.smf-left,
+.smf-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-right: 1px solid #e5e7eb;
+  padding-right: 24px;
+}
+
 .smf-right {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  padding-left: 24px;
 }
 
+/* ===== Tiêu đề nhóm (Ảnh thực đơn / Thông tin / Bố cục) ===== */
 .smf-section-title {
+  font-size: 16px;
   font-weight: 700;
   color: #111827;
-  font-size: 15px;
-  margin-bottom: 6px;
+  margin: 0;
+  position: relative;
+  padding-left: 14px;
 }
 
-/* image */
+.smf-section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background-color: #F7444E;
+  border-radius: 2px;
+}
+
+/* ===== Box ảnh thực đơn – giống sc-image-box ===== */
 .smf-image-box {
-  border-radius: 10px;
-  border: 1px dashed #cbd5e1;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
   background: #f9fafb;
-  min-height: 180px;
   display: grid;
   place-items: center;
   cursor: pointer;
   overflow: hidden;
+  transition: border-color .2s ease, background .2s ease;
 }
+
+.smf-image-box:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
 .smf-image-box img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .smf-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  color: #94a3b8;
+  display: grid;
+  place-items: center;
   gap: 6px;
-  color: #6b7280;
+  text-align: center;
+  padding: 12px;
   font-size: 13px;
 }
+
 .smf-placeholder i {
-  font-size: 28px;
+  font-size: 32px;
 }
 
-.smf-field-title-upl {
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151;
-  margin-top: 14px;
-  margin-bottom: 4px;
-}
-
-.smf-field-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151;
-  margin-top: 10px;
-  margin-bottom: 4px;
-}
-
+/* ===== Nhãn field (đồng bộ size, màu) ===== */
+.smf-field-title-upl,
+.smf-field-title,
 .smf-field-title-desc {
   font-size: 12px;
   font-weight: 600;
   color: #374151;
-  margin-top: 15px;
+}
+
+.smf-field-title-upl {
+  margin-top: 14px;
+  margin-bottom: -4px;
+}
+
+.smf-field-title {
+  margin-top: 10px;
   margin-bottom: 10px;
 }
 
-/* totals */
+.smf-field-title-desc {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+/* ===== Tổng macro ===== */
 .smf-totals-wrap {
   margin-top: 16px;
   padding: 10px 12px;
@@ -98,10 +134,12 @@
   flex-direction: column;
   gap: 6px;
 }
+
 .smf-total-kcal {
   font-size: 14px;
   color: #0f172a;
 }
+
 .smf-total-macros {
   display: flex;
   flex-wrap: wrap;
@@ -110,22 +148,22 @@
   color: #374151;
 }
 
-/* divider */
+/* ===== Divider giữa Thông tin và Bố cục – giống sc-divider ===== */
 .smf-divider {
-  margin: 18px 0 10px;
   border: none;
-  border-top: 1px dashed #e5e7eb;
+  border-top: 1px solid #e5e7eb;
+  margin: 8px 0;
 }
 
-/* Day / meal / item boxes */
+/* ===== Day / meal / item boxes (gần giống SuggestPlan_Create) ===== */
 .smf-day-box {
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 14px 14px 10px;
-  background: #f8fafc;
+  border-radius: 4px;
+  padding: 16px 16px 12px;
+  background-color: #F8F9FA;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .smf-day-head {
@@ -134,25 +172,17 @@
   justify-content: space-between;
   gap: 8px;
 }
+
 .smf-day-title {
   font-weight: 600;
   position: relative;
 }
-.smf-day-title::before {
-  content: "";
-  position: absolute;
-  left: -10px;
-  top: 50%;
-  width: 4px;
-  height: 16px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background-color: #38bdf8;
-}
+
 .smf-day-actions {
   display: flex;
   gap: 6px;
 }
+
 .smf-day-addmeal {
   border-radius: 999px;
   border: 1px solid #22c55e33;
@@ -165,6 +195,7 @@
   gap: 6px;
   cursor: pointer;
 }
+
 .smf-day-addmeal i {
   font-size: 11px;
 }
@@ -175,28 +206,32 @@
   flex-direction: column;
   gap: 10px;
 }
+
 .smf-meal-box {
-  border-radius: 6px;
+  border-radius: 4px;
   background: #ffffff;
   padding: 10px 12px;
   border: 1px solid #e2e8f0;
 }
+
 .smf-meal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
 }
+
 .smf-meal-title {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   color: #111827;
   position: relative;
 }
+
 .smf-meal-title::before {
   content: "";
   position: absolute;
-  left: -8px;
+  left: 2px;
   top: 50%;
   width: 3px;
   height: 14px;
@@ -204,6 +239,7 @@
   border-radius: 999px;
   background-color: #6366f1;
 }
+
 .smf-meal-remove {
   border: none;
   background: transparent;
@@ -212,10 +248,12 @@
   border-radius: 999px;
   color: #dc2626;
 }
+
 .smf-meal-remove:disabled {
   opacity: .4;
   cursor: default;
 }
+
 .smf-meal-remove:not(:disabled):hover {
   background: rgba(220,38,38,.08);
 }
@@ -233,17 +271,20 @@
   padding: 8px 10px 10px;
   background: #fff;
 }
+
 .smf-item-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
 }
+
 .smf-item-title {
   font-size: 13px;
   font-weight: 600;
   color: #111827;
 }
+
 .smf-item-remove {
   border: none;
   background: transparent;
@@ -252,6 +293,7 @@
   border-radius: 999px;
   color: #6b7280;
 }
+
 .smf-item-remove:hover {
   background: #f3f4f6;
   color: #ef4444;
@@ -262,6 +304,7 @@
   grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.3fr);
   gap: 8px 12px;
 }
+
 .smf-item-col {
   display: flex;
   flex-direction: column;
@@ -273,7 +316,6 @@
   font-size: 12px;
   color: #374151;
   display: flex;
-  flex-direction: column;
   gap: 2px;
   padding: 6px 8px;
   border-radius: 6px;
@@ -285,12 +327,29 @@
   margin-top: 6px;
 }
 
-/* Responsive */
+/* ===== Responsive ===== */
 @media (max-width: 980px) {
   .smf-page {
     padding: 18px;
   }
+
   .smf-form-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .smf-left {
+    border-right: none;
+    padding-right: 0;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 24px;
+  }
+
+  .smf-right {
+    padding-left: 0;
+    padding-top: 12px;
+  }
+
+  .smf-item-fields {
     grid-template-columns: 1fr;
   }
 }
@@ -304,8 +363,5 @@
   .head-actions {
     width: 100%;
     justify-content: flex-end;
-  }
-  .smf-item-fields {
-    grid-template-columns: 1fr;
   }
 }

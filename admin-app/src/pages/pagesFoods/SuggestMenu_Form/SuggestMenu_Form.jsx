@@ -130,22 +130,10 @@ export default function SuggestMenu_Form() {
               (m?.items || []).map((it) => ({
                 foodId: it?.food?._id || it?.food || "",
                 foodName: it?.food?.name || it?.foodName || "",
-                kcal:
-                  it?.kcal ??
-                  it?.food?.kcal ??
-                  0,
-                proteinG:
-                  it?.proteinG ??
-                  it?.food?.proteinG ??
-                  0,
-                carbG:
-                  it?.carbG ??
-                  it?.food?.carbG ??
-                  0,
-                fatG:
-                  it?.fatG ??
-                  it?.food?.fatG ??
-                  0,
+                kcal: it?.kcal ?? it?.food?.kcal ?? 0,
+                proteinG: it?.proteinG ?? it?.food?.proteinG ?? 0,
+                carbG: it?.carbG ?? it?.food?.carbG ?? 0,
+                fatG: it?.fatG ?? it?.food?.fatG ?? 0,
               })) || [makeEmptyItem()],
           })) || [makeEmptyMeal()],
         }));
@@ -550,7 +538,7 @@ export default function SuggestMenu_Form() {
           className="smf-form-layout"
           onSubmit={onSubmit}
         >
-          {/* LEFT: ảnh + tổng macro */}
+          {/* LEFT: Ảnh + tổng macro */}
           <div className="smf-left">
             <h3 className="smf-section-title">Ảnh thực đơn</h3>
 
@@ -607,7 +595,7 @@ export default function SuggestMenu_Form() {
             {/* Tổng macro */}
             <div className="smf-totals-wrap">
               <div className="smf-total-kcal">
-                Tổng Calorie toàn bộ thực đơn:{" "}
+                Tổng Calorie:{" "}
                 <strong>{totals.kcal.toLocaleString()} kcal</strong>
               </div>
               <div className="smf-total-macros">
@@ -618,7 +606,7 @@ export default function SuggestMenu_Form() {
             </div>
           </div>
 
-          {/* RIGHT: Thông tin + cấu trúc thực đơn */}
+          {/* RIGHT: Thông tin + Bố cục thực đơn */}
           <div className="smf-right">
             <h3 className="smf-section-title">Thông tin thực đơn</h3>
 
@@ -713,14 +701,12 @@ export default function SuggestMenu_Form() {
 
             <hr className="smf-divider" />
 
-            <h3 className="smf-section-title">Cấu trúc thực đơn</h3>
+            <h3 className="smf-section-title">Bố cục thực đơn</h3>
             {errors.daysGeneral && (
               <div className="smf-err-msg">{errors.daysGeneral}</div>
             )}
 
-            <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 3 }}
-            >
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
               {days.map((d, dayIdx) => {
                 const dErr = errors.days?.[dayIdx] || {};
                 return (
@@ -746,10 +732,7 @@ export default function SuggestMenu_Form() {
                       {(d.meals || []).map((m, mealIdx) => {
                         const mErr = dErr.meals?.[mealIdx] || {};
                         return (
-                          <div
-                            key={mealIdx}
-                            className="smf-meal-box"
-                          >
+                          <div key={mealIdx} className="smf-meal-box">
                             <div className="smf-meal-head">
                               <div className="smf-meal-title smf-section-title">
                                 Bữa thứ {mealIdx + 1}
@@ -757,12 +740,8 @@ export default function SuggestMenu_Form() {
                               <button
                                 type="button"
                                 className="smf-meal-remove"
-                                onClick={() =>
-                                  removeMeal(dayIdx, mealIdx)
-                                }
-                                disabled={
-                                  (d.meals || []).length <= 1
-                                }
+                                onClick={() => removeMeal(dayIdx, mealIdx)}
+                                disabled={(d.meals || []).length <= 1}
                                 title="Xóa bữa"
                               >
                                 <i className="fa-regular fa-trash-can" />
@@ -771,8 +750,7 @@ export default function SuggestMenu_Form() {
 
                             <div className="smf-meal-body">
                               {(m.items || []).map((it, itemIdx) => {
-                                const iErr =
-                                  mErr.items?.[itemIdx] || {};
+                                const iErr = mErr.items?.[itemIdx] || {};
                                 const selectedOption =
                                   foodOptions.find(
                                     (o) => o.id === it.foodId
@@ -791,15 +769,10 @@ export default function SuggestMenu_Form() {
                                         type="button"
                                         className="smf-item-remove"
                                         onClick={() =>
-                                          removeItem(
-                                            dayIdx,
-                                            mealIdx,
-                                            itemIdx
-                                          )
+                                          removeItem(dayIdx, mealIdx, itemIdx)
                                         }
                                         disabled={
-                                          (m.items || []).length <=
-                                          1
+                                          (m.items || []).length <= 1
                                         }
                                         title="Xóa món"
                                       >
@@ -872,25 +845,22 @@ export default function SuggestMenu_Form() {
                                         <div className="smf-item-macros-row">
                                           <span>
                                             Calorie:{" "}
-                                            {Math.round(
-                                              it.kcal || 0
-                                            )}{" "}
-                                            kcal
-                                          </span>
+                                            {Math.round(it.kcal || 0)} kcal
+                                          </span>, 
                                           <span>
                                             Đạm:{" "}
                                             {Math.round(
                                               it.proteinG || 0
                                             )}{" "}
                                             g
-                                          </span>
+                                          </span>,
                                           <span>
                                             Đường bột:{" "}
                                             {Math.round(
                                               it.carbG || 0
                                             )}{" "}
                                             g
-                                          </span>
+                                          </span>,
                                           <span>
                                             Chất béo:{" "}
                                             {Math.round(
@@ -909,9 +879,7 @@ export default function SuggestMenu_Form() {
                                 <Button
                                   variant="outlined"
                                   size="small"
-                                  onClick={() =>
-                                    addItem(dayIdx, mealIdx)
-                                  }
+                                  onClick={() => addItem(dayIdx, mealIdx)}
                                 >
                                   + Thêm món
                                 </Button>
