@@ -50,6 +50,7 @@ const SuggestMenuSchema = new Schema(
     totalProteinG: { type: Number, default: 0 },
     totalCarbG: { type: Number, default: 0 },
     totalFatG: { type: Number, default: 0 },
+    savedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );

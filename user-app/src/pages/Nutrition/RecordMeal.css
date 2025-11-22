@@ -369,6 +369,9 @@
   position: relative;
   overflow: visible; /* Cho phép menu xổ xuống không bị cắt */
 }
+.nm-card:hover {
+  border-color: #f00519;
+}
 .nm-card-thumb {
   position: relative;
   width: 100%;

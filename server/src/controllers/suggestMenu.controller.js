@@ -476,3 +476,79 @@ export async function deleteSuggestMenu(req, res) {
     return res.status(500).json({ message: "Lỗi máy chủ" });
   }
 }
+
+export async function listSuggestMenusUser(req, res) {
+  const userId = req.userId;
+  const { q, totalKcalMin, totalKcalMax, limit = 30, skip = 0 } = req.query;
+
+  const match = {};
+  const and = [];
+
+  if (q) {
+    match.$text = { $search: q };
+  }
+
+  if (totalKcalMin || totalKcalMax) {
+    const r = {};
+    if (totalKcalMin) r.$gte = Number(totalKcalMin);
+    if (totalKcalMax) r.$lte = Number(totalKcalMax);
+    and.push({ totalKcal: r });
+  }
+
+  if (and.length) match.$and = and;
+
+  const docs = await SuggestMenu.find(match)
+    .sort({ createdAt: -1 })
+    .skip(Number(skip))
+    .limit(Number(limit) + 1)
+    .select({
+      name: 1,
+      imageUrl: 1,
+      category: 1,
+      numDays: 1,
+      totalKcal: 1,
+      totalProteinG: 1,
+      totalCarbG: 1,
+      totalFatG: 1,
+      savedBy: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      ...(q ? { score: { $meta: "textScore" } } : {}),
+    })
+    .lean();
+
+  const items = docs.slice(0, Number(limit)).map((d) => ({
+    ...d,
+    saved: userId
+      ? (d.savedBy || []).some((u) => String(u) === String(userId))
+      : false,
+  }));
+
+  const hasMore = docs.length > Number(limit);
+  res.json({ items, hasMore, total: items.length });
+}
+
+export async function toggleSaveSuggestMenu(req, res) {
+  const userId = req.userId;
+  const id = req.params.id;
+
+  const doc = await SuggestMenu.findById(id);
+  if (!doc) return res.status(404).json({ message: "Not found" });
+
+  const arr = doc.savedBy || [];
+  const idx = arr.findIndex((u) => String(u) === String(userId));
+  let saved;
+
+  if (idx >= 0) {
+    // đang lưu -> bỏ lưu
+    doc.savedBy = arr.filter((u) => String(u) !== String(userId));
+    saved = false;
+  } else {
+    // chưa lưu -> lưu
+    doc.savedBy = [...arr, userId];
+    saved = true;
+  }
+
+  await doc.save();
+  res.json({ saved });
+}

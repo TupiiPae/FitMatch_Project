@@ -23,7 +23,7 @@ import workoutRoutes from "./routes/workout.routes.js";
 import adminSuggestPlanRoutes from "./routes/admin.suggestPlan.routes.js";
 import suggestPlanUserRoutes from "./routes/suggestPlan.user.routes.js";
 import adminSuggestMenuRoutes from "./routes/admin.suggestMenu.routes.js";
-
+import suggestMenuUserRoutes from "./routes/suggestMenu.routes.js";
 
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
@@ -131,6 +131,7 @@ app.use("/api", exercisePublicRoutes);
 // ===== IMPORTANT: Workout routes under /api/user (để FE gọi /user/workouts) =====
 app.use("/api/user", workoutRoutes);
 app.use("/api/user", suggestPlanUserRoutes);
+app.use("/api", suggestMenuUserRoutes);
 
 // ===== Debug: list registered routes in DEV =====
 if (isDev) {

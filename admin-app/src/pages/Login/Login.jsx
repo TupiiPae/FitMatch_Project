@@ -3,7 +3,7 @@ import { useAuth } from "../../auth/AuthContext.jsx";
 import { toast } from "react-toastify";
 import "./Login.css";
 
-import heroImg from "../../assets/bg-adm-fitmatch.png";
+import heroImg from "../../assets/fm-bg-login.png";
 import bgImg from "../../assets/landing-bg.png";
 import logoFitmatch from "../../assets/fm-logo-name.png";
 

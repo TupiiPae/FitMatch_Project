@@ -1,0 +1,476 @@
+/* SuggestMenuList – khung nền + card giống RecordMeal grid/list */
+
+/* Khung nền tối giống SuggestPlanList / RecordMeal */
+.smu-frame {
+  background: #1e1e1e;
+  border-radius: 4px;
+  border: 1px solid #fff;
+  padding: 20px;
+  margin-top: 16px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.5);
+}
+
+
+
+.smu-search {
+  flex: 1 1 auto;
+}
+
+.smu-search input {
+  color: #f9fafb;
+}
+
+/* Filter chips */
+.smu-filter-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.smu-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.smu-chip {
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  padding: 6px 12px;
+  background: #1f2937;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.smu-chip:hover {
+  border-color: #f97373;
+}
+
+.smu-chip.active {
+  background: #f00519;
+  border-color: #f97373;
+  color: #fff;
+}
+
+/* Empty state */
+.smu-empty {
+  color: #9ca3af;
+  padding: 16px 4px;
+  text-align: center;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ===== CARD HORIZONTAL SCROLL ===== */
+.smu-card-row {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  cursor: grab;
+}
+
+.smu-card-row.dragging {
+  cursor: grabbing;
+}
+
+.smu-card-row::-webkit-scrollbar {
+  height: 6px;
+}
+.smu-card-row::-webkit-scrollbar-track {
+  background: #030712;
+}
+.smu-card-row::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 999px;
+}
+
+/* Một card thực đơn – giống nm-card grid food */
+.smu-card {
+  flex: 0 0 320px;
+  background: #221010;
+  border-radius: 12px;
+  border: 4px solid #1f2937;
+  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+    border-color 0.18s ease, background 0.18s ease;
+}
+
+.smu-card:hover {
+  border-color: #f00519;
+}
+
+/* Ảnh giống nm-card-thumb */
+.smu-card-img {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  background: #0b1120;
+  overflow: hidden;
+}
+
+.smu-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.smu-thumb-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #4b5563;
+  font-size: 28px;
+}
+
+/* Nội dung card */
+.smu-card-body {
+  padding: 12px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #e5e7eb;
+}
+
+.smu-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.smu-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.smu-card-tags .ex-chip {
+  background: #111827;
+  border-color: #4b5563;
+  color: #e5e7eb;
+  font-size: 13px;
+  padding: 4px 10px;
+}
+
+.smu-card-kcal {
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f97373;
+}
+
+.smu-card-macros {
+  font-size: 12px;
+  color: #d1d5db;
+  display: flex;
+  gap: 2px;
+}
+
+/* Footer buttons – giống phong cách nút RecordMeal */
+.smu-card-footer {
+  padding: 10px 14px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid #1f2937;
+}
+
+.smu-btn-detail {
+    width: 100%;
+  height: 34px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #020617;
+  color: #e5e7eb;
+  transition: all 0.15s ease;
+}
+
+.smu-btn-detail:hover {
+  background: #111827;
+}
+
+/* Icon lưu (bookmark) thay cho nút chữ */
+.smu-save-icon {
+  width: 40px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f00519;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.smu-save-icon i {
+  font-size: 18px;
+}
+
+.smu-save-icon:hover {
+  background: #f97373;
+  transform: translateY(-1px);
+}
+
+.smu-save-icon.saved {
+  background: #111827;
+  color: #f97373;
+  border: 1px solid #f97373;
+}
+
+.smu-save-icon.saved:hover {
+  background: #1f2937;
+}
+
+/* ===== SAVED LIST – giống nm-item list ===== */
+.smu-saved-section {
+  margin-top: 28px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.smu-saved-title {
+  color: #d30016;
+  font-size: 34px;
+  font-weight: 700;
+  padding-top: 30px;
+  margin-top: 10px;
+}
+
+.smu-saved-desc {
+  margin-top: 4px;
+  color: #e5e7eb;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.smu-empty-saved {
+  padding-left: 0;
+  text-align: left;
+}
+
+.smu-saved-list {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Box list giống nm-item */
+.smu-saved-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #1e1e1e;
+  border: 4px solid #1f2937;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
+  transition: all 0.15s ease;
+}
+
+.smu-saved-item:hover {
+  border-color: #f00519;
+}
+
+/* Ảnh saved nhỏ giống list món ăn */
+.smu-saved-img {
+  flex: 0 0 64px;
+}
+
+.smu-saved-img img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.smu-saved-thumb-fallback {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  border: 1px dashed #4b5563;
+  display: grid;
+  place-items: center;
+  color: #9ca3af;
+}
+
+/* Text */
+.smu-saved-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #e5e7eb;
+}
+
+.smu-saved-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.smu-saved-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.smu-saved-tags .ex-chip {
+  background: #111827;
+  border-color: #4b5563;
+  color: #e5e7eb;
+  font-size: 11px;
+  padding: 2px 7px;
+}
+
+.smu-saved-kcal {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f97373;
+}
+
+/* Macros kiểu giống .nm-item .macro */
+.smu-saved-macros {
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: #e5e7eb;
+}
+
+.smu-saved-macros span {
+  font-weight: 700;
+}
+
+.smu-saved-macros i {
+  margin-right: 6px;
+}
+
+.smu-saved-macros .protein {
+  color: #f34f2a;
+}
+.smu-saved-macros .carb {
+  color: #183c7c;
+}
+.smu-saved-macros .fat {
+  color: #c1f722;
+}
+
+/* Nút bỏ lưu (bookmark) bên phải */
+.smu-saved-unsave {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: #f97373;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.smu-saved-unsave:hover {
+  background: rgba(248, 113, 113, 0.12);
+}
+
+/* ===== Modal xác nhận bỏ lưu ===== */
+.smu-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: grid;
+  place-items: center;
+  z-index: 40;
+}
+
+.smu-modal {
+  width: 100%;
+  max-width: 420px;
+  background: #0b1120;
+  border-radius: 12px;
+  padding: 16px 18px 14px;
+  border: 1px solid #4b5563;
+  color: #e5e7eb;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.7);
+}
+
+.smu-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.smu-modal-body {
+  font-size: 13px;
+  color: #d1d5db;
+}
+
+.smu-modal-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.smu-modal-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.smu-modal-btn.ghost {
+  background: #020617;
+  border-color: #4b5563;
+  color: #e5e7eb;
+}
+.smu-modal-btn.ghost:hover {
+  background: #111827;
+}
+
+.smu-modal-btn.danger {
+  background: #f00519;
+  border-color: #f97373;
+  color: #fff;
+}
+.smu-modal-btn.danger:hover {
+  background: #f97373;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .smu-card {
+    flex: 0 0 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .smu-frame {
+    padding: 16px 12px 14px;
+  }
+}

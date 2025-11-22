@@ -17,6 +17,7 @@ import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy";
 import RecordMeal from "./pages/Nutrition/RecordMeal";
 import FoodForm from "./pages/Nutrition/FoodForm";
 import DailyJournal from "./pages/Nutrition/DailyJournal";
+import SuggestMenuList from "./pages/Nutrition/SuggestMenuList";
 
 // Train
 import StrengthList from "./pages/Training/StrengthList";
@@ -109,7 +110,7 @@ export default function App() {
           <Route path="/dinh-duong/tao-mon-an-ai" element={<TaoMonAI />} />
           {/* Link "Tính Calo AI" từ navbar */}
           <Route path="/dinh-duong/tinh-calo-ai" element={<TinhCaloAI />} />
-          <Route path="/dinh-duong/thuc-don-goi-y" element={<ThucDonGoiY />} />
+          <Route  path="/dinh-duong/thuc-don-goi-y" element={<SuggestMenuList  />} />
 
           {/* === TẬP LUYỆN (Đã cập nhật) === */}
           <Route path="/tap-luyen" element={<Navigate to="/tap-luyen/lich-cua-ban" replace />} />
