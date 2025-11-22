@@ -225,17 +225,25 @@ html, body, #root { height: 100%; overflow: hidden; }
 }
 
 .brand-logo-big{
-  height: 100px;            /* hiển thị logo rõ hơn */
+  height: 40px;            /* hiển thị logo rõ hơn */
   width: auto;
   filter: drop-shadow(0 1px 0 rgba(0,0,0,.05));
-  margin-bottom: -10px;
+  margin-bottom: 30px;
 }
 
 .sys-title{
   margin:0;
   font-weight: 900;
   font-size: 20px;         /* nhỏ gọn, không “nặng” bố cục */
-  color:#008080;
+  color: #d30016;
+  letter-spacing:.3px;
+  text-transform: uppercase;
+}
+.sys-title {
+  margin:0;
+  font-weight: 900;
+  font-size: 20px;        
+  color: #d30016;
   letter-spacing:.3px;
   text-transform: uppercase;
 }

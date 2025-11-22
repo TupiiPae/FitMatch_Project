@@ -39,7 +39,7 @@ export default function Landing() {
           {/* Logo + slogan */}
           <div className="lm-hero-head">
             <img
-              src="/images/fm-logo-iconname.png"
+              src="/images/fm-logo-name.png"
               alt="FitMatch"
               className="lm-hero-logo"
             />
@@ -61,8 +61,8 @@ export default function Landing() {
                   {/* icon tờ giấy + dấu + */}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
+                    width="30"
+                    height="30"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -95,8 +95,8 @@ export default function Landing() {
                   {/* icon login */}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
+                    width="30"
+                    height="30"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -140,6 +140,11 @@ export default function Landing() {
         {/* SECTION 2: FITMATCH là gì? */}
         <section className="lm-section lm-section-intro" id="about">
           <h2>FITMATCH là gì?</h2>
+            <img
+              src="/images/thumb4.png"
+              alt="FitMatch"
+              className="lm-section-logo"
+            />
           <p>
             Chúng tôi kết nối những người đam mê thể thao, giúp bạn tìm được
             người bạn đồng hành lý tưởng để cùng nhau chinh phục mọi mục tiêu
@@ -307,10 +312,10 @@ export default function Landing() {
                 alt="Sổ kế hoạch luyện tập và đồ ăn lành mạnh"
               />
               <div className="lm-benefit-body">
-                <h3>Kiến thức chuyên sâu</h3>
+                <h3>Tiện lợi hơn với AI</h3>
                 <p>
-                  Tiếp cận các kế hoạch dinh dưỡng và bài tập được thiết kế bởi
-                  chuyên gia, phù hợp với mục tiêu của bạn.
+                  AI được tích hợp để việc tính toán Calories từ các món ăn
+                  dễ dàng và nhanh chóng hơn.
                 </p>
               </div>
             </div>

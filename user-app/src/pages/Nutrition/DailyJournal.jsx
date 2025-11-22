@@ -239,55 +239,66 @@ export default function DailyJournal() {
   return (
     <div className="dj-page">
       <div className="dj-wrap">
-        <div className="dj-bar">
+        <div className="dj-container">
+          {/* ===== HÀNG HEAD: 2/3 TRÁI (TITLE + DESC) ===== */}
+          <div className="dj-head">
+            <div className="dj-head-left">
+              <h1 className="dj-title">Nhật ký dinh dưỡng</h1>
+              <p className="dj-desc">
+                Tiếp tục theo dõi chế độ dinh dưỡng và lưu lại nhật ký dinh dưỡng
+              </p>
+            </div>
+          </div>
+
+          <div className="dj-bar">
           <div className="left">
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-  <DatePicker
-    format="DD/MM/YYYY"
-    value={date ? dayjs(date) : null}
-    onChange={(newValue) => {
-      const newDateString = newValue
-        ? newValue.format("YYYY-MM-DD")
-        : "";
-      onTopDateHiddenChange({ target: { value: newDateString } });
-    }}
-    slotProps={{
-      textField: {
-        placeholder: "DD/MM/YYYY",
-        size: "small",
-        sx: {
-          width: 150,
-          // Root của OutlinedInput
-          "& .MuiOutlinedInput-root": {
-            height: 34,
-            borderRadius: "999px",
-            backgroundColor: "#020617",
-            "& fieldset": {
-              borderColor: "#ef4444",
-            },
-            "&:hover fieldset": {
-              borderColor: "#f97373",
-            },
-            "&.Mui-focused fieldset": {
-              borderColor: "#ef4444",
-              boxShadow: "0 0 0 1px #f97373",
-            },
-          },
-          // Input text
-          "& .MuiInputBase-input": {
-            padding: "6px 12px",
-            fontSize: 14,
-            color: "#f9fafb",
-          },
-          // Icon lịch
-          "& .MuiSvgIcon-root": {
-            color: "#f9fafb",
-          },
-        },
-      },
-    }}
-  />
-</LocalizationProvider>
+              <DatePicker
+                format="DD/MM/YYYY"
+                value={date ? dayjs(date) : null}
+                onChange={(newValue) => {
+                  const newDateString = newValue
+                    ? newValue.format("YYYY-MM-DD")
+                    : "";
+                  onTopDateHiddenChange({ target: { value: newDateString } });
+                }}
+                slotProps={{
+                  textField: {
+                    placeholder: "DD/MM/YYYY",
+                    size: "small",
+                    sx: {
+                      width: 150,
+                      // Root của OutlinedInput
+                      "& .MuiOutlinedInput-root": {
+                        height: 34,
+                        borderRadius: "999px",
+                        backgroundColor: "#020617",
+                        "& fieldset": {
+                          borderColor: "#ef4444",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "#f97373",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#ef4444",
+                          boxShadow: "0 0 0 1px #f97373",
+                        },
+                      },
+                      // Input text
+                      "& .MuiInputBase-input": {
+                        padding: "6px 12px",
+                        fontSize: 14,
+                        color: "#f9fafb",
+                      },
+                      // Icon lịch
+                      "& .MuiSvgIcon-root": {
+                        color: "#f9fafb",
+                      },
+                    },
+                  },
+                }}
+              />
+            </LocalizationProvider>
           </div>
           <div className="week">
             {weekDays.map((d, i) => (
@@ -307,17 +318,6 @@ export default function DailyJournal() {
             <span className="streak-num">{streak}</span>
           </div>
         </div>
-
-        <div className="dj-container">
-          {/* ===== HÀNG HEAD: 2/3 TRÁI (TITLE + DESC) ===== */}
-          <div className="dj-head">
-            <div className="dj-head-left">
-              <h1 className="dj-title">Nhật ký dinh dưỡng</h1>
-              <p className="dj-desc">
-                Tiếp tục theo dõi chế độ dinh dưỡng và lưu lại nhật ký dinh dưỡng
-              </p>
-            </div>
-          </div>
 
           {/* ===== BODY: DƯỚI HEAD – 2/3 TRÁI dj-main, 1/3 PHẢI dj-side ===== */}
           <div className="dj-grid">

@@ -309,19 +309,32 @@ export default function WorkoutCreate() {
                   </div>
                 ) : (
                   <div className="wc-exbox">
-                    <div className="ex-head">
-                      <div className="ex-name">{b.exercise.name}</div>
-                      <div className="ex-actions">
+                    <div className="wc-head">
+                      <div className="wc-name">{b.exercise.name}</div>
+                      <div className="wc-actions">
                         <div className="more-wrap">
-                          <button type="button" className="more-btn"
-                            onClick={(e) => { e.stopPropagation(); setMenuIdx(menuIdx === idx ? -1 : idx); }}
-                            aria-label="Mở menu">
+                          <button
+                            type="button"
+                            className="more-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuIdx(menuIdx === idx ? -1 : idx);
+                            }}
+                            aria-label="Mở menu"
+                          >
                             <i className="fa-solid fa-ellipsis-vertical" />
                           </button>
                           {menuIdx === idx && (
                             <div className="menu" onClick={(e) => e.stopPropagation()}>
-                              <button className="menu-item" onClick={() => changeExercise(idx)}>Thay đổi bài tập</button>
-                              <button className="menu-item danger" onClick={() => removeBlock(idx)}>Xóa</button>
+                              <button className="menu-item" onClick={() => changeExercise(idx)}>
+                                Thay đổi bài tập
+                              </button>
+                              <button
+                                className="menu-item danger"
+                                onClick={() => removeBlock(idx)}
+                              >
+                                Xóa
+                              </button>
                             </div>
                           )}
                         </div>

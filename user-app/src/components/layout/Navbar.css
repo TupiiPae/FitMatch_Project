@@ -94,7 +94,7 @@
 }
 
 .fm-logo {
-  height: 60px;
+  height: 30px;
   width: auto;
   display: block;
   object-fit: contain;
@@ -173,7 +173,7 @@
   top: 100%;
   left: 0;
   transform: none;
-  width: 1000px;
+  width: 750px;
   max-width: calc(100vw - 24px);
   background: radial-gradient(circle at top left, #111827, #020617 70%);
   border: 1px solid rgba(148, 163, 184, 0.5);
@@ -223,7 +223,7 @@
 
 /* Links bên phải */
 .fm-megamenu-links {
-  flex-basis: 66.67%;
+  flex-basis: 100%;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;

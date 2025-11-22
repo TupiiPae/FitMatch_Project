@@ -25,6 +25,11 @@ const FoodSchema = new Schema(
     },
     imageUrl: { type: String, trim: true },
     portionName: { type: String, trim: true }, // “1 chén”, “1 miếng”, ...
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [1000, "Mô tả tối đa 1000 ký tự"],
+    },
 
     // massG: required, [0..10000]
     massG: {

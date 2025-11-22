@@ -147,7 +147,7 @@ export default function Login() {
   const renderSignIn = (
     <form className="auth-form" onSubmit={onSubmit} noValidate style={{ width: "100%", maxWidth: 520 }}>
       <div className="login-head">
-        <img src="/images/logo-fitmatch.png" alt="FitMatch" className="login-logo-rect" />
+        <img src="/images/fm-logo-name.png" alt="FitMatch" className="login-logo-rect" />
         <h1>Đăng nhập</h1>
       </div>
 

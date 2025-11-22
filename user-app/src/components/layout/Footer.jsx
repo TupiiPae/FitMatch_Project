@@ -1,7 +1,8 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFacebookF, faLinkedinIn, faGithub } from "@fortawesome/free-brands-svg-icons";
+import { faFacebookF, faInstagram } from "@fortawesome/free-brands-svg-icons";
+import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -9,35 +10,62 @@ export default function Footer() {
   return (
     <footer className="fm-footer fm-footer--mock07">
       <div className="fm-foot-container">
-        {/* Brand center */}
-        <div className="fm-foot-brand">FitMatch</div>
-
-        {/* Nav center – 6 items */}
-        <nav className="fm-foot-nav" aria-label="Footer">
-          <NavLink to="/thong-ke">Thống kê</NavLink>
-          <NavLink to="/ket-noi">Kết nối</NavLink>
-          <NavLink to="/dinh-duong/nhat-ky">Dinh Dưỡng</NavLink>
-          <NavLink to="/tap-luyen/lich-cua-ban">Tập Luyện</NavLink>
-          <NavLink to="/cong-dong">Cộng đồng</NavLink>
-          <NavLink to="/ung-dung">Ứng dụng</NavLink>
-        </nav>
-
-        {/* Social */}
-        <div className="fm-foot-social" aria-label="Social">
-          <a href="https://facebook.com" aria-label="Facebook" target="_blank" rel="noreferrer">
-            <FontAwesomeIcon icon={faFacebookF} />
-          </a>
-          <a href="https://linkedin.com" aria-label="LinkedIn" target="_blank" rel="noreferrer">
-            <FontAwesomeIcon icon={faLinkedinIn} />
-          </a>
-          <a href="https://github.com" aria-label="GitHub" target="_blank" rel="noreferrer">
-            <FontAwesomeIcon icon={faGithub} />
-          </a>
+        {/* LEFT: Logo + copy */}
+        <div className="fm-foot-left">
+          <NavLink to="/" className="fm-foot-logo">
+            {/* Thay src logo theo file thực tế của bạn */}
+            <img
+              src="/images/fm-logo-name.png"
+              alt="FitMatch"
+              className="fm-foot-logo-img"
+              onError={(e) => {
+                // fallback nếu chưa có file logo
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          </NavLink>
+          <div className="fm-foot-copy">
+            © {year} FitMatch. All rights reserved.
+          </div>
         </div>
 
-        {/* Copy */}
-        <div className="fm-foot-copy">
-          Copyright © {year} All rights reserved. <a href="#">FitMatch</a>
+        {/* CENTER: Nav menu */}
+        <nav className="fm-foot-nav" aria-label="Footer navigation">
+          <NavLink to="/ve-fitmatch">Về FitMatch</NavLink>
+          <NavLink to="/chinh-sach-bao-mat">Chính sách bảo mật</NavLink>
+          <NavLink to="/dieu-khoan-dich-vu">Điều khoản dịch vụ</NavLink>
+          <NavLink to="/faqs">FAQs</NavLink>
+          <NavLink to="/lien-he">Liên hệ</NavLink>
+        </nav>
+
+        {/* RIGHT: Social icons */}
+        <div className="fm-foot-right">
+          <div className="fm-foot-social" aria-label="Social links">
+            <a
+              href="https://facebook.com"
+              aria-label="Facebook"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <FontAwesomeIcon icon={faFacebookF} />
+            </a>
+            <a
+              href="https://instagram.com"
+              aria-label="Instagram"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <FontAwesomeIcon icon={faInstagram} />
+            </a>
+            <a
+              href="mailto:support@fitmatch.vn"
+              aria-label="Gmail"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <FontAwesomeIcon icon={faEnvelope} />
+            </a>
+          </div>
         </div>
       </div>
     </footer>

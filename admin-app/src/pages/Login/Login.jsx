@@ -5,7 +5,7 @@ import "./Login.css";
 
 import heroImg from "../../assets/bg-adm-fitmatch.png";
 import bgImg from "../../assets/landing-bg.png";
-import logoFitmatch from "../../assets/logo-fitmatch.png";
+import logoFitmatch from "../../assets/fm-logo-name.png";
 
 // Validate giống pagesAdmin
 const USERNAME_RE = /^[a-zA-Z0-9]{4,200}$/; // chữ + số, 4..200
@@ -102,7 +102,7 @@ export default function Login() {
             <div className="panel-header">
               <img src={logoFitmatch} alt="FitMatch" className="brand-logo-big" />
               <h2 className="sys-title">HỆ THỐNG QUẢN TRỊ DÀNH CHO</h2>
-              <h2 className="sys-title">QUẢN TRỊ VIÊN FITMATCH</h2>
+              <h2 className="sys-title">QUẢN TRỊ VIÊN <span>FIT</span>MATCH</h2>
             </div>
 
             <div className="login-title">

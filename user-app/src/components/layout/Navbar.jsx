@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 
 const logoHref =
   (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") +
-  "images/fm-logo-iconname.png";
+  "images/fm-logo-name.png";
 
 // Helpers (KHÔNG THAY ĐỔI)
 const fmtDate = (iso) => {
@@ -206,10 +206,9 @@ export default function Navbar({
 
                 <div className={`fm-dropdown fm-megamenu ${openDropdown === "dd" ? "is-open" : ""}`} role="menu" aria-haspopup="true">
                   <div className="fm-megamenu-content">
-                    <div className="fm-megamenu-image">
-                      {/* Thay bằng ảnh của bạn */}
+                    {/* <div className="fm-megamenu-image">
                       <img src="/images/dropd1.png" alt="Dinh dưỡng" />
-                    </div>
+                    </div> */}
                     <div className="fm-megamenu-links">
                       <NavLink to="/dinh-duong/nhat-ky" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faBookOpen} />
@@ -274,10 +273,9 @@ export default function Navbar({
 
                 <div className={`fm-dropdown fm-megamenu ${openDropdown === "tl" ? "is-open" : ""}`} role="menu" aria-haspopup="true">
                   <div className="fm-megamenu-content">
-                    <div className="fm-megamenu-image">
-                       {/* Thay bằng ảnh của bạn */}
+                    {/* <div className="fm-megamenu-image">
                       <img src="/images/dropd2.png" alt="Tập luyện" />
-                    </div>
+                    </div> */}
                     <div className="fm-megamenu-links">
                       <NavLink to="/tap-luyen/lich-cua-ban" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faCalendar} />

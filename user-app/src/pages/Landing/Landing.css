@@ -126,7 +126,7 @@
 }
 
 .lm-hero-logo {
-  height: 100px;
+  height: 80px;
   object-fit: contain;
   filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.5));
 }
@@ -142,7 +142,7 @@
 /* NOTE – slogan */
 
 .lm-hero-slogan {
-  font-size: 54px;
+  font-size: 48px;
   font-weight: 800;
   line-height: 1.35;
   color: #ffffff;
@@ -175,7 +175,7 @@
   text-align: center;  /* Căn giữa nội dung văn bản */
   
   /* Quan trọng: Tạo chiều cao tối thiểu để box vuông vức và footer đẩy xuống đáy */
-  min-height: 180px; 
+  min-height: 200px; 
   
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease,
@@ -221,7 +221,7 @@
 }
 
 .lm-box-title {
-  font-size: 28px; 
+  font-size: 34px; 
   font-weight: 700;
   color: #da0b3e;
   display: flex;
@@ -229,7 +229,7 @@
 }
 
 .lm-box-login .lm-box-title {
-  font-size: 24px; 
+  font-size: 34px; 
   font-weight: 700;
   color: #e5e7eb;
   display: flex;
@@ -361,6 +361,11 @@
 .lm-section {
   margin: 0 auto;
   padding: 80px 24px 80px;
+}
+
+.lm-section-logo {
+  height: 120px;
+  margin: 0 auto 30px auto;
 }
 
 .lm-section h2 {

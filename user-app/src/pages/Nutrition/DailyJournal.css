@@ -1,7 +1,6 @@
 /* ===== LAYOUT CHUNG ===== */
 
 .dj-page {
-  margin: -16px 0 -16px 0;
   color: #f9fafb;
 }
 
@@ -22,7 +21,7 @@
   grid-template-columns: 2fr 1fr;
   gap: 24px;
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 }
 
 .dj-head-left {
@@ -36,7 +35,7 @@
   color: #d30016;
   font-size: 34px;
   font-weight: 700;
-  margin: 0;
+  margin-top: 20px;
   padding-top: 0;
 }
 
@@ -57,13 +56,13 @@
 
 .dj-bar {
   max-width: 1400px;
-  margin: 0 auto 40px auto;
+  margin: 0 auto 20px auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 10px 18px;
-  border-radius: 999px;
+  border-radius: 8px;
   background-color: #1e1e1e;
   border: 1px solid #ef4444;
 }
@@ -83,7 +82,7 @@
 }
 
 .wbtn {
-  height: 34px;
+  height: 40px;
   min-width: 48px;
   padding: 0 12px;
   border-radius: 6px;
