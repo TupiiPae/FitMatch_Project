@@ -348,6 +348,50 @@ export const validateFoodsBulk = async ({ file, archive }) => {
 };
 
 /* =========================
+ * SUGGEST MENUS (ADMIN)
+ * ========================= */
+
+export const createSuggestMenuApi = async (formDataOrJson, isMultipart = false) => {
+  if (isMultipart) {
+    const r = await api.post("/api/admin/suggest-menus", formDataOrJson, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return r.data?.data ?? r.data;
+  } else {
+    const r = await api.post("/api/admin/suggest-menus", formDataOrJson);
+    return r.data?.data ?? r.data;
+  }
+};
+
+export const listSuggestMenusAdminOnly = async (params = {}) => {
+  const r = await api.get("/api/admin/suggest-menus", { params });
+  return r.data?.data ?? r.data; // { items, total, limit, skip }
+};
+
+export const getSuggestMenu = async (id) => {
+  const r = await api.get(`/api/admin/suggest-menus/${id}`);
+  return r.data?.data ?? r.data;
+};
+
+export const updateSuggestMenuApi = async (id, formDataOrJson, isMultipart = false) => {
+  if (isMultipart) {
+    const r = await api.patch(`/api/admin/suggest-menus/${id}`, formDataOrJson, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return r.data?.data ?? r.data;
+  } else {
+    const r = await api.patch(`/api/admin/suggest-menus/${id}`, formDataOrJson);
+    return r.data?.data ?? r.data;
+  }
+};
+
+export const deleteSuggestMenu = async (id) => {
+  const r = await api.delete(`/api/admin/suggest-menus/${id}`);
+  return r.data?.data ?? r.data;
+};
+
+
+/* =========================
  * EXERCISES (ADMIN)
  * ========================= */
 

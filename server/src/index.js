@@ -22,6 +22,7 @@ import exercisePublicRoutes from "./routes/exercise.routes.js";
 import workoutRoutes from "./routes/workout.routes.js";
 import adminSuggestPlanRoutes from "./routes/admin.suggestPlan.routes.js";
 import suggestPlanUserRoutes from "./routes/suggestPlan.user.routes.js";
+import adminSuggestMenuRoutes from "./routes/admin.suggestMenu.routes.js";
 
 
 // ===== Middlewares =====
@@ -116,6 +117,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminFoodsRoutes);
 app.use("/api/admin", adminExercisesRoutes);
 app.use("/api/admin", adminSuggestPlanRoutes);
+app.use("/api/admin", adminSuggestMenuRoutes); 
 
 // ===== User routes =====
 app.use("/api/user/onboarding", onboardingRoutes);

@@ -14,6 +14,8 @@ import FoodCreate from "./pages/pagesFoods/Food_Create/Food_Create.jsx";
 import FoodsReview from "./pages/pagesFoods/Review/Review.jsx";
 import FoodEdit from "./pages/pagesFoods/Food_Edit/Food_Edit.jsx";
 import ImportList from "./pages/pagesFoods/Import_List/Import_List.jsx";
+import SuggestMenu_List from "./pages/pagesFoods/SuggestMenu_List/SuggestMenu_List";
+import SuggestMenu_Form from "./pages/pagesFoods/SuggestMenu_Form/SuggestMenu_Form";
 
 // ===== Exercises
 import StrengthList from "./pages/pagesExercises/Strength_List/Strength_List.jsx";
@@ -75,6 +77,9 @@ export default function App() {
           <Route path="/foods/:id/edit" element={<FoodEdit />} />
           <Route path="/foods/review" element={<FoodsReview />} />
           <Route path="/foods/import-list" element={<ImportList />} />
+          <Route path="/foods/suggest-menu" element={<SuggestMenu_List />} />
+          <Route path="/foods/suggest-menu/create" element={<SuggestMenu_Form />} />
+          <Route path="/foods/suggest-menu/:id/edit" element={<SuggestMenu_Form />} />
 
           {/* Bài tập */}
           <Route path="/exercises/strength" element={<StrengthList />} />

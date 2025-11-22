@@ -38,7 +38,8 @@ const buildManagementSections = (rawLevel) => {
         { to: "/foods",              label: "Danh sách món ăn", exact: true },
         { to: "/foods/create",       label: "Tạo món ăn mới" },
         { to: "/foods/review",       label: "Duyệt món ăn người dùng" },
-        { to: "/foods/menu-suggest", label: "Tạo thực đơn gợi ý" },
+        { to: "/foods/suggest-menu",       label: "Danh sách thực đơn gợi ý", exact: true },
+        { to: "/foods/suggest-menu/create", label: "Tạo thực đơn gợi ý" },
       ],
     },
     {
