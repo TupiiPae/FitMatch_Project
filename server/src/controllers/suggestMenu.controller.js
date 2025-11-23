@@ -196,7 +196,14 @@ export async function listSuggestMenus(req, res) {
 }
 
 export async function getSuggestMenu(req, res) {
-  const d = await SuggestMenu.findById(req.params.id).lean();
+  const d = await SuggestMenu.findById(req.params.id)
+    .populate({
+      path: "days.meals.items.food",
+      select:
+        "name imageUrl portionName massG unit kcal proteinG carbG fatG",
+    })
+    .lean();
+
   if (!d) return res.status(404).json({ message: "Not found" });
   res.json(d);
 }

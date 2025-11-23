@@ -199,7 +199,7 @@
   padding: 14px 12px;
   font-size: 13px;
   color: #9ca3af;
-  border-radius: 8px;
+  border-radius: 4px;
   background: #020617;
   border: 1px dashed #4b5563;
 }
@@ -257,9 +257,14 @@
   align-items: center;
   gap: 12px;
   padding: 8px 8px;
-  border-radius: 8px;
+  border-radius: 4px;
   background: #1e1e1e;
   border: 1px solid #1f2937;
+  cursor: pointer;
+}
+
+.smd-food-row:hover {
+  border-color: #f00519;
 }
 
 .smd-food-thumb {
@@ -276,7 +281,7 @@
 .smd-food-thumb-fallback {
   width: 56px;
   height: 56px;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px dashed #4b5563;
   display: grid;
   place-items: center;
@@ -345,7 +350,7 @@
 /* Summary card */
 .smd-summary-card {
   padding: 18px 18px 20px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #0b0b0f;
   border: 1px solid #27272f;
 }

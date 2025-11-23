@@ -38,6 +38,29 @@ const ensureUniqueUsername = async (base) => {
   return `${slug}${Date.now()}`;
 };
 
+/**
+ * Cập nhật timestamp đăng nhập/hoạt động cho user
+ * - lastLoginAt: lần đăng nhập gần nhất
+ * - lastActiveAt: lần hoạt động gần nhất (ở đây cũng set bằng lúc login)
+ */
+const touchLoginActivity = async (userId) => {
+  if (!userId) return;
+  try {
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          lastLoginAt: new Date(),
+          lastActiveAt: new Date(),
+        },
+      },
+      { new: false }
+    );
+  } catch (e) {
+    console.error("[auth] cập nhật lastLoginAt/lastActiveAt lỗi:", e?.message || e);
+  }
+};
+
 /* =========================== AUTH CORE =========================== */
 export const register = async (req, res) => {
   try {
@@ -58,10 +81,14 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Tên tài khoản hoặc email đã tồn tại." });
     }
 
+    const now = new Date();
     const newUser = await User.create({
       username,
       email,
       password,
+      // Đăng ký xong là coi như đăng nhập luôn → set luôn 2 field
+      lastLoginAt: now,
+      lastActiveAt: now,
     });
 
     const token = signToken(newUser);
@@ -126,6 +153,9 @@ export const login = async (req, res) => {
     if (!match) {
       return res.status(401).json({ message: "Sai mật khẩu." });
     }
+
+    // ✅ Đánh dấu hoạt động & đăng nhập
+    await touchLoginActivity(user._id);
 
     const token = signToken(user);
 
@@ -201,6 +231,7 @@ export const google = async (req, res) => {
       // Mật khẩu ngẫu nhiên để pass schema (user đăng nhập lại vẫn dùng Google)
       const randomPass = crypto.randomBytes(12).toString("base64url").slice(0, 12);
 
+      const now = new Date();
       user = await User.create({
         username,
         email: googleEmail,
@@ -208,7 +239,13 @@ export const google = async (req, res) => {
         profile: {
           nickname: googleName || username, // nickname required trong schema
         },
+        // Đăng nhập lần đầu bằng Google
+        lastLoginAt: now,
+        lastActiveAt: now,
       });
+    } else {
+      // User cũ đăng nhập lại bằng Google → cập nhật time
+      await touchLoginActivity(user._id);
     }
 
     if (user.blocked) {

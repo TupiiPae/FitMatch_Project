@@ -312,31 +312,23 @@ export async function deleteSuggestPlan(req, res, next) {
         .json({ ok: false, message: "Không tìm thấy lịch tập gợi ý" });
     }
 
-    // ---- RÀNG BUỘC: còn user active < 7 ngày đang lưu lịch tập? ----
-    const activeSince = getActiveSinceDate();
-
+    // Nếu có user nào (không bị block) đã lưu → chặn xoá luôn, bỏ logic 7 ngày
     if (Array.isArray(doc.savedBy) && doc.savedBy.length > 0) {
       const activeUsersCount = await User.countDocuments({
         _id: { $in: doc.savedBy },
         blocked: { $ne: true },
-        $or: [
-          { lastLoginAt: { $gte: activeSince } }, // nếu bạn có field này
-          { lastActiveAt: { $gte: activeSince } }, // hoặc field này
-          { updatedAt: { $gte: activeSince } }, // fallback: user vừa có hoạt động gần đây
-        ],
       });
 
       if (activeUsersCount > 0) {
         return res.status(409).json({
           ok: false,
-          code: "SUGGEST_PLAN_IN_USE_ACTIVE_USERS",
+          code: "SUGGEST_PLAN_IN_USE_SAVED_USERS",
           message:
-            "Lịch tập gợi ý này vẫn đang được người dùng hoạt động lưu lại trong 7 ngày gần đây, không thể xoá.",
+            "Lịch tập gợi ý này đang được người dùng lưu lại, không thể xoá.",
         });
       }
     }
 
-    // Không còn user active giữ -> cho xoá như cũ
     if (doc.imageUrl && doc.imageUrl.startsWith("http")) {
       deleteFile(doc.imageUrl, "image").catch(() => {});
     }

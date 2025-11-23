@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import "./SuggestMenuDetail.css";
 import { getSuggestMenu } from "../../api/suggestMenus";
 import api from "../../lib/api";
+import DetailModal from "./components/DetailModal/DetailModal"; // <- thêm dòng này
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => {
@@ -29,31 +30,58 @@ function getTotals(src = {}) {
   };
 }
 
-// Lấy label ngày: ưu tiên day.name/label, fallback "Ngày X"
+// Lấy label ngày: ưu tiên title / name/label, fallback "Ngày X"
 function getDayLabel(day, index) {
   if (!day) return `Ngày ${index + 1}`;
-  return day.label || day.name || `Ngày ${index + 1}`;
+  return day.title || day.label || day.name || `Ngày ${index + 1}`;
 }
 
-// Lấy tên bữa: ưu tiên name/label/mealType, fallback "Bữa X"
+// Lấy tên bữa: ưu tiên title / name/label/mealType, fallback "Bữa X"
 function getMealName(meal, index) {
   if (!meal) return `Bữa ${index + 1}`;
-  return meal.name || meal.label || meal.mealType || `Bữa ${index + 1}`;
+  return (
+    meal.title ||
+    meal.name ||
+    meal.label ||
+    meal.mealType ||
+    `Bữa ${index + 1}`
+  );
 }
 
 // Chuẩn hoá 1 record món ăn trong bữa
 function normalizeFood(food) {
+  // "food" ở đây là 1 item trong MenuItemSchema
+  // - food.food: doc Food đã populate (nếu BE populate)
+  // - food.foodName, food.kcal,...: dữ liệu snapshot lưu trong SuggestMenu
   const base = food?.food || food || {};
+
+  const name =
+    food?.foodName ||
+    base.name ||
+    food?.name ||
+    "Món ăn";
+
+  const imageUrl = base.imageUrl || food?.imageUrl;
+  const portionName =
+    base.portionName || food?.portionName || "Khẩu phần tiêu chuẩn";
+  const massG = base.massG ?? food?.massG;
+  const unit = base.unit || food?.unit || "g";
+
+  const kcal = food?.kcal ?? base.kcal ?? 0;
+  const proteinG = food?.proteinG ?? base.proteinG ?? 0;
+  const carbG = food?.carbG ?? base.carbG ?? 0;
+  const fatG = food?.fatG ?? base.fatG ?? 0;
+
   return {
-    name: base.name || food?.name || "Món ăn",
-    imageUrl: base.imageUrl || food?.imageUrl,
-    portionName: base.portionName || food?.portionName || "Khẩu phần tiêu chuẩn",
-    massG: base.massG ?? food?.massG,
-    unit: base.unit || food?.unit || "g",
-    kcal: base.kcal ?? food?.kcal ?? 0,
-    proteinG: base.proteinG ?? food?.proteinG ?? 0,
-    carbG: base.carbG ?? food?.carbG ?? 0,
-    fatG: base.fatG ?? food?.fatG ?? 0,
+    name,
+    imageUrl,
+    portionName,
+    massG,
+    unit,
+    kcal: Math.round(Number(kcal) || 0),
+    proteinG: Math.round(Number(proteinG) || 0),
+    carbG: Math.round(Number(carbG) || 0),
+    fatG: Math.round(Number(fatG) || 0),
   };
 }
 
@@ -65,6 +93,34 @@ export default function SuggestMenuDetail() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [activeDayIndex, setActiveDayIndex] = useState(0);
+
+  // --- state cho DetailModal ---
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailFood, setDetailFood] = useState(null);
+
+  // mở modal chi tiết món
+  const openFoodDetail = (item) => {
+    if (!item) return;
+    const nf = normalizeFood(item);
+    const base = item?.food || item || {};
+
+    // gom thêm các trường DetailModal cần: description, sugarG, fiberG
+    const fullFood = {
+      ...nf,
+      _id: base._id || item._id,
+      description: base.description || item.description || "",
+      sugarG: base.sugarG ?? item.sugarG ?? null,
+      fiberG: base.fiberG ?? item.fiberG ?? null,
+    };
+
+    setDetailFood(fullFood);
+    setDetailOpen(true);
+  };
+
+  const closeFoodDetail = () => {
+    setDetailOpen(false);
+    setDetailFood(null);
+  };
 
   useEffect(() => {
     (async () => {
@@ -99,10 +155,74 @@ export default function SuggestMenuDetail() {
   }, [activeDay]);
 
   const totalsMenu = getTotals(menu || {});
-  const totalsDay = getTotals(activeDay || {});
+
+  // Tính tổng calo/ngày:
+  // - Ưu tiên field tổng từ BE: activeDay.totalKcal/totalProteinG/...
+  // - Nếu không có → cộng từ các bữa → rồi cộng từ từng item trong bữa
+  const totalsDay = useMemo(() => {
+    if (!activeDay) {
+      return { totalKcal: 0, proteinG: 0, carbG: 0, fatG: 0 };
+    }
+
+    const baseTotals = getTotals(activeDay || {});
+    if (baseTotals.totalKcal) return baseTotals;
+
+    let totalKcal = 0;
+    let proteinG = 0;
+    let carbG = 0;
+    let fatG = 0;
+
+    dayMeals.forEach((meal) => {
+      if (!meal) return;
+
+      // nếu BE có totalKcal cho bữa thì dùng luôn
+      const mt = getTotals(meal || {});
+      if (mt.totalKcal) {
+        totalKcal += mt.totalKcal;
+        proteinG += mt.proteinG;
+        carbG += mt.carbG;
+        fatG += mt.fatG;
+        return;
+      }
+
+      const foods = Array.isArray(meal.items)
+        ? meal.items
+        : Array.isArray(meal.foods)
+        ? meal.foods
+        : [];
+
+      foods.forEach((it) => {
+        const base = it?.food || it || {};
+        const kcal = Number(it?.kcal ?? base.kcal ?? 0) || 0;
+        const p = Number(it?.proteinG ?? base.proteinG ?? 0) || 0;
+        const c = Number(it?.carbG ?? base.carbG ?? 0) || 0;
+        const fat = Number(it?.fatG ?? base.fatG ?? 0) || 0;
+
+        totalKcal += kcal;
+        proteinG += p;
+        carbG += c;
+        fatG += fat;
+      });
+    });
+
+    return {
+      totalKcal: Math.round(totalKcal),
+      proteinG: Math.round(proteinG),
+      carbG: Math.round(carbG),
+      fatG: Math.round(fatG),
+    };
+  }, [activeDay, dayMeals]);
 
   const cate = menu?.category || "Chưa phân loại";
   const numDays = menu?.numDays || days.length || (menu?.days?.length ?? 0);
+
+  // Mô tả rich-text: sử dụng descriptionHtml từ BE
+  const descHtml =
+    menu?.descriptionHtml ||
+    menu?.description ||
+    menu?.note ||
+    menu?.shortDesc ||
+    "";
 
   if (loading) {
     return (
@@ -178,11 +298,12 @@ export default function SuggestMenuDetail() {
               </div>
             </div>
 
-            {/* Mô tả ngắn */}
-            {(menu.description || menu.note || menu.shortDesc) && (
-              <div className="smd-desc">
-                {menu.description || menu.note || menu.shortDesc}
-              </div>
+            {/* Mô tả của Thực đơn (rich-text) – nằm ngay dưới hashtag và trên Tabs ngày */}
+            {descHtml && (
+              <div
+                className="smd-desc"
+                dangerouslySetInnerHTML={{ __html: descHtml }}
+              />
             )}
 
             {/* Tabs các ngày */}
@@ -230,7 +351,42 @@ export default function SuggestMenuDetail() {
                     ? meal.foods
                     : [];
 
-                  const mealTotals = getTotals(meal || {});
+                  // Tổng calo của bữa:
+                  // - ưu tiên meal.totalKcal nếu BE có
+                  // - nếu không → cộng từ từng món trong bữa
+                  const mealTotals = (() => {
+                    const baseTotals = getTotals(meal || {});
+                    if (baseTotals.totalKcal) return baseTotals;
+
+                    let totalKcal = 0;
+                    let proteinG = 0;
+                    let carbG = 0;
+                    let fatG = 0;
+
+                    foods.forEach((it) => {
+                      const base = it?.food || it || {};
+                      const kcal =
+                        Number(it?.kcal ?? base.kcal ?? 0) || 0;
+                      const p =
+                        Number(it?.proteinG ?? base.proteinG ?? 0) || 0;
+                      const c =
+                        Number(it?.carbG ?? base.carbG ?? 0) || 0;
+                      const fat =
+                        Number(it?.fatG ?? base.fatG ?? 0) || 0;
+
+                      totalKcal += kcal;
+                      proteinG += p;
+                      carbG += c;
+                      fatG += fat;
+                    });
+
+                    return {
+                      totalKcal: Math.round(totalKcal),
+                      proteinG: Math.round(proteinG),
+                      carbG: Math.round(carbG),
+                      fatG: Math.round(fatG),
+                    };
+                  })();
 
                   return (
                     <section className="smd-meal" key={meal._id || mIdx}>
@@ -243,6 +399,8 @@ export default function SuggestMenuDetail() {
                         <div className="smd-meal-kcal">
                           {mealTotals.totalKcal ? (
                             <>
+                              {/* Tổng calo bữa ăn – cùng hàng với title, góc phải */}
+                              Tổng:{" "}
                               {mealTotals.totalKcal.toLocaleString()} Cal ·{" "}
                               <span className="protein">
                                 {mealTotals.proteinG}g Protein
@@ -275,6 +433,7 @@ export default function SuggestMenuDetail() {
                             <div
                               key={f._id || fIdx}
                               className="smd-food-row"
+                              onClick={() => openFoodDetail(f)} // <- mở DetailModal
                             >
                               <div className="smd-food-thumb">
                                 {nf.imageUrl ? (
@@ -296,7 +455,9 @@ export default function SuggestMenuDetail() {
                                 <div className="smd-food-sub">
                                   {nf.portionName} ·{" "}
                                   {nf.massG != null
-                                    ? `${nf.massG} ${nf.unit || "g"}`
+                                    ? `${nf.massG} ${
+                                        nf.unit || "g"
+                                      }`
                                     : `Khối lượng tiêu chuẩn`}{" "}
                                   · {nf.kcal} Cal
                                 </div>
@@ -415,6 +576,14 @@ export default function SuggestMenuDetail() {
             </section>
           </aside>
         </div>
+
+        {/* DetailModal – dùng chung với RecordMeal / DailyJournal */}
+        <DetailModal
+          open={detailOpen}
+          food={detailFood}
+          onClose={closeFoodDetail}
+        />
+        {/* Không truyền onAddToLog => modal chỉ xem chi tiết, không có nút "Thêm vào Nhật ký" */}
       </div>
     </div>
   );

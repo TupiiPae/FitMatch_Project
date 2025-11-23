@@ -35,6 +35,7 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
     carbG,
     fatG,
     sugarG,
+    saltG,
     fiberG,
     description,
     imageUrl,
@@ -42,11 +43,12 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
 
   const macros = [
     { label: "Calories", value: kcal != null ? `${kcal} kcal` : "-" },
-    { label: "Protein", value: proteinG != null ? `${proteinG} g` : "-" },
-    { label: "Carbs", value: carbG != null ? `${carbG} g` : "-" },
-    { label: "Fat", value: fatG != null ? `${fatG} g` : "-" },
-    { label: "Sugar", value: sugarG != null ? `${sugarG} g` : "-" },
-    { label: "Fiber", value: fiberG != null ? `${fiberG} g` : "-" },
+    { label: "Chất đạm (Protein)", value: proteinG != null ? `${proteinG} g` : "-" },
+    { label: "Đường bột (Carbs)", value: carbG != null ? `${carbG} g` : "-" },
+    { label: "Chất béo (Fat)", value: fatG != null ? `${fatG} g` : "-" },
+    { label: "Muối (Salt)", value: saltG != null ? `${saltG} g` : "-" },
+    { label: "Đường (Sugar)", value: sugarG != null ? `${sugarG} g` : "-" },
+    { label: "Chất xơ (Fiber)", value: fiberG != null ? `${fiberG} g` : "-" },
   ];
 
   const desc =

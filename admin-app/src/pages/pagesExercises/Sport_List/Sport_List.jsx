@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, listExercisesAdminOnly, deleteExercise, getExerciseMeta } from "../../../lib/api";
+import CannotDeleteModal from "../../../components/CannotDeleteModal";
 import "./Sport_List.css";
 import { toast } from "react-toastify";
 
@@ -37,6 +38,11 @@ export default function Sport_List() {
   const [flashId, setFlashId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const [cannotDelete, setCannotDelete] = useState({
+    open: false,
+    message: "",
+  });
 
   useEffect(() => {
     (async () => {
@@ -106,15 +112,44 @@ export default function Sport_List() {
     try {
       setDeletingId(id);
       await deleteExercise(id);
-      if (items.length === 1 && skip > 0) setSkip(Math.max(0, skip - limit));
-      else {
-        setItems(prev => prev.filter(x => x._id !== id));
-        setTotal(t => Math.max(0, (t || 0) - 1));
-        setSelectedIds(sel => sel.filter(x => x !== id));
+
+      if (items.length === 1 && skip > 0) {
+        setSkip(Math.max(0, skip - limit));
+      } else {
+        setItems((prev) => prev.filter((x) => x._id !== id));
+        setTotal((t) => Math.max(0, (t || 0) - 1));
+        setSelectedIds((sel) => sel.filter((x) => x !== id));
       }
+
       toast.success("Đã xóa môn thể thao");
     } catch (e) {
-      console.error(e); toast.error("Xóa thất bại");
+      const status = e?.response?.status;
+      const data = e?.response?.data;
+      const code = data?.code;
+      const msg = data?.message;
+
+      if (status === 409) {
+        // Phân biệt 2 trường hợp 409 từ BE
+        let fallbackMsg;
+        if (code === "EXERCISE_IN_USE_SUGGEST_PLAN") {
+          fallbackMsg =
+            "Không thể xoá bài tập này vì đang được sử dụng trong một hoặc nhiều Lịch tập gợi ý.";
+        } else if (code === "EXERCISE_IN_USE_ACTIVE_USERS") {
+          fallbackMsg =
+            "Bài tập này đang được người dùng hoạt động sử dụng trong lịch tập cá nhân 7 ngày gần đây, không thể xoá.";
+        } else {
+          fallbackMsg =
+            "Bài tập này đang được sử dụng nên không thể xoá.";
+        }
+
+        setCannotDelete({
+          open: true,
+          message: msg || fallbackMsg,
+        });
+      } else {
+        console.error(e);
+        toast.error(msg || "Xóa thất bại");
+      }
     } finally {
       setDeletingId(null);
     }
@@ -124,19 +159,48 @@ export default function Sport_List() {
     if (!ids?.length) return;
     try {
       setBulkDeleting(true);
-      const results = await Promise.allSettled(ids.map(id => deleteExercise(id)));
-      const ok = results.filter(r => r.status === "fulfilled").length;
-      const fail = results.length - ok;
+      const results = await Promise.allSettled(ids.map((id) => deleteExercise(id)));
+
+      const ok = results.filter((r) => r.status === "fulfilled").length;
+      const fails = results.filter((r) => r.status === "rejected");
+      const blocked = fails.filter(
+        (r) => r.reason?.response?.status === 409
+      );
+      const otherFail = fails.length - blocked.length;
 
       const deletingAll = ids.length >= items.length;
       if (deletingAll && skip > 0) setSkip(Math.max(0, skip - limit));
       else {
-        setItems(prev => prev.filter(x => !ids.includes(x._id)));
-        setTotal(t => Math.max(0, (t || 0) - ok));
+        setItems((prev) => prev.filter((x) => !ids.includes(x._id)));
+        setTotal((t) => Math.max(0, (t || 0) - ok));
         setSelectedIds([]);
       }
+
       if (ok) toast.success(`Đã xóa ${ok} môn`);
-      if (fail) toast.error(`${fail} môn xóa thất bại`);
+      if (otherFail) toast.error(`${otherFail} môn xóa thất bại`);
+
+      if (blocked.length > 0) {
+        const first = blocked[0].reason?.response?.data;
+        const code = first?.code;
+        const msg = first?.message;
+
+        let fallbackMsg;
+        if (code === "EXERCISE_IN_USE_SUGGEST_PLAN") {
+          fallbackMsg =
+            "Một số bài tập không thể xoá vì đang được sử dụng trong các Lịch tập gợi ý.";
+        } else if (code === "EXERCISE_IN_USE_ACTIVE_USERS") {
+          fallbackMsg =
+            "Một số bài tập không thể xoá vì đang được người dùng hoạt động sử dụng trong lịch tập cá nhân 7 ngày gần đây.";
+        } else {
+          fallbackMsg =
+            "Một số bài tập không thể xoá vì đang được sử dụng.";
+        }
+
+        setCannotDelete({
+          open: true,
+          message: msg || fallbackMsg,
+        });
+      }
     } finally {
       setBulkDeleting(false);
     }
@@ -331,6 +395,13 @@ export default function Sport_List() {
           </div>
         </div>
       )}
+
+      <CannotDeleteModal
+        open={cannotDelete.open}
+        title="Không thể xoá môn thể thao"
+        message={cannotDelete.message}
+        onClose={() => setCannotDelete({ open: false, message: "" })}
+      />
     </div>
   );
 }

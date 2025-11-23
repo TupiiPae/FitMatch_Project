@@ -188,7 +188,7 @@ export default function SuggestMenu_List() {
         <span className="sml-sep">/</span>
         <span className="sml-grp">
           <i className="fa-solid fa-bowl-food" />{" "}
-          <span>Quản lý Thực đơn gợi ý</span>
+          <span>Quản lý món ăn</span>
         </span>
         <span className="sml-sep">/</span>
         <span className="sml-cur">Danh sách thực đơn gợi ý</span>

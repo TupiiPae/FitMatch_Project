@@ -198,7 +198,7 @@ export function sumRepsFromSets(sets = []) {
  * Thời gian 1 block (phút)
  * Công thức: ((Tổng reps * 3s) + (max(sets-1,0) * 60s)) / 60
   Thời gian tập = (Tổng số rep x 3 giây)
-  hời gian nghỉ = (Số hiệp - 1) x 60 giây
+  Thời gian nghỉ = (Số hiệp - 1) x 60 giây
   Tổng thời gian (phút) = (Thời gian tập + Thời gian nghỉ) / 60
  */
 export function blockMinutesFromSets(sets = []) {

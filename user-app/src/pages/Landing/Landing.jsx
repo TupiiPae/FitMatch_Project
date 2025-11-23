@@ -146,9 +146,9 @@ export default function Landing() {
               className="lm-section-logo"
             />
           <p>
-            Chúng tôi kết nối những người đam mê thể thao, giúp bạn tìm được
+            Là ứng dụng hỗ trợ quản lý dinh dưỡng, tập luyện và kết nối những người đam mê thể thao, giúp bạn tìm được
             người bạn đồng hành lý tưởng để cùng nhau chinh phục mọi mục tiêu
-            tập luyện và dinh dưỡng. Không còn những buổi tập đơn độc, hãy cùng
+            tập luyện và dinh dưỡng. Không còn loay hoay với những công cụ riêng lẻ - Hay những buổi tập đơn độc, hãy cùng
             nhau tạo nên sự khác biệt.
           </p>
         </section>

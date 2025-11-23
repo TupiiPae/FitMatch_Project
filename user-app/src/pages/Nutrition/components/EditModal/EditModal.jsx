@@ -180,37 +180,37 @@ export default function EditModal({
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Protein</span>
+                <span className="lbl">Chất đạm (Protein)</span>
                 <span className="val">
                   {fmt(food.proteinG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Carbs</span>
+                <span className="lbl">Đường bột (Carbs)</span>
                 <span className="val">
                   {fmt(food.carbG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Fat</span>
+                <span className="lbl">Chất béo (Fat)</span>
                 <span className="val">
                   {fmt(food.fatG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Salt</span>
+                <span className="lbl">Muối (Salt)</span>
                 <span className="val">
                   {fmt(food.saltG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Sugar</span>
+                <span className="lbl">Đường (Sugar)</span>
                 <span className="val">
                   {fmt(food.sugarG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Fiber</span>
+                <span className="lbl">Chất xơ (Fiber)</span>
                 <span className="val">
                   {fmt(food.fiberG)} g
                 </span>

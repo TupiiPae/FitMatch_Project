@@ -120,6 +120,11 @@ const userSchema = new mongoose.Schema({
   blockedAt: { type: Date, default: undefined },
   role: { type: String, enum: ["user", "admin"], default: "user" },
   onboarded: { type: Boolean, default: false },
+
+  // 🔹 Thêm 2 field đánh dấu hoạt động
+  lastLoginAt: { type: Date, default: undefined },
+  lastActiveAt: { type: Date, default: undefined },
+
   profile: profileSchema,
 }, { timestamps: true });
 

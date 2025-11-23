@@ -59,7 +59,7 @@ html, body { font-size: var(--fs-base); }
   padding:10px; border-bottom:1px solid var(--fm-border); flex-shrink:0;  background-color: #fff;
 }
 .fm-logo-link{ display:inline-flex; align-items:center; justify-content:center; }
-.fm-logo-rect{ height:120px; width:auto; object-fit:contain; display:block; border-radius:10px; transition:height .18s ease; }
+.fm-logo-rect{ height:40px; width:auto; object-fit:contain; display:block; border-radius:10px; transition:height .18s ease; }
 .fm-side.is-sm .fm-side__logo{ height:84px; padding:8px; }
 .fm-side.is-sm .fm-logo-rect{ height:34px; }
 

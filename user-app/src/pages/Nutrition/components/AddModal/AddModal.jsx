@@ -215,37 +215,37 @@ export default function AddModal({
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Protein</span>
+                <span className="lbl">Chất đạm (Protein)</span>
                 <span className="val">
                   {fmt(f.proteinG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Carbs</span>
+                <span className="lbl">Đường bột (Carbs)</span>
                 <span className="val">
                   {fmt(f.carbG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Fat</span>
+                <span className="lbl">Chất béo (Fat)</span>
                 <span className="val">
                   {fmt(f.fatG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Salt</span>
+                <span className="lbl">Muối (Salt)</span>
                 <span className="val">
                   {fmt(f.saltG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Sugar</span>
+                <span className="lbl">Đường (Sugar)</span>
                 <span className="val">
                   {fmt(f.sugarG)} g
                 </span>
               </div>
               <div className="am-macro-row">
-                <span className="lbl">Fiber</span>
+                <span className="lbl">Chất xơ (Fiber)</span>
                 <span className="val">
                   {fmt(f.fiberG)} g
                 </span>

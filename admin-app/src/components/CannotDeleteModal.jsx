@@ -23,7 +23,7 @@ export default function CannotDeleteModal({ open, title, message, onClose }) {
         </div>
         <div className="cm-body">
           {message ||
-            "Dữ liệu này đang được người dùng hoạt động sử dụng trong 7 ngày gần đây, nên không thể xoá."}
+            "Dữ liệu này đang được người dùng sử dụng nên không thể xoá."}
         </div>
         <div className="cm-foot">
           <button className="btn" onClick={onClose}>

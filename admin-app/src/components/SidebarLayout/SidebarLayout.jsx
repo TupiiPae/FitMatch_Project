@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import "./SidebarLayout.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import logoFitmatch from "../../assets/logo-fitmatch.png";
+import logoFitmatch from "../../assets/fm-logo-name.png";
 import { toast } from "react-toastify";
 
 const buildManagementSections = (rawLevel) => {

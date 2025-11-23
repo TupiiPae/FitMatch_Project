@@ -493,7 +493,7 @@ export default function SuggestMenu_Form() {
         <span className="separator">/</span>
         <span className="current-group">
           <i className="fa-solid fa-bowl-food" aria-hidden="true" />
-          <span>Quản lý Thực đơn gợi ý</span>
+          <span>Quản lý Món ăn</span>
         </span>
         <span className="separator">/</span>
         <span className="current-page">{pageTitle}</span>
