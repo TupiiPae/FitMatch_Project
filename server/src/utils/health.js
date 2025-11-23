@@ -187,7 +187,7 @@ export function tinhMacroMucTieuTuProfile(profile = {}) {
   return tinhMacroMucTieu({ mucTieu, canNangKg, calorieTarget, tdee });
 }
 
-/* ==================== BỔ SUNG: TÍNH CALORIE CHO WORKOUT ==================== */
+/* ==================== Check: TÍNH CALORIE CHO WORKOUT ==================== */
 
 /** Tổng reps của 1 mảng set */
 export function sumRepsFromSets(sets = []) {
@@ -197,6 +197,9 @@ export function sumRepsFromSets(sets = []) {
 /**
  * Thời gian 1 block (phút)
  * Công thức: ((Tổng reps * 3s) + (max(sets-1,0) * 60s)) / 60
+  Thời gian tập = (Tổng số rep x 3 giây)
+  hời gian nghỉ = (Số hiệp - 1) x 60 giây
+  Tổng thời gian (phút) = (Thời gian tập + Thời gian nghỉ) / 60
  */
 export function blockMinutesFromSets(sets = []) {
   const reps = sumRepsFromSets(sets);
@@ -209,6 +212,7 @@ export function blockMinutesFromSets(sets = []) {
 /*** Cong thuc tuong doi --------------------------------------------
  * Kcal theo MET (caloriePerRep ~ MET):
  * (MET * 3.5 * weightKg (user) * minutes) / 200
+  Calo Đốt Cháy = (MET × 3.5 × Cân nặng (user-kg) × Thời gian (phút)) / 200
  */
 export function kcalByMETMinutes(met = 0, weightKg = 0, minutes = 0) {
   const m = Math.max(0, Number(met || 0));
@@ -218,11 +222,15 @@ export function kcalByMETMinutes(met = 0, weightKg = 0, minutes = 0) {
   return (m * 3.5 * w * t) / 200;
 }
 
+
+
+
+
 /**
  * items[] cần có { caloriePerRep, sets[] }
  * weightKg: cân nặng hiện tại (kg)
  */
-export function calcPlanKcalByMET(items = [], weightKg = 60) {
+export function calcPlanKcalByMET(items = [], weightKg = 70) {
   let total = 0;
   for (const it of (items || [])) {
     const minutes = blockMinutesFromSets(it?.sets || []);

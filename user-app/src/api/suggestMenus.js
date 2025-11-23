@@ -10,3 +10,8 @@ export async function toggleSaveSuggestMenu(id) {
   const res = await api.post(`/suggest-menus/${id}/save`);
   return res.data;
 }
+
+export async function getSuggestMenu(id) {
+  const { data } = await api.get(`/suggest-menus/${id}`);
+  return data;
+}

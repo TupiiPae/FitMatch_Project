@@ -278,7 +278,7 @@
 .smu-saved-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 10px;
   border-radius: 8px;
   background: #1e1e1e;
@@ -294,12 +294,12 @@
 
 /* Ảnh saved nhỏ giống list món ăn */
 .smu-saved-img {
-  flex: 0 0 64px;
+  flex: 0 0 100px;
 }
 
 .smu-saved-img img {
-  width: 64px;
-  height: 64px;
+  width: 100px;
+  height: 100px;
   object-fit: cover;
   border-radius: 6px;
 }
@@ -325,7 +325,7 @@
 }
 
 .smu-saved-name {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 600;
 }
 

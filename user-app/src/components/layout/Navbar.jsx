@@ -217,18 +217,18 @@ export default function Navbar({
                           <span>Theo dõi bữa ăn hàng ngày của bạn</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/dinh-duong/ghi-lai" className="fm-megamenu-link" role="menuitem">
-                        <FontAwesomeIcon icon={faUtensils} />
-                        <div>
-                          <strong>Ghi lại bữa ăn</strong>
-                          <span>Thêm nhanh các bữa ăn sáng, trưa, tối</span>
-                        </div>
-                      </NavLink>
                       <NavLink to="/dinh-duong/ghi-lai/tao-mon" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faAppleAlt} />
                         <div>
                           <strong>Tạo món ăn</strong>
                           <span>Lưu lại công thức món ăn của riêng bạn</span>
+                        </div>
+                      </NavLink>
+                      <NavLink to="/dinh-duong/ghi-lai" className="fm-megamenu-link" role="menuitem">
+                        <FontAwesomeIcon icon={faUtensils} />
+                        <div>
+                          <strong>Ghi lại bữa ăn</strong>
+                          <span>Thêm nhanh các bữa ăn sáng, trưa, tối</span>
                         </div>
                       </NavLink>
                       <NavLink to="/dinh-duong/tao-mon-an-ai" className="fm-megamenu-link" role="menuitem">
@@ -238,18 +238,18 @@ export default function Navbar({
                           <span>Để AI tính toán công thức món ăn cho bạn</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/dinh-duong/tinh-calo-ai" className="fm-megamenu-link" role="menuitem">
-                        <FontAwesomeIcon icon={faCalculator} />
-                        <div>
-                          <strong>Tính toán Calorie với AI</strong>
-                          <span>Chụp ảnh món ăn để ước tính calo</span>
-                        </div>
-                      </NavLink>
                       <NavLink to="/dinh-duong/thuc-don-goi-y" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faLightbulb} />
                         <div>
                           <strong>Thực đơn gợi ý</strong>
                           <span>Khám phá các thực đơn lành mạnh</span>
+                        </div>
+                      </NavLink>
+                      <NavLink to="/dinh-duong/tinh-calo-ai" className="fm-megamenu-link" role="menuitem">
+                        <FontAwesomeIcon icon={faCalculator} />
+                        <div>
+                          <strong>Tính toán Calorie với AI</strong>
+                          <span>Chụp ảnh món ăn để ước tính calo</span>
                         </div>
                       </NavLink>
                     </div>
