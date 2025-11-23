@@ -1,11 +1,18 @@
-// admin-app/src/components/CannotDeleteModal.jsx
 import React from "react";
 
 /**
  * Modal thông báo không thể xoá – dùng chung cho tất cả danh sách.
- * Dùng lại class .cm-backdrop, .cm-modal để không bể giao diện.
+ * - title: tiêu đề
+ * - message: câu mô tả chính
+ * - details: mảng string để in thêm chi tiết (danh sách thực đơn, món, v.v.)
  */
-export default function CannotDeleteModal({ open, title, message, onClose }) {
+export default function CannotDeleteModal({
+  open,
+  title,
+  message,
+  details,
+  onClose,
+}) {
   if (!open) return null;
 
   return (
@@ -17,13 +24,21 @@ export default function CannotDeleteModal({ open, title, message, onClose }) {
         aria-modal="true"
       >
         <div className="cm-head">
-          <h1 className="cm-title">
-            {title || "Không thể xoá"}
-          </h1>
+          <h1 className="cm-title">{title || "Không thể xoá"}</h1>
         </div>
         <div className="cm-body">
-          {message ||
-            "Dữ liệu này đang được người dùng sử dụng nên không thể xoá."}
+          <p>
+            {message ||
+              "Dữ liệu này đang được sử dụng nên không thể xoá."}
+          </p>
+
+          {Array.isArray(details) && details.length > 0 && (
+            <ul className="cm-detail-list">
+              {details.map((line, idx) => (
+                <li key={idx}>{line}</li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="cm-foot">
           <button className="btn" onClick={onClose}>

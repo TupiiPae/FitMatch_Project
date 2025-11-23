@@ -4,6 +4,7 @@ import fs from "fs";
 import sharp from "sharp";
 import Food from "../models/Food.js";
 import NutritionLog from "../models/NutritionLog.js";
+import SuggestMenu from "../models/SuggestMenu.js";
 import { responseOk } from "../utils/response.js";
 import { FOOD_DIR } from "../middleware/upload.js";
 import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
@@ -313,8 +314,28 @@ export async function deleteFood(req, res) {
   const isAdmin = isAdminRole(req);
   if (!isOwner && !isAdmin) return res.status(403).json({ message: "Forbidden" });
 
+  // 🔍 Tìm các thực đơn gợi ý đang sử dụng món ăn này
+  const menus = await SuggestMenu.find(
+    { "days.meals.items.food": doc._id },
+    { _id: 1, name: 1 }
+  ).lean();
+
+  if (menus.length > 0) {
+    const names = menus
+      .map((m) => m.name || `#${String(m._id).slice(-6)}`)
+      .join(", ");
+
+    return res.status(400).json({
+      message: `Món ăn này đang được sử dụng trong ${menus.length} thực đơn gợi ý: ${names}. Vui lòng gỡ món ra khỏi các thực đơn đó trước khi xoá.`,
+      menus: menus.map((m) => ({
+        id: m._id,
+        name: m.name,
+      })),
+    });
+  }
+
   await Food.deleteOne({ _id: doc._id });
-  res.json(responseOk());
+  return res.json(responseOk());
 }
 
 export async function approveFood(req, res) {

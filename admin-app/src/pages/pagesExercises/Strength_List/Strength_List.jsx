@@ -61,6 +61,7 @@ export default function Strength_List() {
   const [cannotDelete, setCannotDelete] = useState({
     open: false,
     message: "",
+    details: null,
   });
 
   useEffect(() => {
@@ -161,35 +162,44 @@ export default function Strength_List() {
       }
 
       toast.success("Đã xóa môn thể thao");
-    } catch (e) {
-      const status = e?.response?.status;
-      const data = e?.response?.data;
-      const code = data?.code;
-      const msg = data?.message;
+        } catch (e) {
+            const status = e?.response?.status;
+            const data = e?.response?.data;
+            const code = data?.code;
+            const msg = data?.message;
 
-      if (status === 409) {
-        // Phân biệt 2 trường hợp 409 từ BE
-        let fallbackMsg;
-        if (code === "EXERCISE_IN_USE_SUGGEST_PLAN") {
-          fallbackMsg =
-            "Không thể xoá bài tập này vì đang được sử dụng trong một hoặc nhiều Lịch tập gợi ý.";
-        } else if (code === "EXERCISE_IN_USE_ACTIVE_USERS") {
-          fallbackMsg =
-            "Bài tập này đang được người dùng hoạt động sử dụng trong lịch tập cá nhân 7 ngày gần đây, không thể xoá.";
-        } else {
-          fallbackMsg =
-            "Bài tập này đang được sử dụng nên không thể xoá.";
-        }
+            if (status === 409) {
+              let fallbackMsg;
+              if (code === "EXERCISE_IN_USE_SUGGEST_PLAN") {
+                fallbackMsg =
+                  "Không thể xoá bài tập này vì đang được sử dụng trong một hoặc nhiều Lịch tập gợi ý.";
+              } else if (code === "EXERCISE_IN_USE_ACTIVE_USERS") {
+                fallbackMsg =
+                  "Bài tập này đang được người dùng hoạt động sử dụng trong lịch tập cá nhân 7 ngày gần đây, không thể xoá.";
+              } else {
+                fallbackMsg =
+                  "Bài tập này đang được sử dụng nên không thể xoá.";
+              }
 
-        setCannotDelete({
-          open: true,
-          message: msg || fallbackMsg,
-        });
-      } else {
-        console.error(e);
-        toast.error(msg || "Xóa thất bại");
-      }
-    } finally {
+              const detailLines =
+                Array.isArray(data?.plans) && data.plans.length
+                  ? data.plans.map(
+                      (p) =>
+                        p.name ||
+                        `#${String(p.id || p._id || "").slice(-6)}`
+                    )
+                  : null;
+
+              setCannotDelete({
+                open: true,
+                message: msg || fallbackMsg,
+                details: detailLines,
+              });
+            } else {
+              console.error(e);
+              toast.error(msg || "Xóa thất bại");
+            }
+          } finally {
       setDeletingId(null);
     }
   };
@@ -199,19 +209,35 @@ export default function Strength_List() {
     if (!ids?.length) return;
     try {
       setBulkDeleting(true);
-      const results = await Promise.allSettled(ids.map((id) => deleteExercise(id)));
-
-      const ok = results.filter((r) => r.status === "fulfilled").length;
-      const fails = results.filter((r) => r.status === "rejected");
-      const blocked = fails.filter(
-        (r) => r.reason?.response?.status === 409
+      const results = await Promise.allSettled(
+        ids.map((id) => deleteExercise(id))
       );
-      const otherFail = fails.length - blocked.length;
+
+      const successIds = [];
+      const blocked = [];
+      const otherErrors = [];
+
+      results.forEach((r, idx) => {
+        if (r.status === "fulfilled") {
+          successIds.push(ids[idx]);
+        } else {
+          const status = r.reason?.response?.status;
+          if (status === 409) blocked.push(r);
+          else otherErrors.push(r);
+        }
+      });
+
+      const ok = successIds.length;
+      const otherFail = otherErrors.length;
 
       const deletingAll = ids.length >= items.length;
-      if (deletingAll && skip > 0) setSkip(Math.max(0, skip - limit));
-      else {
-        setItems((prev) => prev.filter((x) => !ids.includes(x._id)));
+      if (deletingAll && skip > 0) {
+        setSkip(Math.max(0, skip - limit));
+      } else {
+        // chỉ remove những bài tập xoá thành công
+        setItems((prev) =>
+          prev.filter((x) => !successIds.includes(x._id))
+        );
         setTotal((t) => Math.max(0, (t || 0) - ok));
         setSelectedIds([]);
       }
@@ -236,9 +262,19 @@ export default function Strength_List() {
             "Một số bài tập không thể xoá vì đang được sử dụng.";
         }
 
+        const detailLines =
+          Array.isArray(first?.plans) && first.plans.length
+            ? first.plans.map(
+                (p) =>
+                  p.name ||
+                  `#${String(p.id || p._id || "").slice(-6)}`
+              )
+            : null;
+
         setCannotDelete({
           open: true,
           message: msg || fallbackMsg,
+          details: detailLines,
         });
       }
     } finally {
@@ -640,8 +676,13 @@ export default function Strength_List() {
         open={cannotDelete.open}
         title="Không thể xoá bài tập"
         message={cannotDelete.message}
+        details={cannotDelete.details}
         onClose={() =>
-          setCannotDelete({ open: false, message: "" })
+          setCannotDelete({
+            open: false,
+            message: "",
+            details: null,
+          })
         }
       />
     </div>

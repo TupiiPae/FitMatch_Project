@@ -1,6 +1,7 @@
 // server/src/controllers/suggestMenu.controller.js
 import SuggestMenu from "../models/SuggestMenu.js";
 import Food from "../models/Food.js";
+import { User } from "../models/User.js";
 import { responseOk } from "../utils/response.js";
 import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
 
@@ -468,13 +469,25 @@ export async function deleteSuggestMenu(req, res) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    const doc = await SuggestMenu.findById(req.params.id);
+    const doc = await SuggestMenu.findById(req.params.id).select(
+      "imageUrl savedBy name"
+    );
     if (!doc) return res.status(404).json({ message: "Not found" });
 
+    // 🔒 Nếu thực đơn đang được user lưu → không cho xoá
+    if (Array.isArray(doc.savedBy) && doc.savedBy.length > 0) {
+      return res.status(400).json({
+        message: `Thực đơn "${doc.name}" đang được ${doc.savedBy.length} người dùng lưu, nên không thể xoá.`,
+        savedCount: doc.savedBy.length,
+      });
+    }
+
     // (Tuỳ chọn) nếu muốn xoá luôn ảnh Cloudinary:
-    // if (doc.imageUrl && doc.imageUrl.includes("cloudinary.com")) {
-    //   await deleteFile(doc.imageUrl, "image").catch(() => {});
-    // }
+    if (doc.imageUrl && doc.imageUrl.includes("cloudinary.com")) {
+      try {
+        await deleteFile(doc.imageUrl, "image");
+      } catch (_) {}
+    }
 
     await SuggestMenu.deleteOne({ _id: doc._id });
     return res.json(responseOk());
@@ -483,6 +496,7 @@ export async function deleteSuggestMenu(req, res) {
     return res.status(500).json({ message: "Lỗi máy chủ" });
   }
 }
+
 
 export async function listSuggestMenusUser(req, res) {
   const userId = req.userId;

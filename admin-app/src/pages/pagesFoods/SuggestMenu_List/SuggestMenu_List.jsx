@@ -1,3 +1,4 @@
+// admin-app/src/pagesFoods/SuggestMenu_List/SuggestMenu_List.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -6,6 +7,7 @@ import {
   deleteSuggestMenu,
 } from "../../../lib/api";
 import { toast } from "react-toastify";
+import CannotDeleteModal from "../../../components/CannotDeleteModal.jsx";
 import "./SuggestMenu_List.css";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
@@ -40,6 +42,11 @@ export default function SuggestMenu_List() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const [flashId, setFlashId] = useState(null);
+
+  // Cannot delete modal
+  const [cannotDeleteOpen, setCannotDeleteOpen] = useState(false);
+  const [cannotDeleteMsg, setCannotDeleteMsg] = useState("");
+  const [cannotDeleteInfo, setCannotDeleteInfo] = useState(null);
 
   const fmtDate = (v) => (v ? new Date(v).toLocaleString() : "—");
   const fmtMacrosTriple = (p, c, f) =>
@@ -126,12 +133,21 @@ export default function SuggestMenu_List() {
       }
       toast.success("Đã xóa thực đơn gợi ý");
     } catch (err) {
-      console.error(err);
-      const msg = err?.response?.data?.message;
-      toast.error(msg || "Xóa thực đơn thất bại");
-    } finally {
-      setDeletingId(null);
-    }
+        console.error(err);
+        const data = err?.response?.data;
+
+        if (err?.response?.status === 400 && data?.message) {
+          setCannotDeleteInfo({
+            title: "Không thể xoá thực đơn gợi ý",
+            message: data.message,
+          });
+        } else {
+          const msg = data?.message;
+          toast.error(msg || "Xóa thực đơn thất bại");
+        }
+      } finally {
+        setDeletingId(null);
+      }
   };
 
   const onBulkDelete = async (ids) => {
@@ -142,14 +158,18 @@ export default function SuggestMenu_List() {
         ids.map((id) => deleteSuggestMenu(id))
       );
 
-      const okCount = results.filter((r) => r.status === "fulfilled").length;
-      const failCount = results.length - okCount;
+      const okResults = results.filter((r) => r.status === "fulfilled");
+      const failResults = results.filter((r) => r.status === "rejected");
+
+      const okCount = okResults.length;
+      const failCount = failResults.length;
 
       const deletingAllOnPage = ids.length >= items.length;
       if (deletingAllOnPage && skip > 0) {
         setSkip(Math.max(0, skip - limit));
       } else {
-        setItems((prev) => prev.filter((x) => !ids.includes(x._id)));
+        const successIds = okResults.map((r, idx) => ids[idx]);
+        setItems((prev) => prev.filter((x) => !successIds.includes(x._id)));
         setTotal((t) => Math.max(0, Number(t || 0) - okCount));
         setSelectedIds([]);
       }
@@ -158,7 +178,18 @@ export default function SuggestMenu_List() {
         toast.success(`Đã xóa ${okCount} thực đơn gợi ý`);
       }
       if (failCount > 0) {
-        toast.error(`${failCount} thực đơn xóa thất bại`);
+        const blocking = failResults
+          .map((r) => r.reason?.response?.data)
+          .find((d) => d?.message);
+
+        if (blocking) {
+          setCannotDeleteInfo({
+            title: "Một số thực đơn không thể xoá",
+            message: blocking.message,
+          });
+        } else {
+          toast.error(`${failCount} thực đơn xóa thất bại`);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -425,6 +456,14 @@ export default function SuggestMenu_List() {
           </div>
         </div>
       )}
+
+      {/* Cannot delete modal */}
+      <CannotDeleteModal
+        open={!!cannotDeleteInfo}
+        title={cannotDeleteInfo?.title}
+        message={cannotDeleteInfo?.message}
+        onClose={() => setCannotDeleteInfo(null)}
+      />
     </div>
   );
 }

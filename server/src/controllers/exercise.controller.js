@@ -274,17 +274,26 @@ export async function deleteExercise(req, res, next) {
     }
 
     /* --------- 1. RÀNG BUỘC: đang dùng trong Lịch tập gợi ý --------- */
-    const usedInSuggestPlan = await SuggestPlan.exists({
-      "sessions.exercises.exercise": exercise._id,
-    });
+    const plans = await SuggestPlan.find(
+      { "sessions.exercises.exercise": exercise._id },
+      { _id: 1, name: 1 }
+    ).lean();
 
-    if (usedInSuggestPlan) {
+    if (plans.length > 0) {
+      const names = plans
+        .map((p) => p.name || `#${String(p._id).slice(-6)}`)
+        .join(", ");
+
       return res.status(409).json({
         ok: false,
         code: "EXERCISE_IN_USE_SUGGEST_PLAN",
         message:
-          "Không thể xoá bài tập này vì đang được sử dụng trong một hoặc nhiều Lịch tập gợi ý. " +
-          "Vui lòng chỉnh sửa hoặc xoá các lịch tập gợi ý liên quan trước.",
+          `Không thể xoá bài tập này vì đang được sử dụng trong ${plans.length} lịch tập gợi ý: ${names}. ` +
+          "Vui lòng gỡ bài tập khỏi các lịch tập đó trước khi xoá.",
+        plans: plans.map((p) => ({
+          id: p._id,
+          name: p.name,
+        })),
       });
     }
 
@@ -331,6 +340,7 @@ export async function deleteExercise(req, res, next) {
     return next(err);
   }
 }
+
 
 // GET /api/admin/exercises/meta
 export function meta(_req, res) {

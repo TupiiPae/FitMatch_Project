@@ -312,7 +312,7 @@ export async function deleteSuggestPlan(req, res, next) {
         .json({ ok: false, message: "Không tìm thấy lịch tập gợi ý" });
     }
 
-    // Nếu có user nào (không bị block) đã lưu → chặn xoá luôn, bỏ logic 7 ngày
+    // Nếu có user (không bị block) đã lưu → chặn xoá luôn (không còn logic 7 ngày)
     if (Array.isArray(doc.savedBy) && doc.savedBy.length > 0) {
       const activeUsersCount = await User.countDocuments({
         _id: { $in: doc.savedBy },
@@ -323,8 +323,8 @@ export async function deleteSuggestPlan(req, res, next) {
         return res.status(409).json({
           ok: false,
           code: "SUGGEST_PLAN_IN_USE_SAVED_USERS",
-          message:
-            "Lịch tập gợi ý này đang được người dùng lưu lại, không thể xoá.",
+          message: `Lịch tập gợi ý "${doc.name}" đang được ${activeUsersCount} người dùng lưu, không thể xoá.`,
+          savedCount: activeUsersCount,
         });
       }
     }

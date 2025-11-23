@@ -150,21 +150,37 @@ export default function SuggestPlan_List() {
         setSelectedIds((sel) => sel.filter((x) => x !== id));
       }
       toast.success("Đã xóa lịch tập gợi ý");
-    } catch (err) {
-      console.error(err);
-      const status = err?.response?.status;
-      const msg = err?.response?.data?.message;
-      if (status === 409) {
-        setCannotDelete({
-          open: true,
-          message:
-            msg ||
-            "Lịch tập gợi ý này vẫn đang được người dùng hoạt động lưu lại trong 7 ngày gần đây, nên không thể xoá.",
-        });
-      } else {
-        toast.error(msg || "Xóa lịch tập thất bại");
-      }
-    } finally {
+      } catch (err) {
+        console.error(err);
+        const status = err?.response?.status;
+        const data = err?.response?.data;
+        const msg = data?.message;
+        const code = data?.code;
+
+        if (status === 409) {
+          let fallbackMsg;
+          if (code === "SUGGEST_PLAN_IN_USE_SAVED_USERS") {
+            const cnt =
+              typeof data?.savedCount === "number"
+                ? data.savedCount
+                : undefined;
+            fallbackMsg =
+              cnt && cnt > 0
+                ? `Lịch tập gợi ý này đang được ${cnt} người dùng lưu, nên không thể xoá.`
+                : "Lịch tập gợi ý này đang được người dùng lưu, nên không thể xoá.";
+          } else {
+            fallbackMsg =
+              "Lịch tập gợi ý này đang được người dùng lưu, nên không thể xoá.";
+          }
+
+          setCannotDelete({
+            open: true,
+            message: msg || fallbackMsg,
+          });
+        } else {
+          toast.error(msg || "Xóa lịch tập thất bại");
+        }
+      } finally {
       setDeletingId(null);
     }
   };
@@ -178,20 +194,30 @@ export default function SuggestPlan_List() {
         ids.map((id) => deleteSuggestPlan(id))
       );
 
-      const okCount = results.filter(
-        (r) => r.status === "fulfilled"
-      ).length;
-      const fails = results.filter((r) => r.status === "rejected");
-      const blocked = fails.filter(
-        (r) => r.reason?.response?.status === 409
-      );
-      const otherFailCount = fails.length - blocked.length;
+      const successIds = [];
+      const blocked = [];
+      const otherErrors = [];
+
+      results.forEach((r, idx) => {
+        if (r.status === "fulfilled") {
+          successIds.push(ids[idx]);
+        } else {
+          const status = r.reason?.response?.status;
+          if (status === 409) blocked.push(r);
+          else otherErrors.push(r);
+        }
+      });
+
+      const okCount = successIds.length;
+      const otherFailCount = otherErrors.length;
 
       const deletingAllOnPage = ids.length >= items.length;
       if (deletingAllOnPage && skip > 0) {
         setSkip(Math.max(0, skip - limit));
       } else {
-        setItems((prev) => prev.filter((x) => !ids.includes(x._id)));
+        setItems((prev) =>
+          prev.filter((x) => !successIds.includes(x._id))
+        );
         setTotal((t) =>
           Math.max(0, Number(t || 0) - okCount)
         );
@@ -205,13 +231,28 @@ export default function SuggestPlan_List() {
         toast.error(`${otherFailCount} lịch tập xóa thất bại`);
       }
       if (blocked.length > 0) {
-        const msg =
-          blocked[0].reason?.response?.data?.message;
+        const data = blocked[0].reason?.response?.data;
+        const msg = data?.message;
+        const code = data?.code;
+        const savedCount =
+          typeof data?.savedCount === "number"
+            ? data.savedCount
+            : undefined;
+
+        let fallbackMsg;
+        if (code === "SUGGEST_PLAN_IN_USE_SAVED_USERS") {
+          fallbackMsg =
+            savedCount && savedCount > 0
+              ? `Một số lịch tập gợi ý không thể xoá vì đang được ${savedCount} người dùng lưu.`
+              : "Một số lịch tập gợi ý không thể xoá vì đang được người dùng lưu.";
+        } else {
+          fallbackMsg =
+            "Một số lịch tập gợi ý không thể xoá vì đang được người dùng lưu.";
+        }
+
         setCannotDelete({
           open: true,
-          message:
-            msg ||
-            "Một số lịch tập gợi ý không thể xoá vì vẫn đang được người dùng hoạt động lưu lại trong 7 ngày gần đây.",
+          message: msg || fallbackMsg,
         });
       }
     } catch (err) {
@@ -221,6 +262,7 @@ export default function SuggestPlan_List() {
       setBulkDeleting(false);
     }
   };
+
 
   // ---- pagination ----
   const page = Math.floor(skip / limit);
