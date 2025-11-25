@@ -1,98 +1,65 @@
 // user-app/src/pages/Account/PrivacyPolicy/index.jsx
 import React from "react";
-import "../AccountSettings/AccountLayout.css"; // tái dùng layout & biến pf-*
+import "../AccountSettings/AccountLayout.css"; // dùng lại width/nav vars
+import "./Policy.css";
 import Policy from "./Policy";
-import { getMe } from "../../../api/account";
-import api from "../../../lib/api";
 
-// Helpers
-const fmtDate = (iso) => {
-  if (!iso) return "xx/xx/xxxx";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "xx/xx/xxxx";
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-};
-const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
-const toAbs = (u) => {
-  if (!u) return u;
-  try { return new URL(u, API_ORIGIN).toString(); } catch { return u; }
-};
+const SECTIONS = [
+  { id: "pp-intro", label: "Giới thiệu" },
+  { id: "pp-sec-1", label: "1. Thông tin chúng tôi thu thập" },
+  { id: "pp-sec-2", label: "2. Cách chúng tôi sử dụng thông tin" },
+  { id: "pp-sec-3", label: "3. Chia sẻ thông tin của bạn" },
+  { id: "pp-sec-4", label: "4. Cookies & công nghệ theo dõi" },
+  { id: "pp-sec-5", label: "5. Xử lý đăng nhập xã hội" },
+  { id: "pp-sec-6", label: "6. Quảng cáo bên thứ ba" },
+  { id: "pp-sec-7", label: "7. Thời gian lưu trữ thông tin" },
+  { id: "pp-sec-8", label: "8. Cách chúng tôi giữ an toàn thông tin" },
+  { id: "pp-sec-9", label: "9. Quyền riêng tư của bạn" },
+  { id: "pp-sec-10", label: "10. Quyền cư dân California (CCPA)" },
+  { id: "pp-sec-11", label: "11. Cập nhật thông báo" },
+  { id: "pp-sec-12", label: "12. Liên hệ với chúng tôi" },
+];
 
 export default function PrivacyPolicyPage() {
-  const [user, setUser] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [err, setErr] = React.useState("");
-
-  React.useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoading(true);
-        setErr("");
-        const me = await getMe();           // getMe() trả object user từ BE
-        if (!mounted) return;
-        setUser(me || null);
-      } catch (e) {
-        if (!mounted) return;
-        setErr(e?.response?.data?.message || "Không thể tải tài khoản");
-        setUser(null);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
-
-  const p = user?.profile || {};
-  const joinDate = React.useMemo(() => fmtDate(user?.createdAt), [user?.createdAt]);
-  const avatarSrc = React.useMemo(() => (p.avatarUrl ? toAbs(p.avatarUrl) : "/images/avatar.png"), [p.avatarUrl]);
-
-  if (loading) {
-    return (
-      <div className="pf-wrap acc-page">
-        <div className="card" style={{ marginTop: 16 }}>
-          <h2 className="pf-title">Đang tải…</h2>
-          <p className="pf-desc">Vui lòng chờ trong giây lát.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (err || !user) {
-    return (
-      <div className="pf-wrap acc-page">
-        <div className="card" style={{ marginTop: 16 }}>
-          <h2 className="pf-title">Không thể tải dữ liệu</h2>
-          <p className="pf-desc">{err || "Không có dữ liệu tài khoản"}</p>
-        </div>
-      </div>
-    );
-  }
+  const handleScrollTo = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const yOffset = -120; // bù cho navbar sticky
+    const target = window.pageYOffset + rect.top + yOffset;
+    window.scrollTo({ top: target, behavior: "smooth" });
+  };
 
   return (
-    <div className="pf-wrap acc-page">
-      {/* Header chung */}
-      <div className="pf-head">
-        <div className="pf-user">
-          <div className="pf-avatar sm">
-            <img src={avatarSrc} alt="avatar" />
-          </div>
-          <div className="pf-userinfo">
-            <div className="pf-name">{p.nickname || user?.username || "Bạn"}</div>
-            <div className="pf-join">Đã tham gia từ {joinDate}</div>
-          </div>
-        </div>
-      </div>
+    <div className="pf-wrap acc-page pp-page">
+      {/* HEAD giống hình */}
+      <header className="pp-head">
+        <div className="pp-breadcrumb">Chính sách bảo mật</div>
+        <div className="pp-updated">Cập nhật lần cuối: 24/11/2025</div>
 
-      <div className="pf-body">
-        {/* Sidebar chỉ 1 route */}
-        <aside className="pf-side">
-          <div className="pf-side-title">Quyền riêng tư</div>
-          <button className="pf-side-item is-active">Chính sách quyền riêng tư</button>
+        <div className="pp-title-wrapper">
+          <h1 className="pp-main-title">CHÍNH SÁCH BẢO MẬT FITMATCH</h1>
+        </div>
+      </header>
+
+      {/* BODY: sidebar + content, không có line chia */}
+      <div className="pp-body">
+        <aside className="pp-side">
+          <nav className="pp-toc" aria-label="Mục lục Chính sách bảo mật">
+            {SECTIONS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className="pp-toc-item"
+                onClick={() => handleScrollTo(s.id)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </nav>
         </aside>
 
-        {/* Nội dung */}
-        <section className="pf-content">
+        <section className="pp-content">
           <Policy />
         </section>
       </div>

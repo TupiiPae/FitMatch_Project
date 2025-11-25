@@ -136,13 +136,11 @@ export default function Profile() {
               {tab === "goals" && <GoalsCustomize user={user} />}
               {tab === "nutri" && (
                 <div className="card">
-                  <h2 className="pf-title">Xem thống kê Dinh dưỡng</h2>
                   <p className="pf-desc">Đang phát triển…</p>
                 </div>
               )}
               {tab === "weight" && (
                 <div className="card">
-                  <h2 className="pf-title">Xem thống kê Cân nặng</h2>
                   <p className="pf-desc">Đang phát triển…</p>
                 </div>
               )}

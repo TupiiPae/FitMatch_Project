@@ -1,113 +1,405 @@
-.card {
-  border-radius: 4px;
-}
-
-/* Bố cục dọc (giống bạn đang dùng) */
-.pf-grid-2{
-  display:grid;
-  grid-template-columns: 1fr; /* 1 cột để đổ xuống dọc */
-  gap:16px;                   /* = nhịp dọc chung */
+/* Trang Hồ sơ thể chất – dùng dark theme giống Account */
+.bp-page {
   padding: 0 12px;
+  color: #e5e7eb;
+  font-size: 14px;
 }
-.pf-grid-2 > :first-child{ order:1; }
-.pf-grid-2 > :last-child{  order:2; }
 
-/* Bảng mục tiêu: đồng bộ bo & viền với GoalsCustomize */
-.pf-table{
-  border:1px solid var(--fm-ring);
-  border-radius:10px;          /* bo 10 */
-  overflow:hidden;
-  background:#fff;             /* đồng nhất nền với card */
+/* Trạng thái loading / error */
+.bp-loading {
+  color: #e5e7eb;
 }
-.pf-tr{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
+
+.bp-error {
+  color: #f97373;
 }
-.pf-tr + .pf-tr{ border-top:1px solid var(--fm-ring); }
-.pf-tr-head{ background:#f8fafc; font-weight:600; }
-.pf-td{ padding:8px 10px; }    /* padding bằng fact-row/pill vùng Goals */
-.pf-td-end{ text-align:right; }
-/* Đây là code gốc của bạn, được thêm vào 1 dòng 'transition' */
-.pf-actions .btn-primary-1 {
+
+/* ===== Titles & sections ===== */
+
+.bp-section + .bp-section {
+  margin-top: 32px;
+}
+
+.bp-title-main {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 18px;
+}
+
+.bp-title-sub {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.bp-desc {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ===== Fields & inputs (giống Account) ===== */
+
+.bp-row {
+  margin-bottom: 18px;
+}
+
+.bp-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.bp-row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.bp-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.bp-label {
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #f9fafb;
+}
+
+.bp-input {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #f9fafb;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.bp-input:hover {
+  border-color: #ef4444;
+}
+
+.bp-input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+}
+
+.bp-input-readonly {
+  cursor: default;
+  background-color: #221010;
+}
+
+.bp-input-readonly:focus {
+  border-color: #4b5563;
+  box-shadow: none;
+}
+
+/* Input + đơn vị bên cạnh */
+.bp-input-unit {
   display: flex;
   align-items: center;
-  justify-self: center;
-  padding: 10px 450px;
-  background: #008080;
-  color: #fff;
-  border-radius: 15px;
+  gap: 6px;
+}
+
+.bp-input-unit .bp-input {
+  flex: 1 1 auto;
+}
+
+.bp-unit {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ===== Bảng mục tiêu cân nặng ===== */
+
+.bp-goal-table {
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #020617;
+}
+
+.bp-row-goal {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+}
+
+.bp-row-goal + .bp-row-goal {
+  border-top: 1px solid #1f2937;
+}
+
+.bp-row-goal-head {
+  background: #1e1e1e;
+  font-weight: 600;
+}
+
+.bp-cell {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.bp-cell-end {
+  text-align: right;
+}
+
+/* Nút "Thiết lập mục tiêu mới" dưới bảng */
+.bp-actions-row {
+  margin-top: 14px;
+}
+
+/* ===== Nút chung (bottom + modal + action) ===== */
+
+.bp-btn {
+  min-width: 120px;
+  height: 38px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
   cursor: pointer;
-
-  /* Thêm dòng này để tạo hiệu ứng chuyển động mượt */
-  /* transition: [thuộc tính] [thời gian] [kiểu chuyển động]; */
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  transition: background-color 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease, transform 0.05s ease;
 }
 
-/* Đây là code hiệu ứng khi trỏ chuột vào */
-.pf-actions .btn-primary-1:hover {
-  /* Di chuyển nút lên trên 4px */
-  transform: translateY(-2px);
-  background:#78BCC4;
-  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+.bp-btn:active {
+  transform: translateY(1px);
 }
-/* Khối đo lường: đồng bộ card nhỏ */
-.pf-measures{
-  display:grid;
-  grid-template-columns: repeat(3, minmax(0,1fr));
-  gap:10px;                    /* nhịp = Goals pills gap gần nhất */
-}
-.measure{
-  background:#fff;
-  border:1px solid var(--fm-ring);
-  border-radius:10px;          /* bo 10 để đồng nhất */
-  padding:10px 10px;           /* tương đương card nhỏ */
-  box-shadow:0 0 0 rgba(0,0,0,0); /* giữ phẳng như Goals */
-}
-.measure-top{
-  display:flex; align-items:center; justify-content:space-between;
-}
-.measure-name{ font-weight:600; }
-.measure-add{
-  width:26px; height:26px;
-  border-radius:50%;
-  border:1px solid #cbd5e1;
-  background:#f8fafc;
-  cursor:pointer;
-}
-.measure-value{ margin-top:10px; color:#6b7280; }
 
-/* Form blocks: dùng util chung từ ProfileLayout.css (không sửa lại) */
+.bp-actions-row .bp-btn-primary {
+  width: 100%;
+}
 
-/* Nút hành động: giữ nhịp như Goals */
-.pf-actions{ margin-top:12px; }
-.pf-actions-right{ text-align:right; }
-.btn-secondary{
-  background:#008080; color:#fff; border:0; border-radius:8px; padding:10px 20px; cursor:pointer;
+.bp-btn-primary {
+  background: #f00519;
+  color: #ffffff;
 }
-.btn-secondary:hover{ background:#78BCC4; }
-.pf-modal { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; z-index: 60; }
-.pf-modal-backdrop { position:absolute; inset:0; background: rgba(0,0,0,.35); }
-.pf-modal-card {
-  position: relative; z-index: 1; width: 96%; max-width: 580px;
-  background:#fff; border:1px solid var(--fm-ring); border-radius:12px; padding:16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.12);
-}
-.pf-form-2 { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-.pf-form-2 > label { display:flex; flex-direction:column; gap:6px; font-size:14px; color:#334155; }
-.pf-form-2 input, .pf-form-2 select { padding:8px 10px; border:1px solid var(--fm-ring); border-radius:8px; }
-.btn-tertiary{
-  border:1px solid var(--fm-ring); background:#fff; border-radius:8px; padding:10px 15px; font-weight:600; cursor:pointer;
-}
-.btn-tertiary:hover{ background:#f9fafb; }
-.btn-primary2{
-  background:#008080; color:#fff; border:0; border-radius:8px; padding:10px 30px; cursor:pointer;
-}
-.btn-primary2:hover{ background:#006666; }
 
-/* Responsive khớp với Goals */
-@media (max-width:1024px){
-  .pf-measures{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+.bp-btn-primary:hover:not(:disabled) {
+  background: #ef4444;
+  border-color: #ef4444;
 }
-@media (max-width:640px){
-  .pf-measures{ grid-template-columns: 1fr; }
+
+.bp-btn-outline {
+  background: transparent;
+  color: #e5e7eb;
+  border-color: #4b5563;
+}
+
+.bp-btn-outline:hover:not(:disabled) {
+  background: #111827;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.bp-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Nhóm nút Hủy / Lưu ở cuối */
+.bp-actions {
+  margin-top: 28px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* ===== Hình ảnh tiến độ ===== */
+
+.bp-progress-header {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bp-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #020617;
+  border: 1px solid #4b5563;
+}
+
+.bp-tab {
+  border: 0;
+  outline: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: transparent;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.bp-tab.active {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.bp-add-btn {
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 13px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.bp-add-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+/* Khung hiển thị ảnh (tạm thời placeholder) */
+.bp-progress-grid {
+  margin-top: 14px;
+  min-height: 350px;
+  border-radius: 12px;
+  border: 1px dashed #4b5563;
+  display: grid;
+  place-items: center;
+}
+
+.bp-progress-empty {
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* ===== Modal mục tiêu mới ===== */
+
+.bp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.bp-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(2px);
+}
+
+.bp-modal-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(620px, calc(100% - 32px));
+  background: #020617;
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  padding: 18px 18px 16px;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.75);
+  color: #e5e7eb;
+}
+
+.bp-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.bp-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bp-modal-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.bp-modal-grid input,
+.bp-modal-grid select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #f9fafb;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bp-modal-grid input:hover,
+.bp-modal-grid select:hover {
+  border-color: #ef4444;
+}
+
+.bp-modal-grid input:focus,
+.bp-modal-grid select:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+}
+
+.bp-modal-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 960px) {
+  .bp-row-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .bp-page {
+    padding: 0 8px;
+  }
+
+  .bp-row-2,
+  .bp-row-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .bp-progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bp-modal-card {
+    width: calc(100% - 24px);
+  }
+
+  .bp-modal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bp-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .bp-modal-actions .bp-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }

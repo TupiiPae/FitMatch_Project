@@ -1,212 +1,378 @@
-/* Card tổng */
-.acc-page .pf-content .acc-card {
-  padding-top: 16px;
-  border: 1px solid #002C3E;
+.acc-page {
+  color: #e5e7eb;
+  font-size: 14px;
 }
 
-.acc-page .pf-content .acc-hero {
-  position: relative;
+.acc-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+  gap: 56px;
+  align-items: flex-start;
+}
+
+/* LEFT COLUMN */
+.acc-left {
+  max-width: 780px;
+}
+
+.acc-section + .acc-section {
+  margin-top: 24px;
+}
+
+.acc-title-main {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 18px;
+}
+
+.acc-title-sub {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+/* Fields */
+.acc-field-block {
+  margin-bottom: 24px;
+}
+
+.acc-label {
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #f9fafb;
+}
+
+.acc-label .required {
+  color: #f97316;
+  margin-left: 3px;
+}
+
+.acc-sub-label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: #d1d5db;
+}
+
+.acc-input,
+.acc-select,
+.acc-textarea,
+.acc-input-bio {
   width: 100%;
-  /* chiều cao hiển thị avatar + khoảng đệm phía dưới */
-  padding-top: 200px;          /* 180px avatar + 20px khoảng trống */
-  margin-bottom: 12px;
+  border-radius: 4px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #f9fafb;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.acc-select {
+  max-height: 40px;
+}
+
+.acc-input-bio {
+  height: 130px;
+  resize: vertical;
+}
+
+.acc-input:hover,
+.acc-select:hover,
+.acc-textarea:hover,
+.acc-input-bio:hover {
+  border-color: #ef4444;
+}
+
+.acc-input:focus,
+.acc-select:focus,
+.acc-textarea:focus,
+.acc-input-bio:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+}
+
+/* textarea nếu dùng lại */
+.acc-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.acc-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.acc-row-gap {
+  gap: 16px;
+}
+
+.acc-row-height {
+  padding-top: 10px;
+}
+
+/* Date input + icon */
+.acc-date-wrapper {
+  position: relative;
+}
+
+.acc-input-date {
+  padding-right: 32px;
+}
+
+/* Ẩn icon calendar mặc định nhưng vẫn clickable */
+.acc-input-date::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  cursor: pointer;
+}
+.acc-input-date::-webkit-inner-spin-button,
+.acc-input-date::-webkit-clear-button {
+  display: none;
+}
+
+.acc-date-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 20px;
+  color: #9ca3af;
+}
+
+/* Radios */
+.acc-radio-group {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.acc-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #e5e7eb;
+}
+
+.acc-radio input {
+  width: 16px;
+  height: 16px;
+}
+
+.acc-radio-desc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+.acc-box-desc {
+  margin: 6px 0 6px;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+.acc-radio-block {
+  margin-bottom: 16px;
+}
+
+/* Divider */
+.acct-divider {
+  display: block;
+  width: 100%;
+  height: 1px;
+  margin: 32px 0;
+  background: #1f2937;
+  border: none;
+}
+
+/* Email row */
+.acc-row-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.acc-label-inline {
+  min-width: 80px;
+  font-weight: 500;
+  color: #f9fafb;
+}
+
+.acc-input-email {
+  flex: 1;
+  background-color: #221010;
+}
+
+/* Errors / Loading */
+.acc-error-text {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #f97373;
+}
+
+.acc-loading-text,
+.acc-error-text-global {
+  color: #e5e7eb;
+}
+
+/* ===== RIGHT COLUMN ===== */
+.acc-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 24px;
+}
+
+.acc-avatar-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 1;
+  gap: 10px;
 }
 
-/* Khung bọc avatar + button (để định vị nút ở góc dưới-phải ngoài avatar) */
-.acc-page .pf-content .acc-avatarWrap {
-  position: absolute;          /* đặt giữa card */
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 188px;                /* 180 + viền; rộng hơn avatar một chút để chứa nút */
-  height: 188px;
-  overflow: visible;
-}
-
-/* Avatar: đặt tuyệt đối, căn GIỮA theo trục X ở đỉnh khung */
-.acc-page .pf-content .acc-avatar {
-  position: absolute !important; /* đè mọi rule cũ */
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
+.acc-avatar-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
   overflow: hidden;
-  border: 1px solid var(--fm-ring);
-  background: #fff;
+  border: 2px solid #374151;
+  background: #111827;
   display: grid;
   place-items: center;
-  margin: 0;                    /* tránh rule cũ đẩy lệch */
-  float: none !important;       /* chặn float từ CSS khác */
+  margin-bottom: 20px;
 }
-.acc-page .pf-content .acc-avatar img {
-  display: block;
+
+.acc-avatar-large img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* Nút đổi ảnh (button riêng) – đặt ở góc DƯỚI-PHẢI, nhô ra ngoài avatar giống navbar */
-.acc-page .pf-content .acc-avatar-btn {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  transform: translate(1%, 1%); /* nhô ra 1 chút tạo cảm giác “gài” vào avatar */
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #1d4ed8;
-  color: #fff;
-  border: 2px solid #fff;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  font-size: 20px;
-  z-index: 2;
-  box-shadow: 0 6px 18px rgba(0,0,0,.15);
-}
-.acc-page .pf-content .acc-avatar-btn:hover {
-  filter: brightness(1.05);
-}
-.acc-page .pf-content .acc-file {
-  display: none;
-}
-
-.acc-page .pf-content .pf-title {
-  margin: 0 0 10px;
-  padding: 0 12px; /* căn đều với acc-frame */
-  font-size: 20px;
-  font-weight: 700;
-  color: #111827;
-}
-
-/* Nút submit */
-.acc-page .pf-content .btn-success {
-  height: 37px;
-  display: flex;
+.acc-avatar-btn-main,
+.acc-avatar-btn-remove {
+  display: inline-flex;
   align-items: center;
-  padding: 0 30px;
-  border-radius: 8px;
-  background: #008080; /* Màu theme */
-  color: #fff;
-  text-decoration: none;
-  margin-left: 5px;
-  font-weight: 500;
-  border: none;
-}
-.acc-page .pf-content .btn-success:hover { background: #78BCC4; }
-
-/* Trạng thái tải */
-.acc-page .pf-content .acc-loading {
-  padding: 8px;
-  color: #6b7280;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 14px;
   font-size: 13px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
 }
 
-/* Edit buttons on header */
-.acc-page .pf-content .acc-edit{
-  display:inline-flex; align-items:center; gap:8px;
-  border:1px solid var(--fm-ring); background:#fff; color:#002C3E;
-  border-radius:30px; padding:6px 10px; cursor:pointer; font-weight:400; font-size: 18px;
+.acc-avatar-btn-main {
+  background: #2563eb;
+  color: #ffffff;
 }
-.acc-page .pf-content .acc-edit:hover{ background:#f9fafb; }
-.acc-page .pf-content .acc-edit-actions{ display:flex; gap:2px; }
-.acc-page .pf-content .btn-tertiary{
-  border:1px solid var(--fm-ring); background:#fff; border-radius:8px; padding:6px 10px; font-weight:600; cursor:pointer;
-}
-.acc-page .pf-content .btn-tertiary:hover{ background:#f9fafb; }
 
-/* Box 1 profile row (ĐANG SỬ DỤNG) */
-.acc-page .pf-content .acc-profile-row{
-  display:flex; align-items:center; gap:16px; padding: 12px;
+.acc-avatar-btn-remove {
+  background: transparent;
+  color: #f97373;
 }
-.acc-page .pf-content .acc-avatarWrap--inline{
-  position: relative !important;
-  top: auto !important;
-  left: 30px;
-  transform: none !important;
-  width: 72px;
-  height: 72px;
-  overflow: visible;
-}
-.acc-page .pf-content .acc-avatarWrap--inline .acc-avatar{
-  position: absolute;
-  inset: 0;
-  width: 72px; height: 72px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1px solid var(--fm-ring);
-  background: #fff;
-}
-.acc-page .pf-content .acc-avatarWrap--inline .acc-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
-.acc-page .pf-content .acc-avatarWrap--inline .acc-avatar-btn{
-  position: absolute;
-  right: 25px; bottom: -4px;
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  background: #1d4ed8; color: #fff;
-  display: grid; place-items: center;
-  font-size: 14px; cursor: pointer;
-  box-shadow: 0 6px 12px rgba(0,0,0,.15);
-}
-.acc-page .pf-content .acc-profile-main .acc-name{ font-weight:700; color:#111827; }
-.acc-page .pf-content .acc-profile-main .acc-sub{ display:flex; flex-wrap:wrap; gap:8px; color:#6b7280; font-size:13px; }
-.acc-page .pf-content .acc-profile-main .acc-sub .dot{ opacity:.6; }
 
-/* Input file ẩn */
-.acc-page .pf-content .acc-file {
+.acc-avatar-btn-main:hover,
+.acc-avatar-btn-remove:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.acc-file {
   display: none;
 }
 
-/* Grid nhãn:giá trị (read view - ĐANG SỬ DỤNG) */
-.acc-page .pf-content .acc-grid{
-  display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; padding: 12px;
-}
-.acc-page .pf-content .acc-field{ display:grid; gap:6px; }
-.acc-page .pf-content .acc-field .label{ color:#6b7280; font-size:13px; }
-.acc-page .pf-content .acc-field .value{ color:#111827; font-weight:450; }
-
-/* Edit form grid (ĐANG SỬ DỤNG cho layout MUI) */
-.acc-page .pf-content .acc-form{ padding: 12px; display:grid; gap:25px; }
-.acc-page .pf-content .acc-two{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.acc-page .pf-content .acc-one{ display:grid; gap:6px; }
-.acc-page .pf-content .acc-form-col{ display:grid; gap:6px; }
-
-/* CSS cho input/select native (ĐÃ BỊ XÓA) */
-
-/* CSS cho Segmented control (ĐÃ BỊ XÓA) */
-
-/* ===== Sections nằm trong card lớn (ĐANG SỬ DỤNG) ===== */
-.acc-page .pf-content .acc-card .acc-sec{
-  padding: 12px;
-  border-top: 1px solid var(--fm-ring);
-}
-.acc-page .pf-content .acc-card .acc-sec:first-of-type{
-  border-top: 0;
-  padding-top: 6px;
+/* Nút Hủy / Lưu cố định – sticky theo cột phải, không lệch khi zoom */
+.acc-actions-bar {
+  margin-top: 32px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  position:fixed; /* thay đổi thì */
+  bottom: 120px;         /* luôn gần mép dưới viewport */
+  padding: 8px 0;
+  background: transparent;
+  z-index: 10;
 }
 
-/* Header nhỏ mỗi section (ĐANG SỬ DỤNG) */
-.acc-page .pf-content .acc-card .acc-sec-head{
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom: 8px;
-}
-.acc-page .pf-content .acc-card .acc-sec-head h3{
-  margin:0; font-size:15px; font-weight:700; color:#111827;
-}
-
-/* CSS cho .acc-combo, .acc-search, select (ĐÃ BỊ XÓA) */
-
-/* Responsive (ĐANG SỬ DỤNG) */
-@media (max-width: 900px){
-  .acc-page .pf-content .acc-grid{ grid-template-columns: 1fr; }
-  .acc-page .pf-content .acc-two{ grid-template-columns: 1fr; }
+.acc-btn {
+  min-width: 120px;
+  height: 38px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
 }
 
-/* Responsive (ĐÃ BỊ XÓA VÌ .pf-form-2 không dùng nữa) */
+.acc-btn:active {
+  transform: translateY(1px);
+}
+
+.acc-btn-cancel {
+  background: transparent;
+  color: #e5e7eb;
+  border-color: #4b5563;
+}
+
+.acc-btn-save {
+  background: #f00519;
+  color: #ffffff;
+}
+
+/* Hover cho 2 nút đều dùng màu #ef4444 */
+.acc-btn-cancel:hover:not(:disabled),
+.acc-btn-save:hover:not(:disabled) {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+/* Disabled state */
+.acc-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 960px) {
+  .acc-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .acc-right {
+    align-items: flex-start;
+  }
+
+  .acc-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .acc-row-inline {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .acc-input-email {
+    width: 100%;
+  }
+
+  .acc-actions-bar {
+    bottom: 16px;   /* gần đáy màn hình mobile hơn */
+  }
+}

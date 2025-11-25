@@ -9,7 +9,8 @@ import {
   faAppleAlt, faUtensils, faBrain, faCalculator, faBookOpen,
   faHeartPulse, faPersonRunning, faDumbbell, faVolleyball,
   faClipboard,
-  faClipboardList
+  faClipboardList,
+  faClipboardCheck
 } from "@fortawesome/free-solid-svg-icons";
 import { getMe } from "../../api/account";
 import api from "../../lib/api";
@@ -429,13 +430,15 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
       <div className="acc-menu">
         <NavLink to="/tai-khoan/ho-so" className="acc-item"><FontAwesomeIcon icon={faUser} />Hồ sơ</NavLink>
         <div className="acc-sep" />
-        <NavLink to="/tin-nhan" className="acc-item"><FontAwesomeIcon icon={faMessage} />Tin nhắn</NavLink>
-        <div className="acc-sep" />
         <NavLink to="/tai-khoan/tai-khoan" className="acc-item"><FontAwesomeIcon icon={faGear} />Tài khoản</NavLink>
         <div className="acc-sep" />
-        <a href="https://www.facebook.com/tupae.1509" className="acc-item" target="_blank" rel="noopener noreferrer"><FontAwesomeIcon icon={faCircleInfo} />Về FitMatch</a>
+        <NavLink to="/tin-nhan" className="acc-item"><FontAwesomeIcon icon={faMessage} />Tin nhắn</NavLink>
         <div className="acc-sep" />
-        <NavLink to="/tai-khoan/quyen-rieng-tu" className="acc-item"><FontAwesomeIcon icon={faShieldHalved} />Chính sách quyền riêng tư</NavLink>
+        <NavLink to="/tai-khoan/chinh-sach-bao-mat" className="acc-item"><FontAwesomeIcon icon={faShieldHalved} />Chính sách bảo mật</NavLink>
+        <div className="acc-sep" />
+        <NavLink to="/tai-khoan/dieu-khoan-dich-vu" className="acc-item"><FontAwesomeIcon icon={faClipboardCheck} />Điều khoản dịch vụ</NavLink>
+        <div className="acc-sep" />
+        <a href="https://www.facebook.com/tupae.1509" className="acc-item" target="_blank" rel="noopener noreferrer"><FontAwesomeIcon icon={faCircleInfo} />Về FitMatch</a>
       </div>
       <button className="acc-logout" type="button" onClick={onAskLogout}>
         <FontAwesomeIcon icon={faRightFromBracket} /> Đăng xuất

@@ -79,7 +79,11 @@ export default function ChangePassword() {
   const handleResendOtp = async () => {
     clearMsg();
     const v = email.trim().toLowerCase();
-    if (!v) return setMsg({ type: "error", text: "Vui lòng nhập email trước khi gửi lại OTP." });
+    if (!v)
+      return setMsg({
+        type: "error",
+        text: "Vui lòng nhập email trước khi gửi lại OTP.",
+      });
     if (cooldown > 0) return;
 
     try {
@@ -120,7 +124,10 @@ export default function ChangePassword() {
 
     try {
       setLoading(true);
-      const res = await api.post("/auth/password/verify", { email: vEmail, otp: vOtp });
+      const res = await api.post("/auth/password/verify", {
+        email: vEmail,
+        otp: vOtp,
+      });
       const token = res?.data?.resetToken;
       if (!token) throw new Error("Không nhận được resetToken.");
       setResetToken(token);
@@ -141,13 +148,22 @@ export default function ChangePassword() {
     e.preventDefault();
     clearMsg();
     if (!newPassword || !confirmPassword) {
-      return setMsg({ type: "error", text: "Vui lòng nhập đủ mật khẩu mới và xác nhận." });
+      return setMsg({
+        type: "error",
+        text: "Vui lòng nhập đủ mật khẩu mới và xác nhận.",
+      });
     }
     if (newPassword.length < 6) {
-      return setMsg({ type: "error", text: "Mật khẩu mới phải từ 6 ký tự." });
+      return setMsg({
+        type: "error",
+        text: "Mật khẩu mới phải từ 6 ký tự.",
+      });
     }
     if (newPassword !== confirmPassword) {
-      return setMsg({ type: "error", text: "Xác nhận mật khẩu mới không khớp." });
+      return setMsg({
+        type: "error",
+        text: "Xác nhận mật khẩu mới không khớp.",
+      });
     }
 
     try {
@@ -157,7 +173,10 @@ export default function ChangePassword() {
         resetToken,
         newPassword,
       });
-      setMsg({ type: "success", text: res?.data?.message || "Đặt lại mật khẩu thành công." });
+      setMsg({
+        type: "success",
+        text: res?.data?.message || "Đặt lại mật khẩu thành công.",
+      });
       setOtp("");
       setNewPassword("");
       setConfirmPassword("");
@@ -174,8 +193,8 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="acc-card card">
-      <h2 className="pf-title">Thay đổi mật khẩu</h2>
+    <div className="acc-card card cp-page">
+      <h2 className="cp-title">Thay đổi mật khẩu</h2>
 
       <div className="cp-wrap">
         <div className="cp-block">
@@ -198,7 +217,11 @@ export default function ChangePassword() {
                 onFocus={clearMsg}
                 required
               />
-              <button className="btn-success cp-send" type="submit" disabled={loading}>
+              <button
+                className="btn-success cp-send"
+                type="submit"
+                disabled={loading}
+              >
                 {loading ? "Đang gửi..." : "Gửi OTP"}
               </button>
             </form>
@@ -219,15 +242,25 @@ export default function ChangePassword() {
                   onFocus={clearMsg}
                   required
                 />
-                <button className="btn-success cp-send" type="submit" disabled={loading || otpLeft <= 0}>
-                  {loading ? "Đang xác minh..." : otpLeft > 0 ? "Xác minh OTP" : "OTP đã hết hạn"}
+                <button
+                  className="btn-success cp-send"
+                  type="submit"
+                  disabled={loading || otpLeft <= 0}
+                >
+                  {loading
+                    ? "Đang xác minh..."
+                    : otpLeft > 0
+                    ? "Xác minh OTP"
+                    : "OTP đã hết hạn"}
                 </button>
               </form>
 
               {/* Hàng meta: trái = đếm ngược, phải = gửi lại OTP */}
               <div className="cp-meta-row">
                 <div className={`cp-timer ${otpLeft <= 0 ? "expired" : ""}`}>
-                  {otpLeft > 0 ? `Mã hết hạn sau: ${fmtMMSS(otpLeft)}` : "OTP đã hết hạn"}
+                  {otpLeft > 0
+                    ? `Mã hết hạn sau: ${fmtMMSS(otpLeft)}`
+                    : "OTP đã hết hạn"}
                 </div>
                 <button
                   className="btn-ghost cp-resend"
@@ -236,7 +269,9 @@ export default function ChangePassword() {
                   disabled={loading || cooldown > 0}
                   title="Gửi lại OTP"
                 >
-                  {cooldown > 0 ? `Gửi lại OTP (${cooldown}s)` : "Gửi lại OTP"}
+                  {cooldown > 0
+                    ? `Gửi lại OTP (${cooldown}s)`
+                    : "Gửi lại OTP"}
                 </button>
               </div>
 
@@ -258,7 +293,7 @@ export default function ChangePassword() {
 
           {/* STEP 3: RESET PASSWORD */}
           {step === "reset" && (
-            <form className="cp-form" onSubmit={handleResetPassword}>
+            <form className="cp-form cp-form-vertical" onSubmit={handleResetPassword}>
               <input
                 type="password"
                 className="cp-input"
@@ -277,7 +312,11 @@ export default function ChangePassword() {
                 onFocus={clearMsg}
                 required
               />
-              <button className="btn-success cp-send" type="submit" disabled={loading}>
+              <button
+                className="btn-success cp-send"
+                type="submit"
+                disabled={loading}
+              >
                 {loading ? "Đang đặt lại..." : "Đặt mật khẩu"}
               </button>
 
@@ -301,7 +340,8 @@ export default function ChangePassword() {
             <div className="cp-done">
               <div className="cp-subtitle">Hoàn tất</div>
               <p className="cp-desc">
-                Bạn đã đặt lại mật khẩu thành công. Vui lòng dùng mật khẩu mới cho lần đăng nhập tiếp theo.
+                Bạn đã đặt lại mật khẩu thành công. Vui lòng dùng mật khẩu mới
+                cho lần đăng nhập tiếp theo.
               </p>
               <div className="cp-resend-row">
                 <button

@@ -1,39 +1,171 @@
-/* Dùng lại pf-title / pf-subtitle / pf-desc / pf-actions từ AccountLayout.css */
-/* Chỉ bổ sung nút đỏ và modal cho trang này */
 
-/* Nút đỏ chính (tái dùng quy ước nút trong AccountLayout) */
-.acc-page .pf-content .btn-danger{
-  background:#ef4444;
-  color:#fff;
-  border:0;
-  border-radius:8px;
-  padding:10px 16px;
-  font-weight:700;
-  cursor:pointer;
+.cp-page.acc-card.card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
-.acc-page .pf-content .btn-danger:hover{ filter:brightness(0.95); }
 
-/* -------- Modal xác nhận xoá -------- */
-.acc-page .pf-content .del-modal{ position:fixed; inset:0; z-index:1000; }
-.acc-page .pf-content .del-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.35); backdrop-filter:saturate(120%) blur(1px); }
-.acc-page .pf-content .del-dialog{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:min(640px, calc(100% - 24px));
-  border:1px solid var(--fm-ring); border-radius:8px; background:#fff; padding:20px;
-  box-shadow:0 15px 50px rgba(2,6,23,.2);
+.cp-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 18px;
 }
-.acc-page .pf-content .del-dialog-title{
-  text-transform:uppercase; font-weight:800; font-size:18px; text-align:center; color:#111827; margin-bottom:8px;
-}
-.acc-page .pf-content .del-dialog-desc{ text-align:center; color:#6b7280; margin:0 0 18px; }
 
-.acc-page .pf-content .del-actions{ display:flex; justify-content:center; gap:12px; }
-.acc-page .pf-content .del-actions .btn-secondary{
-  background:#f3f4f6; color:#111827; border:0; border-radius:8px; padding:10px 16px; cursor:pointer;
+.cp-wrap {
+  width: 100%;
+  max-width: 780px;
 }
-.acc-page .pf-content .del-actions .btn-secondary:hover{ filter:brightness(0.97); }
 
-@media (max-width:640px){
-  .acc-page .pf-content .del-dialog{ padding:16px; }
-  .acc-page .pf-content .del-dialog-title{ font-size:18px; }
+.cp-subtitle {
+  font-weight: 600;
+  font-size: 16px;
+  color: #f9fafb;
+  margin-bottom: 6px;
+}
+
+.cp-desc {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* Nút chính ở phần nội dung */
+.cp-main-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ===== Buttons (giống ChangePassword / Account) ===== */
+
+.cp-page .btn-danger {
+  min-width: 220px;
+  height: 38px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 0 20px;
+  background: #f00519;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transition: background-color 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease, transform 0.05s ease;
+}
+
+.cp-page .btn-danger:active {
+  transform: translateY(1px);
+}
+
+.cp-page .btn-danger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cp-page .btn-danger:hover:not(:disabled) {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+/* Nút phụ trong modal */
+.cp-page .btn-secondary {
+  background: transparent;
+  color: #e5e7eb;
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  padding: 0 18px;
+  height: 36px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease, transform 0.05s ease;
+}
+
+.cp-page .btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cp-page .btn-secondary:hover:not(:disabled) {
+  background: #111827;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+/* ===== Modal xác nhận xoá (dark) ===== */
+
+.del-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+.del-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(2px);
+}
+
+.del-dialog {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, calc(100% - 32px));
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  background: #020617;
+  padding: 20px 22px 18px;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.65);
+}
+
+.del-dialog-title {
+  font-weight: 700;
+  font-size: 18px;
+  text-align: center;
+  color: #f9fafb;
+  margin-bottom: 8px;
+}
+
+.del-dialog-desc {
+  text-align: center;
+  color: #9ca3af;
+  margin: 0 0 18px;
+  font-size: 14px;
+}
+
+/* Actions trong modal */
+.del-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .cp-page {
+    padding: 0 16px;
+  }
+
+  .del-dialog {
+    width: calc(100% - 24px);
+    padding: 16px 16px 14px;
+  }
+
+  .del-dialog-title {
+    font-size: 16px;
+  }
+
+  .del-actions {
+    flex-direction: column-reverse;
+  }
+
+  .del-actions .btn-secondary,
+  .del-actions .btn-danger {
+    width: 100%;
+    justify-content: center;
+  }
 }

@@ -4,76 +4,78 @@ import "./Account.css";
 import { getMe } from "../../../api/account";
 import api from "../../../lib/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCamera, faPen, faPenToSquare, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCamera, faXmark, faCalendarDays } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 import AvatarCropper from "../../../components/AvatarCropper";
+
 import countries from "../../../data/locations/countries.json";
 import regionsVN from "../../../data/locations/vn/regions.json";
 import regionCenters from "../../../data/locations/vn/region-centers.json";
 
-import {
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-} from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import dayjs from "dayjs";
-
-// >>>>> THÊM: import validators
-import {
-  validateNickname,
-  validateEmailGmail,
-  validatePhone,
-} from "../../../lib/validators";
+import { validateNickname, validateEmailGmail, validatePhone } from "../../../lib/validators";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
-const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
-const formatDobDMY = (dob, fallback = "") => { if (typeof dob !== "string") return fallback; if (!/^\d{4}-\d{2}-\d2$/.test(dob)) return fallback; const [y, mo, d] = dob.split("-"); return `${d}/${mo}/${y}`; };
+const toAbs = (u) => {
+  if (!u) return u;
+  try { return new URL(u, API_ORIGIN).toString(); } catch { return u; }
+};
 
 export default function AccountInfo() {
   const [user, setUser] = useState(null);
   const [loaded, setLoaded] = useState(false);
 
-  const [editInfo, setEditInfo] = useState(false);
-  const [editAddr, setEditAddr] = useState(false);
-  const [savingInfo, setSavingInfo] = useState(false);
-  const [savingAddr, setSavingAddr] = useState(false);
-
-  const [form, setForm] = useState({ nickname: "", dob: "", sex: "male", email: "", phone: "" });
-
-  // >>>>> THÊM: state lỗi theo field
-  const [errs, setErrs] = useState({ nickname: "", email: "", phone: "" });
-
-  // Address + code
-  const [addr, setAddr] = useState({
-    country: "", countryCode: "",
-    city: "", regionCode: "",
-    district: "", districtCode: "",
-    ward: "", wardCode: ""
+  const [form, setForm] = useState({
+    nickname: "",
+    sex: "male",
+    dob: "",
+    phone: "",
+    email: "",
+    bio: "",
   });
 
-  // Geo theo city center (có thể đổi theo district sau này)
-  const [geo, setGeo] = useState(null); // [lng, lat]
+  const [errs, setErrs] = useState({
+    nickname: "",
+    email: "",
+    phone: "",
+  });
 
-  // Lists
+  const [addr, setAddr] = useState({
+    country: "",
+    countryCode: "",
+    city: "",
+    regionCode: "",
+    district: "",
+    districtCode: "",
+    ward: "",
+    wardCode: "",
+  });
+
+  const [geo, setGeo] = useState(null); // [lng,lat]
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
 
-  // Avatar
+  const [profileVisibility, setProfileVisibility] = useState("private"); // "public" | "private"
+  const [chatRequestSetting, setChatRequestSetting] = useState("private"); // "all" | "matched" | "private"
+
   const [avatarPreview, setAvatarPreview] = useState("/images/avatar.png");
   const fileRef = useRef(null);
   const [cropOpen, setCropOpen] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
 
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  /* ----------------- LOAD USER ----------------- */
   useEffect(() => {
     (async () => {
-      try { const me = await getMe(); if (me && typeof me === "object") setUser(me); }
-      catch { toast.error("Không thể tải tài khoản"); }
-      finally { setLoaded(true); }
+      try {
+        const me = await getMe();
+        if (me && typeof me === "object") setUser(me);
+      } catch {
+        toast.error("Không thể tải tài khoản");
+      } finally {
+        setLoaded(true);
+      }
     })();
   }, []);
 
@@ -81,91 +83,213 @@ export default function AccountInfo() {
     if (!user) return;
     const p = user.profile || {};
     const a = p.address || {};
-    setForm({ nickname: p.nickname || "", dob: p.dob || "", sex: p.sex || "male", email: user.email || "", phone: user.phone || "" });
-    setAddr({
-      country: a.country || "", countryCode: a.countryCode || (a.country ? "VN" : ""),
-      city: a.city || "", regionCode: a.regionCode || "",
-      district: a.district || "", districtCode: a.districtCode || "",
-      ward: a.ward || "", wardCode: a.wardCode || ""
-    });
-    setAvatarPreview(p.avatarUrl ? toAbs(p.avatarUrl) : "/images/avatar.png");
-    setGeo(a.regionCode && regionCenters[a.regionCode] ? regionCenters[a.regionCode] : null);
-    setEditInfo(false); setEditAddr(false);
 
-    // >>>>> THÊM: reset lỗi khi load user
+    setForm({
+      nickname: p.nickname || "",
+      sex: p.sex || "male",
+      dob: p.dob || "",
+      phone: user.phone || "",
+      email: user.email || "",
+      bio: p.bio || "",
+    });
+
+    setAddr({
+      country: a.country || "",
+      countryCode: a.countryCode || (a.country ? "VN" : ""),
+      city: a.city || "",
+      regionCode: a.regionCode || "",
+      district: a.district || "",
+      districtCode: a.districtCode || "",
+      ward: a.ward || "",
+      wardCode: a.wardCode || "",
+    });
+
+    setGeo(a.regionCode && regionCenters[a.regionCode] ? regionCenters[a.regionCode] : null);
+    setAvatarPreview(p.avatarUrl ? toAbs(p.avatarUrl) : "/images/avatar.png");
+
+    setProfileVisibility(p.visibility || "private");
+    setChatRequestSetting(p.chatRequest || "private");
+
     setErrs({ nickname: "", email: "", phone: "" });
   }, [user]);
 
-  // >>>>> THÊM: validate theo từng field khi change
-  const onChange = (e) => {
+  /* ----------------- LOAD DISTRICTS / WARDS ----------------- */
+  useEffect(() => {
+    (async () => {
+      if (!addr.regionCode) {
+        setDistricts([]);
+        return;
+      }
+      try {
+        if (addr.regionCode === "HN") {
+          const m = await import("../../../data/locations/vn/districts-HN.json");
+          setDistricts(m.default || []);
+        } else if (addr.regionCode === "HCM") {
+          const m = await import("../../../data/locations/vn/districts-HCM.json");
+          setDistricts(m.default || []);
+        } else {
+          setDistricts([]);
+        }
+      } catch {
+        setDistricts([]);
+      }
+    })();
+
+    setWards([]);
+    setAddr((a) => ({ ...a, district: "", districtCode: "", ward: "", wardCode: "" }));
+    setGeo(Array.isArray(regionCenters[addr.regionCode]) ? regionCenters[addr.regionCode] : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addr.regionCode]);
+
+  useEffect(() => {
+    (async () => {
+      if (!addr.regionCode || !addr.districtCode) {
+        setWards([]);
+        setAddr((a) => ({ ...a, ward: "", wardCode: "" }));
+        return;
+      }
+      try {
+        if (addr.regionCode === "HN") {
+          const m = await import("../../../data/locations/vn/wards-HN.json");
+          const map = m.default || {};
+          const list = Array.isArray(map[addr.districtCode]) ? map[addr.districtCode] : [];
+          setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
+        } else if (addr.regionCode === "HCM") {
+          const m = await import("../../../data/locations/vn/wards-HCM.json");
+          const map = m.default || {};
+          const list = Array.isArray(map[addr.districtCode]) ? map[addr.districtCode] : [];
+          setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
+        } else {
+          setWards([]);
+        }
+      } catch {
+        setWards([]);
+      }
+    })();
+  }, [addr.regionCode, addr.districtCode]);
+
+  /* ----------------- CHANGE HANDLERS ----------------- */
+  const handleFormChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
 
     setErrs((prev) => {
       const next = { ...prev };
       if (name === "nickname") next.nickname = validateNickname(value, { required: true });
-      if (name === "email") next.email = validateEmailGmail(value);
       if (name === "phone") next.phone = validatePhone(value);
       return next;
     });
   };
 
-  // Avatar handlers (giữ nguyên)
+  const handleCountryChange = (e) => {
+    const code = e.target.value;
+    const item = countries.find((c) => c.code === code) || {};
+    setAddr({
+      country: item.name || "",
+      countryCode: code || "",
+      city: "",
+      regionCode: "",
+      district: "",
+      districtCode: "",
+      ward: "",
+      wardCode: "",
+    });
+    setGeo(null);
+    setDistricts([]);
+    setWards([]);
+  };
+
+  const handleRegionChange = (e) => {
+    const code = e.target.value;
+    const item = regionsVN.find((r) => r.code === code) || {};
+    const center = regionCenters[code];
+
+    setAddr((a) => ({
+      ...a,
+      regionCode: code || "",
+      city: item.name || "",
+      district: "",
+      districtCode: "",
+      ward: "",
+      wardCode: "",
+    }));
+    setGeo(Array.isArray(center) ? center : null);
+  };
+
+  const handleDistrictChange = (e) => {
+    const code = e.target.value;
+    const item = districts.find((d) => d.code === code) || {};
+    setAddr((a) => ({
+      ...a,
+      districtCode: code || "",
+      district: item.name || "",
+      ward: "",
+      wardCode: "",
+    }));
+  };
+
+  const handleWardChange = (e) => {
+    const code = e.target.value;
+    const item = wards.find((w) => w.code === code) || {};
+    setAddr((a) => ({
+      ...a,
+      wardCode: code || "",
+      ward: item.name || "",
+    }));
+  };
+
+  /* ----------------- AVATAR ----------------- */
   const pickAvatar = () => fileRef.current?.click();
+
   const onFile = (e) => {
-    const file = e.target.files?.[0]; if (!file) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
     if (!file.type.startsWith("image/")) return toast.error("Vui lòng chọn ảnh PNG/JPG");
     if (file.size > 2 * 1024 * 1024) return toast.error("Kích thước ảnh tối đa 2MB");
     const reader = new FileReader();
-    reader.onload = () => { setCropSrc(reader.result?.toString() || null); setCropOpen(true); };
+    reader.onload = () => {
+      setCropSrc(reader.result?.toString() || null);
+      setCropOpen(true);
+    };
     reader.readAsDataURL(file);
   };
+
   const uploadAvatarDirect = async (file) => {
     try {
-      const fd = new FormData(); fd.append("avatar", file);
+      const fd = new FormData();
+      fd.append("avatar", file);
       const res = await api.post("/api/user/avatar", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      const updated = res?.data?.user; const url = res?.data?.avatarUrl;
-      if (updated) setUser(updated); if (url) setAvatarPreview(toAbs(url));
+      const updated = res?.data?.user;
+      const url = res?.data?.avatarUrl;
+      if (updated) setUser(updated);
+      if (url) setAvatarPreview(toAbs(url));
       toast.success("Đã cập nhật ảnh đại diện!");
-    } catch (e) { toast.error(e?.response?.data?.message || e?.message || "Tải ảnh thất bại"); }
-    finally { if (fileRef.current) fileRef.current.value = ""; }
-  };
-  const onCropConfirm = (fileCropped, previewUrl) => { setCropOpen(false); setAvatarPreview(previewUrl); uploadAvatarDirect(fileCropped); };
-
-  // Khi đổi City → nạp Districts + reset Ward + set geo center
-  useEffect(() => {
-    setAddr((a) => ({ ...a, district: "", districtCode: "", ward: "", wardCode: "" }));
-    setWards([]);
-    if (addr.regionCode === "HN") {
-      import("../../../data/locations/vn/districts-HN.json").then((m) => setDistricts(m.default || []));
-    } else if (addr.regionCode === "HCM") {
-      import("../../../data/locations/vn/districts-HCM.json").then((m) => setDistricts(m.default || []));
-    } else setDistricts([]);
-    setGeo(Array.isArray(regionCenters[addr.regionCode]) ? regionCenters[addr.regionCode] : null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addr.regionCode]);
-
-  // Khi đổi District → nạp Wards tương ứng
-  useEffect(() => {
-    setAddr((a) => ({ ...a, ward: "", wardCode: "" }));
-    setWards([]);
-    if (!addr.regionCode || !addr.districtCode) return;
-    if (addr.regionCode === "HN") {
-      import("../../../data/locations/vn/wards-HN.json").then((m) => {
-        const map = m.default || {};
-        const list = Array.isArray(map[addr.districtCode]) ? map[addr.districtCode] : [];
-        setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
-      });
-    } else if (addr.regionCode === "HCM") {
-      import("../../../data/locations/vn/wards-HCM.json").then((m) => {
-        const map = m.default || {};
-        const list = Array.isArray(map[addr.districtCode]) ? map[addr.districtCode] : [];
-        setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
-      });
+    } catch (e) {
+      toast.error(e?.response?.data?.message || e?.message || "Tải ảnh thất bại");
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
     }
-  }, [addr.regionCode, addr.districtCode]);
+  };
 
-  // >>>>> THÊM: hàm validate tổng trước khi lưu Box 2
+  const onCropConfirm = (fileCropped, previewUrl) => {
+    setCropOpen(false);
+    setAvatarPreview(previewUrl);
+    uploadAvatarDirect(fileCropped);
+  };
+
+  const removeAvatar = async () => {
+    try {
+      const res = await api.patch("/api/user/account", { "profile.avatarUrl": "" });
+      const updated = res?.data?.user;
+      if (updated) setUser(updated);
+      setAvatarPreview("/images/avatar.png");
+      toast.success("Đã gỡ ảnh đại diện");
+    } catch (e) {
+      toast.error(e?.response?.data?.message || e?.message || "Không thể gỡ avatar");
+    }
+  };
+
+  /* ----------------- VALIDATE & DIRTY ----------------- */
   const validateInfoAll = () => {
     const eNick = validateNickname(form.nickname, { required: true });
     const eEmail = validateEmailGmail(form.email);
@@ -176,32 +300,84 @@ export default function AccountInfo() {
     return !hasErr;
   };
 
-  // Save Box 2
-  const saveInfo = async () => {
-    // >>>>> THÊM: chặn lưu nếu còn lỗi
+  useEffect(() => {
+    if (!user) {
+      setDirty(false);
+      return;
+    }
+    const p = user.profile || {};
+    const a = p.address || {};
+
+    const sameForm =
+      (form.nickname || "") === (p.nickname || "") &&
+      (form.sex || "male") === (p.sex || "male") &&
+      (form.dob || "") === (p.dob || "") &&
+      (form.phone || "") === (user.phone || "") &&
+      (form.email || "") === (user.email || "") &&
+      (form.bio || "") === (p.bio || "");
+
+    const sameAddr =
+      (addr.country || "") === (a.country || "") &&
+      (addr.countryCode || "") === (a.countryCode || (a.country ? "VN" : "")) &&
+      (addr.city || "") === (a.city || "") &&
+      (addr.regionCode || "") === (a.regionCode || "") &&
+      (addr.district || "") === (a.district || "") &&
+      (addr.districtCode || "") === (a.districtCode || "") &&
+      (addr.ward || "") === (a.ward || "") &&
+      (addr.wardCode || "") === (a.wardCode || "");
+
+    const samePref =
+      (profileVisibility || "private") === (p.visibility || "private") &&
+      (chatRequestSetting || "private") === (p.chatRequest || "private");
+
+    setDirty(!(sameForm && sameAddr && samePref));
+  }, [form, addr, profileVisibility, chatRequestSetting, user]);
+
+  /* ----------------- SAVE / CANCEL ----------------- */
+  const handleCancel = () => {
+    if (!user) return;
+    const p = user.profile || {};
+    const a = p.address || {};
+    setForm({
+      nickname: p.nickname || "",
+      sex: p.sex || "male",
+      dob: p.dob || "",
+      phone: user.phone || "",
+      email: user.email || "",
+      bio: p.bio || "",
+    });
+    setAddr({
+      country: a.country || "",
+      countryCode: a.countryCode || (a.country ? "VN" : ""),
+      city: a.city || "",
+      regionCode: a.regionCode || "",
+      district: a.district || "",
+      districtCode: a.districtCode || "",
+      ward: a.ward || "",
+      wardCode: a.wardCode || "",
+    });
+    setProfileVisibility(p.visibility || "private");
+    setChatRequestSetting(p.chatRequest || "private");
+    setGeo(a.regionCode && regionCenters[a.regionCode] ? regionCenters[a.regionCode] : null);
+    setErrs({ nickname: "", email: "", phone: "" });
+  };
+
+  const handleSave = async () => {
+    if (!dirty) return;
     if (!validateInfoAll()) {
-      toast.error("Thông tin chưa hợp lệ. Vui lòng chỉnh sửa.");
+      toast.error("Thông tin chưa hợp lệ. Vui lòng kiểm tra lại.");
       return;
     }
 
-    setSavingInfo(true);
+    setSaving(true);
     try {
       const payload = {
-        email: form.email, phone: form.phone,
-        "profile.nickname": form.nickname, "profile.dob": form.dob, "profile.sex": form.sex
-      };
-      const res = await api.patch("/api/user/account", payload);
-      const updated = res?.data?.user; if (updated) setUser(updated);
-      toast.success("Đã lưu thông tin!"); setEditInfo(false);
-    } catch (e) { toast.error(e?.response?.data?.message || e?.message || "Cập nhật thất bại"); }
-    finally { setSavingInfo(false); }
-  };
-
-  // Save Box 3 (địa chỉ) — giữ nguyên
-  const saveAddr = async () => {
-    setSavingAddr(true);
-    try {
-      const payload = {
+        email: form.email,
+        phone: form.phone,
+        "profile.nickname": form.nickname,
+        "profile.dob": form.dob,
+        "profile.sex": form.sex,
+        "profile.bio": form.bio,
         "profile.address.country": addr.country,
         "profile.address.countryCode": addr.countryCode,
         "profile.address.city": addr.city,
@@ -210,358 +386,392 @@ export default function AccountInfo() {
         "profile.address.districtCode": addr.districtCode,
         "profile.address.ward": addr.ward,
         "profile.address.wardCode": addr.wardCode,
-        ...(Array.isArray(geo) ? { "profile.location.coordinates": geo } : {})
+        ...(Array.isArray(geo) ? { "profile.location.coordinates": geo } : {}),
+        "profile.visibility": profileVisibility,
+        "profile.chatRequest": chatRequestSetting,
       };
+
       const res = await api.patch("/api/user/account", payload);
-      const updated = res?.data?.user; if (updated) setUser(updated);
-      toast.success("Đã lưu địa chỉ!"); setEditAddr(false);
-    } catch (e) { toast.error(e?.response?.data?.message || "Lưu địa chỉ thất bại"); }
-    finally { setSavingAddr(false); }
+      const updated = res?.data?.user;
+      if (updated) setUser(updated);
+      toast.success("Cập nhật thông tin tài khoản thành công!");
+    } catch (e) {
+      toast.error(e?.response?.data?.message || e?.message || "Cập nhật thất bại");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (!loaded) return (<div className="card acc-card"><h2 className="pf-title">Tài khoản</h2><div className="acc-loading">Đang tải…</div></div>);
-  if (!user) return (<div className="card acc-card"><h2 className="pf-title">Tài khoản</h2><div className="pf-error">Không tìm thấy dữ liệu</div></div>);
+  /* ----------------- RENDER ----------------- */
+  if (!loaded) {
+    return (
+      <div className="acc-page">
+        <div className="acc-loading-text">Đang tải thông tin tài khoản…</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="acc-page">
+        <div className="acc-error-text">Không tìm thấy dữ liệu tài khoản</div>
+      </div>
+    );
+  }
 
   return (
     <div className="acc-page">
-      <div className="card acc-card">
-        <h2 className="pf-title">Thông tin tài khoản</h2>
+      <div className="acc-layout">
+        {/* LEFT COLUMN */}
+        <div className="acc-left">
+          <section className="acc-section">
+            <h1 className="acc-title-main">Thông tin</h1>
 
-        {/* Box 1 */}
-        <section className="acc-sec">
-          <div className="acc-profile-row">
-            <div className="acc-avatarWrap acc-avatarWrap--inline">
-              <div className="acc-avatar"><img src={avatarPreview} alt="avatar" /></div>
-              <button className="acc-avatar-btn" title="Đổi avatar" aria-label="Đổi avatar" type="button" onClick={pickAvatar}><FontAwesomeIcon icon={faCamera} /></button>
-              <input ref={fileRef} type="file" accept="image/*" className="acc-file" onChange={onFile} />
+            {/* Nickname */}
+            <div className="acc-field-block">
+              <label className="acc-label" htmlFor="acc-nickname">
+                Nickname <span className="required">*</span>
+              </label>
+              <p className="acc-box-desc">
+                Tên gọi hiển thị công khai trên hồ sơ của bạn.
+              </p>
+              <input
+                id="acc-nickname"
+                name="nickname"
+                className="acc-input"
+                value={form.nickname}
+                onChange={handleFormChange}
+                placeholder="Nhập nickname của bạn"
+              />
+              {errs.nickname && <div className="acc-error-text">{errs.nickname}</div>}
             </div>
-            <div className="acc-profile-main">
-              <div className="acc-name">{(user.profile?.nickname) || user.username}</div>
-              <div className="acc-sub">
-                <span>{user.profile?.sex === "female" ? "Nữ" : "Nam"}</span><span className="dot">•</span>
-                <span>{formatDobDMY(user.profile?.dob) || "Chưa có ngày sinh"}</span>
+
+            {/* Giới tính */}
+            <div className="acc-field-block">
+              <div className="acc-label">
+                Giới tính <span className="required">*</span>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Box 2 */}
-        <section className="acc-sec">
-          <div className="acc-sec-head">
-            <h3>Thông tin cá nhân</h3>
-            {!editInfo ? (
-              <button className="acc-edit" onClick={() => setEditInfo(true)}><FontAwesomeIcon icon={faPenToSquare} /></button>
-            ) : (
-              <div className="acc-edit-actions">
-                <button className="btn-tertiary" onClick={() => { 
-                  setEditInfo(false); 
-                  const p = user.profile || {}; 
-                  setForm({ nickname: p.nickname || "", dob: p.dob || "", sex: p.sex || "male", email: user.email || "", phone: user.phone || "" });
-                  setErrs({ nickname: "", email: "", phone: "" });
-                }}>
-                 Hủy
-                </button>
-                <button className="btn-success" onClick={saveInfo} disabled={savingInfo}>{savingInfo ? "Đang lưu..." : "Lưu"}</button>
-              </div>
-            )}
-          </div>
-
-          {!editInfo && (
-            <div className="acc-grid">
-              <div className="acc-field"><span className="label">Nickname</span><span className="value">{user.profile?.nickname || "-"}</span></div>
-              <div className="acc-field"><span className="label">Ngày sinh</span><span className="value">{formatDobDMY(user.profile?.dob) || "-"}</span></div>
-              <div className="acc-field"><span className="label">Giới tính</span><span className="value">{user.profile?.sex === "female" ? "Nữ" : "Nam"}</span></div>
-              <div className="acc-field"><span className="label">Email</span><span className="value">{user.email || "-"}</span></div>
-              <div className="acc-field"><span className="label">Số điện thoại</span><span className="value">{user.phone || "-"}</span></div>
-            </div>
-          )}
-
-          {editInfo && (
-            <div className="acc-form">
-              {/* Hàng 1: Nickname (MUI) */}
-              <div className="acc-one">
-                <div className="acc-form-col">
-                  <TextField
-                    label="Nickname"
-                    name="nickname"
-                    value={form.nickname}
-                    onChange={onChange}
-                    onBlur={(e)=> setErrs((p)=>({ ...p, nickname: validateNickname(e.target.value, { required: true }) }))}
-                    error={Boolean(errs.nickname)}
-                    helperText={errs.nickname || ""}
-                    fullWidth
-                    size="small"
+              <div className="acc-radio-group">
+                <label className="acc-radio">
+                  <input
+                    type="radio"
+                    name="sex"
+                    value="male"
+                    checked={form.sex === "male"}
+                    onChange={handleFormChange}
                   />
-                </div>
-              </div>
-
-              <div className="acc-two">
-                <div className="acc-form-col">
-                  <FormControl fullWidth size="small">
-                    <InputLabel id="gender-select-label">Giới tính</InputLabel>
-                    <Select
-                      labelId="gender-select-label"
-                      label="Giới tính"
-                      name="sex"
-                      value={form.sex}
-                      onChange={onChange}
-                      MenuProps={{ disableScrollLock: true }}
-                    >
-                      <MenuItem value="male">Nam</MenuItem>
-                      <MenuItem value="female">Nữ</MenuItem>
-                    </Select>
-                  </FormControl>
-                </div>
-                
-                <div className="acc-form-col">
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      label="Ngày sinh"
-                      format="DD/MM/YYYY"
-                      value={form.dob ? dayjs(form.dob) : null}
-                      onChange={(newValue) => {
-                        onChange({
-                          target: {
-                            name: "dob",
-                            value: newValue ? newValue.format("YYYY-MM-DD") : "",
-                          },
-                        });
-                      }}
-                      maxDate={dayjs(new Date())}
-                      slotProps={{
-                        textField: {
-                          size: "small",
-                          fullWidth: true,
-                          sx: {
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: 1.5,
-                              backgroundColor: "#020617",     // nền tối cho hợp acc-card
-                              "& fieldset": {
-                                borderColor: "#4b5563",        // border mặc định
-                              },
-                              "&:hover fieldset": {
-                                borderColor: "#008080",        // hover
-                              },
-                              "&.Mui-focused fieldset": {
-                                borderColor: "#008080",        // focus
-                                boxShadow: "0 0 0 1px rgba(0,128,128,0.45)",
-                              },
-                            },
-                            "& .MuiInputBase-input": {
-                              padding: "8px 10px",
-                              fontSize: 14,
-                              color: "#f9fafb",
-                            },
-                            "& .MuiSvgIcon-root": {
-                              color: "#9ca3af",
-                            },
-                          },
-                        },
-                      }}
-                    />
-                  </LocalizationProvider>
-                </div>
-              </div>
-
-              {/* Hàng 3: Email (MUI) + SĐT (MUI) */}
-              <div className="acc-two">
-                <div className="acc-form-col">
-                  <TextField
-                    label="Email"
-                    type="email"
-                    name="email"
-                    value={form.email}
-                    onChange={onChange}
-                    onBlur={(e)=> setErrs((p)=>({ ...p, email: validateEmailGmail(e.target.value) }))}
-                    error={Boolean(errs.email)}
-                    helperText={errs.email || ""}
-                    fullWidth
-                    size="small"
+                  <span>Nam</span>
+                </label>
+                <label className="acc-radio">
+                  <input
+                    type="radio"
+                    name="sex"
+                    value="female"
+                    checked={form.sex === "female"}
+                    onChange={handleFormChange}
                   />
-                </div>
-                <div className="acc-form-col">
-                  <TextField
-                    label="Số điện thoại"
-                    name="phone"
-                    value={form.phone}
-                    onChange={onChange}
-                    onBlur={(e)=> setErrs((p)=>({ ...p, phone: validatePhone(e.target.value) }))}
-                    error={Boolean(errs.phone)}
-                    helperText={errs.phone || ""}
-                    fullWidth
-                    size="small"
-                  />
-                </div>
+                  <span>Nữ</span>
+                </label>
               </div>
             </div>
-          )}
-        </section>
 
-        {/* Box 3: Address */}
-        <section className="acc-sec">
-          <div className="acc-sec-head">
-            <h3>Địa chỉ</h3>
-            {!editAddr ? (
-              <button className="acc-edit" onClick={() => setEditAddr(true)}><FontAwesomeIcon icon={faPenToSquare} /></button>
-            ) : (
-              <div className="acc-edit-actions">
-                <button className="btn-tertiary" onClick={() => {
-                  setEditAddr(false);
-                  const a = user.profile?.address || {};
-                  setAddr({
-                    country: a.country || "", countryCode: a.countryCode || "",
-                    city: a.city || "", regionCode: a.regionCode || "",
-                    district: a.district || "", districtCode: a.districtCode || "",
-                    ward: a.ward || "", wardCode: a.wardCode || ""
-                  });
-                  setGeo(a.regionCode && regionCenters[a.regionCode] ? regionCenters[a.regionCode] : null);
-                  setDistricts([]); setWards([]);
-                }}>
-                 Hủy
-                </button>
-                <button className="btn-success" onClick={saveAddr} disabled={savingAddr}>{savingAddr ? "Đang lưu..." : "Lưu"}</button>
+            {/* Ngày sinh */}
+            <div className="acc-field-block">
+              <label className="acc-label" htmlFor="acc-dob">
+                Ngày sinh <span className="required">*</span>
+              </label>
+              <div className="acc-date-wrapper">
+                <input
+                  id="acc-dob"
+                  type="date"
+                  name="dob"
+                  className="acc-input acc-input-date"
+                  value={form.dob || ""}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={handleFormChange}
+                />
+                <FontAwesomeIcon icon={faCalendarDays} className="acc-date-icon" />
               </div>
-            )}
-          </div>
-
-          {!editAddr && (
-            <div className="acc-grid">
-              <div className="acc-field"><span className="label">Quốc gia</span><span className="value">{user.profile?.address?.country || "-"}</span></div>
-              <div className="acc-field"><span className="label">Thành phố</span><span className="value">{user.profile?.address?.city || "-"}</span></div>
-              <div className="acc-field"><span className="label">Quận/Huyện</span><span className="value">{user.profile?.address?.district || "-"}</span></div>
-              <div className="acc-field"><span className="label">Phường/Xã</span><span className="value">{user.profile?.address?.ward || "-"}</span></div>
             </div>
-          )}
 
-          {editAddr && (
-            <div className="acc-form">
-              {/* Country */}
-              <div className="acc-one">
-                <FormControl fullWidth size="small">
-                  <InputLabel id="country-select-label">Quốc Gia</InputLabel>
-                  <Select
-                    labelId="country-select-label"
-                    label="Quốc Gia"
+            {/* Số điện thoại */}
+            <div className="acc-field-block">
+              <label className="acc-label" htmlFor="acc-phone">
+                Số điện thoại
+              </label>
+              <input
+                id="acc-phone"
+                name="phone"
+                className="acc-input"
+                value={form.phone}
+                onChange={handleFormChange}
+                placeholder="Nhập số điện thoại"
+              />
+              {errs.phone && <div className="acc-error-text">{errs.phone}</div>}
+            </div>
+
+            {/* Địa chỉ */}
+            <div className="acc-field-block">
+              <div className="acc-label">Địa chỉ</div>
+              <p className="acc-box-desc">
+                Bạn cần nhập địa chỉ để có thể sử dụng chức năng "Kết nối". Hệ thống sẽ định vị ví trí của bạn dựa
+                trên địa chỉ này để tìm kiếm những người dùng khác gần bạn.
+              </p>
+              <div className="acc-row-2 acc-row-gap">
+                <div>
+                  <label className="acc-sub-label" htmlFor="acc-country">
+                    Quốc gia
+                  </label>
+                  <select
+                    id="acc-country"
+                    className="acc-select"
                     value={addr.countryCode || ""}
-                    MenuProps={{ disableScrollLock: true }}
-                    onChange={(e) => {
-                      const code = e.target.value;
-                      const item = countries.find((x) => x.code === code) || null;
-                      setAddr((a) => ({
-                        ...a,
-                        countryCode: item?.code || "", country: item?.name || "",
-                        regionCode: "", city: "", districtCode: "", district: "", wardCode: "", ward: ""
-                      }));
-                      setGeo(null); setDistricts([]); setWards([]);
-                    }}
+                    onChange={handleCountryChange}
                   >
-                    <MenuItem value="">-- Chọn Quốc Gia --</MenuItem>
-                    {countries.map((c) => (<MenuItem key={c.code} value={c.code}>{c.name}</MenuItem>))}
-                  </Select>
-                </FormControl>
-              </div>
-
-              {/* City / Region */}
-              <div className="acc-one">
-                <FormControl fullWidth size="small">
-                  <InputLabel id="city-select-label">Thành Phố</InputLabel>
-                  <Select
-                    labelId="city-select-label"
-                    label="Thành Phố"
-                    disabled={addr.countryCode !== "VN"}
+                    <option value="">-- Chọn quốc gia --</option>
+                    {countries.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="acc-sub-label" htmlFor="acc-region">
+                    Thành phố
+                  </label>
+                  <select
+                    id="acc-region"
+                    className="acc-select"
                     value={addr.regionCode || ""}
-                    MenuProps={{ disableScrollLock: true }}
-                    onChange={(e) => {
-                      const code = e.target.value;
-                      const item = regionsVN.find((x) => x.code === code) || null;
-                      const center = regionCenters[code];
-                      setAddr((a) => ({
-                        ...a,
-                        regionCode: item?.code || "", city: item?.name || "",
-                        districtCode: "", district: "", wardCode: "", ward: ""
-                      }));
-                      setGeo(Array.isArray(center) ? center : null);
-                    }}
+                    disabled={addr.countryCode !== "VN"}
+                    onChange={handleRegionChange}
                   >
-                    <MenuItem value="">-- Chọn Thành Phố --</MenuItem>
-                    {regionsVN.map((r) => (<MenuItem key={r.code} value={r.code}>{r.name}</MenuItem>))}
-                  </Select>
-                </FormControl>
+                    <option value="">-- Chọn thành phố --</option>
+                    {regionsVN.map((r) => (
+                      <option key={r.code} value={r.code}>
+                        {r.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* District */}
-              <div className="acc-one">
-                <FormControl fullWidth size="small">
-                  <InputLabel id="district-select-label">Quận</InputLabel>
-                  <Select
-                    labelId="district-select-label"
-                    label="Quận"
-                    disabled={!addr.regionCode}
+              <div className="acc-row-2 acc-row-gap acc-row-height">
+                <div>
+                  <label className="acc-sub-label" htmlFor="acc-district">
+                    Quận
+                  </label>
+                  <select
+                    id="acc-district"
+                    className="acc-select"
                     value={addr.districtCode || ""}
-                    MenuProps={{ disableScrollLock: true }}
-                    onChange={(e) => {
-                      const code = e.target.value;
-                      let display = "", list = [];
-                      if (addr.regionCode === "HN") {
-                        import("../../../data/locations/vn/districts-HN.json").then((m) => {
-                          const arr = m.default || [];
-                          const item = arr.find((x) => x.code === code) || null;
-                          display = item?.name || "";
-                          setAddr((a) => ({ ...a, districtCode: code, district: display, wardCode: "", ward: "" }));
-                        });
-                        import("../../../data/locations/vn/wards-HN.json").then((m) => {
-                          const map = m.default || {};
-                          list = Array.isArray(map[code]) ? map[code] : [];
-                          setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
-                        });
-                      } else if (addr.regionCode === "HCM") {
-                        import("../../../data/locations/vn/districts-HCM.json").then((m) => {
-                          const arr = m.default || [];
-                          const item = arr.find((x) => x.code === code) || null;
-                          display = item?.name || "";
-                          setAddr((a) => ({ ...a, districtCode: code, district: display, wardCode: "", ward: "" }));
-                        });
-                        import("../../../data/locations/vn/wards-HCM.json").then((m) => {
-                          const map = m.default || {};
-                          list = Array.isArray(map[code]) ? map[code] : [];
-                          setWards(list.map((name, i) => ({ code: String(i + 1).padStart(2, "0"), name })));
-                        });
-                      }
-                    }}
+                    disabled={!addr.regionCode}
+                    onChange={handleDistrictChange}
                   >
-                    <MenuItem value="">-- Chọn Quận --</MenuItem>
-                    {districts.map((d) => (<MenuItem key={d.code} value={d.code}>{d.name}</MenuItem>))}
-                  </Select>
-                </FormControl>
-              </div>
-
-              {/* Ward */}
-              <div className="acc-one">
-                <FormControl fullWidth size="small">
-                  <InputLabel id="ward-select-label">Phường</InputLabel>
-                  <Select
-                    labelId="ward-select-label"
-                    label="Phường"
-                    disabled={!addr.districtCode || wards.length === 0}
+                    <option value="">-- Chọn quận --</option>
+                    {districts.map((d) => (
+                      <option key={d.code} value={d.code}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="acc-sub-label" htmlFor="acc-ward">
+                    Phường
+                  </label>
+                  <select
+                    id="acc-ward"
+                    className="acc-select"
                     value={addr.wardCode || ""}
-                    MenuProps={{ disableScrollLock: true }}
-                    onChange={(e) => {
-                      const code = e.target.value;
-                      const item = wards.find((w) => w.code === code) || null;
-                      setAddr((a) => ({ ...a, wardCode: item?.code || "", ward: item?.name || "" }));
-                    }}
+                    disabled={!addr.districtCode || wards.length === 0}
+                    onChange={handleWardChange}
                   >
-                    <MenuItem value="">{wards.length ? "-- Chọn Phường --" : "Không có dữ liệu Phường"}</MenuItem>
-                    {wards.map((w) => (<MenuItem key={w.code} value={w.code}>{w.name}</MenuItem>))}
-                  </Select>
-                </FormControl>
+                    <option value="">
+                      {wards.length ? "-- Chọn phường --" : "Không có dữ liệu"}
+                    </option>
+                    {wards.map((w) => (
+                      <option key={w.code} value={w.code}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-          )}
-        </section>
+
+            {/* Bio */}
+            <div className="acc-field-block">
+              <label className="acc-label" htmlFor="acc-bio">
+                Bio
+              </label>
+              <textarea
+                id="acc-bio"
+                name="bio"
+                className="acc-input-bio"
+                value={form.bio}
+                onChange={handleFormChange}
+                placeholder="Giới thiệu ngắn về bạn"
+              />
+            </div>
+          </section>
+
+          <hr className="acct-divider" />
+
+          {/* Email */}
+          <section className="acc-section">
+            <h2 className="acc-title-sub">Email</h2>
+            <div className="acc-field-block">
+              <div className="acc-row-inline">
+                <label className="acc-label-inline">Email</label>
+                <input className="acc-input acc-input-email" value={form.email} readOnly />
+              </div>
+              {errs.email && <div className="acc-error-text">{errs.email}</div>}
+            </div>
+          </section>
+
+          <hr className="acct-divider" />
+
+          {/* Hiển thị hồ sơ */}
+          <section className="acc-section">
+            <h2 className="acc-title-sub">Hiển thị hồ sơ</h2>
+
+            <div className="acc-radio-block">
+              <label className="acc-radio">
+                <input
+                  type="radio"
+                  name="profileVisibility"
+                  value="public"
+                  checked={profileVisibility === "public"}
+                  onChange={(e) => setProfileVisibility(e.target.value)}
+                />
+                <span>Mọi người ( hồ sơ công khai )</span>
+              </label>
+              <p className="acc-radio-desc">
+                Bất kỳ ai trên Internet có liên kết đến trang cá nhân của bạn đều có thể xem được. Thông tin bạn
+                chia sẻ trên trang cá nhân (chẳng hạn như tên và họ, thông tin mạng xã hội, ảnh công khai) sẽ hiển
+                thị trên trang cá nhân, trong phần trò chuyện hoặc diễn đàn cộng đồng.
+              </p>
+            </div>
+
+            <div className="acc-radio-block">
+              <label className="acc-radio">
+                <input
+                  type="radio"
+                  name="profileVisibility"
+                  value="private"
+                  checked={profileVisibility === "private"}
+                  onChange={(e) => setProfileVisibility(e.target.value)}
+                />
+                <span>Chỉ mình tôi ( hồ sơ riêng tư )</span>
+              </label>
+              <p className="acc-radio-desc">
+                ONLY your profile photo, first name and username is visible on your profile, and within chat or the
+                community forums.
+              </p>
+            </div>
+          </section>
+
+          <hr className="acct-divider" />
+
+          {/* Cài đặt yêu cầu trò chuyện */}
+          <section className="acc-section">
+            <h2 className="acc-title-sub">Cài đặt yêu cầu trò chuyện</h2>
+
+            <div className="acc-radio-block">
+              <label className="acc-radio">
+                <input
+                  type="radio"
+                  name="chatRequest"
+                  value="all"
+                  checked={chatRequestSetting === "all"}
+                  onChange={(e) => setChatRequestSetting(e.target.value)}
+                />
+                <span>Tất cả mọi người</span>
+              </label>
+            </div>
+
+            <div className="acc-radio-block">
+              <label className="acc-radio">
+                <input
+                  type="radio"
+                  name="chatRequest"
+                  value="matched"
+                  checked={chatRequestSetting === "matched"}
+                  onChange={(e) => setChatRequestSetting(e.target.value)}
+                />
+                <span>Chỉ những người dùng đã ghép đôi</span>
+              </label>
+            </div>
+
+            <div className="acc-radio-block">
+              <label className="acc-radio">
+                <input
+                  type="radio"
+                  name="chatRequest"
+                  value="private"
+                  checked={chatRequestSetting === "private"}
+                  onChange={(e) => setChatRequestSetting(e.target.value)}
+                />
+                <span>Riêng tư</span>
+              </label>
+            </div>
+          </section>
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="acc-right">
+          <div className="acc-avatar-panel">
+            <div className="acc-avatar-large">
+              <img src={avatarPreview} alt="avatar" />
+            </div>
+            <button type="button" className="acc-avatar-btn-main" onClick={pickAvatar}>
+              <FontAwesomeIcon icon={faCamera} />
+              <span>Thay đổi avatar</span>
+            </button>
+            <button type="button" className="acc-avatar-btn-remove" onClick={removeAvatar}>
+              <FontAwesomeIcon icon={faXmark} />
+              <span>Gỡ avatar</span>
+            </button>
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="acc-file"
+              onChange={onFile}
+            />
+          </div>
+
+          {/* Nút Hủy / Lưu cố định cuối màn hình */}
+          <div className="acc-actions-bar">
+            <button
+              type="button"
+              className="acc-btn acc-btn-cancel"
+              disabled={!dirty || saving}
+              onClick={handleCancel}
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              className="acc-btn acc-btn-save"
+              disabled={!dirty || saving}
+              onClick={handleSave}
+            >
+              {saving ? "Đang lưu..." : "Lưu thay đổi"}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <AvatarCropper open={cropOpen} src={cropSrc} onClose={() => setCropOpen(false)} onConfirm={onCropConfirm} />
+      <AvatarCropper
+        open={cropOpen}
+        src={cropSrc}
+        onClose={() => setCropOpen(false)}
+        onConfirm={onCropConfirm}
+      />
     </div>
   );
 }

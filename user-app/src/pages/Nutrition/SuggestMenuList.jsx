@@ -208,7 +208,7 @@ export default function SuggestMenuList() {
       {/* ===== HEAD ===== */}
       <div className="ex-head">
         <div className="ex-head-text">
-          <div className="ex-list-title">Danh sách Thực đơn gợi ý</div>
+          <div className="ex-list-title">Danh sách thực đơn gợi ý</div>
           <div className="ex-list-desc">
             Đây là danh sách mang tính chất gợi ý, không bắt buộc sử dụng
             hoàn toàn thực đơn.

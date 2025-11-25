@@ -12,6 +12,7 @@ import Home from "./pages/Home/Home";
 import Profile from "./pages/Account/Profile"; 
 import AccountSettings from "./pages/Account/AccountSettings";
 import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy"; 
+import TermsCondiotionsPage from "./pages/Account/TermsConditions";
 
 // Diary
 import RecordMeal from "./pages/Nutrition/RecordMeal";
@@ -130,7 +131,8 @@ export default function App() {
           {/* Tài khoản */}
           <Route path="/tai-khoan/ho-so" element={<Profile />} />
           <Route path="/tai-khoan/tai-khoan" element={<AccountSettings />} />
-          <Route path="/tai-khoan/quyen-rieng-tu" element={<PrivacyPolicyPage />} />
+          <Route path="/tai-khoan/chinh-sach-bao-mat" element={<PrivacyPolicyPage />} />
+          <Route path="/tai-khoan/dieu-khoan-dich-vu" element={<TermsCondiotionsPage />} />
 
           {/* Khác */}
           {/* <Route path="/cong-dong" element={<CongDong />} /> */} {/* Đã xóa */}

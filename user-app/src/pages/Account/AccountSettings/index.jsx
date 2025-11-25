@@ -21,12 +21,14 @@ const fmtDate = (iso) => {
   if (!iso) return "xx/xx/xxxx";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "xx/xx/xxxx";
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  return `${String(d.getDate()).padStart(2, "0")}/${String(
+    d.getMonth() + 1
+  ).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
 export default function AccountSettings() {
-  const [tab, setTab] = useState("account"); 
-  const [user, setUser] = useState(null);    
+  const [tab, setTab] = useState("account");
+  const [user, setUser] = useState(null);
   const [openLogout, setOpenLogout] = useState(false);
 
   // tải user 1 lần
@@ -68,13 +70,16 @@ export default function AccountSettings() {
             <img src={avatarSrc} alt="avatar" />
           </div>
           <div className="pf-userinfo">
-            <div className="pf-name">{p.nickname || user?.username || "Bạn"}</div>
+            <div className="pf-name">
+              {p.nickname || user?.username || "Bạn"}
+            </div>
             <div className="pf-join">Đã tham gia từ {joinDate}</div>
           </div>
         </div>
       </div>
 
       <div className="pf-body">
+        {/* SIDEBAR (không nằm trong card, giống Chloe Ting) */}
         <aside className="pf-side">
           <div className="pf-side-title">Thông tin và liên hệ</div>
           <button
@@ -102,8 +107,8 @@ export default function AccountSettings() {
           </button>
         </aside>
 
+        {/* CONTENT: có line chia cột, kéo dài theo chiều cao nội dung */}
         <section className="pf-content">
-          {/* Truyền xuống callback để child báo user mới lên parent */}
           {tab === "account" && <Account onUserChange={setUser} />}
           {tab === "password" && <ChangePassword />}
           {tab === "delete" && <DeleteAccount />}
@@ -111,8 +116,16 @@ export default function AccountSettings() {
       </div>
 
       {openLogout && (
-        <div className="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
-          <div className="logout-backdrop" onClick={() => setOpenLogout(false)} />
+        <div
+          className="logout-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="logout-title"
+        >
+          <div
+            className="logout-backdrop"
+            onClick={() => setOpenLogout(false)}
+          />
           <div className="logout-dialog card" role="document">
             <div id="logout-title" className="logout-title">
               Đăng xuất tài khoản?
@@ -121,10 +134,18 @@ export default function AccountSettings() {
               Bạn sắp đăng xuất khỏi FitMatch. Bạn có chắc chắn muốn tiếp tục?
             </p>
             <div className="logout-actions">
-              <button className="btn-secondary" type="button" onClick={() => setOpenLogout(false)}>
+              <button
+                className="btn-secondary"
+                type="button"
+                onClick={() => setOpenLogout(false)}
+              >
                 Hủy
               </button>
-              <button className="btn-danger" type="button" onClick={handleLogout}>
+              <button
+                className="btn-danger"
+                type="button"
+                onClick={handleLogout}
+              >
                 Xác nhận
               </button>
             </div>

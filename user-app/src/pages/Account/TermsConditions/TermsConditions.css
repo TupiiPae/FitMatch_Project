@@ -1,71 +1,71 @@
 /* ===== PAGE WRAPPER ===== */
-.pp-page {
+.tc-page {
   margin-top: 40px;
   margin-bottom: 60px;
 }
 
-/* Giới hạn chiều rộng giống hình Chloe Ting */
-.pp-head,
-.pp-body {
+/* Giới hạn chiều rộng giống PrivacyPolicy */
+.tc-head,
+.tc-body {
   max-width: 1100px;
   margin: 0 auto;
 }
 
 /* ===== HEADER / TITLE ===== */
-.pp-head {
+.tc-head {
   margin-bottom: 32px;
 }
 
-.pp-breadcrumb {
+.tc-breadcrumb {
   font-size: 14px;
   color: #9ca3af;
   margin-bottom: 4px;
 }
 
-.pp-updated {
+.tc-updated {
   font-size: 12px;
   color: #6b7280;
   margin-bottom: 16px;
 }
 
 /* Khung title có line trên & dưới */
-.pp-title-wrapper {
+.tc-title-wrapper {
   border-top: 1px solid #4b5563;
   border-bottom: 1px solid #4b5563;
   padding: 18px 0 20px;
 }
 
-.pp-main-title {
+.tc-main-title {
   font-size: 32px;
   line-height: 1.3;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #f9fafb;
 }
 
 /* ===== BODY LAYOUT ===== */
-.pp-body {
+.tc-body {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr); /* sidebar đủ rộng */
+  grid-template-columns: 320px minmax(0, 1fr); /* sidebar rộng để không xuống dòng */
   column-gap: 40px;
   align-items: flex-start;
 }
 
 /* ===== SIDEBAR MỤC LỤC ===== */
-.pp-side {
+.tc-side {
   position: sticky;
   top: calc(var(--nav-size) + 24px);
   align-self: flex-start;
 }
 
-.pp-toc {
+.tc-toc {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.pp-toc-item {
+.tc-toc-item {
   display: block;
   width: 100%;
   padding: 4px 0;
@@ -75,40 +75,39 @@
   cursor: pointer;
   font-size: 14px;
   color: #9ca3af;
-  white-space: nowrap; /* không xuống dòng trên desktop */
+  white-space: nowrap; /* không xuống dòng desktop */
   transition: color 0.18s ease, transform 0.18s ease;
 }
 
-.pp-toc-item:hover,
-.pp-toc-item:focus-visible {
+.tc-toc-item:hover,
+.tc-toc-item:focus-visible {
   color: #f9fafb;
   transform: translateX(2px);
 }
 
-/* ===== NỘI DUNG CHÍNH SÁCH ===== */
-.pp-content {
+/* ===== NỘI DUNG ===== */
+.tc-content {
   min-width: 0;
 }
 
-.pp-policy {
+.tc-terms {
   color: #e5e7eb;
   font-family: "Roboto", system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
 }
 
-/* mỗi section cách nhau 1 đoạn */
-.pp-section + .pp-section {
-  margin-top: 20px;
+.tc-section + .tc-section {
+  margin-top: 100px;
 }
 
-.pp-h2 {
+.tc-h2 {
   font-size: 24px;
   font-weight: 600;
-  margin: 80px 0 40px;
+  margin: 0 0 40px;
   color: #f9fafb;
 }
 
-.pp-p {
+.tc-p {
   font-size: 14px;
   line-height: 1.7;
   margin: 6px 0 14px;
@@ -117,13 +116,13 @@
   text-justify: inter-word;
 }
 
-/* list bullet trong chính sách */
-.pp-list {
+/* danh sách */
+.tc-list {
   margin: 6px 0 14px 18px;
   padding: 0;
 }
 
-.pp-list li {
+.tc-list li {
   font-size: 14px;
   line-height: 1.7;
   margin-bottom: 4px;
@@ -132,22 +131,22 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 980px) {
-  .pp-body {
+  .tc-body {
     grid-template-columns: 1fr;
     row-gap: 24px;
   }
 
-  .pp-side {
+  .tc-side {
     position: static;
   }
 
-  /* cho phép xuống dòng trên mobile */
-  .pp-toc {
+  .tc-toc {
     display: flex;
     flex-wrap: wrap;
     gap: 6px 16px;
   }
-  .pp-toc-item {
+
+  .tc-toc-item {
     white-space: normal;
     padding-right: 12px;
   }

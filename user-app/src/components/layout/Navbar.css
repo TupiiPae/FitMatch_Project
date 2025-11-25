@@ -39,7 +39,8 @@
   color: var(--fm-text);
 }
 
-.fm-main { padding: 16px 0 10px 0}
+.fm-main { flex: 1; 
+  width: 100%; padding: 16px 0 10px 0}
 
 /* ================= HEADER / NAV ================= */
 .fm-header {

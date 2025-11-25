@@ -71,7 +71,7 @@
 /* ===== Frame danh sách – đồng bộ với nm-list-frame ===== */
 .wl-list-title {
   color: #d30016;
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 700;
   padding-top: 58px;
 }
@@ -79,7 +79,7 @@
 .wl-list-desc {
   margin-top: 4px;
   color: #e5e7eb;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 400;
 }
 
