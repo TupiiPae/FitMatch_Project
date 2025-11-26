@@ -1,47 +1,41 @@
 .in-wrap {
   min-height: 100vh;
-  background: #f4f6ea;
+  background: linear-gradient(135deg, #121212 40%, #ef4444);
   display: flex;
   flex-direction: column;
 }
 
 .in-header {
-  height: 64px;
+  height: 72px;
   display: flex;
   align-items: center;
-  padding: 0 150px;
-  background: #f4f6ea;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 40px rgba(0,0,0,.1);
-}
-
-.in-logo {
-  height: 150px;
+  padding: 0 40px;
+  background: transparent;
 }
 
 .in-main {
   flex: 1;
   display: grid;
-  justify-items: center;  
-  align-content: start;    
-  padding-top: 20px;  
+  justify-items: center;
+  align-content: start;
+  padding: 16px 16px 40px;
 }
 
 .in-card {
-  max-height: 550px;
-  width: 900px;
-  background: #fff;
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
   border-radius: 8px;
-  padding: 24px;
-  border: 1px solid #eef1f5;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  padding: 24px 24px 26px;
+  border: 1px solid rgba(15, 23, 42, 0.7);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
   text-align: center;
 }
 
 .in-title {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: #111827;
   margin-bottom: 6px;
 }
 
@@ -51,7 +45,7 @@
   margin-bottom: 20px;
 }
 
-/* ====== Options ====== */
+/* Options */
 .in-list {
   display: flex;
   flex-direction: column;
@@ -59,27 +53,26 @@
   text-align: left;
 }
 
-/* container mỗi option */
 .in-option {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  background: #fff;
+  background: #ffffff;
   overflow: hidden;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .in-option:hover {
-  border-color: #cfd3da;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  border-color: #e5e7eb;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 .in-option.active {
-  border-color: #008080;
-  box-shadow: 0 4px 12px rgba(52, 207, 135, 0.32);
-  background: #78BCC420;
+  border-color: #ef4444;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35);
+  background: #fef2f2;
 }
 
-/* nút đầu hàng (tiêu đề) */
+/* head */
 .in-head {
   width: 100%;
   display: grid;
@@ -95,7 +88,7 @@
   font-weight: 600;
 }
 
-/* radio giả lập */
+/* radio */
 .in-radio {
   width: 18px;
   height: 18px;
@@ -108,8 +101,8 @@
 }
 
 .in-option.active .in-radio {
-  border-color: #008080;
-  background: rgba(26, 115, 232, 0.08);
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .in-dot {
@@ -120,10 +113,10 @@
 }
 
 .in-option.active .in-dot {
-  background: #008080;
+  background: #ef4444;
 }
 
-/* mũi tên chỉ trạng thái */
+/* chevron */
 .in-chevron {
   width: 10px;
   height: 10px;
@@ -136,10 +129,10 @@
 
 .in-option.active .in-chevron {
   transform: rotate(45deg);
-  border-color: #008080;
+  border-color: #ef4444;
 }
 
-/* panel chi tiết ẩn/hiện */
+/* panel */
 .in-panel {
   max-height: 0;
   overflow: hidden;
@@ -166,6 +159,7 @@
   margin: 4px 0;
 }
 
+/* Error & actions */
 .in-error {
   margin-top: 10px;
   color: #d32f2f;
@@ -175,14 +169,15 @@
 .in-actions {
   display: flex;
   gap: 14px;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
+/* Buttons */
 .btn {
   min-width: 120px;
   height: 40px;
   padding: 0 18px;
-  border-radius: 8px;
+  border-radius: 999px;
   font-weight: 500;
   cursor: pointer;
   transition: transform 0.05s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
@@ -193,38 +188,44 @@
 }
 
 .btn-outline {
-  background: #fff;
-  border: 1px solid #d1d5db;
-  color: #111827;
+  background: #111827;
+  border: 1px solid #9ca3af;
+  color: #e5e7eb;
 }
 
 .btn-outline:hover {
-  border-color: #9ca3af;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-color: #f97373;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.6);
 }
 
 .btn-primary {
-  background: #008080;
+  background: #f00519;
   border: none;
-  color: #fff;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
 .btn-primary:hover {
-  background: #007070;
+  background: #ef4444;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.55);
+}
+
+.btn-primary:disabled {
+  background: #f97373;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 @media (max-width: 560px) {
   .in-card {
     padding: 20px 16px;
   }
-
   .in-actions {
     width: 100%;
     justify-content: center;
   }
-
   .btn {
     flex: 1;
-    max-width: 220px;
+    max-width: 260px;
   }
 }

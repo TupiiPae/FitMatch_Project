@@ -8,12 +8,11 @@ const STEPS = [
   { slug: "ten-goi",            label: "B1" },
   { slug: "muc-tieu",           label: "B2" },
   { slug: "dong-luc",           label: "B3" },
-  { slug: "so-lieu-co-ban",     label: "B4" },
-  { slug: "can-nang-muc-tieu",  label: "B5" },
-  { slug: "muc-tieu-hang-tuan", label: "B6" },
-  { slug: "cuong-do",           label: "B7" },
-  { slug: "tong-hop",           label: "B8" },
+  { slug: "can-nang-muc-tieu",  label: "B4" },
+  { slug: "cuong-do",           label: "B5" },
+  { slug: "tong-hop",           label: "B6" },
 ];
+
 
 function StepProgress({ currentSlug }) {
   const currentIndex = Math.max(0, STEPS.findIndex(s => s.slug === currentSlug));
@@ -118,7 +117,7 @@ export default function Intensity() {
     <div className="in-wrap">
       <header className="in-header">
         <Link to="/" className="logo-link" aria-label="Về trang chủ">
-          <img src="/images/logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
+          <img src="/images/fm-logo-name.png" alt="FitMatch" className="nk-logo" />
         </Link>
       </header>
 

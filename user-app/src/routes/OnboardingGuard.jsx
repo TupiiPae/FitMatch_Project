@@ -17,7 +17,7 @@ export default function OnboardingGuard({ children }) {
       }
       try {
         // endpoint đúng theo server
-        const { data } = await api.get("/api/user/onboarding/me");
+        const { data } = await api.get("/api/user/me");
         if (!huy) setDaOnboard(!!data?.data); // có doc onboarding = đã onboarding
       } catch {
         if (!huy) setDaOnboard(false);
