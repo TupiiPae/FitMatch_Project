@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard/Dashboard.jsx";
 
 import SidebarLayout from "./components/SidebarLayout/SidebarLayout.jsx";
 import { ProtectedRoute, OnlyLevel1 } from "./components/ProtectedRoute.jsx";
+import AdminNotFound from "./pages/Error404/AdminNotFound.jsx";
 
 // ===== Foods
 import FoodsList from "./pages/pagesFoods/Food_List/Food_List.jsx";
@@ -101,7 +102,7 @@ export default function App() {
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={ <ProtectedRoute><AdminNotFound /></ProtectedRoute>}/>
       </Routes>
     </Suspense>
   );
