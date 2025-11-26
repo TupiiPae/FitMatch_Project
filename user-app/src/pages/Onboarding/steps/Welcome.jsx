@@ -4,15 +4,15 @@ import { useState } from "react";
 
 const FEATURES = [
   {
-    img: "/images/welcome1.png",       // đặt ảnh vào public/images/welcome/*
+    img: "/images/thumb1.png",       // đặt ảnh vào public/images/welcome/*
     caption: <>Đồng hành cùng nhau <br /> và hướng đến mục tiêu</>,
   },
   {
-    img: "/images/welcome2.png",
+    img: "/images/thumb2.png",
     caption: <>Lên kế hoạch cho dinh <br /> dưỡng và tập luyện</>,
   },
   {
-    img: "/images/welcome3.png",
+    img: "/images/thumb3.png",
     caption: <>Dễ dàng với AI hỗ trợ <br /> tính toán Calo</>,
   },
 ];
@@ -30,7 +30,7 @@ export default function Welcome() {
       <div className="wel-head">
         <h2 className="wel-title">~ Chào mừng đến với ~</h2>
         <Link to="/" className="logo-link" aria-label="Về trang chủ">
-          <img src="/images/logo-fitmatch.png" alt="FitMatch" className="nk-logo" />
+          <img src="/images/fm-logo-name.png" alt="FitMatch" className="nk-logo" />
         </Link>
       </div>
 

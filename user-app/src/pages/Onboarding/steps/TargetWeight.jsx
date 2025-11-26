@@ -146,7 +146,7 @@ export default function TargetWeight() {
   const current = Number(localStorage.getItem("weightKg")) || 65;
 
   // Phạm vi tổng thể (giữ nguyên)
-  const ABS_MIN = 20, ABS_MAX = 200, STEP = 0.1;
+  const ABS_MIN = 20, ABS_MAX = 120, STEP = 0.1;
 
   // Ràng buộc theo mục tiêu
   const isLose = goal === "giam_can" || goal === "giam_mo";

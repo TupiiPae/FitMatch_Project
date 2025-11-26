@@ -7,6 +7,10 @@ import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 export default function Footer() {
   const year = new Date().getFullYear();
 
+  const handleScrollTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <footer className="fm-footer fm-footer--mock07">
       <div className="fm-foot-container">
@@ -31,10 +35,10 @@ export default function Footer() {
 
         {/* CENTER: Nav menu */}
         <nav className="fm-foot-nav" aria-label="Footer navigation">
-          <NavLink to="/ve-fitmatch">Về FitMatch</NavLink>
-          <NavLink to="tai-khoan/chinh-sach-bao-mat">Chính sách bảo mật</NavLink>
-          <NavLink to="tai-khoan/dieu-khoan-dich-vu">Điều khoản dịch vụ</NavLink>
-          <NavLink to="/faqs">FAQs</NavLink>
+          <NavLink to="/ve-fitmatch" >Về FitMatch</NavLink>
+          <NavLink to="tai-khoan/chinh-sach-bao-mat" onClick={handleScrollTop}>Chính sách bảo mật</NavLink>
+          <NavLink to="tai-khoan/dieu-khoan-dich-vu" onClick={handleScrollTop}>Điều khoản dịch vụ</NavLink>
+          <NavLink to="/faqs" onClick={handleScrollTop}>FAQs</NavLink>
           <NavLink to="/lien-he">Liên hệ</NavLink>
         </nav>
 
