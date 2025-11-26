@@ -1,87 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
 
+.admin-create-page {
+  font-family: "Roboto", sans-serif;
+}
+
+/* Lưới 2 cột giống trước đây */
 .admin-create-grid {
   display: grid;
   grid-template-columns: minmax(340px, 520px) 1fr;
   gap: 16px;
-  padding: 0 12px 12px; /* khớp padding list (.card-head .table) */
+  padding: 0 12px 12px;
 }
 
 /* Form cột trái */
 .admin-create-form {
-  display: grid;
-  gap: 16px;
   padding-top: 12px;
-  font-family: "Roboto", sans-serif;
 }
 
-/* Float label fields */
-.fc-field {
-  position: relative;
+.admin-create-fields {
   display: flex;
   flex-direction: column;
-}
-.fc-field input {
-  height: 56px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  padding: 20px 12px 8px 12px;
-  font-size: 14px;
-  background: #fff;
-  transition: all 0.15s ease;
-}
-.fc-field label {
-  position: absolute;
-  left: 13px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  color: #6b7280;
-  pointer-events: none;
-  transition: all 0.15s ease-out;
-  background: transparent;
-  padding: 0 2px;
-}
-.fc-field input:focus + label,
-.fc-field input:not(:placeholder-shown) + label {
-  top: 0;
-  transform: translateY(-50%) scale(0.8);
-  color: #008080;
-  background: #fff;
-  font-weight: 600;
-}
-.fc-field input:not(:placeholder-shown):not(:focus) + label {
-  color: #374151;
-}
-
-/* Focus ring teal đồng bộ các module */
-.fc-field input:focus {
-  border-color: #008080;
-  box-shadow: 0 0 0 2px rgba(0,128,128,0.15);
-  outline: none;
-}
-
-/* Đánh dấu bắt buộc */
-.req {
-  color: #ef4444;
-  font-weight: normal;
-  margin-left: 2px;
-}
-
-/* Error styles */
-.fc-field.has-error input,
-.input-invalid {
-  border-color: #ef4444 !important;
-
-}
-
-.fc-field.has-error input:focus + label {
-  color: #b91c1c !important;
-}
-.error-item {
-  font-size: 13px;
-  color: #b91c1c;
-  padding: 10px 12px;
+  gap: 16px;
 }
 
 /* Hint text */
@@ -98,9 +37,10 @@
   color: #1e293b;
 }
 
-/* Lỗi global */
+/* Lỗi global (server trả về) */
 .error-global {
-  text-align: center;
+  margin-top: 4px;
+  font-size: 13px;
   color: #b91c1c;
   background: #fef2f2;
   border: 1px solid #fecaca;
@@ -109,14 +49,10 @@
   font-weight: 500;
 }
 
-/* Actions */
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 12px;
-  padding-top: 16px;
-  border-top: 1px dashed #e5e7eb;
+.ac-field-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
 }
 
 /* Responsive */
@@ -124,5 +60,7 @@
   .admin-create-grid {
     grid-template-columns: 1fr;
   }
-  .admin-create-aside { display: none; }
+  .admin-create-aside {
+    display: none;
+  }
 }

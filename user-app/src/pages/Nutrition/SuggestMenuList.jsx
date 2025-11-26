@@ -394,7 +394,7 @@ export default function SuggestMenuList() {
                       </span>
                     </div>
                     <div className="smu-saved-kcal">
-                      {totals.totalKcal.toLocaleString()} Cal
+                      Calorie: {totals.totalKcal.toLocaleString()} Cal
                     </div>
                     <div className="smu-saved-macros">
                       <span className="protein">

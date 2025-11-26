@@ -130,7 +130,7 @@
 .smd-tag.main {
   border-color: #ef4444;
   background: #1f2937;
-  color: #fecaca;
+  color: #e5e7eb;
 }
 
 /* Description */
@@ -315,13 +315,13 @@
 .smd-food-macros-line .protein,
 .smd-meal-kcal .protein,
 .smd-day-summary-line .protein {
-  color: #f34f2a;
+  color: #ee6c20;
   font-weight: 700;
 }
 .smd-food-macros-line .carb,
 .smd-meal-kcal .carb,
 .smd-day-summary-line .carb {
-  color: #183c7c;
+  color: #1460e4;
   font-weight: 700;
 }
 .smd-food-macros-line .fat,
@@ -437,7 +437,7 @@
   background: #f34f2a;
 }
 .smd-macro-item .dot.carb {
-  background: #183c7c;
+  background: #1460e4;
 }
 .smd-macro-item .dot.fat {
   background: #c1f722;

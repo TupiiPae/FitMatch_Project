@@ -367,13 +367,13 @@
 }
 
 .smu-saved-macros .protein {
-  color: #f34f2a;
+  color: #d1d5db;
 }
 .smu-saved-macros .carb {
-  color: #183c7c;
+  color: #d1d5db;
 }
 .smu-saved-macros .fat {
-  color: #c1f722;
+  color: #d1d5db;
 }
 
 /* Nút bỏ lưu (bookmark) bên phải */
@@ -388,7 +388,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 28px;
 }
 
 .smu-saved-unsave:hover {

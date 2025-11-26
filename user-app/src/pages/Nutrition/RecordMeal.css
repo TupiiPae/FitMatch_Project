@@ -530,13 +530,13 @@
   opacity: 0.95;
 }
 .nm-item .macro .protein {
-  color: #F34F2A;
+  color: #ee6c20;
 }
 .nm-item .macro .carb {
-  color: #183C7C;
+  color: #1460e4;
 }
 .nm-item .macro .fat {
-  color: #C1F722;
+  color: #c1f722;
 }
 
 /* ===== Confirm Delete Modal ===== */

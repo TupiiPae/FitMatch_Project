@@ -1,18 +1,28 @@
-import React, { useState } from "react";
+// admin-app/src/pagesAdmins/Admin_Create/Admin_Create.jsx
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createAdminAccount } from "../../../lib/api.js";
 import { toast } from "react-toastify";
 import "./Admin_Create.css";
 
+// MUI
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
+import FormHelperText from "@mui/material/FormHelperText";
+
 const USERNAME_REGEX = /^[a-zA-Z0-9]{4,200}$/;
 const NICKNAME_RE = /^(?=.{1,30}$)[\p{L}\p{M}\d ]+$/u;
 
-export default function AdminCreate(){
+export default function AdminCreate() {
   const nav = useNavigate();
   const [username, setUsername] = useState("");
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
   const [errs, setErrs] = useState({}); // { username, nickname, global }
+
+  // ref để cuộn tới field lỗi đầu tiên (nhẹ giống Food_Create)
+  const refUsername = useRef(null);
+  const refNickname = useRef(null);
 
   const validateUsername = (v) => {
     const u = (v || "").trim();
@@ -20,43 +30,87 @@ export default function AdminCreate(){
     if (!USERNAME_REGEX.test(u)) return "Username chỉ gồm chữ và số (4–200)";
     return "";
   };
+
   const validateNickname = (v) => {
     const n = (v || "").trim();
     if (!n) return "Vui lòng nhập nickname";
-    if (!NICKNAME_RE.test(n)) return "Chỉ cho phép chữ (có dấu), số, khoảng trắng và tối đa 30 ký tự.";
+    if (!NICKNAME_RE.test(n)) {
+      return "Chỉ cho phép chữ (có dấu), số, khoảng trắng và tối đa 30 ký tự.";
+    }
     return "";
   };
+
   const validate = () => {
     const e = {
       username: validateUsername(username),
       nickname: validateNickname(nickname),
     };
-    Object.keys(e).forEach(k => { if (!e[k]) delete e[k]; });
+
+    // xoá các key không lỗi
+    Object.keys(e).forEach((k) => {
+      if (!e[k]) delete e[k];
+    });
     setErrs(e);
-    return Object.keys(e).length === 0;
+    return e;
+  };
+
+  const scrollToFirstError = (e) => {
+    if (e.username && refUsername.current) {
+      refUsername.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      refUsername.current.focus();
+      return;
+    }
+    if (e.nickname && refNickname.current) {
+      refNickname.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      refNickname.current.focus();
+    }
   };
 
   const onSubmit = async (ev) => {
     ev.preventDefault();
     setErrs({});
-    if (!validate()) { toast.error("Vui lòng nhập đúng các trường trước khi lưu."); return; }
+    const e = validate();
+    if (Object.keys(e).length > 0) {
+      toast.error("Vui lòng nhập đúng các trường trước khi lưu.");
+      scrollToFirstError(e);
+      return;
+    }
+
     setLoading(true);
     try {
-      await createAdminAccount({ username: username.trim(), nickname: nickname.trim() });
-      // KHÔNG toast ở đây để tránh trùng — để Admin_List hiển thị 1 lần
+      await createAdminAccount({
+        username: username.trim(),
+        nickname: nickname.trim(),
+      });
+      // Không toast ở đây để tránh trùng – Admin_List sẽ hiển thị 1 lần
       nav("/admins", { state: { justCreated: true } });
-    } catch (e) {
-      setErrs({ global: e?.response?.data?.message || "Tạo tài khoản thất bại" });
-    } finally { setLoading(false); }
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message || "Tạo tài khoản thất bại";
+      setErrs({ global: msg });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // style chung cho TextField (border-radius 4px, không shadow dày)
+  const textFieldSx = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "4px",
+    },
   };
 
   return (
     <div className="foods-page admin-create-page">
       <nav className="breadcrumb-nav" aria-label="breadcrumb">
-        <Link to="/"><i className="fa-solid fa-house"></i><span>Trang chủ</span></Link>
+        <Link to="/">
+          <i className="fa-solid fa-house"></i>
+          <span>Trang chủ</span>
+        </Link>
         <span className="separator">/</span>
         <Link to="/admins" className="current-group">
-          <i className="fa-solid fa-user-gear"></i><span>Quản lý Admin</span>
+          <i className="fa-solid fa-user-gear"></i>
+          <span>Quản lý Admin</span>
         </Link>
         <span className="separator">/</span>
         <span className="current-page">Tạo tài khoản</span>
@@ -69,7 +123,6 @@ export default function AdminCreate(){
             <Link to="/admins" className="btn ghost">
               <span>Quay lại danh sách</span>
             </Link>
-            {/* Nút submit đặt ở header, submit form qua thuộc tính form */}
             <button
               className="btn primary"
               type="submit"
@@ -82,48 +135,74 @@ export default function AdminCreate(){
         </div>
 
         <div className="admin-create-grid">
-          <form id="admin-create-form" onSubmit={onSubmit} className="admin-create-form">
-            <div className={`fc-field ${errs.username ? "has-error" : ""}`}>
-              <input
-                id="admin-username"
+          <form
+            id="admin-create-form"
+            onSubmit={onSubmit}
+            className="admin-create-form"
+          >
+            <Box className="admin-create-fields" sx={{ display: "flex", flexDirection: "column"}}>
+              <div className="ac-field-title">Tên đăng nhập *</div>
+              {/* Username */}
+              <TextField
+                inputRef={refUsername}
+                label="Tên đăng nhập (username)"
                 value={username}
-                onChange={(e)=>setUsername(e.target.value)}
-                onBlur={()=> setErrs(prev => ({ ...prev, username: validateUsername(username) || undefined }))}
-                placeholder=" "
-                maxLength={200}
-                aria-invalid={!!errs.username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  // clear lỗi khi user sửa
+                  setErrs((prev) => ({ ...prev, username: undefined }));
+                }}
+                onBlur={() =>
+                  setErrs((prev) => ({
+                    ...prev,
+                    username: validateUsername(username) || undefined,
+                  }))
+                }
+                error={!!errs.username}
+                helperText={errs.username}
+                fullWidth
                 required
+                inputProps={{ maxLength: 200 }}
+                sx={textFieldSx}
               />
-              <label htmlFor="admin-username">
-                Tên đăng nhập (username) <span className="req">*</span>
-              </label>
-              {errs.username && <div className="error-item">{errs.username}</div>}
-            </div>
 
-            <div className={`fc-field ${errs.nickname ? "has-error" : ""}`}>
-              <input
-                id="admin-nickname"
+              {/* Nickname */}
+              <div className="ac-field-title">Tên hiển thị *</div>
+              <TextField
+                inputRef={refNickname}
+                label="Tên hiển thị (nickname)"
                 value={nickname}
-                onChange={(e)=>setNickname(e.target.value)}
-                onBlur={()=> setErrs(prev => ({ ...prev, nickname: validateNickname(nickname) || undefined }))}
-                placeholder=" "
-                maxLength={30}
-                aria-invalid={!!errs.nickname}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  setErrs((prev) => ({ ...prev, nickname: undefined }));
+                }}
+                onBlur={() =>
+                  setErrs((prev) => ({
+                    ...prev,
+                    nickname: validateNickname(nickname) || undefined,
+                  }))
+                }
+                error={!!errs.nickname}
+                helperText={errs.nickname}
+                fullWidth
                 required
+                inputProps={{ maxLength: 30 }}
+                sx={textFieldSx}
               />
-              <label htmlFor="admin-nickname">
-                Tên hiển thị (nickname) <span className="req">*</span>
-              </label>
-              {errs.nickname && <div className="error-item">{errs.nickname}</div>}
-            </div>
 
-            <div className="hint">
-              Mật khẩu mặc định: <b>fitmatch@admin2</b> (Admin có thể tự đổi sau khi đăng nhập).
-            </div>
+              <div className="hint">
+                Mật khẩu mặc định: <b>fitmatch@admin2</b> (Admin có thể tự đổi sau khi đăng nhập).
+              </div>
 
-            {errs.global && <div className="error-global">{errs.global}</div>}
+              {errs.global && (
+                <FormHelperText error className="error-global">
+                  {errs.global}
+                </FormHelperText>
+              )}
+            </Box>
           </form>
 
+          {/* Cột phải để trống / có thể thêm banner / mô tả sau này */}
           <div className="admin-create-aside" aria-hidden="true"></div>
         </div>
       </div>

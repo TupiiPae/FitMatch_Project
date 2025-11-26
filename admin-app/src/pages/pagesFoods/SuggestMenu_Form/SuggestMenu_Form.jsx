@@ -594,14 +594,29 @@ export default function SuggestMenu_Form() {
 
             {/* Tổng macro */}
             <div className="smf-totals-wrap">
-              <div className="smf-total-kcal">
-                Tổng Calorie:{" "}
-                <strong>{totals.kcal.toLocaleString()} kcal</strong>
+              <div className="smf-total-header">
+                <span className="smf-label">Tổng Calorie</span>
+                <span className="smf-kcal-big">{totals.kcal.toLocaleString()} <span>kcal</span></span>
               </div>
+              
+              <div className="smf-divider"></div>
+
               <div className="smf-total-macros">
-                <span>Đạm: {totals.proteinG} g</span>
-                <span>Đường bột: {totals.carbG} g</span>
-                <span>Chất béo: {totals.fatG} g</span>
+                <div className="macro-item protein">
+                  <span className="dot"></span>
+                  <span className="macro-name">Đạm</span>
+                  <span className="macro-val">{totals.proteinG}g</span>
+                </div>
+                <div className="macro-item carbs">
+                  <span className="dot"></span>
+                  <span className="macro-name">Đường bột</span>
+                  <span className="macro-val">{totals.carbG}g</span>
+                </div>
+                <div className="macro-item fat">
+                  <span className="dot"></span>
+                  <span className="macro-name">Chất béo</span>
+                  <span className="macro-val">{totals.fatG}g</span>
+                </div>
               </div>
             </div>
           </div>
@@ -846,28 +861,31 @@ export default function SuggestMenu_Form() {
                                           <span>
                                             Calorie:{" "}
                                             {Math.round(it.kcal || 0)} kcal
-                                          </span>, 
-                                          <span>
-                                            Đạm:{" "}
-                                            {Math.round(
-                                              it.proteinG || 0
-                                            )}{" "}
-                                            g
-                                          </span>,
-                                          <span>
-                                            Đường bột:{" "}
-                                            {Math.round(
-                                              it.carbG || 0
-                                            )}{" "}
-                                            g
-                                          </span>,
-                                          <span>
-                                            Chất béo:{" "}
-                                            {Math.round(
-                                              it.fatG || 0
-                                            )}{" "}
-                                            g
                                           </span>
+                                          <br />
+                                          <div className="smf-item-macros-row-break">
+                                            <span>
+                                              Đạm:{" "}
+                                              {Math.round(
+                                                it.proteinG || 0
+                                              )}{" "}
+                                              g
+                                            </span>,
+                                            <span>
+                                              Đường bột:{" "}
+                                              {Math.round(
+                                                it.carbG || 0
+                                              )}{" "}
+                                              g
+                                            </span>,
+                                            <span>
+                                              Chất béo:{" "}
+                                              {Math.round(
+                                                it.fatG || 0
+                                              )}{" "}
+                                              g
+                                            </span>
+                                          </div>
                                         </div>
                                       </div>
                                     </div>

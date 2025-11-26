@@ -126,27 +126,70 @@
 /* ===== Tổng macro ===== */
 .smf-totals-wrap {
   margin-top: 16px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #f1f5f9;
-  border: 1px solid #e5e7eb;
+  padding: 16px 20px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
-.smf-total-kcal {
+.smf-total-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.smf-label {
   font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.smf-kcal-big {
+  font-size: 20px;
+  font-weight: 600;
   color: #0f172a;
+}
+.smf-kcal-big span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.smf-divider {
+  height: 1px;
+  background: #e2e8f0;
+  width: 100%;
 }
 
 .smf-total-macros {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  font-size: 13px;
-  color: #374151;
+  justify-content: space-between;
 }
+
+.macro-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.macro-item .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-bottom: 2px;
+}
+/* Màu sắc định danh */
+.macro-item.protein .dot { background: #b91c1c; } 
+.macro-item.carbs .dot { background: #6C63FF; }   
+.macro-item.fat .dot { background: #008080; }   
+
+.macro-name { color: #64748b; font-size: 12px; }
+.macro-val { font-weight: 700; color: #334155; }
 
 /* ===== Divider giữa Thông tin và Bố cục – giống sc-divider ===== */
 .smf-divider {
@@ -247,6 +290,7 @@
   padding: 4px;
   border-radius: 999px;
   color: #dc2626;
+  font-size: 20px;
 }
 
 .smf-meal-remove:disabled {
@@ -313,14 +357,21 @@
 
 /* macros display */
 .smf-item-macros-row {
-  font-size: 12px;
+  font-size: 16px;
+  font-weight: 600;
   color: #374151;
-  display: flex;
-  gap: 2px;
-  padding: 6px 8px;
+  gap: 4px;
+  padding: 8px 8px;
   border-radius: 6px;
   background: #f9fafb;
   border: 1px dashed #e5e7eb;
+}
+.smf-item-macros-row-break {
+  font-size: 13px;
+  font-weight: 400;
+  color: #374151;
+  display: flex;
+  gap: 4px;
 }
 
 .smf-add-item-wrap {

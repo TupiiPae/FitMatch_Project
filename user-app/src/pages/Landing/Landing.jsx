@@ -1,8 +1,24 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react"; 
+import { useNavigate, useLocation } from "react-router-dom"
 import "./Landing.css";
 
 export default function Landing() {
   const nav = useNavigate();
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) {
+      // Tìm phần tử có id tương ứng với hash (bỏ dấu # ở đầu)
+      const element = document.getElementById(hash.replace("#", ""));
+      if (element) {
+        // Cuộn xuống mượt mà
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+        // (Tuỳ chọn) Nếu không có hash thì cuộn lên đầu
+        window.scrollTo(0, 0);
+    }
+  }, [hash]);
 
   return (
     <div className="lm-wrap">
@@ -117,7 +133,7 @@ export default function Landing() {
       </section>
 
       {/* ========== Phần scroll xuống phía dưới ========== */}
-      <main className="lm-main">
+      <main className="lm-main" id="main-content">
         {/* SECTION 1: Banner Tìm Partner (ảnh nền + CTA) */}
         <section className="lm-main-hero">
           <div className="lm-main-hero-inner">

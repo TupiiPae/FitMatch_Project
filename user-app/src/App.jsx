@@ -7,6 +7,7 @@ import OnboardingGuard from "./routes/OnboardingGuard";
 import HomeGuard from "./routes/HomeGuard";
 import OnboardingRoutes from "./pages/Onboarding/OnboardingRoutes";
 import Home from "./pages/Home/Home";
+import NotFound from "./pages/Misc/NotFound";
 //Hehe
 // Account pages
 import Profile from "./pages/Account/Profile"; 
@@ -139,8 +140,8 @@ export default function App() {
           <Route path="/ung-dung" element={<UngDung />} />
         </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* 404 – luôn để cuối cùng */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

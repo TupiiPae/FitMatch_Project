@@ -1,0 +1,200 @@
+/* Nền + layout chung */
+.nf-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: #ffffff;
+}
+
+.nf-container {
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+}
+
+/* Logo chữ FITMATCH */
+.nf-logo {
+  height: 40px;
+  margin: 0 auto;
+}
+
+/* Số 404 lớn */
+.nf-number {
+  font-size: 150px;
+  font-weight: 700;
+  color: #ff3333;
+  line-height: 1;
+  margin-bottom: 20px;
+  text-shadow: 0 0 24px rgba(255, 51, 51, 0.45);
+  animation: nf-pulse 2s ease-in-out infinite;
+}
+
+/* hiệu ứng “phồng” nhẹ */
+@keyframes nf-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Icon tạ */
+.nf-dumbbell {
+  width: 100%;
+  max-width: 200px;
+  margin: 30px auto;
+  animation: nf-lift 2s ease-in-out infinite;
+}
+
+/* hiệu ứng “nâng tạ” */
+@keyframes nf-lift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+/* Tiêu đề / subtitle */
+.nf-title {
+  font-size: 42px;
+  color: #ffffff;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.nf-subtitle {
+  font-size: 24px;
+  color: #cccccc;
+  margin-bottom: 40px;
+  font-weight: 400;
+}
+
+/* Nút CTA chính */
+.nf-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ff3333;
+  color: #ffffff;
+  padding: 18px 40px;
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 50px;
+  margin: 10px 0;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 51, 51, 0.35);
+}
+
+.nf-cta:hover {
+  background: #cc0000;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(255, 51, 51, 0.5);
+}
+
+.nf-cta:active {
+  transform: translateY(-1px);
+}
+
+/* Vùng link nhanh */
+.nf-links-container {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 2px solid #404040;
+}
+
+.nf-quick-links {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+/* Link nhanh (kế hoạch tập luyện / dinh dưỡng) */
+.nf-quick-link {
+  color: #cccccc;
+  text-decoration: none;
+  font-size: 16px;
+  padding: 10px 20px;
+  border: 2px solid #404040;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nf-quick-link:hover {
+  border-color: #ff3333;
+  color: #ff3333;
+  background: rgba(255, 51, 51, 0.1);
+}
+
+/* Câu quote động lực */
+.nf-motivation {
+  margin-top: 40px;
+  font-size: 16px;
+  color: #999999;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nf-number {
+    font-size: 100px;
+  }
+
+  .nf-title {
+    font-size: 32px;
+  }
+
+  .nf-subtitle {
+    font-size: 18px;
+  }
+
+  .nf-cta {
+    padding: 15px 30px;
+    font-size: 16px;
+  }
+
+  .nf-quick-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .nf-quick-link {
+    width: 80%;
+    max-width: 300px;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .nf-number {
+    font-size: 80px;
+  }
+
+  .nf-title {
+    font-size: 24px;
+  }
+
+  .nf-subtitle {
+    font-size: 16px;
+  }
+
+  .nf-logo {
+    font-size: 24px;
+  }
+}

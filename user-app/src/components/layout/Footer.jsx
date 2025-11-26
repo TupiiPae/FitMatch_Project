@@ -35,18 +35,18 @@ export default function Footer() {
 
         {/* CENTER: Nav menu */}
         <nav className="fm-foot-nav" aria-label="Footer navigation">
-          <NavLink to="/ve-fitmatch" >Về FitMatch</NavLink>
+          <NavLink to="/#main-content" >Về FitMatch</NavLink>
           <NavLink to="tai-khoan/chinh-sach-bao-mat" onClick={handleScrollTop}>Chính sách bảo mật</NavLink>
           <NavLink to="tai-khoan/dieu-khoan-dich-vu" onClick={handleScrollTop}>Điều khoản dịch vụ</NavLink>
           <NavLink to="/faqs" onClick={handleScrollTop}>FAQs</NavLink>
-          <NavLink to="/lien-he">Liên hệ</NavLink>
+          <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer">Liên hệ</a>
         </nav>
 
         {/* RIGHT: Social icons */}
         <div className="fm-foot-right">
           <div className="fm-foot-social" aria-label="Social links">
             <a
-              href="https://facebook.com"
+              href="https://www.facebook.com/profile.php?id=61582997385998"
               aria-label="Facebook"
               target="_blank"
               rel="noreferrer"
@@ -62,7 +62,7 @@ export default function Footer() {
               <FontAwesomeIcon icon={faInstagram} />
             </a>
             <a
-              href="mailto:support@fitmatch.vn"
+              href="https://mail.google.com"
               aria-label="Gmail"
               target="_blank"
               rel="noreferrer"

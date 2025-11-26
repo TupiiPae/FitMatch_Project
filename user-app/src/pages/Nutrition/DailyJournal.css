@@ -375,13 +375,13 @@
   transition: width 0.3s ease;
 }
 .mbar.red > span {
-  background: #F34F2A;
+  background: #ee6c20;
 }
 .mbar.purple > span {
-  background: #183C7C;
+  background: #1460e4;
 }
 .mbar.green > span {
-  background: #C1F722;
+  background: #c1f722;
 }
 .mbar.gray > span {
   background: #fff;

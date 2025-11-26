@@ -178,13 +178,13 @@
 
 /* màu icon macro */
 .dj-search-macro-protein i {
-  color: #F34F2A; /* xanh đạm */
+  color: #ee6c20;
 }
 .dj-search-macro-carb i {
-  color: #183C7C; /* xanh dương carb */
+  color: #1460e4; 
 }
 .dj-search-macro-fat i {
-  color: #C1F722; /* cam chất béo */
+  color: #c1f722; 
 }
 
 /* Cột action: nút + màu đỏ giống AddModal */

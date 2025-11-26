@@ -434,11 +434,6 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
         <div className="acc-sep" />
         <NavLink to="/tin-nhan" className="acc-item"><FontAwesomeIcon icon={faMessage} />Tin nhắn</NavLink>
         <div className="acc-sep" />
-        <NavLink to="/tai-khoan/chinh-sach-bao-mat" className="acc-item"><FontAwesomeIcon icon={faShieldHalved} />Chính sách bảo mật</NavLink>
-        <div className="acc-sep" />
-        <NavLink to="/tai-khoan/dieu-khoan-dich-vu" className="acc-item"><FontAwesomeIcon icon={faClipboardCheck} />Điều khoản dịch vụ</NavLink>
-        <div className="acc-sep" />
-        <a href="https://www.facebook.com/tupae.1509" className="acc-item" target="_blank" rel="noopener noreferrer"><FontAwesomeIcon icon={faCircleInfo} />Về FitMatch</a>
       </div>
       <button className="acc-logout" type="button" onClick={onAskLogout}>
         <FontAwesomeIcon icon={faRightFromBracket} /> Đăng xuất

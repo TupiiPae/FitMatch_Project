@@ -141,9 +141,14 @@
 }
 
 .spd-save-btn.saved {
-  background: #121212;
+  background: #374151;
   color: #e5e7eb;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #f20d0d;
+}
+
+.spd-save-btn:hover {
+    background: #4b5563;
+  color: #fff;
 }
 
 /* SECTION 'Lịch tập' (Frame 2) – card tối giống frame 1 / nm-list-frame */
