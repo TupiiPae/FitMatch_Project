@@ -688,7 +688,7 @@ export default function SuggestPlanCreate() {
                           onClick={() => addExerciseToSession(sIdx)}
                           title="Thêm bài tập"
                         >
-                          <i class="fa-solid fa-plus" aria-hidden="true" />
+                          <i className="fa-solid fa-plus" aria-hidden="true" />
                         </button>
 
                         {/* Icon Xóa buổi */}

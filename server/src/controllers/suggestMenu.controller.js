@@ -4,6 +4,7 @@ import Food from "../models/Food.js";
 import { User } from "../models/User.js";
 import { responseOk } from "../utils/response.js";
 import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
+import { logAdminAction } from "../utils/auditLog.js";
 
 const CLOUD_FOLDER = "asset/folder/foods"; // dùng chung folder với Food
 
@@ -193,7 +194,13 @@ export async function listSuggestMenus(req, res) {
   const items = docs.slice(0, Number(limit));
   const hasMore = docs.length > Number(limit);
 
-  res.json({ items, hasMore, total: items.length });
+  res.json({
+    items,
+    hasMore,
+    total: items.length,
+    limit: Number(limit),
+    skip: Number(skip),
+  });
 }
 
 export async function getSuggestMenu(req, res) {
@@ -292,9 +299,10 @@ export async function createSuggestMenu(req, res) {
     }
 
     const numDaysFromBody = Number(b.numDays);
-    const finalNumDays = Number.isFinite(numDaysFromBody) && numDaysFromBody > 0
-      ? numDaysFromBody
-      : numDays;
+    const finalNumDays =
+      Number.isFinite(numDaysFromBody) && numDaysFromBody > 0
+        ? numDaysFromBody
+        : numDays;
 
     const doc = await SuggestMenu.create({
       name,
@@ -307,6 +315,14 @@ export async function createSuggestMenu(req, res) {
       totalProteinG,
       totalCarbG,
       totalFatG,
+    });
+
+    // 🔍 Audit log tạo Thực đơn gợi ý
+    await logAdminAction(req, {
+      resourceType: "suggestMenu",
+      resourceId: doc._id,
+      resourceName: doc.name,
+      action: "create",
     });
 
     return res.status(201).json({ message: "Created", id: doc._id });
@@ -434,8 +450,7 @@ export async function updateSuggestMenu(req, res) {
       set.days = days;
 
       const n = Number(b.numDays);
-      set.numDays =
-        Number.isFinite(n) && n > 0 ? n : numDays;
+      set.numDays = Number.isFinite(n) && n > 0 ? n : numDays;
 
       set.totalKcal = totalKcal;
       set.totalProteinG = totalProteinG;
@@ -443,8 +458,20 @@ export async function updateSuggestMenu(req, res) {
       set.totalFatG = totalFatG;
     }
 
-    await SuggestMenu.findByIdAndUpdate(doc._id, { $set: set }, {
-      runValidators: true,
+    await SuggestMenu.findByIdAndUpdate(
+      doc._id,
+      { $set: set },
+      {
+        runValidators: true,
+      }
+    );
+
+    // 🔍 Audit log cập nhật Thực đơn gợi ý
+    await logAdminAction(req, {
+      resourceType: "suggestMenu",
+      resourceId: doc._id,
+      resourceName: set.name || doc.name,
+      action: "update",
     });
 
     return res.json(responseOk());
@@ -490,6 +517,15 @@ export async function deleteSuggestMenu(req, res) {
     }
 
     await SuggestMenu.deleteOne({ _id: doc._id });
+
+    // 🔍 Audit log xoá Thực đơn gợi ý
+    await logAdminAction(req, {
+      resourceType: "suggestMenu",
+      resourceId: doc._id,
+      resourceName: doc.name,
+      action: "delete",
+    });
+
     return res.json(responseOk());
   } catch (err) {
     console.error("[deleteSuggestMenu]", err?.message || err);
@@ -497,6 +533,9 @@ export async function deleteSuggestMenu(req, res) {
   }
 }
 
+/* =========================
+ * USER SIDE
+ * ========================= */
 
 export async function listSuggestMenusUser(req, res) {
   const userId = req.userId;

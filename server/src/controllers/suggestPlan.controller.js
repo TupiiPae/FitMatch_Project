@@ -8,10 +8,12 @@ import SuggestPlan, {
 import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
 import { responseOk } from "../utils/response.js";
 import { User } from "../models/User.js";
+import { logAdminAction } from "../utils/auditLog.js";
 
 const nameRegex = /^[\p{L}\p{M}\s0-9'’\-.,()\/]+$/u;
 
 // ----- Cửa sổ "user còn hoạt động" (7 ngày) -----
+// (hiện tại không còn dùng, giữ lại nếu sau này muốn bật lại logic 7 ngày)
 const ACTIVE_WINDOW_DAYS = 7;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 function getActiveSinceDate() {
@@ -225,6 +227,14 @@ export async function createSuggestPlan(req, res, next) {
       createdByAdmin,
     });
 
+    // 🔍 Audit log tạo Lịch tập gợi ý
+    await logAdminAction(req, {
+      resourceType: "suggestPlan",
+      resourceId: doc._id,
+      resourceName: doc.name,
+      action: "create",
+    });
+
     return res.status(201).json(responseOk(doc));
   } catch (err) {
     next(err);
@@ -294,6 +304,14 @@ export async function updateSuggestPlan(req, res, next) {
 
     await existing.save();
 
+    // 🔍 Audit log cập nhật Lịch tập gợi ý
+    await logAdminAction(req, {
+      resourceType: "suggestPlan",
+      resourceId: existing._id,
+      resourceName: existing.name,
+      action: "update",
+    });
+
     return res.json(responseOk(existing));
   } catch (err) {
     next(err);
@@ -334,6 +352,15 @@ export async function deleteSuggestPlan(req, res, next) {
     }
 
     await doc.deleteOne();
+
+    // 🔍 Audit log xoá Lịch tập gợi ý
+    await logAdminAction(req, {
+      resourceType: "suggestPlan",
+      resourceId: doc._id,
+      resourceName: doc.name,
+      action: "delete",
+    });
+
     return res.json(responseOk({ success: true }));
   } catch (err) {
     next(err);

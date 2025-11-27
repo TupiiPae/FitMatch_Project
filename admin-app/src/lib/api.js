@@ -626,3 +626,13 @@ export const changeMyAdminPassword = async ({ currentPassword, newPassword }) =>
     throw e1;
   }
 };
+
+
+// =========================
+// AUDIT LOGS (ADMIN)
+// =========================
+export const listAuditLogs = async (params = {}) => {
+  const r = await api.get("/api/admin/audit-logs", { params });
+  // BE nên trả responseOk({ items, total, limit, skip })
+  return r.data?.data ?? r.data;
+};

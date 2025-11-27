@@ -8,6 +8,7 @@ import SuggestMenu from "../models/SuggestMenu.js";
 import { responseOk } from "../utils/response.js";
 import { FOOD_DIR } from "../middleware/upload.js";
 import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
+import { logAdminAction } from "../utils/auditLog.js";
 
 const isNum = (v) => Number.isFinite(v);
 const toNumOrNull = (v) =>
@@ -146,21 +147,17 @@ export async function createFood(req, res) {
     const mass = Number(b.massG);
     const kcal = toNumOrNull(b.kcal);
     
-    // Kiểm tra rất cơ bản, phần còn lại giao cho Mongoose validators ở model
     if (!name || !isNum(mass) || mass <= 0) {
       return res.status(400).json({ message: "name & massG required" });
     }
     
-    // kcal là required trong model
     if (kcal === null || kcal === undefined) {
       return res.status(400).json({ message: "kcal is required" });
     }
 
-    // Ảnh: chấp nhận multipart (req.file) hoặc link (b.imageUrl)
     let imageUrl = b.imageUrl || null;
     if (req.file) {
       try {
-        // Upload lên Cloudinary
         imageUrl = await uploadImageWithResize(
           req.file.buffer,
           "asset/folder/foods",
@@ -172,7 +169,6 @@ export async function createFood(req, res) {
       }
     }
 
-    // Base doc chung
     const baseDoc = {
       name,
       imageUrl,
@@ -180,7 +176,7 @@ export async function createFood(req, res) {
       description: typeof b.description === "string" ? b.description.trim() || undefined : undefined,
       massG: mass,
       unit: b.unit === "ml" ? "ml" : "g",
-      kcal: kcal, // Đã validate ở trên
+      kcal,
       proteinG: toNumOrNull(b.proteinG),
       carbG: toNumOrNull(b.carbG),
       fatG: toNumOrNull(b.fatG),
@@ -191,20 +187,27 @@ export async function createFood(req, res) {
     };
 
     if (isAdmin) {
-      // Admin tạo → tự approved
       baseDoc.createdByAdmin = userId;
       baseDoc.status = "approved";
       baseDoc.approvedBy = userId;
       baseDoc.approvedAt = new Date();
     } else {
-      // User tạo → pending
       baseDoc.createdBy = userId;
       baseDoc.status = "pending";
     }
 
     const doc = await Food.create(baseDoc);
 
-    // Trả mã phù hợp
+    // 🔍 Ghi nhật ký khi admin tạo món ăn
+    if (isAdmin) {
+      await logAdminAction(req, {
+        resourceType: "food",
+        resourceId: doc._id,
+        resourceName: doc.name,
+        action: "create",
+      });
+    }
+
     if (isAdmin) {
       return res.status(201).json({ message: "Created & approved", id: doc._id });
     }
@@ -245,7 +248,6 @@ export async function updateFood(req, res) {
     ["name", "imageUrl", "portionName", "description", "sourceType"].forEach((k) => {
       if (b[k] !== undefined) {
         const v = typeof b[k] === "string" ? b[k].trim() : b[k];
-        // Không ghi đè imageUrl nếu là chuỗi rỗng
         if (k === "imageUrl" && v === "") return;
         set[k] = v;
       }
@@ -256,12 +258,10 @@ export async function updateFood(req, res) {
 
     if (req.file) {
       try {
-        // Xóa ảnh cũ từ Cloudinary nếu có
         if (doc.imageUrl && doc.imageUrl.includes("cloudinary.com")) {
           await deleteFile(doc.imageUrl, "image").catch(() => {});
         }
         
-        // Upload ảnh mới lên Cloudinary
         const newImageUrl = await uploadImageWithResize(
           req.file.buffer,
           "asset/folder/foods",
@@ -274,25 +274,33 @@ export async function updateFood(req, res) {
       }
     }
 
-    // Admin có quyền đổi status
+    // Admin có thể chỉnh status, nhưng log chung là "update"
     if (isAdmin && b.status && ["pending", "approved", "rejected"].includes(b.status)) {
       set.status = b.status;
       if (b.status === "approved") {
         if (!("approvedAt" in set)) set.approvedAt = new Date();
         if (!("approvedBy" in set)) set.approvedBy = userId;
-        // set.rejectionReason = undefined; // nếu muốn clear lý do cũ
       } else if (b.status === "rejected") {
         const raw = String(b.rejectionReason ?? "").trim();
         if (!raw) {
           return res.status(400).json({ message: "Vui lòng nhập lý do từ chối (1–500 ký tự)" });
         }
         set.rejectionReason = raw.slice(0, 500);
-        // Không buộc xóa approvedAt/approvedBy để giữ dấu vết; cần thì uncomment:
-        // set.approvedAt = null; set.approvedBy = null;
       }
     }
 
     await Food.findByIdAndUpdate(doc._id, { $set: set }, { runValidators: true });
+
+    // 🔍 Ghi nhật ký khi admin cập nhật món ăn
+    if (isAdmin) {
+      await logAdminAction(req, {
+        resourceType: "food",
+        resourceId: doc._id,
+        resourceName: set.name || doc.name,
+        action: "update",
+      });
+    }
+
     return res.json(responseOk());
   } catch (err) {
     const map = toValidationMap(err);
@@ -314,7 +322,6 @@ export async function deleteFood(req, res) {
   const isAdmin = isAdminRole(req);
   if (!isOwner && !isAdmin) return res.status(403).json({ message: "Forbidden" });
 
-  // 🔍 Tìm các thực đơn gợi ý đang sử dụng món ăn này
   const menus = await SuggestMenu.find(
     { "days.meals.items.food": doc._id },
     { _id: 1, name: 1 }
@@ -335,6 +342,17 @@ export async function deleteFood(req, res) {
   }
 
   await Food.deleteOne({ _id: doc._id });
+
+  // 🔍 Audit log khi admin xoá món ăn
+  if (isAdmin) {
+    await logAdminAction(req, {
+      resourceType: "food",
+      resourceId: doc._id,
+      resourceName: doc.name,
+      action: "delete",
+    });
+  }
+
   return res.json(responseOk());
 }
 
@@ -347,6 +365,15 @@ export async function approveFood(req, res) {
     { new: true, runValidators: true }
   ).lean();
   if (!doc) return res.status(404).json({ message: "Not found" });
+
+  // 🔍 Audit log duyệt món ăn
+  await logAdminAction(req, {
+    resourceType: "food",
+    resourceId: doc._id,
+    resourceName: doc.name,
+    action: "approve",
+  });
+
   res.json(doc);
 }
 
@@ -363,6 +390,16 @@ export async function rejectFood(req, res) {
     { new: true, runValidators: true }
   ).lean();
   if (!doc) return res.status(404).json({ message: "Not found" });
+
+  // 🔍 Audit log từ chối món ăn
+  await logAdminAction(req, {
+    resourceType: "food",
+    resourceId: doc._id,
+    resourceName: doc.name,
+    action: "reject",
+    meta: { reason },
+  });
+
   res.json(doc);
 }
 

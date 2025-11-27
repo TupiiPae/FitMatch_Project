@@ -17,6 +17,7 @@ import { uploadImageWithResize, uploadVideo, deleteFile } from "../utils/cloudin
 import WorkoutPlan from "../models/WorkoutPlan.js";
 import { User } from "../models/User.js";
 import SuggestPlan from "../models/SuggestPlan.js"; // 🔴 THÊM: để check bài tập đang dùng trong Lịch tập gợi ý
+import { logAdminAction } from "../utils/auditLog.js";
 
 /* ========= Helpers ========= */
 const toNum = (v) => (v === "" || v == null ? null : Number(v));
@@ -165,6 +166,16 @@ export async function createExercise(req, res, next) {
     }
 
     const doc = await Exercise.create(b);
+
+    // 🔍 Audit log: admin tạo bài tập
+    await logAdminAction(req, {
+      resourceType: "exercise",
+      resourceId: doc._id,
+      resourceName: doc.name,
+      action: "create",
+      meta: { exerciseType: doc.type },
+    });
+
     return res.status(201).json(doc);
   } catch (err) {
     if (err?.name === "ValidationError") {
@@ -199,6 +210,16 @@ export async function updateExercise(req, res, next) {
       ).lean();
 
       if (!it) return res.status(404).json({ message: "Not found" });
+
+      // 🔍 log remove video
+      await logAdminAction(req, {
+        resourceType: "exercise",
+        resourceId: it._id,
+        resourceName: it.name,
+        action: "update",
+        meta: { change: "remove_video" },
+      });
+
       return res.json({ ok: true, videoUrl: it.videoUrl || "" });
     }
 
@@ -223,6 +244,16 @@ export async function updateExercise(req, res, next) {
     }).lean();
 
     if (!it) return res.status(404).json({ message: "Not found" });
+
+    // 🔍 log update bài tập
+    await logAdminAction(req, {
+      resourceType: "exercise",
+      resourceId: it._id,
+      resourceName: it.name,
+      action: "update",
+      meta: { exerciseType: it.type },
+    });
+
     return res.json(it);
   } catch (err) {
     if (err?.name === "ValidationError") {
@@ -270,6 +301,16 @@ export async function deleteExercise(req, res, next) {
     // Nếu không tồn tại: giữ behavior cũ (coi như xoá xong)
     if (!exercise) {
       await Exercise.findByIdAndDelete(id);
+
+      // 🔍 Audit log xoá bài tập
+      await logAdminAction(req, {
+        resourceType: "exercise",
+        resourceId: exercise._id,
+        resourceName: exercise.name,
+        action: "delete",
+        meta: { exerciseType: exercise.type },
+      });
+
       return res.json(responseOk());
     }
 

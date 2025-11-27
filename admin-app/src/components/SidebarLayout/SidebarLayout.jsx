@@ -17,6 +17,7 @@ const buildManagementSections = (rawLevel) => {
         { to: "/stats/users",    label: "Người dùng" },
         { to: "/stats/journal",  label: "Nhật ký" },
         { to: "/stats/matching", label: "Ghép cặp" },
+        { to: "/statistics/audit-log", label: "Nhật ký hoạt động" },
       ],
     },
     ...(level === 1

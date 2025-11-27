@@ -31,6 +31,8 @@ import SportEdit from "./pages/pagesExercises/Sport_Edit/Sport_Edit.jsx";
 import SuggestPlanCreate from "./pages/pagesExercises/SuggestPlan_Create/SuggestPlan_Create.jsx";
 import SuggestPlanList from "./pages/pagesExercises/SuggestPlan_List/SuggestPlan_List.jsx";
 
+// ===== Statistic / Audit Log
+import AuditLog from "./pages/pagesStatistic/Audit_Log/Audit_Log.jsx";
 
 // ===== Users
 import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
@@ -95,14 +97,17 @@ export default function App() {
           <Route path="/exercises/suggest-plan" element={<SuggestPlanList />} />
           <Route path="/exercises/suggest-plan/create" element={<SuggestPlanCreate />} />
           <Route path="/exercises/suggest-plan/:id/edit" element={<SuggestPlanCreate />} />
-          
+
+          {/* Thống kê - Audit Log */}
+          <Route path="/statistics/audit-log" element={<AuditLog />} />
 
           {/* Người dùng */}
           <Route path="/users" element={<UsersList />} />
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={ <ProtectedRoute><AdminNotFound /></ProtectedRoute>}/>
+        <Route
+          path="*" element={ <ProtectedRoute> <AdminNotFound /> </ProtectedRoute>}/>
       </Routes>
     </Suspense>
   );

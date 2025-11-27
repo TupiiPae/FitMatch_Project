@@ -24,10 +24,12 @@ import adminSuggestPlanRoutes from "./routes/admin.suggestPlan.routes.js";
 import suggestPlanUserRoutes from "./routes/suggestPlan.user.routes.js";
 import adminSuggestMenuRoutes from "./routes/admin.suggestMenu.routes.js";
 import suggestMenuUserRoutes from "./routes/suggestMenu.routes.js";
+import adminAuditRoutes from "./routes/admin.audit.routes.js";
 
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
 import { UPLOAD_ROOT } from "./middleware/upload.js";
+
 
 const app = express();
 
@@ -118,6 +120,7 @@ app.use("/api/admin", adminFoodsRoutes);
 app.use("/api/admin", adminExercisesRoutes);
 app.use("/api/admin", adminSuggestPlanRoutes);
 app.use("/api/admin", adminSuggestMenuRoutes); 
+app.use("/api/admin", adminAuditRoutes);
 
 // ===== User routes =====
 app.use("/api/user/onboarding", onboardingRoutes);
