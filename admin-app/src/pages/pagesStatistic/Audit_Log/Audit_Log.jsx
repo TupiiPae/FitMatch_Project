@@ -75,17 +75,8 @@ function getEditPath(resourceType, id) {
     return `/exercises/suggest-plan/${id}/edit`;
   }
 
-  // ✅ Thêm case cho bài tập
-  // Nếu log chỉ ghi "exercise" chung chung thì mở bằng trang Strength_Edit
-  // (vẫn load đúng exercise theo id, chỉ khác đường dẫn breadcrumb)
-  if (rt === "exercise" || rt === "exercise_strength") {
-    return `/exercises/strength/${id}/edit`;
-  }
-  if (rt === "exercise_cardio") {
-    return `/exercises/cardio/${id}/edit`;
-  }
-  if (rt === "exercise_sport") {
-    return `/exercises/sport/${id}/edit`;
+  if (rt === "exercise" || rt === "exercise_strength" || rt === "exercise_cardio" || rt === "exercise_sport") {
+    return `/exercises/${id}/edit`;
   }
 
   // Các loại khác hiện chưa có trang edit riêng

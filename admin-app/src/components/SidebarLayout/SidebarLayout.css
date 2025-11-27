@@ -187,6 +187,168 @@ html, body { font-size: var(--fs-base); }
   width:34px; height:34px; border-radius:9px; border:1px solid var(--fm-border);
   background:transparent; cursor:pointer; display:grid; place-items:center; position:relative;
 }
+/* Badge số thông báo trên icon chuông */
+.fm-iconbtn {
+  position: relative;
+}
+
+.fm-iconbtn .fm-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* Wrapper & dropdown thông báo */
+.fm-notify-wrapper {
+  position: relative;
+}
+
+.fm-notify-dropdown {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  width: 320px;
+  max-height: 420px;
+  background: var(--fm-panel);
+  border-radius: 12px;
+  border: 1px solid var(--fm-border);
+  box-shadow: var(--fm-shadow);
+  display: flex;
+  flex-direction: column;
+  z-index: 70;
+}
+
+/* Header dropdown */
+.fm-notify-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--fm-border);
+}
+
+.fm-notify-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.fm-notify-markall {
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  color: #0f766e;
+  cursor: pointer;
+}
+.fm-notify-markall:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Body dropdown */
+.fm-notify-body {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.fm-notify-item {
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.fm-notify-item:hover {
+  background: rgba(148, 163, 184, 0.15);
+}
+.theme-dark .fm-notify-item:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+.fm-notify-item.is-unread {
+  background: rgba(59, 130, 246, 0.06);
+}
+.theme-dark .fm-notify-item.is-unread {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.fm-notify-main {
+  flex: 1;
+}
+
+.fm-notify-line1 {
+  font-size: 12px;
+  color: var(--fm-muted);
+}
+.fm-notify-action {
+  font-weight: 600;
+}
+.fm-notify-resource {
+  font-weight: 600;
+}
+
+.fm-notify-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fm-text);
+}
+
+.fm-notify-time {
+  font-size: 11px;
+  color: var(--fm-muted);
+  margin-top: 2px;
+}
+
+/* Chấm unread */
+.fm-notify-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0ea5e9;
+  margin-top: 6px;
+}
+
+/* Empty state & footer */
+.fm-notify-empty {
+  padding: 12px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--fm-muted);
+}
+
+.fm-notify-footer {
+  padding: 6px 10px 8px;
+  border-top: 1px solid var(--fm-border);
+}
+
+.fm-notify-link {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  color: #0f766e;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+.fm-notify-link:hover {
+  background: rgba(16, 185, 129, 0.08);
+}
+
 .fm-iconbtn:hover{ background:rgba(0,0,0,.04); }
 .theme-dark .fm-iconbtn:hover{ background:rgba(255,255,255,.07); }
 .fm-iconbtn i{ font-size:13px; }
@@ -300,3 +462,4 @@ html, body { font-size: var(--fs-base); }
 @media (max-width: 720px){
   .fm-modal__grid{ grid-template-columns: 1fr; }
 }
+
