@@ -2,42 +2,82 @@ import React, { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx"; // ensure installed on admin-app
-import { api, importFoodsBulk } from "../../../lib/api";
+import { api, importFoodsBulk, validateFoodsBulk } from "../../../lib/api";
 import "./Import_List.css";
+import { downloadFoodTemplateExcel } from "../../../utils/foodTemplateExcel";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => {
   if (!u) return u;
-  try { return new URL(u, API_ORIGIN).toString(); } catch { return u; }
+  try {
+    return new URL(u, API_ORIGIN).toString();
+  } catch {
+    return u;
+  }
 };
-
-const VN_HEADERS = [
-  "Hình ảnh","Tên","Khẩu phần","Khối lượng","Đơn vị",
-  "Calorie","Đạm","Đường bột","Chất béo","Muối","Đường","Chất xơ"
-];
 
 // Map any header (VN or EN) to internal field
 const keyMap = {
+  // ===== VN headers (cũ & mới) =====
   "Hình ảnh": "imageUrl",
+  "Hình ảnh (URL)": "imageUrl",
+
   "Tên": "name",
+  "Tên món ăn": "name",
+  "Tên món ăn *": "name",
+
   "Khẩu phần": "servingDesc",
+
   "Khối lượng": "massG",
+  "Khối lượng *": "massG",
+
   "Đơn vị": "unit",
+  "Đơn vị *": "unit",
+
   "Calorie": "kcal",
+  "Calorie (kcal)": "kcal",
+  "Calorie (kcal) *": "kcal",
+
   "Đạm": "proteinG",
+  "Đạm (g)": "proteinG",
+
   "Đường bột": "carbG",
+  "Đường bột (g)": "carbG",
+
   "Chất béo": "fatG",
+  "Chất béo (g)": "fatG",
+
   "Muối": "saltG",
+  "Muối (g)": "saltG",
+
   "Đường": "sugarG",
+  "Đường (g)": "sugarG",
+
   "Chất xơ": "fiberG",
-  // accept EN keys
-  imageUrl: "imageUrl", name: "name", servingDesc: "servingDesc", massG: "massG", unit: "unit", kcal: "kcal",
-  proteinG: "proteinG", carbG: "carbG", fatG: "fatG", saltG: "saltG", sugarG: "sugarG", fiberG: "fiberG",
+  "Chất xơ (g)": "fiberG",
+
+  "Mô tả": "description",
+
+  // ===== EN keys =====
+  imageUrl: "imageUrl",
+  name: "name",
+  servingDesc: "servingDesc",
+  massG: "massG",
+  unit: "unit",
+  kcal: "kcal",
+  proteinG: "proteinG",
+  carbG: "carbG",
+  fatG: "fatG",
+  saltG: "saltG",
+  sugarG: "sugarG",
+  fiberG: "fiberG",
+  description: "description",
 };
 
-const isNum = (v) => v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v));
+const isNum = (v) =>
+  v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v));
 const toNum = (v) => (isNum(v) ? Number(v) : null);
-const normUnit = (u) => (String(u||"").toLowerCase() === "ml" ? "ml" : "g");
+const normUnit = (u) => (String(u || "").toLowerCase() === "ml" ? "ml" : "g");
 
 export default function ImportList() {
   // staged rows shown in table (not yet saved)
@@ -48,10 +88,58 @@ export default function ImportList() {
   const [file, setFile] = useState(null);
   const [checking, setChecking] = useState(false);
   const [checkOk, setCheckOk] = useState(false);
+  const [validationErrors, setValidationErrors] = useState([]); // danh sách lỗi từ BE
+
+  const [isDragging, setIsDragging] = useState(false);
+
   const fileInputRef = useRef(null);
 
   const allChecked = rows.length > 0 && selected.length === rows.length;
   const someChecked = selected.length > 0 && selected.length < rows.length;
+
+  // ===== Helper: set file + reset state =====
+  const handleFileSelect = (newFile) => {
+    if (!newFile) {
+      setFile(null);
+      setCheckOk(false);
+      setValidationErrors([]);
+      return;
+    }
+
+    const okExt = /\.(csv|xlsx?|xls)$/i.test(newFile.name || "");
+    if (!okExt) {
+      toast.error("Vui lòng chọn file CSV hoặc Excel (.csv, .xlsx)");
+      return;
+    }
+
+    setFile(newFile);
+    setCheckOk(false);
+    setValidationErrors([]);
+  };
+
+  // ===== Drag & Drop handlers =====
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) {
+      handleFileSelect(f);
+    }
+  };
 
   // ===== Parse helpers =====
   function parseCSV(text) {
@@ -63,7 +151,9 @@ export default function ImportList() {
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(",");
       const obj = {};
-      headers.forEach((h, idx) => { obj[h] = (cols[idx] ?? "").trim(); });
+      headers.forEach((h, idx) => {
+        obj[h] = (cols[idx] ?? "").trim();
+      });
       data.push(obj);
     }
     return data;
@@ -77,9 +167,14 @@ export default function ImportList() {
           const data = new Uint8Array(e.target.result);
           const wb = XLSX.read(data, { type: "array" });
           const ws = wb.Sheets[wb.SheetNames[0]];
-          const json = XLSX.utils.sheet_to_json(ws, { defval: "" });
+          const range = XLSX.utils.decode_range(ws["!ref"]);
+          range.s.r = 2; // bỏ qua 2 dòng đầu, dùng dòng 3 làm header
+          ws["!ref"] = XLSX.utils.encode_range(range);
+          const json = XLSX.utils.sheet_to_json(ws, { defval: "", range: range });
           resolve(json);
-        } catch (err) { reject(err); }
+        } catch (err) {
+          reject(err);
+        }
       };
       reader.onerror = reject;
       reader.readAsArrayBuffer(file);
@@ -118,58 +213,80 @@ export default function ImportList() {
     });
   }
 
-  function validateRows(arr) {
-    const errs = [];
-    arr.forEach((r, idx) => {
-      if (!r.name || !isNum(r.massG) || !r.unit || !isNum(r.kcal)) {
-        errs.push({ index: idx, reason: "Thiếu name/massG/unit/kcal" });
-      }
-      if (r.unit !== "g" && r.unit !== "ml") {
-        errs.push({ index: idx, reason: "Đơn vị chỉ 'g' hoặc 'ml'" });
-      }
-    });
-    return errs;
-  }
-
   // ===== Modal actions =====
-  const onOpenModal = () => { setFile(null); setCheckOk(false); setModalOpen(true); };
-  const onCloseModal = () => { setModalOpen(false); };
+  const onOpenModal = () => {
+    setFile(null);
+    setCheckOk(false);
+    setValidationErrors([]);
+    setModalOpen(true);
+  };
+  const onCloseModal = () => {
+    setModalOpen(false);
+  };
 
+  // Bước 1: kiểm tra file (gọi BE validate) + parse để xem trước
   async function onCheckFile() {
     if (!file) return;
     setChecking(true);
-    try {
-      const raw = await readFileToRows(file);
-      const normalized = normalizeObjects(raw);
-      const errs = validateRows(normalized);
-      if (errs.length) {
-        setCheckOk(false);
-        toast.error("Kiểm tra lại các trường dữ liệu của danh sách món ăn");
-      } else {
-        setCheckOk(true);
-        toast.success("Sẵn sàng thêm danh sách các món ăn");
-      }
-    } catch (e) {
-      setCheckOk(false);
-      toast.error(e.message || "Không đọc được file");
-    } finally { setChecking(false); }
-  }
+    setCheckOk(false);
+    setValidationErrors([]);
 
-  async function onImportToTable() {
     try {
-      const raw = await readFileToRows(file);
-      const normalized = normalizeObjects(raw);
-      const errs = validateRows(normalized);
-      if (errs.length) {
-        toast.error("Kiểm tra thất bại, không thể nhập");
+      // 1. Gọi BE validate
+      const res = await validateFoodsBulk({ file });
+      // BE: { success, total, valid, invalid, errors[] }
+      if (!res?.success) {
+        toast.error(res?.message || "Kiểm tra thất bại");
         return;
       }
+
+      const errors = Array.isArray(res.errors) ? res.errors : [];
+      if (errors.length) {
+        setValidationErrors(errors);
+        toast.error(`Có ${errors.length} hàng dữ liệu không hợp lệ`);
+        return; // không parse/import khi còn lỗi
+      }
+
+      // 2. Không có lỗi -> parse đọc file để hiển thị preview
+      const raw = await readFileToRows(file);
+
+      // Bỏ các dòng hoàn toàn trống
+      const filteredRaw = raw.filter((row) =>
+        Object.values(row || {}).some(
+          (v) => v !== null && v !== undefined && String(v).trim() !== ""
+        )
+      );
+
+      if (!filteredRaw.length) {
+        toast.error(
+          "File không có dữ liệu món ăn. Vui lòng nhập ít nhất 1 dòng dữ liệu."
+        );
+        setCheckOk(false);
+        return;
+      }
+
+      const normalized = normalizeObjects(filteredRaw);
       setRows(normalized);
       setSelected([]);
-      setModalOpen(false);
+
+      setCheckOk(true);
+      toast.success("File hợp lệ, sẵn sàng thêm danh sách các món ăn");
     } catch (e) {
-      toast.error(e.message || "Không thể nhập");
+      console.error(e);
+      const msg = e?.response?.data?.message || e.message || "Không đọc được file";
+      toast.error(msg);
+    } finally {
+      setChecking(false);
     }
+  }
+
+  // Bước 2: "Nhập" chỉ đóng modal vì rows đã được set ở bước kiểm tra
+  function onImportToTable() {
+    if (!rows.length) {
+      toast.error("Chưa có dữ liệu hợp lệ để nhập");
+      return;
+    }
+    setModalOpen(false);
   }
 
   // ===== Page actions =====
@@ -178,7 +295,9 @@ export default function ImportList() {
     else setSelected(rows.map((_, i) => i));
   };
   const toggleOne = (idx) => {
-    setSelected((prev) => prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx]);
+    setSelected((prev) =>
+      prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx]
+    );
   };
 
   const onDeleteSelected = () => {
@@ -191,72 +310,86 @@ export default function ImportList() {
   // Build CSV to send to server import API
   const csvToUpload = useMemo(() => {
     if (!rows.length) return "";
-    const head = ["name","servingDesc","massG","unit","kcal","proteinG","carbG","fatG","saltG","sugarG","fiberG","imageUrl","description"];
+    const head = [
+      "name",
+      "servingDesc",
+      "massG",
+      "unit",
+      "kcal",
+      "proteinG",
+      "carbG",
+      "fatG",
+      "saltG",
+      "sugarG",
+      "fiberG",
+      "imageUrl",
+      "description",
+    ];
     const lines = [head.join(",")];
     rows.forEach((r) => {
-      const a = head.map((k) => (r[k] ?? ""));
+      const a = head.map((k) => r[k] ?? "");
       lines.push(a.join(","));
     });
     return lines.join("\n");
   }, [rows]);
 
   async function onSaveAll() {
-    if (!rows.length) return;
+    if (!rows.length) {
+      toast.error(
+        "Chưa có dữ liệu để lưu. Vui lòng nhập ít nhất 1 món ăn rồi thử lại."
+      );
+      return;
+    }
     try {
-      const blob = new Blob([csvToUpload], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([csvToUpload], {
+        type: "text/csv;charset=utf-8;",
+      });
       const file = new File([blob], "foods_import.csv", { type: "text/csv" });
       const res = await importFoodsBulk({
         file,
-        options: { fetchImages: true, upsertBy: "name+mass+unit", status: "approved" }
+        options: {
+          fetchImages: true,
+          upsertBy: "name+mass+unit",
+          status: "approved",
+        },
       });
       if (res?.success) {
-        toast.success(`Lưu thành công: +${res.inserted} / cập nhật ${res.updated}`);
-        setRows([]); setSelected([]);
+        toast.success(
+          `Lưu thành công: +${res.inserted} / cập nhật ${res.updated}`
+        );
+        setRows([]);
+        setSelected([]);
       } else {
         toast.error(res?.message || "Lưu thất bại");
       }
     } catch (e) {
-      toast.error(e?.response?.data?.message || e.message || "Lưu thất bại");
+      toast.error(
+        e?.response?.data?.message || e.message || "Lưu thất bại"
+      );
     }
   }
 
-  // ===== Download sample (FIX UTF-8 dấu tiếng Việt với BOM) =====
-  function downloadTemplate() {
-    // CSV escape
-    const esc = (v = "") => {
-      const s = String(v);
-      return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    const CRLF = "\r\n";
-    const headerLine = VN_HEADERS.map(esc).join(",");
-    const sampleRow = [
-      "https://example.com/chicken.jpg",
-      "Ức gà áp chảo",
-      "1 phần",
-      "150",
-      "g",
-      "225","33","0","9","0.3","0","0"
-    ].map(esc).join(",");
-
-    // *** BOM để Excel hiểu UTF-8 đúng dấu ***
-    const bom = "\uFEFF";
-    const body = headerLine + CRLF + sampleRow + CRLF;
-    const blob = new Blob([bom, body], { type: "text/csv;charset=utf-8" });
-
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "foods_template.csv";
-    a.click();
-    URL.revokeObjectURL(a.href);
+  // ===== Download sample (ExcelJS template) =====
+  async function downloadTemplate() {
+    try {
+      await downloadFoodTemplateExcel();
+    } catch (e) {
+      console.error(e);
+      toast.error("Không thể tạo file mẫu Excel");
+    }
   }
 
   return (
     <div className="im-page">
       {/* ===== Breadcrumb ===== */}
       <nav className="im-breadcrumb" aria-label="breadcrumb">
-        <Link to="/"><i className="fa-solid fa-house" /> <span>Trang chủ</span></Link>
+        <Link to="/">
+          <i className="fa-solid fa-house" /> <span>Trang chủ</span>
+        </Link>
         <span className="sep">/</span>
-        <span className="group"><i className="fa-solid fa-utensils" /> <span>Quản lý Món ăn</span></span>
+        <span className="group">
+          <i className="fa-solid fa-utensils" /> <span>Quản lý Món ăn</span>
+        </span>
         <span className="separator">/</span>
         <span className="current-page">Danh sách món ăn</span>
         <span className="sep">/</span>
@@ -270,13 +403,25 @@ export default function ImportList() {
           <div className="im-actions">
             {rows.length === 0 ? (
               <>
-                <button className="im-btn" onClick={() => history.back()}>Hủy</button>
-                <button className="im-btn primary" onClick={onOpenModal}><i className="fa-solid fa-file-import"/> Nhập</button>
+                <button className="im-btn" onClick={() => history.back()}>
+                  Hủy
+                </button>
+                <button className="im-btn primary" onClick={onOpenModal}>
+                  <i className="fa-solid fa-file-import" /> Nhập
+                </button>
               </>
             ) : (
               <>
-                <button className="im-btn danger" onClick={onDeleteSelected} disabled={!selected.length}>Xóa</button>
-                <button className="im-btn primary" onClick={onSaveAll}>Lưu</button>
+                <button
+                  className="im-btn danger"
+                  onClick={onDeleteSelected}
+                  disabled={!selected.length}
+                >
+                  Xóa
+                </button>
+                <button className="im-btn primary" onClick={onSaveAll}>
+                  Lưu
+                </button>
               </>
             )}
           </div>
@@ -286,7 +431,14 @@ export default function ImportList() {
         <div className="im-table">
           <div className="im-thead">
             <label className="im-cell cb">
-              <input type="checkbox" checked={allChecked} ref={(el)=>{ if (el) el.indeterminate = someChecked; }} onChange={toggleAll} />
+              <input
+                type="checkbox"
+                checked={allChecked}
+                ref={(el) => {
+                  if (el) el.indeterminate = someChecked;
+                }}
+                onChange={toggleAll}
+              />
             </label>
             <div className="im-cell img">Hình ảnh</div>
             <div className="im-cell name">Tên món ăn</div>
@@ -309,15 +461,31 @@ export default function ImportList() {
           {rows.map((r, idx) => (
             <div key={idx} className="im-trow">
               <label className="im-cell cb">
-                <input type="checkbox" checked={selected.includes(idx)} onChange={()=>toggleOne(idx)} />
+                <input
+                  type="checkbox"
+                  checked={selected.includes(idx)}
+                  onChange={() => toggleOne(idx)}
+                />
               </label>
               <div className="im-cell img">
                 {r.imageUrl ? (
-                  <img src={toAbs(r.imageUrl)} alt={r.name} onError={(e)=>{ e.currentTarget.src = "/images/food-placeholder.jpg"; }} />
-                ) : <div className="im-img-fb"><i className="fa-regular fa-image"/></div>}
+                  <img
+                    src={toAbs(r.imageUrl)}
+                    alt={r.name}
+                    onError={(e) => {
+                      e.currentTarget.src = "/images/food-placeholder.jpg";
+                    }}
+                  />
+                ) : (
+                  <div className="im-img-fb">
+                    <i className="fa-regular fa-image" />
+                  </div>
+                )}
               </div>
               <div className="im-cell name">{r.name || "—"}</div>
-              <div className="im-cell serving">{r.servingDesc || "—"}</div>
+              <div className="im-cell serving">
+                {r.servingDesc || "—"}
+              </div>
               <div className="im-cell mass">{r.massG ?? "—"}</div>
               <div className="im-cell unit">{r.unit || "g"}</div>
               <div className="im-cell kcal">{r.kcal ?? "—"}</div>
@@ -335,29 +503,55 @@ export default function ImportList() {
       {/* ===== Modal ===== */}
       {modalOpen && (
         <div className="im-backdrop" onClick={onCloseModal}>
-          <div className="im-modal" role="dialog" aria-labelledby="im-title" onClick={(e)=>e.stopPropagation()}>
+          <div
+            className="im-modal"
+            role="dialog"
+            aria-labelledby="im-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="im-mhead">
               <h3 id="im-title">Nhập danh sách</h3>
             </div>
 
-            <div className="im-drop" onClick={()=>fileInputRef.current?.click()}>
+            <div
+              className={`im-drop ${isDragging ? "dragging" : ""}`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".csv,.xlsx,.xls"
                 hidden
-                onChange={(e)=>{ setFile(e.target.files?.[0]||null); setCheckOk(false); }}
+                onChange={(e) => {
+                  handleFileSelect(e.target.files?.[0] || null);
+                }}
               />
               {!file ? (
                 <>
-                  <div className="im-drop-text"><i className="fa-regular fa-file"/> Kéo & thả file vào đây hoặc <span className="link">nhấp để tải lên</span></div>
-                  <div className="im-drop-hint">Hỗ trợ CSV/XLSX · Tối đa 5MB</div>
+                  <div className="im-drop-text">
+                    <i className="fa-regular fa-file" /> Kéo &amp; thả file vào
+                    đây hoặc <span className="link">nhấp để tải lên</span>
+                  </div>
+                  <div className="im-drop-hint">
+                    Hỗ trợ CSV/XLSX · Tối đa 5MB
+                  </div>
                 </>
               ) : (
                 <>
-                  <div className="im-file-name"><i className="fa-regular fa-file"/> 
+                  <div className="im-file-name">
+                    <i className="fa-regular fa-file" />
                     {file.name}{" "}
-                    <button className="link" onClick={(e)=>{ e.stopPropagation(); fileInputRef.current?.click(); }}>
+                    <button
+                      className="link"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                    >
                       Thay đổi
                     </button>
                   </div>
@@ -370,28 +564,69 @@ export default function ImportList() {
                 <i className="fa-regular fa-file-excel" />
                 <div>
                   <div className="im-sample-title">Danh sách mẫu</div>
-                  <div className="im-sample-desc">Tải xuống danh sách mẫu để thêm danh sách các món ăn</div>
+                  <div className="im-sample-desc">
+                    Tải xuống danh sách mẫu để thêm danh sách các món ăn
+                  </div>
                 </div>
               </div>
               <button className="im-btn" onClick={downloadTemplate}>
-                <i className="fa-solid fa-download"/> Tải mẫu
+                <i className="fa-solid fa-download" /> Tải mẫu
               </button>
             </div>
 
             {checkOk ? (
-              <div className="im-msg ok">Sẵn sàng thêm danh sách các món ăn</div>
+              <div className="im-msg ok">
+                Sẵn sàng thêm danh sách các món ăn
+              </div>
             ) : file ? (
-              <div className="im-msg warn">Vui lòng nhấn Kiểm tra trước khi nhập</div>
+              <div className="im-msg warn">
+                Vui lòng nhấn Kiểm tra trước khi nhập
+              </div>
             ) : null}
 
+            {/* Danh sách lỗi validate */}
+            {validationErrors.length > 0 && (
+              <div className="im-valbox">
+                <div className="im-val-head">
+                  <i className="fa-solid fa-circle-exclamation" />
+                  <span>
+                    Có {validationErrors.length} hàng dữ liệu không hợp lệ
+                  </span>
+                </div>
+                <div className="im-val-list">
+                  {validationErrors.map((e, i) => (
+                    <div key={i} className="im-val-item">
+                      <span className="im-val-row">Dòng {e.index}</span>
+                      <span className="im-val-name">
+                        {e.name || "(không có tên)"}
+                      </span>
+                      <span className="im-val-msg">
+                        {Array.isArray(e.messages)
+                          ? e.messages.join("; ")
+                          : e.messages}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="im-mfoot">
-              <button className="im-btn" onClick={onCloseModal}>Hủy</button>
+              <button className="im-btn" onClick={onCloseModal}>
+                Hủy
+              </button>
               {!checkOk ? (
-                <button className="im-btn primary" onClick={onCheckFile} disabled={!file || checking}>
+                <button
+                  className="im-btn primary"
+                  onClick={onCheckFile}
+                  disabled={!file || checking}
+                >
                   {checking ? "Đang kiểm tra..." : "Kiểm tra"}
                 </button>
               ) : (
-                <button className="im-btn primary" onClick={onImportToTable}>Nhập</button>
+                <button className="im-btn primary" onClick={onImportToTable}>
+                  Nhập
+                </button>
               )}
             </div>
           </div>

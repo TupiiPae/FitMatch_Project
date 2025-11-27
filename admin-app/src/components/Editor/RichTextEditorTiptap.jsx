@@ -6,8 +6,8 @@ import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
-import Indent from "./extensions/Indent"; // ⬅️ chỉnh path nếu cần
-import { TextSelection } from "prosemirror-state"; // <-- THÊM IMPORT
+import Indent from "./extensions/Indent";
+import { TextSelection } from "prosemirror-state";
 import "./RichTextEditorTiptap.css";
 
 /**
@@ -32,7 +32,8 @@ export default function RichTextEditorTiptap({
     () => [
       StarterKit.configure({
         heading: { levels: [2, 3] },
-        // Tắt bản mặc định để dùng extensions import riêng
+        link: false,
+        underline: false,
       }),
       Underline,
       TextAlign.configure({ types: ["heading", "paragraph"] }),

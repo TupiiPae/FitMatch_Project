@@ -5,19 +5,46 @@ import { responseOk } from "../utils/response.js";
 
 /** --------- Helpers --------- */
 const keyMap = {
-  // VN headers
+  // VN headers (cũ + mới, khớp với template Excel)
   "Hình ảnh": "imageUrl",
+  "Hình ảnh (URL)": "imageUrl",
+
   "Tên": "name",
-  "Khẩu phần": "servingDesc",       // sẽ map -> portionName
+  "Tên món ăn": "name",
+  "Tên món ăn *": "name",
+
+  "Khẩu phần": "servingDesc", // sẽ map -> portionName
+
   "Khối lượng": "massG",
+  "Khối lượng *": "massG",
+
   "Đơn vị": "unit",
+  "Đơn vị *": "unit",
+
   "Calorie": "kcal",
+  "Calorie (kcal)": "kcal",
+  "Calorie (kcal) *": "kcal",
+
   "Đạm": "proteinG",
+  "Đạm (g)": "proteinG",
+
   "Đường bột": "carbG",
+  "Đường bột (g)": "carbG",
+
   "Chất béo": "fatG",
+  "Chất béo (g)": "fatG",
+
   "Muối": "saltG",
+  "Muối (g)": "saltG",
+
   "Đường": "sugarG",
+  "Đường (g)": "sugarG",
+
   "Chất xơ": "fiberG",
+  "Chất xơ (g)": "fiberG",
+
+  "Mô tả": "description",
+
   // EN keys
   imageUrl: "imageUrl",
   name: "name",
@@ -36,14 +63,30 @@ const keyMap = {
 };
 
 const isNum = (v) =>
-  v !== undefined && v !== null && String(v).trim() !== "" && !Number.isNaN(Number(v));
+  v !== undefined &&
+  v !== null &&
+  String(v).trim() !== "" &&
+  !Number.isNaN(Number(v));
+
 const toNumOrUndef = (v) => (isNum(v) ? Number(v) : undefined);
+
 const normUnit = (u) => (String(u || "").toLowerCase() === "ml" ? "ml" : "g");
+
 const toStrOrUndef = (v) => {
   if (v === undefined || v === null) return undefined;
   const s = String(v).trim();
   return s === "" ? undefined : s;
 };
+
+// dòng hoàn toàn trống (không có giá trị nào khác rỗng)
+function isRowEmpty(raw) {
+  if (!raw || typeof raw !== "object") return true;
+  return Object.values(raw).every((v) => {
+    if (v === undefined || v === null) return true;
+    if (typeof v === "string" && v.trim() === "") return true;
+    return false;
+  });
+}
 
 /** Parse CSV text (simple) */
 function parseCSV(text) {
@@ -74,7 +117,11 @@ function bufferToRows(file) {
   if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
     const wb = XLSX.read(buf, { type: "buffer" });
     const ws = wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws, { defval: "" });
+    // Bỏ qua 2 dòng đầu: title + dòng trống, dùng dòng 3 làm header
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    range.s.r = 2; // bắt đầu từ row index 2 (tức là dòng số 3)
+    ws["!ref"] = XLSX.utils.encode_range(range);
+    return XLSX.utils.sheet_to_json(ws, { defval: "", range: range });
   }
   throw new Error("Định dạng không hỗ trợ. Vui lòng dùng CSV hoặc XLSX");
 }
@@ -117,7 +164,8 @@ function validateMinimal(doc) {
   const errs = [];
   if (!doc.name) errs.push("Thiếu tên món");
   if (!isNum(doc.massG)) errs.push("Thiếu/không hợp lệ khối lượng (massG)");
-  if (!doc.unit || (doc.unit !== "g" && doc.unit !== "ml")) errs.push("Đơn vị chỉ 'g' hoặc 'ml'");
+  if (!doc.unit || (doc.unit !== "g" && doc.unit !== "ml"))
+    errs.push("Đơn vị chỉ 'g' hoặc 'ml'");
   if (!isNum(doc.kcal)) errs.push("Thiếu/không hợp lệ kcal");
   return errs;
 }
@@ -143,16 +191,34 @@ function buildUpsertFilter(doc, upsertBy) {
 export async function validateFoods(req, res) {
   try {
     const file = (req.files?.file && req.files.file[0]) || null;
-    if (!file) return res.status(400).json({ success: false, message: "Thiếu file" });
+    if (!file)
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu file" });
 
-    const rawRows = bufferToRows(file);
+    let rawRows = bufferToRows(file);
+
+    // Bỏ các dòng hoàn toàn trống
+    rawRows = rawRows.filter((r) => !isRowEmpty(r));
+
+    if (!rawRows.length) {
+      return res.status(400).json({
+        success: false,
+        message: "File không có dữ liệu món ăn. Cần ít nhất 1 dòng dữ liệu.",
+      });
+    }
+
     const normalized = rawRows.map(normalizeRow);
 
     const errors = [];
     normalized.forEach((doc, i) => {
       const errs = validateMinimal(doc);
-      if (errs.length) errors.push({ index: i + 2, // +2 vì header (1) + 1-based
-        name: doc.name, messages: errs });
+      if (errs.length)
+        errors.push({
+          index: i + 2, // +2 vì header (1) + 1-based
+          name: doc.name,
+          messages: errs,
+        });
     });
 
     return res.json({
@@ -164,7 +230,9 @@ export async function validateFoods(req, res) {
     });
   } catch (e) {
     console.error("[import.validate] ", e?.message || e);
-    return res.status(500).json({ success: false, message: e?.message || "Lỗi validate" });
+    return res
+      .status(500)
+      .json({ success: false, message: e?.message || "Lỗi validate" });
   }
 }
 
@@ -178,12 +246,17 @@ export async function importFoods(req, res) {
   try {
     const adminId = req.userId;
     const file = (req.files?.file && req.files.file[0]) || null;
-    if (!file) return res.status(400).json({ success: false, message: "Thiếu file" });
+    if (!file)
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu file" });
 
     // Parse options
     let opts = {};
     if (req.body?.options) {
-      try { opts = JSON.parse(req.body.options); } catch {}
+      try {
+        opts = JSON.parse(req.body.options);
+      } catch {}
     }
     // Ngoài ra hỗ trợ options rời rạc: fetchImages, upsertBy, status
     if (req.body.fetchImages !== undefined) {
@@ -193,17 +266,33 @@ export async function importFoods(req, res) {
     if (req.body.status) opts.status = String(req.body.status);
 
     const upsertBy = opts.upsertBy || "name+mass+unit";
-    const status = ["approved","pending","rejected"].includes(opts.status) ? opts.status : "approved";
+    const status = ["approved", "pending", "rejected"].includes(opts.status)
+      ? opts.status
+      : "approved";
 
     // Read + normalize
-    const rawRows = bufferToRows(file);
+    let rawRows = bufferToRows(file);
+    rawRows = rawRows.filter((r) => !isRowEmpty(r));
+
+    if (!rawRows.length) {
+      return res.status(400).json({
+        success: false,
+        message: "File không có dữ liệu món ăn. Cần ít nhất 1 dòng để import.",
+      });
+    }
+
     const normalized = rawRows.map(normalizeRow);
 
     // Validate minimal
     const rowErrors = [];
     normalized.forEach((doc, i) => {
       const errs = validateMinimal(doc);
-      if (errs.length) rowErrors.push({ index: i + 2, name: doc.name, messages: errs });
+      if (errs.length)
+        rowErrors.push({
+          index: i + 2,
+          name: doc.name,
+          messages: errs,
+        });
     });
 
     // Nếu có lỗi dữ liệu → không import
@@ -274,6 +363,8 @@ export async function importFoods(req, res) {
     });
   } catch (e) {
     console.error("[importFoods] ", e?.message || e);
-    return res.status(500).json({ success: false, message: e?.message || "Lỗi import" });
+    return res
+      .status(500)
+      .json({ success: false, message: e?.message || "Lỗi import" });
   }
 }
