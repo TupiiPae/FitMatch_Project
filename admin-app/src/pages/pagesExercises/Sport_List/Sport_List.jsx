@@ -367,11 +367,11 @@ export default function Sport_List() {
               <div className="sp-cell created">{fmtDate(it.createdAt)}</div>
 
               <div className="sp-cell act">
-                <button className="sp-iconbtn" title="Chỉnh sửa" onClick={() => nav(`/exercises/sport/${it._id}/edit`)}>
+                <button className="iconbtn" title="Chỉnh sửa" onClick={() => nav(`/exercises/${it._id}/edit`)}>
                   <i className="fa-regular fa-pen-to-square" />
                 </button>
                 <button
-                  className="sp-iconbtn danger"
+                  className="iconbtn danger"
                   title="Xóa"
                   onClick={() => setConfirm({ mode: "single", ids: [it._id] })}
                   disabled={deletingId === it._id}

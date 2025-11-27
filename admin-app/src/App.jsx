@@ -21,13 +21,11 @@ import SuggestMenu_Form from "./pages/pagesFoods/SuggestMenu_Form/SuggestMenu_Fo
 // ===== Exercises
 import StrengthList from "./pages/pagesExercises/Strength_List/Strength_List.jsx";
 import StrengthCreate from "./pages/pagesExercises/Strength_Create/Strength_Create.jsx";
-import StrengthEdit from "./pages/pagesExercises/Strength_Edit/Strength_Edit.jsx";
 import CardioList from "./pages/pagesExercises/Cardio_List/Cardio_List.jsx";
 import CardioCreate from "./pages/pagesExercises/Cardio_Create/Cardio_Create.jsx";
-import CardioEdit from "./pages/pagesExercises/Cardio_Edit/Cardio_Edit.jsx";
 import SportList from "./pages/pagesExercises/Sport_List/Sport_List.jsx";
 import SportCreate from "./pages/pagesExercises/Sport_Create/Sport_Create.jsx";
-import SportEdit from "./pages/pagesExercises/Sport_Edit/Sport_Edit.jsx";
+import ExercisesEdit from "./pages/pagesExercises/Exercises_Edit/Exercises_Edit.jsx";
 import SuggestPlanCreate from "./pages/pagesExercises/SuggestPlan_Create/SuggestPlan_Create.jsx";
 import SuggestPlanList from "./pages/pagesExercises/SuggestPlan_List/SuggestPlan_List.jsx";
 
@@ -87,13 +85,11 @@ export default function App() {
           {/* Bài tập */}
           <Route path="/exercises/strength" element={<StrengthList />} />
           <Route path="/exercises/strength/create" element={<StrengthCreate />} />
-          <Route path="/exercises/strength/:id/edit" element={<StrengthEdit />} />
           <Route path="/exercises/cardio" element={<CardioList />} />
           <Route path="/exercises/cardio/create" element={<CardioCreate />} />
-          <Route path="/exercises/cardio/:id/edit" element={<CardioEdit />} />
           <Route path="/exercises/sport" element={<SportList />} />
           <Route path="/exercises/sport/create" element={<SportCreate />} />
-          <Route path="/exercises/sport/:id/edit" element={<SportEdit />} />
+          <Route path="/exercises/:id/edit" element={<ExercisesEdit />} />
           <Route path="/exercises/suggest-plan" element={<SuggestPlanList />} />
           <Route path="/exercises/suggest-plan/create" element={<SuggestPlanCreate />} />
           <Route path="/exercises/suggest-plan/:id/edit" element={<SuggestPlanCreate />} />

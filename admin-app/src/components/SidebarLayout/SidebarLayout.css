@@ -61,7 +61,7 @@ html, body { font-size: var(--fs-base); }
 .fm-logo-link{ display:inline-flex; align-items:center; justify-content:center; }
 .fm-logo-rect{ height:40px; width:auto; object-fit:contain; display:block; border-radius:10px; transition:height .18s ease; }
 .fm-side.is-sm .fm-side__logo{ height:84px; padding:8px; }
-.fm-side.is-sm .fm-logo-rect{ height:34px; }
+.fm-side.is-sm .fm-logo-rect{ height:18px; border-radius: 0px;}
 
 /* body có thể cuộn nhưng ẩn scrollbar */
 .fm-side__nav{ padding:10px 10px 14px; overflow:auto; flex-grow: 1;}

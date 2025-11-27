@@ -59,7 +59,6 @@ function toRoleLabel(role) {
   return r;
 }
 
-// Link đến trang Edit theo loại tài nguyên
 function getEditPath(resourceType, id) {
   if (!resourceType || !id) return null;
   const rt = String(resourceType);
@@ -76,7 +75,10 @@ function getEditPath(resourceType, id) {
     return `/exercises/suggest-plan/${id}/edit`;
   }
 
-  if (rt === "exercise_strength") {
+  // ✅ Thêm case cho bài tập
+  // Nếu log chỉ ghi "exercise" chung chung thì mở bằng trang Strength_Edit
+  // (vẫn load đúng exercise theo id, chỉ khác đường dẫn breadcrumb)
+  if (rt === "exercise" || rt === "exercise_strength") {
     return `/exercises/strength/${id}/edit`;
   }
   if (rt === "exercise_cardio") {

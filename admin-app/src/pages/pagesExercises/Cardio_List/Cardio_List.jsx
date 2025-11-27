@@ -541,7 +541,7 @@ export default function Cardio_List() {
                     className="iconbtn"
                     title="Chỉnh sửa"
                     onClick={() =>
-                      nav(`/exercises/cardio/${it._id}/edit`)
+                      nav(`/exercises/${it._id}/edit`)
                     }
                   >
                     <i className="fa-regular fa-pen-to-square" />
