@@ -73,13 +73,40 @@
   padding:12px;
 }
 
-/* Card header */
-.card-head{
-  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+.card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; 
+  padding: 20px; 
+  background: #fff; 
 }
+
+/* --- HÀNG 1: SEARCH --- */
+.card-head-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; 
+  width: 100%;
+}
+
+.card-head-bottom {
+  display: flex;
+  align-items: center; 
+  justify-content: space-between; 
+  width: 100%;
+  flex-wrap: wrap; 
+  gap: 12px;
+}
+
 .search{
-  display:flex; align-items:center; gap:8px;
-  border:1px solid #E5E7EB; border-radius:10px; padding:0 10px; height:38px; width: 700px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid #E5E7EB;
+  border-radius:10px;
+  padding:0 10px;
+  height:38px;
+  min-width:600px;
   background:#fff;
 }
 .search i{ color:#6b7280; font-size:14px; }
@@ -88,6 +115,263 @@
   font-size:14px; color:#111827; padding:8px 0;
 }
 .filters{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.filter-chips{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.filter-chip-wrap{
+  position:relative;
+}
+
+.filter-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid #E5E7EB;
+  background:#fff;
+  cursor:pointer;
+  font-size:13px;
+  color:#374151;
+}
+.filter-chip i{
+  font-size:10px;
+  color:#9ca3af;
+}
+.filter-chip.is-active{
+  border-color:#6366f1;
+  background:#EEF2FF;
+  color:#111827;
+}
+
+/* Dropdown filter */
+.filter-pop{
+  position:absolute;
+  top:110%;
+  left:0;
+  z-index:20;
+  width:230px;
+  background:#fff;
+  border-radius:12px;
+  border:1px solid #E5E7EB;
+  box-shadow:0 18px 40px rgba(15,23,42,.24);
+  padding:10px 12px 12px;
+}
+
+.filter-pop-title{
+  font-size:13px;
+  font-weight:600;
+  color:#111827;
+  margin-bottom:6px;
+}
+
+.filter-pop-body{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.filter-pop-item label{
+  display:block;
+  font-size:11px;
+  color:#6B7280;
+  margin-bottom:2px;
+}
+
+.filter-pop-item input{
+  width:100%;
+  height:32px;
+  border-radius:8px;
+  border:1px solid #E5E7EB;
+  padding:4px 8px;
+  font-size:13px;
+  outline:none;
+}
+.filter-pop-item input:focus{
+  border-color:#6366F1;
+  box-shadow:0 0 0 1px rgba(99,102,241,.3);
+}
+
+/* Đặt riêng cho date nếu cần rộng hơn */
+.filter-pop.filter-pop-date{
+  width:300px;
+}
+
+.filter-pop-foot{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.filter-pop-clear{
+  border:none;
+  background:none;
+  padding:0;
+  font-size:12px;
+  color:#6366F1;
+  cursor:pointer;
+}
+
+.filter-pop-submit{
+  border:none;
+  border-radius:999px;
+  padding:6px 14px;
+  font-size:12px;
+  font-weight:500;
+  background:#6366F1;
+  color:#fff;
+  cursor:pointer;
+}
+
+/* Chọn loại file export */
+.export-type-box{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  min-width:180px;
+}
+
+.export-type-select{
+  width:190px;
+  height:36px;
+  border-radius:10px;
+  border:1px solid #E5E7EB;
+  padding:0 10px;
+  font-size:14px;
+  color:#111827;
+  background:#fff;
+}
+
+/* ===== Modal Export ===== */
+.exp-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,.45);
+  backdrop-filter:blur(2px);
+  display:grid;
+  place-items:center;
+  z-index:1100;
+  padding:16px;
+}
+
+.exp-modal{
+  width:min(960px, 100%);
+  max-height:90vh;
+  background:#fff;
+  border-radius:16px;
+  border:1px solid #E5E7EB;
+  box-shadow:0 20px 50px rgba(15,23,42,.3);
+  display:flex;
+  flex-direction:column;
+}
+
+.exp-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 18px 10px 18px;
+  border-bottom:1px solid #F3F4F6;
+}
+
+.exp-title{
+  margin:0;
+  font-size:18px;
+  font-weight:700;
+  color:#111827;
+}
+
+.exp-close{
+  width:32px;
+  height:32px;
+  border-radius:10px;
+  border:1px solid #E5E7EB;
+  background:#F9FAFB;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+}
+.exp-close:hover{
+  background:#EFF2F7;
+}
+
+.exp-body{
+  padding:10px 18px 16px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  flex:1;
+}
+
+.exp-info{
+  margin:0 0 4px 0;
+  font-size:14px;
+  color:#374151;
+}
+
+.exp-table-wrap{
+  border:1px solid #E5E7EB;
+  border-radius:12px;
+  overflow:auto;
+  max-height:420px;
+  background:#F9FAFB;
+}
+
+.exp-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+  background:#fff;
+}
+.exp-table th,
+.exp-table td{
+  padding:6px 8px;
+  border-bottom:1px solid #E5E7EB;
+  border-right:1px solid #F3F4F6;
+  text-align:left;
+}
+.exp-table th:last-child,
+.exp-table td:last-child{
+  border-right:none;
+}
+.exp-table thead th{
+  position:sticky;
+  top:0;
+  background:#F9FAFB;
+  z-index:1;
+}
+.exp-cell-url{
+  word-break:break-all;
+}
+
+.exp-foot{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  padding:10px 18px 14px 18px;
+  border-top:1px dashed #E5E7EB;
+}
+
+/* Responsive cho filter + export select */
+@media (max-width: 980px){
+  .search{ width:100%; }
+  .export-type-box{
+    width:100%;
+    justify-content:flex-start;
+  }
+}
+
+@media (max-width: 760px){
+  .card-head-bottom{
+    align-items:flex-start;
+  }
+}
 .date-range{
   display:flex; align-items:center; gap:8px; border:1px solid #E5E7EB; border-radius:10px; padding:0 10px; height:38px;
 }

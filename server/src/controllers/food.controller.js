@@ -65,27 +65,52 @@ export async function listFoods(req, res) {
   const match = {};
   const and = [];
 
+  // ------- Quyền admin / user -------
   if (isAdmin) {
-    if (status) and.push({ status });
+    if (status) and.push({ status }); // admin truyền gì thì lọc theo status đó
   } else {
     if (onlyMine) and.push({ createdBy: userId });
-    else and.push({ status: "approved" });
+    else and.push({ status: "approved" }); // user chỉ thấy món đã duyệt
   }
 
   if (favorites && userId) and.push({ likedBy: userId });
   if (q) match.$text = { $search: q };
 
+  // ------- Lọc theo thời gian duyệt (approvedAt) -------
   if (approvedFrom || approvedTo) {
+    // đảm bảo chỉ lấy món đã approved
     and.push({ status: "approved" });
     const range = {};
     if (approvedFrom) range.$gte = new Date(approvedFrom);
     if (approvedTo) {
       const t = new Date(approvedTo);
-      t.setDate(t.getDate() + 1);
+      t.setDate(t.getDate() + 1); // +1 ngày để inclusive
       range.$lt = t;
     }
     and.push({ approvedAt: range });
   }
+
+  // ------- Lọc theo min/max số (massG, kcal, proteinG, carbG, fatG) -------
+  const pushRange = (field, minRaw, maxRaw) => {
+    const min = toNumOrNull(minRaw);
+    const max = toNumOrNull(maxRaw);
+    if (min == null && max == null) return;
+
+    const cond = {};
+    if (min != null) cond.$gte = min;
+    if (max != null) cond.$lte = max;
+
+    and.push({ [field]: cond });
+  };
+
+  // Khớp đúng tên param FE đang gửi (Food_List.jsx):
+  // massGMin, massGMax, kcalMin, kcalMax,
+  // proteinGMin, proteinGMax, carbGMin, carbGMax, fatGMin, fatGMax
+  pushRange("massG",    req.query.massGMin,    req.query.massGMax);
+  pushRange("kcal",     req.query.kcalMin,     req.query.kcalMax);
+  pushRange("proteinG", req.query.proteinGMin, req.query.proteinGMax);
+  pushRange("carbG",    req.query.carbGMin,    req.query.carbGMax);
+  pushRange("fatG",     req.query.fatGMin,     req.query.fatGMax);
 
   if (and.length) match.$and = and;
 
@@ -116,17 +141,26 @@ export async function listFoods(req, res) {
 
   const sort = q ? { score: { $meta: "textScore" } } : { updatedAt: -1 };
 
+  const limitNum = Number(limit) || 30;
+  const skipNum  = Number(skip)  || 0;
+
+  // Lấy danh sách
   const docs = await Food.find(match)
     .sort(sort)
-    .skip(Number(skip))
-    .limit(Number(limit) + 1)
+    .skip(skipNum)
+    .limit(limitNum + 1) // để tính hasMore
     .select(proj)
     .lean();
 
-  const items = docs.slice(0, Number(limit));
-  const hasMore = docs.length > Number(limit);
-  res.json({ items, hasMore, total: items.length });
+  const items   = docs.slice(0, limitNum);
+  const hasMore = docs.length > limitNum;
+
+  // Tổng số bản ghi theo filter (phục vụ phân trang + export)
+  const total   = await Food.countDocuments(match);
+
+  res.json({ items, hasMore, total, limit: limitNum, skip: skipNum });
 }
+
 
 export async function getFood(req, res) {
   const d = await Food.findById(req.params.id).lean();
