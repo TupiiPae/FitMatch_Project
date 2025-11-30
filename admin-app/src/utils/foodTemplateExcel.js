@@ -58,7 +58,7 @@ export const downloadFoodTemplateExcel = async () => {
     cell.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FFE3F2FD" },
+      fgColor: { argb: "a7e2b9" },
     };
     cell.border = {
       top: { style: "thin" },
@@ -125,5 +125,5 @@ export const downloadFoodTemplateExcel = async () => {
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
-  saveAs(blob, "Danh_sach_mon_an.xlsx");
+  saveAs(blob, "Danh_sach_mon_an_template.xlsx");
 };

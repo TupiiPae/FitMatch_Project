@@ -270,7 +270,7 @@ export default function AdminAccountsList() {
           </div>
         </div>
 
-        <div className="card-head">
+        <div className="card-headd">
           <div className="search">
             <i className="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
             <input
@@ -278,9 +278,6 @@ export default function AdminAccountsList() {
               onChange={(e) => setQ(e.target.value)}
               placeholder="Tìm theo username / nickname / trạng thái..."
             />
-          </div>
-          <div className="filters">
-            <div className="hint"></div>
           </div>
         </div>
 

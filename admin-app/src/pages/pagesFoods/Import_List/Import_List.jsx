@@ -295,7 +295,7 @@ export default function ImportList() {
       return;
     }
 
-    // Nhập thêm vào bảng (append vào rows hiện có)
+    // Nhập thêm vào bảng (append vào rows hiện có)Có 1 hàng dữ liệu không hợp lệ
     setRows((prev) => [...prev, ...checkedRows]);
     setSelected([]);
     setModalOpen(false);

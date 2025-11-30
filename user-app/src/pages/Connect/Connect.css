@@ -1,0 +1,1006 @@
+.cn-page {
+  max-width: 1700px; margin: 0 auto; padding: 24px 16px 40px; font-size: 14px;
+}
+
+/* Layout 2 cột – chỉ main scroll */
+.cn-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+
+}
+
+.cn-sidebar {
+  width: 280px;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.cn-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ===== Sidebar card (avatar + menu + filter) ===== */
+
+.cn-filters {
+  background: #020617;
+  border-radius: 16px;
+  border: 1px solid #1f2937;
+  padding: 16px 16px 18px;
+  box-shadow: 0 14px 45px rgba(0, 0, 0, 0.45);
+  color: #e5e7eb;
+}
+
+/* Profile */
+.cn-side-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cn-side-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.cn-side-nickname {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+/* Hàng "Cho phép mọi người tìm kiếm bạn" + toggle */
+.cn-side-discover {
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.cn-side-discover-label {
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.cn-side-sub {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* Toggle switch */
+.cn-switch {
+  position: relative;
+  width: 54px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  background: #111827;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.15s ease;
+}
+
+.cn-switch-knob {
+  width: 24px;
+  height: 18px;
+  border-radius: 999px;
+  background: #9ca3af;
+  transform: translateX(4px);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.cn-switch.is-on {
+  background: #22c55e;
+}
+
+.cn-switch.is-on .cn-switch-knob {
+  transform: translateX(17px);
+  background: #f9fafb;
+}
+
+/* Menu */
+.cn-side-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.cn-side-link {
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: #e5e7eb;
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.cn-side-link:hover {
+  background: #111827;
+}
+
+.cn-side-link.is-active {
+  background: #ef4444;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.cn-side-link-icon {
+  width: 18px;
+  display: flex;
+  justify-content: center;
+}
+
+.cn-side-link-label {
+  flex: 1;
+}
+
+.cn-side-divider {
+  border: none;
+  border-top: 1px solid #1f2937;
+  margin: 6px 0;
+}
+
+/* Filter section trong sidebar */
+.cn-side-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #1f2937;
+}
+
+.cn-side-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f9fafb;
+  margin-bottom: 8px;
+}
+
+.cn-side-field {
+  margin-bottom: 10px;
+}
+
+.cn-filter-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #e5e7eb;
+  margin-bottom: 4px;
+}
+
+/* Toggle 1:1 / Nhóm */
+.cn-connection-mode {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: #020617;
+  border: 1px solid #4b5563;
+  gap: 3px;
+  width: 100%;
+}
+
+.cn-toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #e5e7eb;
+  min-width: 70px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  width: 100%;
+}
+
+.cn-toggle-btn.is-active {
+  background: #ef4444;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Vị trí + Độ tuổi: select */
+.cn-location-select {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  padding: 7px 10px;
+  font-size: 12px;
+  background: #020617;
+  color: #f9fafb;
+}
+
+.cn-location-select:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+}
+
+.cn-filter-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Chip (mục tiêu, giới tính) */
+
+.cn-chip {
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  padding: 5px 9px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  color: #e5e7eb;
+}
+
+.cn-chip.is-active {
+  border-color: #ef4444;
+  background: #221010;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.cn-chip-static {
+  cursor: default;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Nhóm chip filter giới tính */
+.cn-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cn-chip-filter {
+  cursor: pointer;
+}
+
+/* Block Mục tiêu – nổi bật cuối sidebar */
+.cn-side-goal-highlight {
+  margin-top: 14px;
+  padding: 10px 10px 9px;
+  border-radius: 12px;
+  background: radial-gradient(
+      circle at top left,
+      rgba(239, 68, 68, 0.18),
+      rgba(15, 23, 42, 1)
+    );
+  border: 1px solid #ef4444;
+}
+
+.cn-side-goal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cn-side-goal-header i {
+  font-size: 13px;
+  color: #fca5a5;
+}
+
+.cn-side-goal-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fecaca;
+}
+
+.cn-goal-chip-wrap {
+  margin-bottom: 4px;
+}
+
+.cn-goal-hint {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* ===== Main content bên phải ===== */
+
+.cn-main-header {
+  margin-bottom: 10px;
+}
+
+.cn-main-header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #f9fafb;
+  margin: 0 0 4px;
+}
+
+.cn-main-header p {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* Toolbar: tạo nhóm + view toggle */
+.cn-main-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cn-main-toolbar-left {
+  flex: 1;
+}
+
+.cn-result-text {
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.cn-main-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Button tạo nhóm */
+.cn-create-group-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  background: #f00519;
+  color: #ffffff;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.cn-create-group-btn:hover {
+  background: #ef4444;
+}
+
+.cn-create-group-btn:active {
+  transform: translateY(1px);
+}
+
+.cn-create-group-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Toggle grid/list */
+.cn-view-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: #020617;
+  border: 1px solid #4b5563;
+  gap: 3px;
+}
+
+.cn-view-toggle-btn {
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 14px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.cn-view-toggle-btn.is-active {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Search bar trên danh sách */
+.cn-main-search {
+  margin-bottom: 8px;
+}
+
+.cn-search-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  background: #020617;
+}
+
+.cn-search-input i {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.cn-search-input input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+  background: transparent;
+  color: #f9fafb;
+}
+
+.cn-search-input input::placeholder {
+  color: #6b7280;
+}
+
+/* ===== Danh sách card (grid/list) ===== */
+
+.cn-card-list {
+  margin-top: 4px;
+  display: grid;
+  gap: 10px;
+}
+
+.cn-card-list--grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cn-card-list--list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Khung card chung */
+.cn-card {
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  background: #020617;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+  color: #e5e7eb;
+  overflow: hidden;
+}
+
+/* GRID mode (giống hình demo) */
+.cn-card--grid {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ảnh trong card grid */
+.cn-card-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+}
+
+.cn-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cn-card-img-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 12px;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9),
+    rgba(0, 0, 0, 0.4),
+    transparent
+  );
+  color: #f9fafb;
+}
+
+.cn-card-img-name-btn {
+  padding: 0;
+  margin: 0 0 2px;
+  border: none;
+  background: none;
+  color: #f9fafb;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cn-card-img-distance {
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.cn-card-img-badge {
+  margin-top: 4px;
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  font-size: 11px;
+}
+
+/* Thân card grid */
+.cn-card-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1; /* để có thể đẩy actions xuống đáy */
+}
+
+.cn-card-meta-line {
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+/* Chip mục tiêu + mức độ */
+.cn-card-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cn-chip-goal {
+  border-color: #ef4444;
+  background: #221010;
+  color: #fca5a5;
+}
+
+.cn-chip-level {
+  background: #020617;
+  color: #e5e7eb;
+}
+
+/* Bio trong grid */
+.cn-card-bio-text {
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+/* Actions – luôn ở đáy body */
+.cn-card-actions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ===== LIST mode – avatar vuông ===== */
+
+.cn-card--list {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 14px;
+  align-items: stretch;
+}
+
+/* Cột avatar – hình vuông, fill chiều cao card */
+.cn-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #020617;
+  flex-shrink: 0;
+}
+
+.cn-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cn-card-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cn-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cn-nickname-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+/* Tên user trong list – clickable */
+.cn-name-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #f9fafb;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cn-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cn-meta {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Badges */
+.cn-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.cn-badge-group {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.cn-badge-goal {
+  background: #221010;
+  color: #fca5a5;
+}
+
+/* Extra info list mode */
+.cn-goal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cn-frequency {
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.cn-bio {
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+/* Buttons dùng chung */
+
+.cn-btn-primary {
+  border-radius: 4px;
+  border: 1px solid transparent;
+  flex: 1;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #f00519;
+  color: #ffffff;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.cn-btn-primary:hover {
+  background: #ef4444;
+}
+
+.cn-btn-primary:active {
+  transform: translateY(1px);
+}
+
+.cn-btn-ghost {
+  border-radius: 4px;
+  border: 1px solid #4b5563;
+  padding: 2px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  background: transparent;
+  color: #e5e7eb;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cn-btn-ghost:hover {
+  background: #111827;
+  border-color: #ef4444;
+}
+
+/* Empty state */
+.cn-empty {
+  border-radius: 12px;
+  border: 1px dashed #4b5563;
+  padding: 16px;
+  font-size: 13px;
+  color: #9ca3af;
+  background: #020617;
+  margin-top: 6px;
+}
+
+/* Tab "Kết nối của tôi" */
+.cn-myconnections {
+  margin-top: 10px;
+}
+
+.cn-myconnections h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f9fafb;
+  margin-bottom: 4px;
+}
+
+.cn-myconnections-sub {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.cn-myconnections-card {
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: #020617;
+  padding: 14px 16px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+  color: #e5e7eb;
+}
+
+.cn-myconnections-card + .cn-myconnections-card {
+  margin-top: 12px;
+}
+
+.cn-myconnections-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9fafb;
+  margin-bottom: 6px;
+}
+
+.cn-myconnections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.cn-myconnections-placeholder {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ===== Lời mời kết nối (pending) trong TabMyConnections – GRID 3 cột ===== */
+
+.cn-requests-section {
+  margin-top: 8px;
+}
+
+.cn-requests-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9fafb;
+  margin: 0 0 4px;
+}
+
+.cn-requests-desc {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0 0 6px;
+}
+
+/* Danh sách request dạng GRID 3 cột */
+.cn-requests-list {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Mỗi request là 1 card */
+.cn-request-row {
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: #020617;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+}
+
+/* Ảnh user / nhóm ở đầu box */
+.cn-request-thumb {
+  width: 100%;
+  height: 300px;
+  background: #020617;
+  overflow: hidden;
+}
+
+.cn-request-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Nội dung chính dưới ảnh */
+.cn-request-main-col {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.cn-request-type {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.cn-request-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9fafb;
+  margin: 0;
+}
+
+.cn-request-title strong:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cn-request-main {
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.cn-request-meta {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.cn-request-footer {
+  margin-top: 2px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Meta bên trái trong footer */
+.cn-request-footer .cn-request-meta {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Status pill */
+.cn-request-status-pill {
+  align-self: flex-start;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.cn-request-status-pending {
+  background: #221010;
+  color: #fca5a5;
+}
+
+/* Nút hành động nằm cuối card */
+.cn-request-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+/* Chia đôi dòng khi có 2 nút, full width khi chỉ 1 nút */
+.cn-request-actions .cn-btn-primary,
+.cn-request-actions .cn-btn-ghost {
+  min-width: 0;
+}
+
+.cn-request-actions .cn-btn-primary {
+  flex: 1;
+}
+
+.cn-request-actions .cn-btn-ghost {
+  flex: 1;
+}
+
+/* Responsive: 2 cột / 1 cột cho requests */
+@media (max-width: 1200px) {
+  .cn-requests-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .cn-requests-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cn-request-actions {
+    flex-direction: column;
+  }
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 900px) {
+  .cn-page {
+    height: auto;
+  }
+
+  .cn-layout {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .cn-sidebar {
+    width: 100%;
+  }
+
+  .cn-main {
+    overflow: visible;
+  }
+
+  .cn-main-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cn-main-toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .cn-create-group-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .cn-card-list--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .cn-card-list--grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cn-card--list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
