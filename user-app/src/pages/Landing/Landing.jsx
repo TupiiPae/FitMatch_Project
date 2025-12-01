@@ -8,34 +8,54 @@ export default function Landing() {
 
   useEffect(() => {
     if (hash) {
-      // Tìm phần tử có id tương ứng với hash (bỏ dấu # ở đầu)
       const element = document.getElementById(hash.replace("#", ""));
       if (element) {
-        // Cuộn xuống mượt mà
         element.scrollIntoView({ behavior: "smooth" });
       }
     } else {
-        // (Tuỳ chọn) Nếu không có hash thì cuộn lên đầu
-        window.scrollTo(0, 0);
+      window.scrollTo(0, 0);
     }
   }, [hash]);
 
+  // Scroll xuống phần nội dung chính
+  const handleScrollToMain = () => {
+    const el = document.getElementById("main-content");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="lm-wrap">
-      {/* HEADER trong suốt nằm trên video (nếu cần dùng thì mở lại) */}
-      {/* <header className="lm-header">
+      {/* HEADER mới trên đầu giao diện */}
+      <header className="lm-header">
         <div className="lm-header-left" onClick={() => nav("/")}>
-          <img
-            src="/images/fm-logo-iconname.png"
-            alt="FitMatch Logo"
-            className="lm-logo-img"
-          />
+          <div className="lm-header-logo-circle">
+            <img
+              src="/images/logo-fm.png"   // từ pages/logo-fm.png
+              alt="FitMatch logo"
+            />
+          </div>
+          <span className="lm-header-site-title">FITMATCH</span>
         </div>
 
-        <button className="lm-header-login" onClick={() => nav("/login")}>
-          Đăng nhập
-        </button>
-      </header> */}
+        <nav className="lm-header-right">
+          <span
+            className="lm-header-nav"
+            onClick={handleScrollToMain}
+          >
+            Về FitMatch
+          </span>
+          <div className="lm-header-login">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            <span
+            className="lm-header-nav"
+            onClick={() => nav("/login")}  // sau này đổi thành mở modal login cũng được
+          >
+            Đăng nhập
+          </span>
+          </div>
+
+        </nav>
+      </header>
 
       {/* HERO – VIDEO BACKGROUND */}
       <section className="lm-hero">
