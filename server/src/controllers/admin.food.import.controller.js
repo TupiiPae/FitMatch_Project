@@ -81,7 +81,8 @@ const toStrOrUndef = (v) => {
 // dòng hoàn toàn trống (không có giá trị nào khác rỗng)
 function isRowEmpty(raw) {
   if (!raw || typeof raw !== "object") return true;
-  return Object.values(raw).every((v) => {
+  return Object.entries(raw).every(([key, v]) => {
+    if (key === "_rowIndex" || key === "__rowNum__") return true; // không tính
     if (v === undefined || v === null) return true;
     if (typeof v === "string" && v.trim() === "") return true;
     return false;
@@ -90,16 +91,28 @@ function isRowEmpty(raw) {
 
 /** Parse CSV text (simple) */
 function parseCSV(text) {
-  const rows = text.split(/\r?\n/).filter((l) => l.trim() !== "");
-  if (rows.length === 0) return [];
-  const headers = rows[0].split(",").map((h) => h.trim());
+  const lines = text.split(/\r?\n/);
+  if (!lines.length) return [];
+
+  const headerLine = lines[0];
+  if (!headerLine.trim()) return [];
+
+  const headers = headerLine.split(",").map((h) => h.trim());
   const out = [];
-  for (let i = 1; i < rows.length; i++) {
-    const cols = rows[i].split(",");
+
+  // i là index trong mảng lines, dòng thực tế = i + 1 (1-based)
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const cols = line.split(",");
     const obj = {};
+
     headers.forEach((h, idx) => {
       obj[h] = (cols[idx] ?? "").trim();
     });
+
+    // Ghi lại số dòng trong file (1-based)
+    obj._rowIndex = i + 1;
+
     out.push(obj);
   }
   return out;
@@ -110,29 +123,55 @@ function bufferToRows(file) {
   const name = (file?.originalname || "").toLowerCase();
   const buf = file?.buffer;
   if (!buf) throw new Error("Thiếu file dữ liệu (file)");
+
   if (name.endsWith(".csv")) {
     const text = Buffer.from(buf).toString("utf8");
-    return parseCSV(text);
+    return parseCSV(text); // CSV đã gắn _rowIndex
   }
+
   if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
     const wb = XLSX.read(buf, { type: "buffer" });
     const ws = wb.Sheets[wb.SheetNames[0]];
+
     // Bỏ qua 2 dòng đầu: title + dòng trống, dùng dòng 3 làm header
     const range = XLSX.utils.decode_range(ws["!ref"]);
     range.s.r = 2; // bắt đầu từ row index 2 (tức là dòng số 3)
     ws["!ref"] = XLSX.utils.encode_range(range);
-    return XLSX.utils.sheet_to_json(ws, { defval: "", range: range });
+
+    const arr = XLSX.utils.sheet_to_json(ws, {
+      defval: "",
+      range: range,
+    });
+
+    // Gắn lại số dòng thật trong Excel (1-based)
+    arr.forEach((row) => {
+      if (row && typeof row.__rowNum__ === "number") {
+        row._rowIndex = row.__rowNum__ + 1; // Excel row
+      }
+    });
+
+    return arr;
   }
+
   throw new Error("Định dạng không hỗ trợ. Vui lòng dùng CSV hoặc XLSX");
 }
 
 /** Normalize one raw row */
 function normalizeRow(raw) {
   const out = {};
+
+  // map header -> internal key, BỎ QUA meta _rowIndex / __rowNum__
   for (const [k, v] of Object.entries(raw || {})) {
+    if (k === "_rowIndex" || k === "__rowNum__") continue;
     const mapped = keyMap[k] || k;
     out[mapped] = v;
   }
+
+  // Lấy lại số dòng trong file (nếu có)
+  const rowIndex =
+    raw._rowIndex ??
+    (typeof raw.__rowNum__ === "number" ? raw.__rowNum__ + 1 : undefined);
+
   // map servingDesc -> portionName (ưu tiên portionName nếu có)
   if (out.portionName === undefined && out.servingDesc !== undefined) {
     out.portionName = out.servingDesc;
@@ -155,6 +194,10 @@ function normalizeRow(raw) {
     // optional free text
     description: toStrOrUndef(out.description),
   };
+
+  if (rowIndex != null) {
+    doc._rowIndex = rowIndex; // meta: số dòng thật trong file
+  }
 
   return doc;
 }
@@ -213,12 +256,15 @@ export async function validateFoods(req, res) {
     const errors = [];
     normalized.forEach((doc, i) => {
       const errs = validateMinimal(doc);
-      if (errs.length)
+      if (errs.length) {
+        // ưu tiên dùng _rowIndex (số dòng thật trong file)
+        const rowIndex = doc._rowIndex ?? i + 2; // fallback cho an toàn
         errors.push({
-          index: i + 2, // +2 vì header (1) + 1-based
+          index: rowIndex,
           name: doc.name,
           messages: errs,
         });
+      }
     });
 
     return res.json({
@@ -287,12 +333,14 @@ export async function importFoods(req, res) {
     const rowErrors = [];
     normalized.forEach((doc, i) => {
       const errs = validateMinimal(doc);
-      if (errs.length)
+      if (errs.length) {
+        const rowIndex = doc._rowIndex ?? i + 2;
         rowErrors.push({
-          index: i + 2,
+          index: rowIndex,
           name: doc.name,
           messages: errs,
         });
+      }
     });
 
     // Nếu có lỗi dữ liệu → không import

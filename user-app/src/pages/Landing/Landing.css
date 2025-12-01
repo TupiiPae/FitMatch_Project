@@ -133,7 +133,7 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(
-      100deg,
+      130deg,
       rgba(148, 81, 81, 0.75),
       rgba(29, 34, 48, 0.92)
     ),
@@ -194,13 +194,13 @@
   width: 100%;
   max-width: 780px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* Sửa 0.5fr thành 1fr cho chuẩn grid */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
 }
 
 .lm-box {
   position: relative;
-  padding: 24px 22px 20px; /* Tăng padding chút cho thoáng */
+  padding: 24px 22px 20px; 
   border-radius: 4px;
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.55);
@@ -211,12 +211,9 @@
   /* Flex settings */
   display: flex;
   flex-direction: column;
-  align-items: center; /* Căn giữa các phần tử con theo chiều ngang */
-  text-align: center;  /* Căn giữa nội dung văn bản */
-  
-  /* Quan trọng: Tạo chiều cao tối thiểu để box vuông vức và footer đẩy xuống đáy */
+  align-items: center; 
+  text-align: center; 
   min-height: 200px; 
-  
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease,
     box-shadow 0.2s ease, border-color 0.2s ease;
@@ -224,7 +221,7 @@
 
 .lm-box:hover {
   background: rgba(15, 23, 42, 0.7);
-  border-color: #da0b3e; /* Hiệu ứng hover viền đỏ */
+  border-color: #da0b3e;
 }
 
 /* Phần text mô tả */
@@ -327,14 +324,12 @@
   box-shadow: 0 16px 40px rgba(248, 113, 113, 0.6);
 }
 
-/* ========== NỘI DUNG PHÍA DƯỚI (giống thiết kế) ========== */
+/* ========== NỘI DUNG PHÍA DƯỚI ========== */
 
 .lm-main {
-  background: #121212; /* nền tối đồng nhất */
+  background: #121212; 
   color: #f4f4f5;
 }
-
-/* Hero banner trong phần main: ảnh nền + card bo tròn */
 
 .lm-main-hero {
   max-width: 1300px;
@@ -629,12 +624,10 @@ flex: 1;
 .lm-cta-main {
   border-radius: 999px;
   border: none;
-  padding: 12px 30px; /* Tăng kích thước nút một chút cho đẹp */
+  padding: 12px 30px; 
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  
-  /* Đổi nút thành màu đỏ chủ đạo để nổi bật trên nền tối */
   background: #f00519; 
   color: #fff;
   

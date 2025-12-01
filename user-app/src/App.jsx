@@ -32,6 +32,12 @@ import WorkoutCreate from "./pages/Training/WorkoutCreate";
 import SuggestPlanList from "./pages/Training/SuggestPlanList";   
 import SuggestPlanDetail from "./pages/Training/SuggestPlanDetail";
 
+// Connect  
+import ConnectSidebar from "./pages/Connect/ConnectSidebar";
+import CreateTeam from "./pages/Connect/CreateTeam";
+import DuoConnect from "./pages/Connect/DuoConnect";
+import TeamConnect from "./pages/Connect/TeamConnect";
+
 // Layout (Navbar + Footer)
 import AppShell from "./components/layout/AppShell";
 
@@ -99,7 +105,10 @@ export default function App() {
           <Route path="/thong-ke" element={<ThongKe />} />
 
           {/* Kết nối */}
-          <Route path="/ket-noi" element={<KetNoi />} />
+          <Route path="/ket-noi" element={<ConnectSidebar  />} />
+          <Route path="/ket-noi/tao-nhom" element={<CreateTeam />} />
+          <Route path="/ket-noi/duo" element={<DuoConnect />} />
+          <Route path="/ket-noi/nhom" element={<TeamConnect />} />
 
           {/* === DINH DƯỠNG (Đã cập nhật) === */}
           <Route path="/dinh-duong" element={<Navigate to="/dinh-duong/nhat-ky" replace />} />

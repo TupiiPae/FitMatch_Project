@@ -89,6 +89,7 @@ export default function ImportList() {
   const [checking, setChecking] = useState(false);
   const [checkOk, setCheckOk] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]); // danh sách lỗi từ BE
+  const [checkedRows, setCheckedRows] = useState([]);
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -103,6 +104,7 @@ export default function ImportList() {
       setFile(null);
       setCheckOk(false);
       setValidationErrors([]);
+      setCheckedRows([]);
       return;
     }
 
@@ -115,6 +117,7 @@ export default function ImportList() {
     setFile(newFile);
     setCheckOk(false);
     setValidationErrors([]);
+    setCheckedRows([]);
   };
 
   // ===== Drag & Drop handlers =====
@@ -218,6 +221,7 @@ export default function ImportList() {
     setFile(null);
     setCheckOk(false);
     setValidationErrors([]);
+    setCheckedRows([]);
     setModalOpen(true);
   };
   const onCloseModal = () => {
@@ -230,6 +234,7 @@ export default function ImportList() {
     setChecking(true);
     setCheckOk(false);
     setValidationErrors([]);
+    setCheckedRows([]);
 
     try {
       // 1. Gọi BE validate
@@ -247,7 +252,7 @@ export default function ImportList() {
         return; // không parse/import khi còn lỗi
       }
 
-      // 2. Không có lỗi -> parse đọc file để hiển thị preview
+      // 2. Không có lỗi -> parse đọc file để chuẩn bị nhập
       const raw = await readFileToRows(file);
 
       // Bỏ các dòng hoàn toàn trống
@@ -262,15 +267,18 @@ export default function ImportList() {
           "File không có dữ liệu món ăn. Vui lòng nhập ít nhất 1 dòng dữ liệu."
         );
         setCheckOk(false);
+        setCheckedRows([]);
         return;
       }
 
       const normalized = normalizeObjects(filteredRaw);
-      setRows(normalized);
-      setSelected([]);
+      // 👉 Lưu tạm vào checkedRows, KHÔNG đổ vào bảng rows
+      setCheckedRows(normalized);
 
       setCheckOk(true);
-      toast.success("File hợp lệ, sẵn sàng thêm danh sách các món ăn");
+      toast.success(
+        `File hợp lệ, có ${normalized.length} dòng dữ liệu, sẵn sàng nhập`
+      );
     } catch (e) {
       console.error(e);
       const msg = e?.response?.data?.message || e.message || "Không đọc được file";
@@ -282,11 +290,23 @@ export default function ImportList() {
 
   // Bước 2: "Nhập" chỉ đóng modal vì rows đã được set ở bước kiểm tra
   function onImportToTable() {
-    if (!rows.length) {
+    if (!checkOk || !checkedRows.length) {
       toast.error("Chưa có dữ liệu hợp lệ để nhập");
       return;
     }
+
+    // Nhập thêm vào bảng (append vào rows hiện có)Có 1 hàng dữ liệu không hợp lệ
+    setRows((prev) => [...prev, ...checkedRows]);
+    setSelected([]);
     setModalOpen(false);
+
+    toast.success(`Đã nhập ${checkedRows.length} dòng vào danh sách`);
+
+    // Reset trạng thái kiểm tra cho lần sau
+    setFile(null);
+    setCheckOk(false);
+    setCheckedRows([]);
+    setValidationErrors([]);
   }
 
   // ===== Page actions =====
@@ -412,6 +432,9 @@ export default function ImportList() {
               </>
             ) : (
               <>
+                <button className="im-btn" onClick={() => history.back()}>
+                  Hủy
+                </button>
                 <button
                   className="im-btn danger"
                   onClick={onDeleteSelected}
@@ -576,7 +599,7 @@ export default function ImportList() {
 
             {checkOk ? (
               <div className="im-msg ok">
-                Sẵn sàng thêm danh sách các món ăn
+                File hợp lệ, có {checkedRows.length} dòng dữ liệu, sẵn sàng nhập
               </div>
             ) : file ? (
               <div className="im-msg warn">
