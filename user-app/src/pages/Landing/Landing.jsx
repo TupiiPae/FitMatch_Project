@@ -1,11 +1,16 @@
-import { useEffect } from "react"; 
-import { useNavigate, useLocation } from "react-router-dom"
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import api from "../../lib/api";
 import "./Landing.css";
 
 export default function Landing() {
   const nav = useNavigate();
   const { hash } = useLocation();
 
+  const [user, setUser] = useState(null);      // { username }
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Scroll theo hash (#main-content, ...)
   useEffect(() => {
     if (hash) {
       const element = document.getElementById(hash.replace("#", ""));
@@ -17,10 +22,68 @@ export default function Landing() {
     }
   }, [hash]);
 
-  // Scroll xuống phần nội dung chính
+  // Kiểm tra trạng thái đăng nhập (token + username)
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    // Ưu tiên dùng username cache trong localStorage để khỏi gọi API
+    const cachedName =
+      localStorage.getItem("username") || localStorage.getItem("nickname");
+    if (cachedName) {
+      setUser({ username: cachedName });
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await api.get("/auth/me");
+        const payload = res?.data || res;
+        const u = payload?.user || payload?.data || payload;
+
+        const username =
+          u?.username || u?.nickname || u?.displayName || u?.email || "";
+
+        if (!cancelled && username) {
+          setUser({ username });
+          localStorage.setItem("username", username);
+        }
+      } catch {
+        if (!cancelled) setUser(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const isLoggedIn = !!user;
+
+  // Scroll xuống phần giới thiệu
   const handleScrollToMain = () => {
     const el = document.getElementById("main-content");
     if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleGoHome = () => {
+    nav("/home");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("onboarded");
+    localStorage.removeItem("username");
+    localStorage.removeItem("nickname");
+    setUser(null);
+    setUserMenuOpen(false);
+    nav("/"); // vẫn ở Landing nhưng quay về state chưa đăng nhập
   };
 
   return (
@@ -29,31 +92,59 @@ export default function Landing() {
       <header className="lm-header">
         <div className="lm-header-left" onClick={() => nav("/")}>
           <div className="lm-header-logo-circle">
-            <img
-              src="/images/logo-fm.png"   // từ pages/logo-fm.png
-              alt="FitMatch logo"
-            />
+            <img src="/images/logo-fm.png" alt="FitMatch logo" />
           </div>
           <span className="lm-header-site-title">FITMATCH</span>
         </div>
 
         <nav className="lm-header-right">
-          <span
-            className="lm-header-nav"
-            onClick={handleScrollToMain}
-          >
+          {isLoggedIn && (
+            <span className="lm-header-nav" onClick={handleGoHome}>
+              Quay lại trang chủ
+            </span>
+          )}
+
+          <span className="lm-header-nav" onClick={handleScrollToMain}>
             Về FitMatch
           </span>
-          <div className="lm-header-login">
-            <i class="fa-solid fa-arrow-right-to-bracket"></i>
-            <span
-            className="lm-header-nav"
-            onClick={() => nav("/login")}  // sau này đổi thành mở modal login cũng được
-          >
-            Đăng nhập
-          </span>
-          </div>
 
+          {isLoggedIn ? (
+            <div
+              className="lm-header-user"
+              onClick={() => setUserMenuOpen((v) => !v)}
+            >
+              <i className="fa-solid fa-user" />
+              <span className="lm-header-username">
+                {user.username || "Tài khoản"}
+              </span>
+              <i
+                className={`fa-solid fa-caret-down ${
+                  userMenuOpen ? "is-open" : ""
+                }`}
+              />
+              {userMenuOpen && (
+                <div
+                  className="lm-header-dropdown"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="lm-header-dropdown-item lm-header-dropdown-logout"
+                    onClick={handleLogout}
+                  >
+                    Đăng xuất
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              className="lm-header-nav"
+              onClick={() => nav("/login")}
+            >
+              <i className="fa-solid fa-arrow-right-to-bracket" />
+              <span className="lm-header-nav-text">Đăng nhập</span>
+            </div>
+          )}
         </nav>
       </header>
 
@@ -82,73 +173,105 @@ export default function Landing() {
             <p className="lm-hero-slogan">CỘNG SỰ SỨC KHỎE CỦA BẠN</p>
           </div>
 
-          {/* Hai box Đăng ký & Đăng nhập – vuông */}
-          <div className="lm-hero-boxes">
-            {/* BOX ĐĂNG KÝ */}
-            <div
-              className="lm-box lm-box-register"
-              onClick={() => nav("/register")}
-            >
-              <p className="lm-box-text">
-                Tạo tài khoản và bắt đầu hành trình cải thiện sức khỏe của bạn.
-              </p>
-              <div className="lm-box-header">
-                <div className="lm-box-icon">
-                  {/* icon tờ giấy + dấu + */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="30"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="12" y1="13" x2="12" y2="19" />
-                    <line x1="9" y1="16" x2="15" y2="16" />
-                  </svg>
+          {/* BOXES: tùy trạng thái đăng nhập */}
+          {!isLoggedIn ? (
+            <div className="lm-hero-boxes">
+              {/* BOX ĐĂNG KÝ */}
+              <div
+                className="lm-box lm-box-register"
+                onClick={() => nav("/register")}
+              >
+                <p className="lm-box-text">
+                  Tạo tài khoản và bắt đầu hành trình cải thiện sức khỏe của bạn.
+                </p>
+                <div className="lm-box-header">
+                  <div className="lm-box-icon">
+                    {/* icon tờ giấy + dấu + */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="30"
+                      height="30"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="12" y1="13" x2="12" y2="19" />
+                      <line x1="9" y1="16" x2="15" y2="16" />
+                    </svg>
+                  </div>
+                  <div className="lm-box-title">Đăng ký ngay</div>
                 </div>
-                <div className="lm-box-title">Đăng ký ngay</div>
               </div>
 
-
-            </div>
-
-            {/* BOX ĐĂNG NHẬP */}
-            <div
-              className="lm-box lm-box-login"
-              onClick={() => nav("/login")}
-            >
-              <p className="lm-box-text">
-                Quay lại theo dõi dinh dưỡng, luyện tập và tiến độ mỗi ngày.
-              </p>
-              <div className="lm-box-header">
-                <div className="lm-box-icon">
-                  {/* icon login */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="30"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                    <polyline points="10 17 15 12 10 7" />
-                    <line x1="15" y1="12" x2="3" y2="12" />
-                  </svg>
+              {/* BOX ĐĂNG NHẬP */}
+              <div
+                className="lm-box lm-box-login"
+                onClick={() => nav("/login")}
+              >
+                <p className="lm-box-text">
+                  Quay lại theo dõi dinh dưỡng, luyện tập và tiến độ mỗi ngày.
+                </p>
+                <div className="lm-box-header">
+                  <div className="lm-box-icon">
+                    {/* icon login */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="30"
+                      height="30"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                      <polyline points="10 17 15 12 10 7" />
+                      <line x1="15" y1="12" x2="3" y2="12" />
+                    </svg>
+                  </div>
+                  <div className="lm-box-title">Đăng nhập</div>
                 </div>
-                <div className="lm-box-title">Đăng nhập</div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="lm-hero-boxes lm-hero-boxes-single">
+              {/* BOX QUAY LẠI TRANG CHỦ */}
+              <div
+                className="lm-box lm-box-login lm-box-backhome"
+                onClick={handleGoHome}
+              >
+                <p className="lm-box-text">
+                  Quay lại trang chủ để tiếp tục theo dõi dinh dưỡng, luyện tập
+                  và tiến độ mỗi ngày.
+                </p>
+                <div className="lm-box-header">
+                  <div className="lm-box-icon">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="30"
+                      height="30"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 12l9-9 9 9" />
+                      <path d="M9 21V9h6v12" />
+                    </svg>
+                  </div>
+                  <div className="lm-box-title">Quay lại trang chủ</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

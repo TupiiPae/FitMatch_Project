@@ -21,7 +21,7 @@ export default function AdminNotFound() {
         </p>
 
         <div className="admin404-motivation">
-          "Có vẻ như Dev trang đang đi tập gym nên chưa có phần này, quay lại sau nhé!"
+          "Có vẻ như Dev đang đi tập gym nên chưa sửa lỗi trang này, vui lòng thử lại sau nhé!"
         </div>
 
         {/* Nút chính: về Dashboard admin */}

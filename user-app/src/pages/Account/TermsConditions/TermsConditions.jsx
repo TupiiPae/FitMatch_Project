@@ -4,12 +4,12 @@ import "./TermsConditions.css";
 
 export default function TermsConditions() {
   return (
-    <article className="tc-terms">
+    <article className="tcd-terms">
 
       {/* 1 */}
-      <section id="tc-sec-1" className="tc-section">
-        <h2 className="tc-h2">1. THỎA THUẬN VỀ CÁC ĐIỀU KHOẢN</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-1" className="tcd-section">
+        <h2 className="tcd-h2">1. THỎA THUẬN VỀ CÁC ĐIỀU KHOẢN</h2>
+        <p className="tcd-p">
           Các Điều khoản Sử dụng này cấu thành một thỏa thuận pháp lý ràng buộc
           giữa bạn, dù là cá nhân hay đại diện cho một tổ chức (&quot;bạn&quot;)
           và FitMatch (&quot;Công ty&quot;, &quot;chúng tôi&quot;), liên quan
@@ -18,7 +18,7 @@ export default function TermsConditions() {
           di động nào liên quan, được liên kết hoặc kết nối với nó (gọi chung là
           &quot;Trang web/Ứng dụng&quot;).
         </p>
-        <p className="tc-p">
+        <p className="tcd-p">
           Bằng cách truy cập Trang web/Ứng dụng, bạn xác nhận rằng bạn đã đọc,
           hiểu và đồng ý bị ràng buộc bởi tất cả các Điều khoản Sử dụng này.
           <strong>
@@ -27,7 +27,7 @@ export default function TermsConditions() {
             CẤM SỬ DỤNG TRANG WEB/ỨNG DỤNG VÀ PHẢI NGỪNG SỬ DỤNG NGAY LẬP TỨC.
           </strong>
         </p>
-        <p className="tc-p">
+        <p className="tcd-p">
           Chúng tôi có quyền, theo quyết định riêng của mình, thực hiện các thay
           đổi hoặc sửa đổi đối với các Điều khoản Sử dụng này bất cứ lúc nào và
           vì bất kỳ lý do gì. Chúng tôi sẽ thông báo cho bạn về bất kỳ thay đổi
@@ -37,9 +37,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 2 */}
-      <section id="tc-sec-2" className="tc-section">
-        <h2 className="tc-h2">2. QUYỀN SỞ HỮU TRÍ TUỆ</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-2" className="tcd-section">
+        <h2 className="tcd-h2">2. QUYỀN SỞ HỮU TRÍ TUỆ</h2>
+        <p className="tcd-p">
           Trừ khi có chỉ định khác, Trang web/Ứng dụng là tài sản độc quyền của
           chúng tôi. Tất cả mã nguồn, cơ sở dữ liệu, chức năng, phần mềm, thiết
           kế website, âm thanh, video, văn bản, hình ảnh và đồ họa trên Trang
@@ -48,7 +48,7 @@ export default function TermsConditions() {
           hữu hoặc kiểm soát của chúng tôi hoặc được cấp phép cho chúng tôi, và
           được bảo vệ bởi luật bản quyền và thương hiệu.
         </p>
-        <p className="tc-p">
+        <p className="tcd-p">
           Nội dung và Nhãn hiệu được cung cấp trên Trang web &quot;NGUYÊN
           TRẠNG&quot; chỉ để bạn tham khảo và sử dụng cá nhân. Không được phép
           sao chép, tái tạo, tổng hợp, tái xuất bản, tải lên, đăng, hiển thị
@@ -59,10 +59,10 @@ export default function TermsConditions() {
       </section>
 
       {/* 3 */}
-      <section id="tc-sec-3" className="tc-section">
-        <h2 className="tc-h2">3. TUYÊN BỐ CỦA NGƯỜI DÙNG</h2>
-        <p className="tc-p">Bằng cách sử dụng Trang web, bạn tuyên bố và bảo đảm rằng:</p>
-        <ul className="tc-list">
+      <section id="tcd-sec-3" className="tcd-section">
+        <h2 className="tcd-h2">3. TUYÊN BỐ CỦA NGƯỜI DÙNG</h2>
+        <p className="tcd-p">Bằng cách sử dụng Trang web, bạn tuyên bố và bảo đảm rằng:</p>
+        <ul className="tcd-list">
           <li>Bạn có năng lực pháp lý và đồng ý tuân thủ các Điều khoản này.</li>
           <li>
             Bạn không phải là người chưa thành niên tại khu vực bạn cư trú (hoặc
@@ -84,9 +84,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 4 */}
-      <section id="tc-sec-4" className="tc-section">
-        <h2 className="tc-h2">4. ĐĂNG KÝ NGƯỜI DÙNG</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-4" className="tcd-section">
+        <h2 className="tcd-h2">4. ĐĂNG KÝ NGƯỜI DÙNG</h2>
+        <p className="tcd-p">
           Bạn có thể cần đăng ký tài khoản để sử dụng các tính năng quản lý dinh
           dưỡng và ghép đôi (matching). Bạn đồng ý giữ mật khẩu của mình bí mật
           và chịu trách nhiệm cho tất cả các hoạt động sử dụng tài khoản và mật
@@ -96,19 +96,19 @@ export default function TermsConditions() {
       </section>
 
       {/* 5 */}
-      <section id="tc-sec-5" className="tc-section">
-        <h2 className="tc-h2">5. PHÍ VÀ THANH TOÁN</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-5" className="tcd-section">
+        <h2 className="tcd-h2">5. PHÍ VÀ THANH TOÁN</h2>
+        <p className="tcd-p">
           FitMatch có thể cung cấp các gói dịch vụ trả phí (Premium) để mở khóa
           các tính năng nâng cao. Chúng tôi chấp nhận các hình thức thanh toán
           sau:
         </p>
-        <ul className="tc-list">
+        <ul className="tcd-list">
           <li>Thẻ Tín dụng / Ghi nợ (Visa, Mastercard)</li>
           <li>Ví điện tử (Momo, ZaloPay, v.v. - tùy tích hợp)</li>
           <li>Thanh toán qua kho ứng dụng (Apple Pay, Google Pay)</li>
         </ul>
-        <p className="tc-p">
+        <p className="tcd-p">
           Bạn đồng ý cung cấp thông tin thanh toán và tài khoản hiện tại, đầy đủ
           và chính xác cho tất cả các giao dịch mua hàng. Bạn đồng ý thanh toán
           mọi khoản phí theo mức giá có hiệu lực cho giao dịch mua của mình và
@@ -117,9 +117,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 6 */}
-      <section id="tc-sec-6" className="tc-section">
-        <h2 className="tc-h2">6. THAY ĐỔI GIÁ CẢ</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-6" className="tcd-section">
+        <h2 className="tcd-h2">6. THAY ĐỔI GIÁ CẢ</h2>
+        <p className="tcd-p">
           Chúng tôi bảo lưu quyền điều chỉnh giá cho các gói đăng ký theo thời
           gian. Chúng tôi sẽ thông báo trước cho bạn về những thay đổi này. Việc
           bạn tiếp tục sử dụng dịch vụ sau khi thay đổi giá có hiệu lực đồng
@@ -128,9 +128,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 7 */}
-      <section id="tc-sec-7" className="tc-section">
-        <h2 className="tc-h2">7. HỦY ĐĂNG KÝ &amp; HOÀN TIỀN</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-7" className="tcd-section">
+        <h2 className="tcd-h2">7. HỦY ĐĂNG KÝ &amp; HOÀN TIỀN</h2>
+        <p className="tcd-p">
           Tất cả các giao dịch mua là không hoàn lại. Bạn có thể hủy đăng ký của
           mình bất cứ lúc nào trong phần Cài đặt. Việc hủy sẽ có hiệu lực vào
           cuối thời hạn trả phí hiện tại và bạn sẽ tiếp tục có quyền truy cập
@@ -139,14 +139,14 @@ export default function TermsConditions() {
       </section>
 
       {/* 8 */}
-      <section id="tc-sec-8" className="tc-section">
-        <h2 className="tc-h2">8. CÁC HOẠT ĐỘNG BỊ CẤM</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-8" className="tcd-section">
+        <h2 className="tcd-h2">8. CÁC HOẠT ĐỘNG BỊ CẤM</h2>
+        <p className="tcd-p">
           Bạn không được sử dụng Trang web cho bất kỳ mục đích nào khác ngoài
           mục đích mà chúng tôi cung cấp. Đặc biệt, vì FitMatch là nền tảng kết
           nối người dùng, nghiêm cấm các hành vi:
         </p>
-        <ul className="tc-list">
+        <ul className="tcd-list">
           <li>
             Sử dụng thông tin từ Trang web để quấy rối, lạm dụng, hoặc làm hại
             người khác (bao gồm rình rập, quấy rối tình dục).
@@ -169,16 +169,16 @@ export default function TermsConditions() {
       </section>
 
       {/* 9 */}
-      <section id="tc-sec-9" className="tc-section">
-        <h2 className="tc-h2">
+      <section id="tcd-sec-9" className="tcd-section">
+        <h2 className="tcd-h2">
           9. NỘI DUNG DO NGƯỜI DÙNG TẠO (CONTRIBUTIONS)
         </h2>
-        <p className="tc-p">
+        <p className="tcd-p">
           FitMatch cho phép bạn đăng tải hồ sơ, hình ảnh, chỉ số cơ thể, mục tiêu
           tập luyện (&quot;Đóng góp&quot;). Khi bạn tạo hoặc cung cấp bất kỳ Đóng
           góp nào, bạn tuyên bố và bảo đảm rằng:
         </p>
-        <ul className="tc-list">
+        <ul className="tcd-list">
           <li>
             Đóng góp của bạn không vi phạm quyền sở hữu trí tuệ của bên thứ ba.
           </li>
@@ -198,9 +198,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 10 */}
-      <section id="tc-sec-10" className="tc-section">
-        <h2 className="tc-h2">10. GIẤY PHÉP ĐÓNG GÓP</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-10" className="tcd-section">
+        <h2 className="tcd-h2">10. GIẤY PHÉP ĐÓNG GÓP</h2>
+        <p className="tcd-p">
           Bằng cách đăng Đóng góp của bạn lên bất kỳ phần nào của Trang web, bạn
           tự động cấp cho chúng tôi quyền không hạn chế, không giới hạn, không
           thể thu hồi, vĩnh viễn, miễn phí bản quyền, toàn cầu để lưu trữ, sử
@@ -211,9 +211,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 11 */}
-      <section id="tc-sec-11" className="tc-section">
-        <h2 className="tc-h2">11. MẠNG XÃ HỘI</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-11" className="tcd-section">
+        <h2 className="tcd-h2">11. MẠNG XÃ HỘI</h2>
+        <p className="tcd-p">
           Bạn có thể liên kết tài khoản FitMatch với tài khoản bên thứ ba
           (Facebook, Google...). Bằng cách này, bạn cho phép chúng tôi truy cập
           và lưu trữ nội dung từ Tài khoản Bên thứ ba đó (như danh sách bạn bè,
@@ -222,9 +222,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 12 */}
-      <section id="tc-sec-12" className="tc-section">
-        <h2 className="tc-h2">12. QUẢN LÝ TRANG WEB</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-12" className="tcd-section">
+        <h2 className="tcd-h2">12. QUẢN LÝ TRANG WEB</h2>
+        <p className="tcd-p">
           Chúng tôi bảo lưu quyền: (1) giám sát Trang web để phát hiện các vi
           phạm; (2) thực hiện hành động pháp lý thích hợp đối với bất kỳ ai vi
           phạm; (3) từ chối, hạn chế truy cập hoặc xóa bất kỳ Đóng góp nào của
@@ -233,9 +233,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 13 */}
-      <section id="tc-sec-13" className="tc-section">
-        <h2 className="tc-h2">13. CHÍNH SÁCH BẢO MẬT</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-13" className="tcd-section">
+        <h2 className="tcd-h2">13. CHÍNH SÁCH BẢO MẬT</h2>
+        <p className="tcd-p">
           Chúng tôi quan tâm đến quyền riêng tư và bảo mật dữ liệu. Vui lòng xem
           Chính sách Bảo mật của chúng tôi. Bằng cách sử dụng Trang web, bạn
           đồng ý bị ràng buộc bởi Chính sách Bảo mật của chúng tôi. Dữ liệu của
@@ -244,9 +244,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 14 */}
-      <section id="tc-sec-14" className="tc-section">
-        <h2 className="tc-h2">14. VI PHẠM BẢN QUYỀN</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-14" className="tcd-section">
+        <h2 className="tcd-h2">14. VI PHẠM BẢN QUYỀN</h2>
+        <p className="tcd-p">
           Chúng tôi tôn trọng quyền sở hữu trí tuệ của người khác. Nếu bạn tin
           rằng bất kỳ tài liệu nào trên FitMatch vi phạm bản quyền bạn sở hữu,
           vui lòng thông báo ngay cho chúng tôi theo thông tin liên hệ bên dưới.
@@ -254,9 +254,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 15 */}
-      <section id="tc-sec-15" className="tc-section">
-        <h2 className="tc-h2">15. SỬA ĐỔI VÀ GIÁN ĐOẠN</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-15" className="tcd-section">
+        <h2 className="tcd-h2">15. SỬA ĐỔI VÀ GIÁN ĐOẠN</h2>
+        <p className="tcd-p">
           Chúng tôi không đảm bảo Trang web sẽ hoạt động mọi lúc. Chúng tôi có
           thể gặp sự cố phần cứng, phần mềm hoặc cần bảo trì, dẫn đến gián đoạn,
           chậm trễ hoặc lỗi. Chúng tôi có quyền thay đổi, sửa đổi, cập nhật, tạm
@@ -266,9 +266,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 16 */}
-      <section id="tc-sec-16" className="tc-section">
-        <h2 className="tc-h2">16. LUẬT ĐIỀU CHỈNH</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-16" className="tcd-section">
+        <h2 className="tcd-h2">16. LUẬT ĐIỀU CHỈNH</h2>
+        <p className="tcd-p">
           Các Điều khoản này sẽ được điều chỉnh và xác định theo luật pháp của
           Việt Nam (hoặc quốc gia sở tại nơi FitMatch đặt trụ sở chính). Bạn và
           FitMatch đồng ý rằng tòa án tại Việt Nam sẽ có thẩm quyền độc quyền để
@@ -277,9 +277,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 17 */}
-      <section id="tc-sec-17" className="tc-section">
-        <h2 className="tc-h2">17. GIẢI QUYẾT TRANH CHẤP</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-17" className="tcd-section">
+        <h2 className="tcd-h2">17. GIẢI QUYẾT TRANH CHẤP</h2>
+        <p className="tcd-p">
           Mọi tranh chấp phát sinh từ hoặc liên quan đến hợp đồng này, bao gồm
           mọi câu hỏi về sự tồn tại, hiệu lực hoặc chấm dứt của nó, trước hết sẽ
           được giải quyết thông qua thương lượng thiện chí. Nếu không thành
@@ -288,16 +288,16 @@ export default function TermsConditions() {
       </section>
 
       {/* 18 */}
-      <section id="tc-sec-18" className="tc-section">
-        <h2 className="tc-h2">18. TỪ CHỐI TRÁCH NHIỆM (QUAN TRỌNG)</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-18" className="tcd-section">
+        <h2 className="tcd-h2">18. TỪ CHỐI TRÁCH NHIỆM (QUAN TRỌNG)</h2>
+        <p className="tcd-p">
           <strong>VỀ Y TẾ:</strong> TRANG WEB ĐƯỢC CUNG CẤP TRÊN CƠ SỞ
           &quot;NGUYÊN TRẠNG&quot;. FITMATCH KHÔNG PHẢI LÀ TỔ CHỨC Y TẾ. CÁC GỢI
           Ý VỀ DINH DƯỠNG VÀ TẬP LUYỆN CHỈ MANG TÍNH THAM KHẢO VÀ KHÔNG THAY THẾ
           CHO LỜI KHUYÊN CỦA BÁC SĨ. BẠN TỰ CHỊU RỦI RO KHI THỰC HIỆN CÁC BÀI
           TẬP.
         </p>
-        <p className="tc-p">
+        <p className="tcd-p">
           <strong>VỀ KẾT NỐI (MATCHING):</strong> FITMATCH KHÔNG CHỊU TRÁCH
           NHIỆM CHO BẤT KỲ TƯƠNG TÁC NÀO GIỮA BẠN VÀ NGƯỜI DÙNG KHÁC. CHÚNG TÔI
           KHÔNG KIỂM TRA LÝ LỊCH HÌNH SỰ CỦA NGƯỜI DÙNG. BẠN CẦN THẬN TRỌNG KHI
@@ -306,9 +306,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 19 */}
-      <section id="tc-sec-19" className="tc-section">
-        <h2 className="tc-h2">19. GIỚI HẠN TRÁCH NHIỆM</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-19" className="tcd-section">
+        <h2 className="tcd-h2">19. GIỚI HẠN TRÁCH NHIỆM</h2>
+        <p className="tcd-p">
           TRONG MỌI TRƯỜNG HỢP, CHÚNG TÔI SẼ KHÔNG CHỊU TRÁCH NHIỆM VỚI BẠN HOẶC
           BẤT KỲ BÊN THỨ BA NÀO VỀ BẤT KỲ THIỆT HẠI TRỰC TIẾP, GIÁN TIẾP, NGẪU
           NHIÊN, ĐẶC BIỆT HOẶC HẬU QUẢ NÀO (BAO GỒM MẤT LỢI NHUẬN, MẤT DỮ LIỆU)
@@ -317,9 +317,9 @@ export default function TermsConditions() {
       </section>
 
       {/* 20 */}
-      <section id="tc-sec-20" className="tc-section">
-        <h2 className="tc-h2">20. BỒI THƯỜNG</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-20" className="tcd-section">
+        <h2 className="tcd-h2">20. BỒI THƯỜNG</h2>
+        <p className="tcd-p">
           Bạn đồng ý bảo vệ, bồi thường và giữ cho chúng tôi (bao gồm các công ty
           con, chi nhánh và nhân viên) không bị tổn hại trước bất kỳ tổn thất,
           thiệt hại, trách nhiệm pháp lý, khiếu nại hoặc yêu cầu nào (bao gồm phí
@@ -331,14 +331,14 @@ export default function TermsConditions() {
       </section>
 
       {/* 21 */}
-      <section id="tc-sec-21" className="tc-section">
-        <h2 className="tc-h2">21. LIÊN HỆ VỚI CHÚNG TÔI</h2>
-        <p className="tc-p">
+      <section id="tcd-sec-21" className="tcd-section">
+        <h2 className="tcd-h2">21. LIÊN HỆ VỚI CHÚNG TÔI</h2>
+        <p className="tcd-p">
           Để giải quyết khiếu nại liên quan đến Trang web hoặc để nhận thêm
           thông tin về việc sử dụng Trang web, vui lòng liên hệ với chúng tôi
           tại:
         </p>
-        <p className="tc-p">
+        <p className="tcd-p">
           <strong>FitMatch Support Team – Email: fitmatchservice@gmail.com</strong>
         </p>
       </section>

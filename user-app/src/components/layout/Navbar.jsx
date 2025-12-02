@@ -185,12 +185,8 @@ export default function Navbar({
           <nav className={`fm-menu ${mobileOpen ? "is-open" : ""}`} aria-label="Chính">
             <ul className="fm-menu__list">
               <li className="fm-menu__item">
-                <NavLink to="/thong-ke" className="fm-link">Thống kê</NavLink>
+                <NavLink to="/home" className="fm-link">Trang chủ</NavLink>
               </li>
-              <li className="fm-menu__item">
-                <NavLink to="/ket-noi" className="fm-link">Kết nối</NavLink>
-              </li>
-
               {/* DINH DƯỠNG (Mega-menu) */}
               <li className={`fm-menu__item has-dropdown ${isDinhDuongActive ? 'is-active-parent' : ''}`}>
                 <NavLink to="/dinh-duong/nhat-ky" className="fm-link">
@@ -324,7 +320,12 @@ export default function Navbar({
                   </div>
                 </div>
               </li>
-
+              <li className="fm-menu__item">
+                <NavLink to="/ket-noi" className="fm-link">Kết nối</NavLink>
+              </li>
+              <li className="fm-menu__item">
+                <NavLink to="/thong-ke" className="fm-link">Thống kê</NavLink>
+              </li>
               <li className="fm-menu__item">
                 <NavLink to="/ung-dung" className="fm-link">Ứng dụng</NavLink>
               </li>

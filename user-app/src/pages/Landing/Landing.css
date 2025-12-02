@@ -78,10 +78,78 @@
   text-transform: uppercase;
 }
 
-.lm-header-login {
+/* ===== USER DROPDOWN TRÊN HEADER ===== */
+
+.lm-header-user {
+  position: relative;                /* để dropdown bám theo */
   display: flex;
   align-items: center;
-  gap: 6px; 
+  gap: 8px;
+  cursor: pointer;
+  color: #000;                       /* text màu đen đồng bộ header */
+}
+
+.lm-header-user i {
+  color: #000;                       /* icon user + caret màu đen */
+}
+
+.lm-header-username {
+  font-size: 16px;
+  font-weight: 500;
+  text-transform: none;              /* để username không bị UPPERCASE nếu bạn muốn */
+  color: #000;
+}
+
+/* icon caret quay xuống khi mở */
+.lm-header-user .fa-caret-down {
+  font-size: 14px;
+  transition: transform 0.18s ease;
+}
+
+.lm-header-user .fa-caret-down.is-open {
+  transform: rotate(180deg);
+}
+
+/* dropdown thả ngoài, không đẩy header */
+.lm-header-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 6px 0;
+  z-index: 40;                       /* cao hơn header */
+}
+
+.lm-header-dropdown-item {
+  padding: 8px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lm-header-dropdown-item:hover {
+  background: #f9fafb;
+}
+
+.lm-header-dropdown-logout {
+  color: #b91c1c;
+  font-weight: 500;
+}
+
+.lm-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #000;
+  position: relative;
 }
 .lm-header-login i {
   color: #000;
@@ -196,6 +264,13 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
+}
+
+.lm-hero-boxes-single {
+  grid-template-columns: 1fr;      
+  max-width: 480px;               
+  margin: 0 auto;             
+  justify-items: stretch;
 }
 
 .lm-box {

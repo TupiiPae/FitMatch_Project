@@ -34,7 +34,7 @@ export default function NotFound() {
         </svg>
 
         <h1 className="nf-title">Ôi! Bạn bị sập tạ hả</h1>
-        <h2 className="nf-subtitle">Nhưng đừng lo, chúng tôi sẽ giúp bạn!</h2>
+        <h2 className="nf-subtitle">Chúng tôi sẽ đến giúp bạn ngay, hãy thử lại sau nhé!</h2>
 
         <button className="nf-cta" onClick={handleGoHome}>
           <span>Về Trang Chủ</span>

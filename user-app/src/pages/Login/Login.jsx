@@ -57,9 +57,19 @@ export default function Login() {
         password,
         remember: false,
       });
+
+      const u = data.user || {};
       localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.user?.role || "user");
-      localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
+      localStorage.setItem("role", u.role || "user");
+      localStorage.setItem("onboarded", u.onboarded ? "1" : "0");
+
+      const usernameToStore =
+        u.username || u.nickname || u.displayName || u.email || "";
+      if (usernameToStore) {
+        localStorage.setItem("username", usernameToStore);
+      } else {
+        localStorage.removeItem("username");
+      }
       toast.success("Đăng nhập thành công!");
       if (data.user?.onboarded) nav("/home");
       else nav("/onboarding");
@@ -100,9 +110,19 @@ export default function Login() {
           code: resp?.code || null,
         };
         const { data } = await api.post("/auth/google", payload);
+
+        const u = data.user || {};
         localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.user?.role || "user");
-        localStorage.setItem("onboarded", data.user?.onboarded ? "1" : "0");
+        localStorage.setItem("role", u.role || "user");
+        localStorage.setItem("onboarded", u.onboarded ? "1" : "0");
+
+        const usernameToStore =
+          u.username || u.nickname || u.displayName || u.email || "";
+        if (usernameToStore) {
+          localStorage.setItem("username", usernameToStore);
+        } else {
+          localStorage.removeItem("username");
+        }
         toast.success("Đăng nhập bằng Google thành công!");
         if (data.user?.onboarded) nav("/home");
         else nav("/onboarding");
