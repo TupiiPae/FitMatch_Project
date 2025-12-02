@@ -15,6 +15,7 @@ import AccountSettings from "./pages/Account/AccountSettings";
 import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy"; 
 import TermsCondiotionsPage from "./pages/Account/TermsConditions";
 import ContactPage from "./pages/Account/Contact/Contact";
+import FAQPage from "./pages/Account/FAQ";
 
 // Diary
 import RecordMeal from "./pages/Nutrition/RecordMeal";
@@ -145,6 +146,7 @@ export default function App() {
           <Route path="/tai-khoan/chinh-sach-bao-mat" element={<PrivacyPolicyPage />} />
           <Route path="/tai-khoan/dieu-khoan-dich-vu" element={<TermsCondiotionsPage />} />
           <Route path="/tai-khoan/lien-he" element={<ContactPage></ContactPage>} />
+          <Route path="/tai-khoan/faq" element={<FAQPage />} />
 
           {/* Khác */}
           {/* <Route path="/cong-dong" element={<CongDong />} /> */} {/* Đã xóa */}
