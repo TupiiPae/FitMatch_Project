@@ -636,3 +636,29 @@ export const listAuditLogs = async (params = {}) => {
   // BE nên trả responseOk({ items, total, limit, skip })
   return r.data?.data ?? r.data;
 };
+
+// =========================
+// CONTACT MESSAGES (ADMIN)
+// =========================
+
+export const listContactMessagesAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/contact-messages", { params });
+  return r.data?.data ?? r.data; // { items, total, limit, skip }
+};
+
+export const getContactMessageAdmin = async (id) => {
+  const r = await api.get(`/api/admin/contact-messages/${id}`);
+  return r.data?.data ?? r.data;
+};
+
+export const updateContactMessageStatus = async (id, status) => {
+  const r = await api.patch(`/api/admin/contact-messages/${id}`, {
+    status,
+  });
+  return r.data?.data ?? r.data;
+};
+
+export const deleteContactMessageAdmin = async (id) => {
+  const r = await api.delete(`/api/admin/contact-messages/${id}`);
+  return r.data?.data ?? r.data;
+};

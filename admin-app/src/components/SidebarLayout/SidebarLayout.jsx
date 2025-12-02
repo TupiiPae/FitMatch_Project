@@ -1,12 +1,31 @@
 // admin-app/src/components/SidebarLayout/SidebarLayout.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import "./SidebarLayout.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import logoFitmatch from "../../assets/fm-logo-name.png";
 import { toast } from "react-toastify";
 import { listAuditLogs } from "../../lib/api.js";
+
+/* ---------- MUI imports ---------- */
+import List from "@mui/material/List";
+import ListSubheader from "@mui/material/ListSubheader";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Collapse from "@mui/material/Collapse";
+
+import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import RestaurantOutlinedIcon from "@mui/icons-material/RestaurantOutlined";
+import FitnessCenterOutlinedIcon from "@mui/icons-material/FitnessCenterOutlined";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import MailOutlineOutlinedIcon from "@mui/icons-material/MailOutlineOutlined";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
 
 /* ----------------- Helpers chung ----------------- */
 
@@ -108,15 +127,16 @@ function fmtDateTimeShort(v) {
   }
 }
 
-/* ----------------- Menu sidebar ----------------- */
+/* ----------------- Menu sidebar (MUI) ----------------- */
 
 const buildManagementSections = (rawLevel) => {
   const level = Number(rawLevel);
-  return [
+
+  const sections = [
     {
       key: "stats",
       title: "Thống kê",
-      icon: "fa-solid fa-chart-line",
+      icon: <BarChartOutlinedIcon fontSize="small" />,
       items: [
         { to: "/stats/users", label: "Người dùng" },
         { to: "/stats/journal", label: "Nhật ký" },
@@ -124,23 +144,10 @@ const buildManagementSections = (rawLevel) => {
         { to: "/statistics/audit-log", label: "Nhật ký thao tác" },
       ],
     },
-    ...(level === 1
-      ? [
-          {
-            key: "admins",
-            title: "Tài khoản quản trị",
-            icon: "fa-solid fa-user-shield",
-            items: [
-              { to: "/admins", label: "Danh sách tài khoản", exact: true },
-              { to: "/admins/create", label: "Tạo tài khoản" },
-            ],
-          },
-        ]
-      : []),
     {
       key: "foods",
       title: "Thực phẩm",
-      icon: "fa-solid fa-utensils",
+      icon: <RestaurantOutlinedIcon fontSize="small" />,
       items: [
         { to: "/foods", label: "Danh sách món ăn", exact: true },
         { to: "/foods/create", label: "Tạo món ăn mới" },
@@ -156,7 +163,7 @@ const buildManagementSections = (rawLevel) => {
     {
       key: "exs",
       title: "Bài tập",
-      icon: "fa-solid fa-dumbbell",
+      icon: <FitnessCenterOutlinedIcon fontSize="small" />,
       items: [
         { to: "/exercises/strength", label: "Danh sách bài tập - Strength" },
         { to: "/exercises/cardio", label: "Danh sách bài tập - Cardio" },
@@ -180,27 +187,55 @@ const buildManagementSections = (rawLevel) => {
     {
       key: "matching",
       title: "Ghép cặp",
-      icon: "fa-solid fa-people-arrows",
+      icon: <PeopleAltOutlinedIcon fontSize="small" />,
       items: [
         { to: "/matching", label: "Danh sách ghép cặp", exact: true },
         { to: "/reports", label: "Báo cáo" },
       ],
     },
-    {
-      key: "users",
-      title: "Người dùng",
-      icon: "fa-solid fa-users",
-      items: [{ to: "/users", label: "Danh sách người dùng", exact: true }],
-    },
   ];
+
+  if (level === 1) {
+    sections.splice(1, 0, {
+      key: "admins",
+      title: "Tài khoản quản trị",
+      icon: <AdminPanelSettingsOutlinedIcon fontSize="small" />,
+      items: [
+        { to: "/admins", label: "Danh sách tài khoản", exact: true },
+        { to: "/admins/create", label: "Tạo tài khoản" },
+      ],
+    });
+  }
+
+  return sections;
 };
 
-const subLinkClass = ({ isActive }) =>
-  "fm-sublink" + (isActive ? " is-active" : "");
+// Các item không có list con: Người dùng, Liên hệ
+const SIMPLE_PAGES = [
+  {
+    key: "users",
+    label: "Danh sách người dùng",
+    to: "/users",
+    icon: <GroupOutlinedIcon fontSize="small" />,
+  },
+  {
+    key: "contact",
+    label: "Liên hệ",
+    to: "/contact",
+    icon: <MailOutlineOutlinedIcon fontSize="small" />,
+  },
+];
 
 /* ----------------- TopNav + Notifications ----------------- */
 
-function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
+function TopNav({
+  collapsed,
+  onToggleSidebar,
+  theme,
+  onToggleTheme,
+  onGoProfile,
+  onOpenLogout,
+}) {
   const { auth } = useAuth();
   const level = Number(auth?.profile?.level) || 2;
   const displayName =
@@ -216,6 +251,10 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
   const [notifLoading, setNotifLoading] = useState(false);
   const [readIds, setReadIds] = useState([]);
   const notifRef = useRef(null);
+
+  // Account dropdown
+  const [accOpen, setAccOpen] = useState(false);
+  const accRef = useRef(null);
 
   // Load danh sách id đã đọc từ localStorage khi đổi admin
   useEffect(() => {
@@ -316,7 +355,7 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
     setNotifOpen(false);
   };
 
-  // Click ngoài để đóng dropdown
+  // Click ngoài để đóng dropdown thông báo
   useEffect(() => {
     if (!notifOpen) return;
     const handler = (e) => {
@@ -328,6 +367,19 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [notifOpen]);
+
+  // Click ngoài để đóng dropdown account
+  useEffect(() => {
+    if (!accOpen) return;
+    const handler = (e) => {
+      if (!accRef.current) return;
+      if (!accRef.current.contains(e.target)) {
+        setAccOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [accOpen]);
 
   return (
     <header className="fm-topnav">
@@ -458,21 +510,56 @@ function TopNav({ collapsed, onToggleSidebar, theme, onToggleTheme }) {
           )}
         </div>
 
-        {/* Account box */}
-        <div className="fm-nav__account">
-          {level === 1 ? (
-            <div className="fm-account-box fm-account-box--level1">
-              <i className="fa-solid fa-user" />
-              <span>
-                Admin cấp 1&nbsp;&nbsp;|&nbsp;&nbsp;{displayName}
-              </span>
-            </div>
-          ) : (
-            <div className="fm-account-box fm-account-box--level2">
-              <i className="fa-solid fa-users" />
-              <span>
-                Admin cấp 2&nbsp;&nbsp;|&nbsp;&nbsp;{displayName}
-              </span>
+        {/* Account box + dropdown */}
+        <div className="fm-nav__account" ref={accRef}>
+          <button
+            type="button"
+            className={
+              "fm-account-box " +
+              (level === 1
+                ? "fm-account-box--level1"
+                : "fm-account-box--level2")
+            }
+            onClick={() => setAccOpen((o) => !o)}
+          >
+            <i className={level === 1 ? "fa-solid fa-user" : "fa-solid fa-users"} />
+            <span>
+              {level === 1 ? "Admin cấp 1" : "Admin cấp 2"}
+              &nbsp;&nbsp;|&nbsp;&nbsp;{displayName}
+            </span>
+            <i
+              className={
+                "fa-solid " +
+                (accOpen ? "fa-chevron-up" : "fa-chevron-down") +
+                " fm-account-caret"
+              }
+            />
+          </button>
+
+          {accOpen && (
+            <div className="fm-account-dropdown">
+              <button
+                type="button"
+                className="fm-account-item"
+                onClick={() => {
+                  if (typeof onGoProfile === "function") onGoProfile();
+                  setAccOpen(false);
+                }}
+              >
+                <i className="fa-regular fa-id-card" />
+                <span>Thông tin tài khoản</span>
+              </button>
+              <button
+                type="button"
+                className="fm-account-item fm-account-item--logout"
+                onClick={() => {
+                  if (typeof onOpenLogout === "function") onOpenLogout();
+                  setAccOpen(false);
+                }}
+              >
+                <i className="fa-solid fa-arrow-right-from-bracket" />
+                <span>Đăng xuất</span>
+              </button>
             </div>
           )}
         </div>
@@ -487,6 +574,7 @@ export default function SidebarLayout() {
   const { auth, logout } = useAuth();
   const level = Number(auth?.profile?.level) || 2;
   const nav = useNavigate();
+  const location = useLocation();
 
   const [theme, setTheme] = useState(
     () => localStorage.getItem("fm_theme") || "light"
@@ -509,7 +597,7 @@ export default function SidebarLayout() {
     [level]
   );
 
-  // dropdown states sidebar
+  // dropdown states sidebar (cho các list như Thống kê / Thực phẩm / Bài tập ...)
   const [openKeys, setOpenKeys] = useState(() => new Set());
   const isOpen = (key) => openKeys.has(key);
   const toggleSection = (key) => {
@@ -520,6 +608,16 @@ export default function SidebarLayout() {
       return next;
     });
   };
+
+  // helper active route
+  const isItemActive = (to, exact) => {
+    if (!to) return false;
+    if (exact) return location.pathname === to;
+    return location.pathname.startsWith(to);
+  };
+
+  const isSectionActive = (sec) =>
+    (sec.items || []).some((it) => isItemActive(it.to, it.exact));
 
   // login toast once
   const shownLoginToast = useRef(false);
@@ -575,95 +673,116 @@ export default function SidebarLayout() {
         </div>
 
         <nav className="fm-side__nav">
-          <div className="fm-cat">Quản lý</div>
-
-          {mgmtSections.map((sec) => {
-            const opened = isOpen(sec.key);
-            return (
-              <div
-                key={sec.key}
-                className={"fm-sec" + (opened ? " is-open" : "")}
-              >
-                <button
-                  className="fm-sec__head"
-                  onClick={() => toggleSection(sec.key)}
-                  aria-expanded={opened}
+          {/* Nhóm Quản lý: các list có submenu (Thống kê / Tài khoản quản trị / Thực phẩm / Bài tập / Ghép cặp) */}
+          <List
+            component="nav"
+            aria-labelledby="fm-sidebar-management"
+            subheader={
+              !collapsed && (
+                <ListSubheader
+                  component="div"
+                  id="fm-sidebar-management"
                 >
-                  <div className="fm-sec__title">
-                    <i
-                      className={sec.icon + " fm-sec__icon"}
-                      aria-hidden="true"
-                    />
-                    <span className="fm-sec__text">{sec.title}</span>
-                  </div>
-                  <i
+                  Quản lý
+                </ListSubheader>
+              )
+            }
+          >
+            {mgmtSections.map((sec) => {
+              const opened = isOpen(sec.key);
+              const sectionActive = isSectionActive(sec);
+              return (
+                <React.Fragment key={sec.key}>
+                  <ListItemButton
+                    disableGutters
+                    onClick={() => toggleSection(sec.key)}
                     className={
-                      "fa-solid " +
-                      (opened ? "fa-minus" : "fa-plus") +
-                      " fm-expander"
+                      "fm-navitem fm-navitem--parent" +
+                      (sectionActive ? " is-active" : "")
                     }
-                  />
-                </button>
+                  >
+                    <ListItemIcon>{sec.icon}</ListItemIcon>
+                    {!collapsed && <ListItemText primary={sec.title} />}
+                    {!collapsed && (opened ? <ExpandLess /> : <ExpandMore />)}
+                  </ListItemButton>
+                  <Collapse in={opened} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                      {(sec.items || []).map((it) => {
+                        const active = isItemActive(it.to, it.exact);
+                        if (it.openCreateModal) {
+                          return (
+                            <ListItemButton
+                              key={it.to}
+                              disableGutters
+                              className="fm-navitem fm-navitem--child"
+                              onClick={openCreateExModal}
+                            >
+                              <ListItemIcon>
+                                <FiberManualRecordIcon sx={{ fontSize: 8 }} />
+                              </ListItemIcon>
+                              {!collapsed && (
+                                <ListItemText primary={it.label} />
+                              )}
+                            </ListItemButton>
+                          );
+                        }
+                        return (
+                          <ListItemButton
+                            key={it.to}
+                            disableGutters
+                            className={
+                              "fm-navitem fm-navitem--child" +
+                              (active ? " is-active" : "")
+                            }
+                            onClick={() => nav(it.to)}
+                          >
+                            <ListItemIcon>
+                              <FiberManualRecordIcon sx={{ fontSize: 8 }} />
+                            </ListItemIcon>
+                            {!collapsed && (
+                              <ListItemText primary={it.label} />
+                            )}
+                          </ListItemButton>
+                        );
+                      })}
+                    </List>
+                  </Collapse>
+                </React.Fragment>
+              );
+            })}
+          </List>
 
-                <div className="fm-sec__body">
-                  {(sec.items || []).map((it) => {
-                    if (it.openCreateModal) {
-                      return (
-                        <button
-                          type="button"
-                          key={it.to}
-                          className="fm-sublink fm-sublink--btn"
-                          onClick={openCreateExModal}
-                          aria-haspopup="dialog"
-                        >
-                          <span className="fm-sublink__text">
-                            {it.label}
-                          </span>
-                        </button>
-                      );
-                    }
-                    return (
-                      <NavLink
-                        key={it.to}
-                        to={it.to}
-                        end={it.exact}
-                        className={subLinkClass}
-                      >
-                        <span className="fm-sublink__text">
-                          {it.label}
-                        </span>
-                      </NavLink>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-
-          <div className="fm-cat fm-cat--settings">Hồ sơ</div>
-
-          <button
-            className="fm-sec__head fm-sec__head--single"
-            onClick={goProfile}
-            title="Thông tin tài khoản"
+          {/* Các trang đơn: Người dùng & Liên hệ (không có list con) */}
+          <List
+            component="nav"
+            aria-labelledby="fm-sidebar-simple"
+            subheader={
+              !collapsed && (
+                <ListSubheader component="div" id="fm-sidebar-simple">
+                  Hỗ trợ
+                </ListSubheader>
+              )
+            }
           >
-            <div className="fm-sec__title">
-              <i className="fa-solid fa-id-card fm-sec__icon" />
-              <span className="fm-sec__text">Thông tin tài khoản</span>
-            </div>
-          </button>
+            {SIMPLE_PAGES.map((p) => {
+              const active = isItemActive(p.to, true);
+              return (
+                <ListItemButton
+                  key={p.key}
+                  disableGutters
+                  className={
+                    "fm-navitem fm-navitem--simple" +
+                    (active ? " is-active" : "")
+                  }
+                  onClick={() => nav(p.to)}
+                >
+                  <ListItemIcon>{p.icon}</ListItemIcon>
+                  {!collapsed && <ListItemText primary={p.label} />}
+                </ListItemButton>
+              );
+            })}
+          </List>
         </nav>
-
-        <div className="fm-logout-fixed">
-          <button
-            className="fm-btn-danger w-full"
-            onClick={openConfirm}
-            title="Đăng xuất"
-          >
-            <i className="fa-solid fa-arrow-right-from-bracket" />
-            <span>Đăng xuất</span>
-          </button>
-        </div>
       </aside>
 
       <main className="fm-main">
@@ -674,6 +793,8 @@ export default function SidebarLayout() {
           onToggleTheme={() =>
             setTheme((t) => (t === "dark" ? "light" : "dark"))
           }
+          onGoProfile={goProfile}
+          onOpenLogout={openConfirm}
         />
         <div className="fm-content">
           <Outlet />
@@ -750,10 +871,7 @@ export default function SidebarLayout() {
             </div>
 
             <div className="fm-modal__actions">
-              <button
-                className="fm-btn ghost"
-                onClick={closeCreateExModal}
-              >
+              <button className="fm-btn ghost" onClick={closeCreateExModal}>
                 Đóng
               </button>
             </div>

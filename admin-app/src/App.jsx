@@ -32,6 +32,9 @@ import SuggestPlanList from "./pages/pagesExercises/SuggestPlan_List/SuggestPlan
 // ===== Statistic / Audit Log
 import AuditLog from "./pages/pagesStatistic/Audit_Log/Audit_Log.jsx";
 
+// ===== Contact Messages
+import Contact from "./pages/pagesContact/Contact_List.jsx";
+
 // ===== Users
 import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
 
@@ -99,6 +102,9 @@ export default function App() {
 
           {/* Người dùng */}
           <Route path="/users" element={<UsersList />} />
+
+          {/* Liên hệ */}
+          <Route path="/contact" element={<Contact />} />
         </Route>
 
         {/* Fallback */}

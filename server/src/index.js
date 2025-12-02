@@ -26,6 +26,9 @@ import adminSuggestMenuRoutes from "./routes/admin.suggestMenu.routes.js";
 import suggestMenuUserRoutes from "./routes/suggestMenu.routes.js";
 import adminAuditRoutes from "./routes/admin.audit.routes.js";
 
+import contactRoutes from "./routes/contact.routes.js";
+import adminContactRoutes from "./routes/admin.contact.routes.js";
+
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
 import { UPLOAD_ROOT } from "./middleware/upload.js";
@@ -121,6 +124,7 @@ app.use("/api/admin", adminExercisesRoutes);
 app.use("/api/admin", adminSuggestPlanRoutes);
 app.use("/api/admin", adminSuggestMenuRoutes); 
 app.use("/api/admin", adminAuditRoutes);
+app.use("/api/admin", adminContactRoutes);
 
 // ===== User routes =====
 app.use("/api/user/onboarding", onboardingRoutes);
@@ -135,6 +139,7 @@ app.use("/api", exercisePublicRoutes);
 app.use("/api/user", workoutRoutes);
 app.use("/api/user", suggestPlanUserRoutes);
 app.use("/api", suggestMenuUserRoutes);
+app.use("/api", contactRoutes);
 
 // ===== Debug: list registered routes in DEV =====
 if (isDev) {

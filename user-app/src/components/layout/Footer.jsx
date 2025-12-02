@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFacebookF, faInstagram } from "@fortawesome/free-brands-svg-icons";
+import { faFacebookF, faInstagram, faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 
 export default function Footer() {
@@ -39,7 +39,7 @@ export default function Footer() {
           <NavLink to="tai-khoan/chinh-sach-bao-mat" onClick={handleScrollTop}>Chính sách bảo mật</NavLink>
           <NavLink to="tai-khoan/dieu-khoan-dich-vu" onClick={handleScrollTop}>Điều khoản dịch vụ</NavLink>
           <NavLink to="/faqs" onClick={handleScrollTop}>FAQs</NavLink>
-          <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer">Liên hệ</a>
+          <NavLink to="tai-khoan/lien-he" onClick={handleScrollTop}>Liên hệ</NavLink>
         </nav>
 
         {/* RIGHT: Social icons */}
@@ -54,12 +54,12 @@ export default function Footer() {
               <FontAwesomeIcon icon={faFacebookF} />
             </a>
             <a
-              href="https://instagram.com"
-              aria-label="Instagram"
+              href="https://Youtube.com"
+              aria-label="Youtube"
               target="_blank"
               rel="noreferrer"
             >
-              <FontAwesomeIcon icon={faInstagram} />
+              <FontAwesomeIcon icon={faYoutube} />
             </a>
             <a
               href="https://mail.google.com"
