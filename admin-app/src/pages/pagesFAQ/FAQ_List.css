@@ -1,0 +1,338 @@
+/* admin-app/src/pages/pagesFAQ/FAQ_List.css */
+
+/* ===== Tabs dưới thanh tìm kiếm ===== */
+.faq-tabs {
+  display: flex;
+  gap: 16px;
+  padding: 4px 4px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.faq-tab {
+  position: relative;
+  padding: 6px 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.faq-tab::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: #dc2626;
+  transition: width 0.16s ease;
+}
+
+.faq-tab.active {
+  color: #111827;
+}
+
+.faq-tab.active::after {
+  width: 100%;
+}
+
+/* Điều chỉnh cột cho bảng FAQ */
+.faq-q-head,
+.faq-q-row {
+  grid-template-columns:
+    40px   /* checkbox */
+    1.6fr  /* question */
+    1.1fr  /* category */
+    1.1fr  /* status toggle */
+    90px;  /* action */
+}
+
+.faq-c-head,
+.faq-c-row {
+  grid-template-columns:
+    120px  /* code */
+    200px  /* name */
+    1.6fr  /* description */
+    1.1fr  /* status */
+    90px;  /* act */
+}
+
+/* Mã câu hỏi nhỏ bên dưới */
+.faq-q-code {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Chip "Danh mục đang tắt" */
+.faq-chip-off {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 11px;
+}
+
+/* ===== Toggle Hoạt động / Không hoạt động ===== */
+.faq-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  padding: 4px 10px 4px 4px;
+  background: #111827;
+  cursor: pointer;
+  width: 150px;
+  justify-content: flex-start;
+  color: #e5e7eb;
+  font-size: 13px;
+  transition: background 0.15s ease, border-color 0.15s ease,
+    opacity 0.1s ease, transform 0.05s ease;
+}
+
+.faq-toggle .knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ef4444;
+  flex-shrink: 0;
+}
+
+.faq-toggle .label {
+  white-space: nowrap;
+}
+
+.faq-toggle.on {
+  background: #16a34a;
+  border-color: #22c55e;
+}
+
+.faq-toggle.on .knob {
+  background: #f9fafb;
+}
+
+.faq-toggle.on .label {
+  color: #f9fafb;
+}
+
+.faq-toggle.off {
+  background: #111827;
+  border-color: #4b5563;
+}
+
+.faq-toggle.off .knob {
+  background: #fecaca;
+}
+
+.faq-toggle.off .label {
+  color: #e5e7eb;
+}
+
+.faq-toggle:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ===== Modal light theme cho FAQ (Category + Question) ===== */
+.faq-modal {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;              /* card trắng */
+  border-radius: 8px;               /* card bo 8px */
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  color: #111827;                   /* chữ tối */
+  box-shadow: none;                 /* không dùng box-shadow */
+}
+
+.faq-modal-lg {
+  max-width: 720px;
+}
+
+.faq-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;              /* header trắng */
+}
+
+.faq-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.faq-modal-close {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+}
+.faq-modal-close i {
+  font-size: 14px;
+}
+.faq-modal-close:hover {
+  color: #111827;
+}
+
+.faq-modal-body {
+  padding: 16px 18px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #ffffff;              /* body trắng */
+}
+
+.faq-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.faq-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;                   /* chữ label tối */
+  display: flex;
+}
+
+/* Inputs (Category + Question) */
+.faq-input,
+.faq-textarea,
+.faq-select {
+  border-radius: 4px;              
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.faq-select {
+    margin-top: 4px;
+}
+
+.faq-input::placeholder,
+.faq-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.faq-textarea {
+  resize: vertical;
+}
+
+.faq-select {
+  height: 36px;
+}
+
+.faq-input:focus,
+.faq-textarea:focus,
+.faq-select:focus {
+  border-color: #0f766e;            /* viền focus xanh teal nhẹ */
+  box-shadow: none;
+}
+
+/* Editor wrapper trong Question modal */
+.faq-editor-wrap {
+  border-radius: 4px;               /* bo 4px giống input */
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  padding: 4px;
+}
+
+.faq-error {
+  font-size: 11px;
+  color: #b91c1c;
+}
+
+.has-error {
+  border-color: #dc2626 !important;
+}
+
+/* Modal footer */
+.faq-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px 16px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;              /* footer trắng */
+}
+
+/* Buttons light */
+.faq-btn {
+  min-width: 84px;
+  height: 34px;
+  border-radius: 999px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.1s ease;
+  box-shadow: none;                 /* không dùng box-shadow */
+}
+
+.faq-btn.ghost {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.faq-btn.primary {
+  background: #008080;           
+  color: #ffffff;
+}
+
+.faq-btn.ghost:hover {
+  background: #f9fafb;
+}
+
+.faq-btn.primary:hover {
+  background: #007070;
+}
+
+.faq-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+
+/* Row 2 cột trong Question modal */
+.faq-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr);
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.faq-col-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .faq-modal,
+  .faq-modal-lg {
+    max-width: 100%;
+  }
+  .faq-row {
+    grid-template-columns: 1fr;
+  }
+}

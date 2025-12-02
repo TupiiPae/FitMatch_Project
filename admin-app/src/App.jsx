@@ -35,6 +35,9 @@ import AuditLog from "./pages/pagesStatistic/Audit_Log/Audit_Log.jsx";
 // ===== Contact Messages
 import Contact from "./pages/pagesContact/Contact_List.jsx";
 
+// ===== FAQ
+import FAQ from "./pages/pagesFAQ/FAQ_List.jsx";
+
 // ===== Users
 import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
 
@@ -105,6 +108,9 @@ export default function App() {
 
           {/* Liên hệ */}
           <Route path="/contact" element={<Contact />} />
+
+          {/* FAQ */}
+          <Route path="/faq" element={<FAQ />} />
         </Route>
 
         {/* Fallback */}

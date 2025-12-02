@@ -662,3 +662,48 @@ export const deleteContactMessageAdmin = async (id) => {
   const r = await api.delete(`/api/admin/contact-messages/${id}`);
   return r.data?.data ?? r.data;
 };
+
+/* =========================
+ * FAQ (ADMIN)
+ * ========================= */
+
+export const listFaqQuestionsAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/faq/questions", { params });
+  // BE dùng responseOk -> { ok:true, data:{...} }
+  return r.data?.data ?? r.data; // { items, total, limit, skip }
+};
+
+export const listFaqCategoriesAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/faq/categories", { params });
+  return r.data?.data ?? r.data; // { items, total, limit, skip }
+};
+
+export const createFaqCategoryAdmin = async (body) => {
+  const r = await api.post("/api/admin/faq/categories", body);
+  return r.data?.data ?? r.data;
+};
+
+export const updateFaqCategoryAdmin = async (id, body) => {
+  const r = await api.patch(`/api/admin/faq/categories/${id}`, body);
+  return r.data?.data ?? r.data;
+};
+
+export const deleteFaqCategoryAdmin = async (id) => {
+  const r = await api.delete(`/api/admin/faq/categories/${id}`);
+  return r.data?.data ?? r.data;
+};
+
+export const createFaqQuestionAdmin = async (body) => {
+  const r = await api.post("/api/admin/faq/questions", body);
+  return r.data?.data ?? r.data;
+};
+
+export const updateFaqQuestionAdmin = async (id, body) => {
+  const r = await api.patch(`/api/admin/faq/questions/${id}`, body);
+  return r.data?.data ?? r.data;
+};
+
+export const deleteFaqQuestionAdmin = async (id) => {
+  const r = await api.delete(`/api/admin/faq/questions/${id}`);
+  return r.data?.data ?? r.data;
+};

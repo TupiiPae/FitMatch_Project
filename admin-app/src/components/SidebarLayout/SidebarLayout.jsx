@@ -23,6 +23,7 @@ import FitnessCenterOutlinedIcon from "@mui/icons-material/FitnessCenterOutlined
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import MailOutlineOutlinedIcon from "@mui/icons-material/MailOutlineOutlined";
+import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
@@ -132,68 +133,79 @@ function fmtDateTimeShort(v) {
 const buildManagementSections = (rawLevel) => {
   const level = Number(rawLevel);
 
-  const sections = [
-    {
-      key: "stats",
-      title: "Thống kê",
-      icon: <BarChartOutlinedIcon fontSize="small" />,
-      items: [
-        { to: "/stats/users", label: "Người dùng" },
-        { to: "/stats/journal", label: "Nhật ký" },
-        { to: "/stats/matching", label: "Ghép cặp" },
-        { to: "/statistics/audit-log", label: "Nhật ký thao tác" },
-      ],
-    },
-    {
-      key: "foods",
-      title: "Thực phẩm",
-      icon: <RestaurantOutlinedIcon fontSize="small" />,
-      items: [
-        { to: "/foods", label: "Danh sách món ăn", exact: true },
-        { to: "/foods/create", label: "Tạo món ăn mới" },
-        { to: "/foods/review", label: "Duyệt món ăn người dùng" },
-        {
-          to: "/foods/suggest-menu",
-          label: "Danh sách thực đơn gợi ý",
-          exact: true,
-        },
-        { to: "/foods/suggest-menu/create", label: "Tạo thực đơn gợi ý" },
-      ],
-    },
-    {
-      key: "exs",
-      title: "Bài tập",
-      icon: <FitnessCenterOutlinedIcon fontSize="small" />,
-      items: [
-        { to: "/exercises/strength", label: "Danh sách bài tập - Strength" },
-        { to: "/exercises/cardio", label: "Danh sách bài tập - Cardio" },
-        { to: "/exercises/sport", label: "Danh sách các môn - Sport" },
-        {
-          to: "/exercises/create",
-          label: "Tạo bài tập/môn thể thao mới",
-          openCreateModal: true,
-        },
-        {
-          to: "/exercises/suggest-plan",
-          label: "Danh sách lịch tập gợi ý",
-          exact: true,
-        },
-        {
-          to: "/exercises/suggest-plan/create",
-          label: "Tạo lịch tập gợi ý",
-        },
-      ],
-    },
-    {
-      key: "matching",
-      title: "Ghép cặp",
-      icon: <PeopleAltOutlinedIcon fontSize="small" />,
-      items: [
-        { to: "/matching", label: "Danh sách ghép cặp", exact: true },
-        { to: "/reports", label: "Báo cáo" },
-      ],
-    },
-  ];
+  const statsSection = {
+    key: "stats",
+    title: "Thống kê",
+    icon: <BarChartOutlinedIcon fontSize="small" />,
+    items: [
+      { to: "/stats/users", label: "Người dùng" },
+      { to: "/stats/journal", label: "Nhật ký" },
+      { to: "/stats/matching", label: "Ghép cặp" },
+      { to: "/statistics/audit-log", label: "Nhật ký thao tác" },
+    ],
+  };
+
+  // Mục "Danh sách người dùng" được đưa vào nhóm Quản lý
+  const usersSection = {
+    key: "users",
+    title: "Người dùng",
+    icon: <GroupOutlinedIcon fontSize="small" />,
+    items: [{ to: "/users", label: "Danh sách người dùng", exact: true }],
+  };
+
+  const foodsSection = {
+    key: "foods",
+    title: "Thực phẩm",
+    icon: <RestaurantOutlinedIcon fontSize="small" />,
+    items: [
+      { to: "/foods", label: "Danh sách món ăn", exact: true },
+      { to: "/foods/create", label: "Tạo món ăn mới" },
+      { to: "/foods/review", label: "Duyệt món ăn người dùng" },
+      {
+        to: "/foods/suggest-menu",
+        label: "Danh sách thực đơn gợi ý",
+        exact: true,
+      },
+      { to: "/foods/suggest-menu/create", label: "Tạo thực đơn gợi ý" },
+    ],
+  };
+
+  const exsSection = {
+    key: "exs",
+    title: "Bài tập",
+    icon: <FitnessCenterOutlinedIcon fontSize="small" />,
+    items: [
+      { to: "/exercises/strength", label: "Danh sách bài tập - Strength" },
+      { to: "/exercises/cardio", label: "Danh sách bài tập - Cardio" },
+      { to: "/exercises/sport", label: "Danh sách các môn - Sport" },
+      {
+        to: "/exercises/create",
+        label: "Tạo bài tập/môn thể thao mới",
+        openCreateModal: true,
+      },
+      {
+        to: "/exercises/suggest-plan",
+        label: "Danh sách lịch tập gợi ý",
+        exact: true,
+      },
+      {
+        to: "/exercises/suggest-plan/create",
+        label: "Tạo lịch tập gợi ý",
+      },
+    ],
+  };
+
+  const matchingSection = {
+    key: "matching",
+    title: "Ghép cặp",
+    icon: <PeopleAltOutlinedIcon fontSize="small" />,
+    items: [
+      { to: "/matching", label: "Danh sách ghép cặp", exact: true },
+      { to: "/reports", label: "Báo cáo" },
+    ],
+  };
+
+  const sections = [statsSection, usersSection, foodsSection, exsSection, matchingSection];
 
   if (level === 1) {
     sections.splice(1, 0, {
@@ -210,19 +222,24 @@ const buildManagementSections = (rawLevel) => {
   return sections;
 };
 
-// Các item không có list con: Người dùng, Liên hệ
-const SIMPLE_PAGES = [
-  {
-    key: "users",
-    label: "Danh sách người dùng",
-    to: "/users",
-    icon: <GroupOutlinedIcon fontSize="small" />,
-  },
+// Hỗ trợ: chỉ còn Liên hệ
+const SUPPORT_PAGES = [
   {
     key: "contact",
     label: "Liên hệ",
     to: "/contact",
     icon: <MailOutlineOutlinedIcon fontSize="small" />,
+  },
+];
+
+// Cấu hình: FAQ
+// Path /config/faq cần khớp với Route hiển thị FAQ_List
+const CONFIG_PAGES = [
+  {
+    key: "faq",
+    label: "FAQ",
+    to: "/faq",
+    icon: <HelpOutlineOutlinedIcon fontSize="small" />,
   },
 ];
 
@@ -597,7 +614,7 @@ export default function SidebarLayout() {
     [level]
   );
 
-  // dropdown states sidebar (cho các list như Thống kê / Thực phẩm / Bài tập ...)
+  // dropdown states sidebar (cho các list như Thống kê / Tài khoản quản trị / Thực phẩm / Bài tập / Ghép cặp)
   const [openKeys, setOpenKeys] = useState(() => new Set());
   const isOpen = (key) => openKeys.has(key);
   const toggleSection = (key) => {
@@ -673,7 +690,7 @@ export default function SidebarLayout() {
         </div>
 
         <nav className="fm-side__nav">
-          {/* Nhóm Quản lý: các list có submenu (Thống kê / Tài khoản quản trị / Thực phẩm / Bài tập / Ghép cặp) */}
+          {/* Nhóm Quản lý */}
           <List
             component="nav"
             aria-labelledby="fm-sidebar-management"
@@ -752,19 +769,50 @@ export default function SidebarLayout() {
             })}
           </List>
 
-          {/* Các trang đơn: Người dùng & Liên hệ (không có list con) */}
+          {/* Hỗ trợ: chỉ Liên hệ */}
           <List
             component="nav"
-            aria-labelledby="fm-sidebar-simple"
+            aria-labelledby="fm-sidebar-support"
             subheader={
               !collapsed && (
-                <ListSubheader component="div" id="fm-sidebar-simple">
+                <ListSubheader component="div" id="fm-sidebar-support">
                   Hỗ trợ
                 </ListSubheader>
               )
             }
           >
-            {SIMPLE_PAGES.map((p) => {
+            {SUPPORT_PAGES.map((p) => {
+              const active = isItemActive(p.to, true);
+              return (
+                <ListItemButton
+                  key={p.key}
+                  disableGutters
+                  className={
+                    "fm-navitem fm-navitem--simple" +
+                    (active ? " is-active" : "")
+                  }
+                  onClick={() => nav(p.to)}
+                >
+                  <ListItemIcon>{p.icon}</ListItemIcon>
+                  {!collapsed && <ListItemText primary={p.label} />}
+                </ListItemButton>
+              );
+            })}
+          </List>
+
+          {/* Cấu hình: FAQ */}
+          <List
+            component="nav"
+            aria-labelledby="fm-sidebar-config"
+            subheader={
+              !collapsed && (
+                <ListSubheader component="div" id="fm-sidebar-config">
+                  Cấu hình
+                </ListSubheader>
+              )
+            }
+          >
+            {CONFIG_PAGES.map((p) => {
               const active = isItemActive(p.to, true);
               return (
                 <ListItemButton

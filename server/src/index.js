@@ -25,6 +25,7 @@ import suggestPlanUserRoutes from "./routes/suggestPlan.user.routes.js";
 import adminSuggestMenuRoutes from "./routes/admin.suggestMenu.routes.js";
 import suggestMenuUserRoutes from "./routes/suggestMenu.routes.js";
 import adminAuditRoutes from "./routes/admin.audit.routes.js";
+import adminFaqRoutes from "./routes/admin.faq.routes.js";
 
 import contactRoutes from "./routes/contact.routes.js";
 import adminContactRoutes from "./routes/admin.contact.routes.js";
@@ -125,6 +126,7 @@ app.use("/api/admin", adminSuggestPlanRoutes);
 app.use("/api/admin", adminSuggestMenuRoutes); 
 app.use("/api/admin", adminAuditRoutes);
 app.use("/api/admin", adminContactRoutes);
+app.use("/api/admin", adminFaqRoutes);
 
 // ===== User routes =====
 app.use("/api/user/onboarding", onboardingRoutes);
