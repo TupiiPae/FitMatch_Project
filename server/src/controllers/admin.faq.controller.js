@@ -1,4 +1,3 @@
-// server/src/controllers/admin.faq.controller.js
 import mongoose from "mongoose";
 import FaqCategory from "../models/FaqCategory.js";
 import FaqQuestion from "../models/FaqQuestion.js";
@@ -42,7 +41,10 @@ export const listFaqCategoriesAdmin = async (req, res) => {
     FaqCategory.countDocuments(filter),
   ]);
 
-  return responseOk(res, { items, total, limit, skip });
+  // ✅ Gửi response đúng chuẩn, KHÔNG trả object thuần nữa
+  return res
+    .status(200)
+    .json(responseOk({ items, total, limit, skip }));
 };
 
 // POST /api/admin/faq/categories
@@ -75,7 +77,12 @@ export const createFaqCategoryAdmin = async (req, res) => {
     updatedBy: req.userId || undefined,
   });
 
-  return responseOk(res, doc, 201);
+  const payload = doc.toObject ? doc.toObject() : doc;
+
+  // ✅ 201 + wrapper responseOk
+  return res
+    .status(201)
+    .json(responseOk(payload));
 };
 
 // PATCH /api/admin/faq/categories/:id
@@ -96,7 +103,6 @@ export const updateFaqCategoryAdmin = async (req, res) => {
 
   const { name, description, isActive } = req.body || {};
   let changedStatus = false;
-  let changedName = false;
 
   if (typeof name === "string") {
     const trimmed = name.trim();
@@ -112,7 +118,6 @@ export const updateFaqCategoryAdmin = async (req, res) => {
     }
     if (trimmed !== cat.name) {
       cat.name = trimmed;
-      changedName = true;
     }
   }
 
@@ -134,7 +139,6 @@ export const updateFaqCategoryAdmin = async (req, res) => {
   cat.updatedBy = req.userId || cat.updatedBy;
   await cat.save();
 
-  // Nếu đổi trạng thái danh mục -> cascade sang câu hỏi
   if (changedStatus) {
     await FaqQuestion.updateMany(
       { category: cat._id },
@@ -142,10 +146,11 @@ export const updateFaqCategoryAdmin = async (req, res) => {
     );
   }
 
-  // (Không cần sync tên xuống câu hỏi vì FE lấy từ populate, nhưng có thể
-  //  làm sau nếu muốn snapshot categoryName)
+  const payload = cat.toObject ? cat.toObject() : cat;
 
-  return responseOk(res, cat);
+  return res
+    .status(200)
+    .json(responseOk(payload));
 };
 
 // DELETE /api/admin/faq/categories/:id
@@ -176,7 +181,10 @@ export const deleteFaqCategoryAdmin = async (req, res) => {
   }
 
   await FaqCategory.deleteOne({ _id: cat._id });
-  return responseOk(res, { deleted: true });
+
+  return res
+    .status(200)
+    .json(responseOk({ deleted: true }));
 };
 
 /* =========================
@@ -204,7 +212,6 @@ export const listFaqQuestionsAdmin = async (req, res) => {
 
     orConds.push({ title: rx }, { answerHtml: rx });
 
-    // Search theo tên danh mục
     const catIds = await FaqCategory.find({ name: rx })
       .select("_id")
       .lean();
@@ -244,7 +251,9 @@ export const listFaqQuestionsAdmin = async (req, res) => {
     };
   });
 
-  return responseOk(res, { items, total, limit, skip });
+  return res
+    .status(200)
+    .json(responseOk({ items, total, limit, skip }));
 };
 
 // POST /api/admin/faq/questions
@@ -284,7 +293,6 @@ export const createFaqQuestionAdmin = async (req, res) => {
       .json({ success: false, message: "Không tìm thấy danh mục FAQ" });
   }
 
-  // Nếu danh mục đang tắt -> câu hỏi tạo mới cũng sẽ tắt theo danh mục
   const finalIsActive =
     typeof isActive === "boolean" ? isActive && cat.isActive : cat.isActive;
 
@@ -304,7 +312,9 @@ export const createFaqQuestionAdmin = async (req, res) => {
     categoryStatus: cat.isActive ? "active" : "inactive",
   };
 
-  return responseOk(res, result, 201);
+  return res
+    .status(201)
+    .json(responseOk(result));
 };
 
 // PATCH /api/admin/faq/questions/:id
@@ -357,7 +367,6 @@ export const updateFaqQuestionAdmin = async (req, res) => {
     question.answerHtml = trimmed;
   }
 
-  // Nếu đổi danh mục
   if (categoryId && categoryId !== String(question.category?._id)) {
     if (!isValidObjectId(categoryId)) {
       return res
@@ -370,7 +379,6 @@ export const updateFaqQuestionAdmin = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Không tìm thấy danh mục FAQ" });
     }
-    // Nếu muốn bật hoạt động nhưng danh mục mới đang tắt -> chặn
     if (isActive === true && !newCat.isActive) {
       return res.status(400).json({
         success: false,
@@ -379,20 +387,16 @@ export const updateFaqQuestionAdmin = async (req, res) => {
       });
     }
     question.category = newCat._id;
-    question.category = newCat._id;
     question.categoryName = newCat.name;
   }
 
-  // Toggle trạng thái
   if (typeof isActive === "boolean") {
-    // Reload lại category hiện tại (sau khi có thể đã đổi ở trên)
     const cat =
       question.category && question.category.isActive != null
         ? question.category
         : await FaqCategory.findById(question.category);
 
     if (isActive && cat && !cat.isActive) {
-      // Danh mục đang tắt: không cho bật câu hỏi
       return res.status(400).json({
         success: false,
         message:
@@ -422,7 +426,9 @@ export const updateFaqQuestionAdmin = async (req, res) => {
         : null,
   };
 
-  return responseOk(res, result);
+  return res
+    .status(200)
+    .json(responseOk(result));
 };
 
 // DELETE /api/admin/faq/questions/:id
@@ -443,5 +449,7 @@ export const deleteFaqQuestionAdmin = async (req, res) => {
 
   await FaqQuestion.deleteOne({ _id: question._id });
 
-  return responseOk(res, { deleted: true });
+  return res
+    .status(200)
+    .json(responseOk({ deleted: true }));
 };

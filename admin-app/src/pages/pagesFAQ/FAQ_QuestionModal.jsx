@@ -38,7 +38,10 @@ export default function FAQQuestionModal({
     const errs = {};
     const t = String(title || "").trim();
     const html = String(answerHtml || "").trim();
-    const plain = html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ");
+    const plain = html
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
 
     if (!t) errs.title = "Vui lòng nhập tiêu đề câu hỏi";
     else if (t.length > 300)
@@ -68,7 +71,7 @@ export default function FAQQuestionModal({
     setSaving(true);
     try {
       await onSubmit(payload, initial?._id || null);
-      onClose();
+      onClose(); // ✅ Lưu xong thì đóng modal
     } catch {
       // onSubmit đã toast lỗi
     } finally {
@@ -98,6 +101,7 @@ export default function FAQQuestionModal({
         </div>
 
         <div className="faq-modal-body">
+          {/* Tiêu đề */}
           <div className="faq-field">
             <label className="faq-label">
               Tiêu đề câu hỏi *
@@ -115,6 +119,7 @@ export default function FAQQuestionModal({
             )}
           </div>
 
+          {/* Nội dung trả lời */}
           <div className="faq-field">
             <label className="faq-label">
               Nội dung câu trả lời *
@@ -138,8 +143,9 @@ export default function FAQQuestionModal({
             )}
           </div>
 
+          {/* Danh mục + Trạng thái */}
           <div className="faq-field faq-row">
-            <div className="faq-col ">
+            <div className="faq-col">
               <label className="faq-label">Danh mục *</label>
               <select
                 className={
@@ -169,8 +175,7 @@ export default function FAQQuestionModal({
               <button
                 type="button"
                 className={
-                  "faq-toggle" +
-                  (isActive ? " on" : " off")
+                  "faq-toggle" + (isActive ? " on" : " off")
                 }
                 onClick={() => setIsActive((v) => !v)}
               >

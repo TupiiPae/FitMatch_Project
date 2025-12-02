@@ -45,13 +45,14 @@ export default function FAQCategoryModal({ initial, onClose, onSubmit }) {
     setSaving(true);
     try {
       await onSubmit(payload, initial?._id || null);
-      onClose();
+      onClose();        // ✅ tạo xong -> đóng modal
     } catch {
       // onSubmit đã toast lỗi
     } finally {
       setSaving(false);
     }
   };
+
 
   return (
     <div className="cm-backdrop" onClick={onClose}>

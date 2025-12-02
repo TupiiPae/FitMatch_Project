@@ -324,26 +324,38 @@ export default function FAQ_List() {
   /* ==========================
    * CATEGORY MODAL submit
    * ========================== */
-  const handleSubmitCategory = async (form, id) => {
-    // form: { name, description }
-    try {
-      if (id) {
-        await updateFaqCategoryAdmin(id, form);
-        toast.success("Cập nhật danh mục FAQ thành công");
-      } else {
-        await createFaqCategoryAdmin(form);
-        toast.success("Tạo danh mục FAQ thành công");
-      }
-      await loadCategories();
-      return true;
-    } catch (err) {
-      console.error(err);
-      const msg =
-        err?.response?.data?.message || "Lưu danh mục FAQ thất bại";
-      toast.error(msg);
-      throw err;
+const handleSubmitCategory = async (form, id) => {
+  // form: { name, description }
+  try {
+    let saved;
+    if (id) {
+      saved = await updateFaqCategoryAdmin(id, form);
+      toast.success("Cập nhật danh mục FAQ thành công");
+      setCategories((prev) =>
+        prev.map((c) => (c._id === id ? { ...c, ...saved } : c))
+      );
+    } else {
+      saved = await createFaqCategoryAdmin(form);
+      toast.success("Tạo danh mục FAQ thành công");
+      setCategories((prev) => [saved, ...(prev || [])]);
+      setCTotal((t) => (t || 0) + 1);
     }
-  };
+
+    setActiveTab("categories");
+
+    // reload cho chắc (nếu server có sort, paging, filter)
+    loadCategories().catch(() => {});
+
+    return true; // báo cho modal là đã thành công
+  } catch (err) {
+    console.error(err);
+    const msg =
+      err?.response?.data?.message || "Lưu danh mục FAQ thất bại";
+    toast.error(msg);
+    throw err; // để modal biết là lỗi, không tự đóng
+  }
+};
+
 
   /* ==========================
    * QUESTION MODAL submit
@@ -433,6 +445,17 @@ export default function FAQ_List() {
             )
           </h2>
           <div className="ct-actions">
+            
+            {activeTab === "questions" && questions.length > 0 && (
+              <button
+                className="btn ghost"
+                type="button"
+                onClick={downloadCSVQuestions}
+              >
+                <i className="fa-solid fa-file-export" />{" "}
+                <span>Xuất danh sách</span>
+              </button>
+            )}
             <button
               className="btn primary"
               type="button"
@@ -451,17 +474,6 @@ export default function FAQ_List() {
             >
               <span>Tạo câu hỏi</span>
             </button>
-
-            {activeTab === "questions" && questions.length > 0 && (
-              <button
-                className="btn ghost"
-                type="button"
-                onClick={downloadCSVQuestions}
-              >
-                <i className="fa-solid fa-file-export" />{" "}
-                <span>Xuất danh sách</span>
-              </button>
-            )}
           </div>
         </div>
 

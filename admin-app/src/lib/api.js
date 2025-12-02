@@ -667,19 +667,17 @@ export const deleteContactMessageAdmin = async (id) => {
  * FAQ (ADMIN)
  * ========================= */
 
-export const listFaqQuestionsAdmin = async (params = {}) => {
-  const r = await api.get("/api/admin/faq/questions", { params });
-  // BE dùng responseOk -> { ok:true, data:{...} }
-  return r.data?.data ?? r.data; // { items, total, limit, skip }
-};
-
+// Dùng normalizeListPayload để luôn nhận về { items, total, limit, skip }
 export const listFaqCategoriesAdmin = async (params = {}) => {
   const r = await api.get("/api/admin/faq/categories", { params });
-  return r.data?.data ?? r.data; // { items, total, limit, skip }
+  const raw = r.data?.data ?? r.data;
+  const { items, total, limit, skip } = normalizeListPayload(raw);
+  return { items, total, limit, skip };
 };
 
 export const createFaqCategoryAdmin = async (body) => {
   const r = await api.post("/api/admin/faq/categories", body);
+  // responseOk -> { ok:true, data: doc } hoặc trả thẳng doc
   return r.data?.data ?? r.data;
 };
 
@@ -692,6 +690,14 @@ export const deleteFaqCategoryAdmin = async (id) => {
   const r = await api.delete(`/api/admin/faq/categories/${id}`);
   return r.data?.data ?? r.data;
 };
+
+export const listFaqQuestionsAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/faq/questions", { params });
+  const raw = r.data?.data ?? r.data; // support cả responseOk({ data }) lẫn trả thẳng
+  const { items, total, limit, skip } = normalizeListPayload(raw);
+  return { items, total, limit, skip };
+};
+
 
 export const createFaqQuestionAdmin = async (body) => {
   const r = await api.post("/api/admin/faq/questions", body);
