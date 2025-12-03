@@ -326,9 +326,9 @@ export default function Navbar({
               <li className="fm-menu__item">
                 <NavLink to="/thong-ke" className="fm-link">Thống kê</NavLink>
               </li>
-              <li className="fm-menu__item">
+              {/* <li className="fm-menu__item">
                 <NavLink to="/ung-dung" className="fm-link">Ứng dụng</NavLink>
-              </li>
+              </li> */}
             </ul>
           </nav>
         </div>

@@ -1,0 +1,264 @@
+.st-page {
+  color: #f9fafb;
+}
+.st-wrap {
+  padding: 24px;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+.st-card {
+  background: #020617;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  height: 100%; /* Important for grid alignment */
+  display: flex;
+  flex-direction: column;
+}
+.st-card.relative { position: relative; }
+.h-full { height: 100%; }
+
+/* --- GRID LAYOUT SYSTEM (4 columns x 4 rows) --- */
+.st-grid-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 1fr 1fr; /* Cột 1 cố định width, còn lại chia đều */
+  grid-template-rows: 180px 140px 120px 240px; /* Định nghĩa chiều cao các hàng */
+  gap: 16px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .st-grid-layout {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+  }
+  /* Fallback layout for tablets: reset grid placements manually if needed */
+}
+
+/* --- PLACEMENT (Đặt vị trí các box) --- */
+
+/* 1. Tổng quan: Cột 1, Hàng 1->5 (chiếm hết dọc) */
+.st-col-overview {
+  grid-column: 1 / 2;
+  grid-row: 1 / 5;
+}
+
+/* 2. Mục tiêu Calo: Cột 2, Hàng 1-2 (chiếm 2 hàng) */
+.st-box-calories {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+}
+
+/* 3. Tập luyện: Cột 3, Hàng 1 */
+.st-box-workout {
+  grid-column: 3 / 4;
+  grid-row: 1 / 2;
+}
+
+/* 4. Bước chân: Cột 4, Hàng 1 */
+.st-box-steps {
+  grid-column: 4 / 5;
+  grid-row: 1 / 2;
+}
+
+/* 5. Lượng nước: Cột 3-4, Hàng 2 (chiếm ngang phần còn lại của hàng 2) */
+.st-box-water {
+  grid-column: 3 / 5;
+  grid-row: 2 / 3;
+}
+
+/* 6. Dinh dưỡng: Cột 2-3-4 (dưới calo/nước), Hàng 3 */
+.st-box-nutrition {
+  grid-column: 2 / 5;
+  grid-row: 3 / 4;
+}
+
+/* 7. Cân nặng: Cột 2-3-4 (cuối cùng), Hàng 4 */
+.st-box-weight {
+  grid-column: 2 / 5;
+  grid-row: 4 / 5;
+}
+
+/* --- STYLING CHI TIẾT CÁC BOX --- */
+
+/* COMMON TEXT */
+.st-card-header {
+  font-size: 15px;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+.st-card-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
+}
+.st-fire-icon { font-size: 16px; color: #ef4444; }
+
+/* === TỔNG QUAN (DATE SLIDER & LIST) === */
+.st-date-slider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #111827;
+  padding: 6px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.st-ds-arrow {
+  background: none; border: none; color: #9ca3af; cursor: pointer; padding: 4px 8px;
+}
+.st-ds-arrow:hover { color: #fff; }
+.st-ds-days {
+  display: flex; overflow: hidden; gap: 4px;
+}
+.st-ds-item {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4px 8px; border-radius: 8px; cursor: pointer;
+  min-width: 36px;
+}
+.st-ds-item.active { background: #2563eb; color: #fff; }
+.st-ds-date { font-weight: 700; font-size: 14px; }
+.st-ds-month { font-size: 10px; opacity: 0.7; }
+
+.st-overview-body {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.st-total-kcal-label {
+  font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #e5e7eb;
+}
+.st-log-list {
+  flex: 1; overflow-y: auto; padding-right: 4px;
+}
+.st-log-group { margin-bottom: 16px; }
+.st-log-hour { font-size: 12px; color: #6b7280; margin-bottom: 4px; border-left: 2px solid #374151; padding-left: 6px; }
+.st-log-item {
+  display: flex; gap: 10px; padding: 8px; background: #111827; border-radius: 10px; margin-bottom: 6px; align-items: center;
+}
+.st-log-item img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; background: #333; }
+.st-food-name { font-size: 13px; font-weight: 500; color: #f3f4f6; }
+.st-food-sub { font-size: 11px; color: #9ca3af; }
+
+/* === CALO GAUGE === */
+.st-cal-gauge-area {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+}
+.st-gauge-wrapper { position: relative; width: 140px; height: 80px; }
+.st-gauge-svg { display: block; overflow: visible; }
+.st-gauge-progress { transition: stroke-dashoffset 0.5s ease; }
+.st-gauge-text {
+  position: absolute; bottom: 0; left: 0; right: 0; text-align: center;
+}
+.st-gauge-val { font-size: 24px; font-weight: 800; color: #fff; line-height: 1; }
+.st-gauge-sub { font-size: 11px; color: #9ca3af; }
+
+.st-cal-stats-row {
+  display: flex; justify-content: space-around; padding-top: 12px; border-top: 1px solid #1f2937;
+}
+.st-cal-stat { text-align: center; }
+.st-stat-val { font-weight: 700; color: #fff; font-size: 14px; }
+.st-stat-lbl { font-size: 11px; color: #6b7280; }
+
+/* === WORKOUT & STEPS & WATER === */
+.st-btn-add-corner {
+  position: absolute; top: 12px; right: 12px;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid #374151; background: #111827; color: #fff;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.st-btn-add-corner:hover { background: #2563eb; border-color: #2563eb; }
+
+.st-box-content { display: flex; flex-direction: column; height: 100%; justify-content: center; }
+.st-big-num { font-size: 28px; font-weight: 700; color: #fff; }
+.st-big-num small { font-size: 14px; color: #9ca3af; font-weight: 400; }
+.st-sub-text { font-size: 12px; color: #9ca3af; }
+
+.st-progress-bar-wrapper {
+  margin-top: 10px; height: 6px; background: #374151; border-radius: 99px; overflow: hidden;
+}
+.st-progress-bar { height: 100%; background: #22c55e; transition: width 0.3s; }
+
+/* Water specific */
+.st-water-flex {
+  display: flex; align-items: center; height: 100%; justify-content: space-between; padding: 0 10px;
+}
+.st-water-icon { font-size: 40px; margin-right: 16px; }
+.st-water-info { flex: 1; }
+.st-big-num-water { font-size: 32px; font-weight: 700; color: #3b82f6; }
+.st-big-num-water small { font-size: 16px; color: #9ca3af; }
+.st-water-controls {
+  display: flex; align-items: center; gap: 8px; background: #111827; padding: 4px; border-radius: 99px; border: 1px solid #374151;
+}
+.st-water-controls button {
+  width: 28px; height: 28px; border-radius: 50%; border: none; background: #2563eb; color: #fff; cursor: pointer;
+}
+.st-water-controls span { font-size: 12px; font-weight: 600; padding: 0 8px; }
+
+/* === NUTRITION (6 cols) === */
+.st-nutrition-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; height: 100%; align-items: center;
+}
+.st-macro-col {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.st-macro-header { font-size: 12px; color: #9ca3af; font-weight: 500; }
+.st-macro-bar-bg { height: 6px; background: #1f2937; border-radius: 99px; overflow: hidden; }
+.st-macro-bar-fill { height: 100%; }
+.st-macro-nums { font-size: 12px; }
+
+/* === WEIGHT CHART === */
+.st-weight-chart-area {
+  flex: 1; position: relative; margin-top: 10px;
+}
+.st-chart-container {
+  width: 100%; height: 100%; position: relative;
+}
+.st-chart-svg {
+  width: 100%; height: 100px; position: absolute; bottom: 20px; left: 0; overflow: visible;
+}
+.st-chart-dot-wrap {
+  position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center;
+}
+.st-chart-dot {
+  width: 10px; height: 10px; background: #14b8a6; border: 2px solid #fff; border-radius: 50%;
+}
+.st-chart-tooltip {
+  position: absolute; bottom: 14px; background: #111827; border: 1px solid #374151; padding: 2px 6px; border-radius: 4px; font-size: 10px; white-space: nowrap;
+}
+.st-chart-date {
+  position: absolute; top: 14px; font-size: 10px; color: #6b7280; white-space: nowrap;
+}
+
+/* === MODAL STYLES === */
+.st-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.st-modal-content {
+  background: #0f172a; padding: 20px; border-radius: 8px; width: 500px; max-width: 90%;
+  border: 1px solid #334155; color: #fff;
+}
+.st-modal-content.sm { width: 320px; }
+.st-modal-content h3 { margin-top: 0; }
+.st-modal-list { max-height: 300px; overflow-y: auto; margin: 16px 0; display: flex; flex-direction: column; gap: 8px; }
+.st-opt-row {
+  padding: 10px; border: 1px solid #334155; border-radius: 8px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.st-opt-row.active { border-color: #22c55e; background: rgba(34, 197, 94, 0.1); }
+.st-inp-full {
+  width: 100%; padding: 10px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #fff; margin: 16px 0;
+}
+.st-modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.st-modal-actions button {
+  padding: 8px 16px; border-radius: 8px; cursor: pointer; background: transparent; border: 1px solid #475569; color: #cbd5e1;
+}
+.st-modal-actions button.primary {
+  background: #ef4444; border-color: #ef4444; color: #fff;
+}

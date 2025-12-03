@@ -40,6 +40,9 @@ import CreateTeam from "./pages/Connect/CreateTeam";
 import DuoConnect from "./pages/Connect/DuoConnect";
 import TeamConnect from "./pages/Connect/TeamConnect";
 
+// Statistical
+import Statistical from "./pages/Statistical/Statistical";
+
 // Layout (Navbar + Footer)
 import AppShell from "./components/layout/AppShell";
 
@@ -104,7 +107,7 @@ export default function App() {
           <Route path="/home" element={<Home />} />
 
           {/* Thống kê */}
-          <Route path="/thong-ke" element={<ThongKe />} />
+          <Route path="/thong-ke" element={<Statistical />} />
 
           {/* Kết nối */}
           <Route path="/ket-noi" element={<ConnectSidebar  />} />
