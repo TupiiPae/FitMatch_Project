@@ -1,5 +1,6 @@
 // user-app/src/pages/Account/Profile/BodyProfile.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import dayjs from "dayjs";
 import api from "../../../lib/api";
 import { toast } from "react-toastify";
 import "./BodyProfile.css";
@@ -24,8 +25,24 @@ const PHOTO_TABS = [
   { id: "back", label: "Mặt sau" },
 ];
 
+const GOAL_LABELS = {
+  giam_can: "Giảm cân",
+  duy_tri: "Duy trì",
+  tang_can: "Tăng cân",
+  giam_mo: "Giảm mỡ",
+  tang_co: "Tăng cơ",
+};
+
+const INTENSITY_LABELS = {
+  level_1: "Không tập luyện, ít vận động",
+  level_2: "Vận động nhẹ nhàng",
+  level_3: "Chăm chỉ tập luyện",
+  level_4: "Rất năng động",
+};
+
 export default function BodyProfile() {
   const [user, setUser] = useState(null);
+  const [onb, setOnb] = useState(null); // OnboardingProfile (base + goals)
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -49,12 +66,23 @@ export default function BodyProfile() {
   // Tab hình ảnh tiến độ
   const [photoTab, setPhotoTab] = useState("all");
 
+  // ===== Load user + onboarding cùng lúc =====
   const loadMe = async () => {
     setLoading(true);
     setErr("");
     try {
-      const res = await api.get("/api/user/me");
-      const u = res?.data?.user || null;
+      const [resUser, resOnb] = await Promise.all([
+        api.get("/user/me"),
+        api
+          .get("/user/onboarding/me")
+          .catch((e) => {
+            // Nếu chưa có onboarding thì BE trả 404 → coi như chưa có dữ liệu mục tiêu
+            if (e?.response?.status === 404) return null;
+            throw e;
+          }),
+      ]);
+
+      const u = resUser?.data?.user || null;
       setUser(u);
       const p = u?.profile || {};
       setForm({
@@ -62,6 +90,12 @@ export default function BodyProfile() {
         weightKg: p.weightKg ?? "",
         bodyFat: p.bodyFat ?? "",
       });
+
+      if (resOnb && resOnb.data?.data) {
+        setOnb(resOnb.data.data); // { _id, user, username, base, goals }
+      } else {
+        setOnb(null);
+      }
     } catch (e) {
       setErr(e?.response?.data?.message || "Không thể tải hồ sơ");
     } finally {
@@ -137,7 +171,7 @@ export default function BodyProfile() {
 
     setSaving(true);
     try {
-      const res = await api.patch("/api/user/account", payload);
+      const res = await api.patch("/user/account", payload);
       const u = res?.data?.user;
       if (u) {
         setUser(u);
@@ -157,38 +191,113 @@ export default function BodyProfile() {
     }
   };
 
-  // ===== Modal “Thiết lập mục tiêu mới”
+  // ===== Lấy goal đang active từ OnboardingProfile =====
+  const currentGoal = useMemo(() => {
+    if (!onb) return null;
+    const goals = Array.isArray(onb.goals) ? onb.goals : [];
+    let active = goals.find((g) => g.status === "active") || null;
+    if (!active && goals.length) {
+      active = goals[goals.length - 1];
+    }
+    if (active) return active;
+
+    const base = onb.base || {};
+    if (base && Object.keys(base).length) {
+      return { ...base, fromBase: true };
+    }
+    return null;
+  }, [onb]);
+
+  const sexLabel =
+    p.sex === "male" ? "Nam" : p.sex === "female" ? "Nữ" : "";
+
+  const age = p.dob ? calcAge(p.dob) : "";
+
+  // ===== Data hiển thị bảng Mục tiêu cân nặng =====
+  const goalType = currentGoal?.mucTieu;
+  const goalLabel = goalType ? GOAL_LABELS[goalType] || goalType : "—";
+  const goalTargetWeight =
+    currentGoal?.canNangMongMuon ??
+    currentGoal?.canNangHienTai ??
+    null;
+
+  const weeklyChange = currentGoal?.mucTieuTuan;
+  const weeklyText =
+    typeof weeklyChange === "number"
+      ? goalType === "tang_can" || goalType === "tang_co"
+        ? `Tăng ${weeklyChange} kg/tuần`
+        : `Giảm ${weeklyChange} kg/tuần`
+      : "—";
+
+  const intensityKey = currentGoal?.cuongDoLuyenTap || p.trainingIntensity;
+  const intensityLabel =
+    (intensityKey && INTENSITY_LABELS[intensityKey]) || intensityKey || "—";
+
+  const kcalTargetFromGoal =
+    typeof currentGoal?.calorieTarget === "number"
+      ? currentGoal.calorieTarget
+      : typeof currentGoal?.tdee === "number"
+      ? currentGoal.tdee
+      : null;
+
+  const kcalText =
+    typeof kcalTargetFromGoal === "number"
+      ? `${Math.round(kcalTargetFromGoal)} kcal`
+      : typeof p.calorieTarget === "number"
+      ? `${Math.round(p.calorieTarget)} kcal`
+      : typeof p.tdee === "number"
+      ? `${Math.round(p.tdee)} kcal`
+      : "—";
+
+  const estimatedFinish =
+    currentGoal && currentGoal.estimatedFinishAt
+      ? dayjs(currentGoal.estimatedFinishAt).format("DD/MM/YYYY")
+      : "—";
+
+  // ===== Modal “Thiết lập mục tiêu mới” =====
   const openNewGoal = () => {
-    const curr = user?.profile || {};
+    const baseOrGoal = currentGoal || {};
+    const prof = user?.profile || {};
     setGoalForm({
-      chieuCao: curr.heightCm ?? "",
-      canNangHienTai: curr.weightKg ?? "",
-      canNangMongMuon: curr.targetWeightKg ?? "",
-      mucTieu: curr.goal ?? "",
-      mucTieuTuan: curr.weeklyChangeKg ?? "",
-      cuongDoLuyenTap: curr.trainingIntensity ?? "",
-      bodyFat: curr.bodyFat ?? "",
+      chieuCao: baseOrGoal.chieuCao ?? prof.heightCm ?? "",
+      canNangHienTai:
+        baseOrGoal.canNangHienTai ?? prof.weightKg ?? "",
+      canNangMongMuon:
+        baseOrGoal.canNangMongMuon ?? prof.targetWeightKg ?? "",
+      mucTieu: baseOrGoal.mucTieu ?? prof.goal ?? "",
+      mucTieuTuan: baseOrGoal.mucTieuTuan ?? prof.weeklyChangeKg ?? "",
+      cuongDoLuyenTap:
+        baseOrGoal.cuongDoLuyenTap ?? prof.trainingIntensity ?? "",
+      bodyFat: baseOrGoal.bodyFat ?? prof.bodyFat ?? "",
     });
     setShowNewGoal(true);
   };
 
   const createNewGoal = async () => {
     const payload = {
-      chieuCao: goalForm.chieuCao === "" ? undefined : Number(goalForm.chieuCao),
+      chieuCao:
+        goalForm.chieuCao === "" ? undefined : Number(goalForm.chieuCao),
       canNangHienTai:
-        goalForm.canNangHienTai === "" ? undefined : Number(goalForm.canNangHienTai),
+        goalForm.canNangHienTai === ""
+          ? undefined
+          : Number(goalForm.canNangHienTai),
       canNangMongMuon:
-        goalForm.canNangMongMuon === "" ? undefined : Number(goalForm.canNangMongMuon),
+        goalForm.canNangMongMuon === ""
+          ? undefined
+          : Number(goalForm.canNangMongMuon),
       mucTieu: goalForm.mucTieu || undefined,
       mucTieuTuan:
-        goalForm.mucTieuTuan === "" ? undefined : Number(goalForm.mucTieuTuan),
+        goalForm.mucTieuTuan === ""
+          ? undefined
+          : Number(goalForm.mucTieuTuan),
       cuongDoLuyenTap: goalForm.cuongDoLuyenTap || undefined,
-      bodyFat: goalForm.bodyFat === "" ? undefined : Number(goalForm.bodyFat),
+      bodyFat:
+        goalForm.bodyFat === "" ? undefined : Number(goalForm.bodyFat),
     };
 
     setCreatingGoal(true);
     try {
-      await api.post("/api/user/onboarding/goal", payload);
+      await api.post("/user/onboarding/goal", payload);
       toast.success("Đã tạo mục tiêu mới!");
       setShowNewGoal(false);
       await loadMe();
@@ -199,11 +308,6 @@ export default function BodyProfile() {
       setCreatingGoal(false);
     }
   };
-
-  const sexLabel =
-    p.sex === "male" ? "Nam" : p.sex === "female" ? "Nữ" : "";
-
-  const age = p.dob ? calcAge(p.dob) : "";
 
   if (loading) {
     return (
@@ -316,41 +420,43 @@ export default function BodyProfile() {
         </p>
 
         <div className="bp-goal-table">
+          {/* Hàng 1: Mục tiêu -> Cân nặng mục tiêu */}
           <div className="bp-row-goal bp-row-goal-head">
             <div className="bp-cell">Mục tiêu</div>
             <div className="bp-cell bp-cell-end">
-              {(p.weightKg ?? "xx")} kg → {(p.targetWeightKg ?? "xx")} kg
+              {goalLabel} →{" "}
+              {goalTargetWeight != null
+                ? `${goalTargetWeight} kg`
+                : "xx kg"}
             </div>
           </div>
+
+          {/* Hàng 2: Mục tiêu hằng tuần */}
           <div className="bp-row-goal">
             <div className="bp-cell">Mục tiêu hằng tuần</div>
-            <div className="bp-cell bp-cell-end">
-              {typeof p.weeklyChangeKg === "number"
-                ? p.goal === "tang_can" || p.goal === "tang_co"
-                  ? `Tăng ${p.weeklyChangeKg} kg/tuần`
-                  : `Giảm ${p.weeklyChangeKg} kg/tuần`
-                : "—"}
-            </div>
+            <div className="bp-cell bp-cell-end">{weeklyText}</div>
           </div>
+
+          {/* Hàng 3: Cường độ vận động (label) */}
           <div className="bp-row-goal">
             <div className="bp-cell">Cường độ vận động</div>
             <div className="bp-cell bp-cell-end">
-              {p.trainingIntensity || "—"}
+              {intensityLabel}
             </div>
           </div>
+
+          {/* Hàng 4: Calo mục tiêu (ước tính) */}
           <div className="bp-row-goal">
             <div className="bp-cell">Calo mục tiêu (ước tính)</div>
-            <div className="bp-cell bp-cell-end">
-              {typeof p.calorieTarget === "number"
-                ? `${Math.round(p.calorieTarget)} kcal`
-                : typeof p.tdee === "number"
-                ? `${Math.round(p.tdee)} kcal`
-                : "—"}
-            </div>
+            <div className="bp-cell bp-cell-end">{kcalText}</div>
           </div>
+
+          {/* Hàng 5: Dự kiến hoàn thành */}
           <div className="bp-row-goal">
             <div className="bp-cell">Dự kiến hoàn thành</div>
-            <div className="bp-cell bp-cell-end">—</div>
+            <div className="bp-cell bp-cell-end">
+              {estimatedFinish}
+            </div>
           </div>
         </div>
 
@@ -375,7 +481,9 @@ export default function BodyProfile() {
               <button
                 key={t.id}
                 type="button"
-                className={`bp-tab ${photoTab === t.id ? "active" : ""}`}
+                className={`bp-tab ${
+                  photoTab === t.id ? "active" : ""
+                }`}
                 onClick={() => setPhotoTab(t.id)}
               >
                 {t.label}
@@ -390,7 +498,8 @@ export default function BodyProfile() {
 
         <div className="bp-progress-grid">
           <div className="bp-progress-empty">
-            Chưa có ảnh tiến độ cho tab "{PHOTO_TABS.find((x) => x.id === photoTab)?.label}".
+            Chưa có ảnh tiến độ cho tab "
+            {PHOTO_TABS.find((x) => x.id === photoTab)?.label}".
           </div>
         </div>
       </section>
@@ -512,10 +621,12 @@ export default function BodyProfile() {
                   }
                 >
                   <option value="">— chọn —</option>
-                  <option value="level_1">level_1</option>
-                  <option value="level_2">level_2</option>
-                  <option value="level_3">level_3</option>
-                  <option value="level_4">level_4</option>
+                  <option value="level_1">
+                    Không tập luyện, ít vận động
+                  </option>
+                  <option value="level_2">Vận động nhẹ nhàng</option>
+                  <option value="level_3">Chăm chỉ tập luyện</option>
+                  <option value="level_4">Rất năng động</option>
                 </select>
               </label>
 
