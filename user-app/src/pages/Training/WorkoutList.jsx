@@ -11,6 +11,10 @@ import {
 } from "../../api/suggestPlans";
 import { toast } from "react-toastify";
 import api from "../../lib/api";
+import dayjs from "dayjs";
+import { toggleWorkoutDone, getDailyActivity } from "../../api/activity";
+
+const STAT_LS_KEY = "fm_daily_stats_v1";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => {
@@ -54,6 +58,33 @@ function mapPlanToUi(p) {
   };
 }
 
+function readActivityFor(dateISO){
+  try{
+    const all = JSON.parse(window.localStorage.getItem(STAT_LS_KEY) || "{}");
+    return all[dateISO] || {steps:0,weightKg:null,workouts:[]};
+  }catch{
+    return {steps:0,weightKg:null,workouts:[]};
+  }
+}
+
+function writeActivityFor(dateISO, activity){
+  try{
+    const all = JSON.parse(window.localStorage.getItem(STAT_LS_KEY) || "{}");
+    all[dateISO] = activity;
+    window.localStorage.setItem(STAT_LS_KEY, JSON.stringify(all));
+  }catch{}
+}
+
+function getMarkedIdsForToday(){
+  try{
+    const d = dayjs().format("YYYY-MM-DD");
+    const a = readActivityFor(d);
+    return (a.workouts || []).map(w => w.id);
+  }catch{
+    return [];
+  }
+}
+
 export default function WorkoutList() {
   const nav = useNavigate();
 
@@ -69,6 +100,9 @@ export default function WorkoutList() {
     id: null,
     name: "",
   });
+  const [markedIds, setMarkedIds] = useState(() => getMarkedIdsForToday());
+  const [doneToday, setDoneToday] = useState({}); // { workoutId: true }
+
 
   // xác nhận bỏ lưu lịch tập gợi ý
   const [confirmUnsave, setConfirmUnsave] = useState({
@@ -139,6 +173,18 @@ export default function WorkoutList() {
     };
     document.addEventListener("click", fn);
     return () => document.removeEventListener("click", fn);
+  }, []);
+  useEffect(() => {
+    const today = dayjs().format("YYYY-MM-DD");
+    getDailyActivity(today)
+      .then(res => {
+        const map = {};
+        (res.data?.workouts || []).forEach(w => {
+          if (w.id) map[w.id] = true;
+        });
+        setDoneToday(map);
+      })
+      .catch(() => {});
   }, []);
 
   const listMine = useMemo(() => mine, [mine]);
@@ -252,6 +298,49 @@ export default function WorkoutList() {
     };
   };
 
+    const toggleMarkToday = (w) => {
+    const d = dayjs().format("YYYY-MM-DD");
+    const activity = readActivityFor(d);
+    const cur = activity.workouts || [];
+    const exists = cur.some(it => it.id === w._id);
+    let nextWorkouts;
+    let msg;
+
+    if (exists) {
+      // Bỏ đánh dấu
+      nextWorkouts = cur.filter(it => it.id !== w._id);
+      msg = "Đã bỏ đánh dấu lịch tập cho hôm nay";
+    } else {
+      // Thêm đánh dấu
+      const obj = { id: w._id, name: w.title, kcal: w.kcal || 0 };
+      nextWorkouts = [...cur, obj];
+      msg = "Đã đánh dấu là đã thực hiện cho hôm nay";
+    }
+
+    const nextActivity = { ...activity, workouts: nextWorkouts };
+    writeActivityFor(d, nextActivity);
+    setMarkedIds(nextWorkouts.map(it => it.id));
+    toast.success(msg);
+    setMenuId(null);
+  };
+
+    const handleToggleMark = async (workoutId) => {
+    const today = dayjs().format("YYYY-MM-DD");
+    try {
+      const r = await toggleWorkoutDone({ date: today, workoutId });
+      const isMarked = !!r.data?.isMarked;
+      setDoneToday(prev => ({ ...prev, [workoutId]: isMarked }));
+      toast.success(
+        isMarked ? "Đã đánh dấu lịch tập cho hôm nay" : "Đã bỏ đánh dấu lịch tập cho hôm nay"
+      );
+      setMenuId(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Không thể cập nhật đánh dấu");
+    }
+  };
+
+
   // ==== helper drag-to-scroll cho 2 frame ====
   const startDrag = (ref, dragRef, e) => {
     if (e.button !== 0) return; // chỉ chuột trái
@@ -345,6 +434,7 @@ export default function WorkoutList() {
                     key={w._id}
                     item={w}
                     mine
+                    marked={!!doneToday[w._id]}
                     menuOpen={menuId === w._id}
                     onToggleMenu={() =>
                       setMenuId(menuId === w._id ? null : w._id)
@@ -355,10 +445,7 @@ export default function WorkoutList() {
                       nav(`/tap-luyen/lich-cua-ban/tao?id=${w._id}`);
                     }}
                     onOpenDetail={() => openPlanDetailWorkout(w._id)}
-                    onMarkDone={() => {
-                      toast.success("Đã đánh dấu là đã thực hiện");
-                      setMenuId(null);
-                    }}
+                    onMarkDone={() => handleToggleMark(w._id)}
                   />
                 ))
               )}
@@ -674,16 +761,17 @@ export default function WorkoutList() {
   );
 }
 
-function WorkoutItem({
-  item,
-  mine,
-  menuOpen,
-  onToggleMenu,
-  onDelete,
-  onEdit,
-  onOpenDetail,
-  onMarkDone,
-}) {
+  function WorkoutItem({
+    item,
+    mine,
+    menuOpen,
+    onToggleMenu,
+    onDelete,
+    onEdit,
+    onOpenDetail,
+    onMarkDone,
+    marked,
+  }) {
   const nf = new Intl.NumberFormat("vi-VN");
   return (
     <div className="wl-item" onClick={() => onOpenDetail && onOpenDetail()}>
@@ -725,7 +813,7 @@ function WorkoutItem({
                   </button>
                 )}
                 <button className="menu-item" onClick={onMarkDone}>
-                  Đánh dấu đã thực hiện
+                  {marked ? "Bỏ đánh dấu" : "Đánh dấu đã thực hiện"}
                 </button>
               </div>
             )}

@@ -1,34 +1,52 @@
 // src/pages/Statistical/Statistical.jsx
-import { useEffect, useMemo, useState } from "react"; import dayjs from "dayjs"; import "./Statistical.css";
+import { useEffect, useMemo, useState } from "react";
+import dayjs from "dayjs";
+import "./Statistical.css";
 import { getDayLogs, getWater, incWater, getStreak } from "../../api/nutrition";
-import { listMyWorkouts } from "../../api/workouts"; import api from "../../lib/api"; import { toast } from "react-toastify";
-import { WorkoutModal, SimpleInputModal } from "./StatisticalModals"; 
+import { listMyWorkouts } from "../../api/workouts";
+import {
+  getDailyActivity,
+  setDailySteps,
+  setDailyWeight,
+  saveDailyWorkouts,
+  getWeightHistory as apiGetWeightHistory,
+} from "../../api/activity";
+import api from "../../lib/api";
+import { toast } from "react-toastify";
+import { WorkoutModal, SimpleInputModal } from "./StatisticalModals";
 
-/* ===== Helpers & Constants ===== */
-const LS_KEY="fm_daily_stats_v1", STEP_GOAL=8000, PLACEHOLDER="/images/food-placeholder.jpg";
-const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
-const toAbs=u=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
-const round1=v=>Math.round((v||0)*10)/10, toNum=(v,d=0)=>v==null||v===""||isNaN(+v)?d:+v;
+const STEP_GOAL = 8000, PLACEHOLDER = "/images/food-placeholder.jpg";
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
+const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
+const toNum = (v, d = 0) => v == null || v === "" || isNaN(+v) ? d : +v;
 
 function readStatFor(d){ try{const r=window.localStorage.getItem(LS_KEY);return (r?JSON.parse(r):{})[d]||{steps:0,weightKg:null,workouts:[]}}catch{return {steps:0,weightKg:null,workouts:[]}} }
 function writeAllStatLocal(d, val){ try{const r=JSON.parse(window.localStorage.getItem(LS_KEY)||'{}'); r[d]=val; window.localStorage.setItem(LS_KEY,JSON.stringify(r))}catch{} }
 function mapWorkoutToOption(p){ const t=p?.totals||{}; return {id:p._id, name:p.name||"(No name)", kcal:t.kcal??t.calories??p.totalKcal??0} }
+const pickWorkoutRes = (r) => r?.data?.data || r?.data || r || {};
 
 export default function Statistical() {
-  const [date, setDate] = useState(()=>dayjs().format("YYYY-MM-DD"));
+  const [date, setDate] = useState(() => dayjs().format("YYYY-MM-DD"));
   const [logs, setLogs] = useState([]);
-  const [totals, setTotals] = useState({kcal:0,proteinG:0,carbG:0,fatG:0,sugarG:0,saltG:0,fiberG:0});
-  const [targets, setTargets] = useState({kcal:0,proteinG:0,carbG:0,fatG:0,sugarG:0,saltG:0,fiberG:0});
+  const [totals, setTotals] = useState({ kcal: 0, proteinG: 0, carbG: 0, fatG: 0, sugarG: 0, saltG: 0, fiberG: 0 });
+  const [targets, setTargets] = useState({ kcal: 0, proteinG: 0, carbG: 0, fatG: 0, sugarG: 0, saltG: 0, fiberG: 0 });
   const [waterMl, setWaterMl] = useState(0); const [stepMl, setStepMl] = useState(250);
   const [streak, setStreak] = useState(0); const [hot, setHot] = useState(false);
-  const [activity, setActivity] = useState(()=>readStatFor(dayjs().format("YYYY-MM-DD")));
-  const [workOptions, setWorkOptions] = useState([]); 
+  const [activity, setActivity] = useState({ steps: 0, weightKg: null, workouts: [] });
+  const [weightHistory, setWeightHistory] = useState([]);
+  const [workOptions, setWorkOptions] = useState([]);
   const [modal, setModal] = useState(null);
   
 
   /* ====== Logic ====== */
-  const selectedWorkoutIds = useMemo(()=>new Set((activity.workouts||[]).map(w=>w.id)),[activity.workouts]);
-  const totalBurnedKcal = useMemo(()=>(activity.workouts||[]).reduce((s,w)=>s+(w.kcal||0),0),[activity.workouts]);
+  const selectedWorkoutIds = useMemo(
+    () => new Set((activity.workouts || []).map(w => w.id)),
+    [activity.workouts]
+  );
+  const totalBurnedKcal = useMemo(
+    () => (activity.workouts || []).reduce((s, w) => s + (w.kcal || 0), 0),
+    [activity.workouts]
+  );
   const kcalTarget=Math.round(targets.kcal||0), kcalAte=Math.round(totals.kcal||0), kcalBurned=Math.round(totalBurnedKcal||0);
   const kcalBudget=Math.max(0,kcalTarget+kcalBurned), kcalRemaining=Math.max(0,kcalBudget-kcalAte), kcalUsedPct=kcalBudget?Math.min(1,kcalAte/kcalBudget):0;
 
@@ -38,31 +56,127 @@ export default function Statistical() {
     return Object.entries(map).map(([h,arr])=>({ hour:Number(h), items:arr, totalKcal: arr.reduce((s,i)=>s+(i.food?.kcal||0)*toNum(i.quantity,1),0) })).sort((a,b)=>a.hour-b.hour);
   }, [logs]);
 
-  const weightHistory = useMemo(() => {
-    try{ const all=JSON.parse(window.localStorage.getItem(LS_KEY)||'{}');
-      return Object.entries(all).filter(([,v])=>v&&v.weightKg!=null).sort(([a],[b])=>a<b?-1:1).slice(-10).map(([d,v])=>({date:d, weight:Number(v.weightKg)}));
-    }catch{return []}
-  }, [activity.weightKg, date]);
-
-  const updateActivity = patch => { setActivity(prev=>{ const next={...prev,...patch}; writeAllStatLocal(date, next); return next; }); };
+  const updateActivity = (patch) => {
+    setActivity(prev => ({ ...prev, ...patch }));
+  };
 
   /* ====== API ====== */
-  async function loadData() {
-    const [l, w, s] = await Promise.all([getDayLogs(date), getWater(date), getStreak()]);
-    setLogs((l.data?.items||[]).map(it=>({ ...it, hour:Number(it.hour), quantity:Number(it.quantity??1), foodAbs:it.food?.imageUrl?toAbs(it.food.imageUrl):PLACEHOLDER })));
-    const t=l.data?.totals||{}, g=l.data?.targets||{};
-    setTotals({kcal:+t.kcal||0,proteinG:+t.proteinG||0,carbG:+t.carbG||0,fatG:+t.fatG||0,sugarG:+t.sugarG||0,saltG:+t.saltG||0,fiberG:+t.fiberG||0});
-    setTargets({kcal:+g.kcal||0,proteinG:+g.proteinG||0,carbG:+g.carbG||0,fatG:+g.fatG||0,sugarG:+g.sugarG||0,saltG:+g.saltG||0,fiberG:+g.fiberG||0});
-    setWaterMl(Number(w.data?.amountMl||0));
-    setStreak(Number(s.data?.streak||0)); setHot(Number(s.data?.streak||0)>=2);
-    setActivity(readStatFor(date));
+async function loadData() {
+    const [l, w, s, actRes] = await Promise.all([
+      getDayLogs(date),
+      getWater(date),
+      getStreak(),
+      getDailyActivity(date),
+    ]);
+
+    setLogs((l.data?.items || []).map(it => ({
+      ...it,
+      hour: Number(it.hour),
+      quantity: Number(it.quantity ?? 1),
+      foodAbs: it.food?.imageUrl ? toAbs(it.food.imageUrl) : PLACEHOLDER,
+    })));
+
+    const t = l.data?.totals || {}, g = l.data?.targets || {};
+    setTotals({
+      kcal: +t.kcal || 0, proteinG: +t.proteinG || 0, carbG: +t.carbG || 0,
+      fatG: +t.fatG || 0, sugarG: +t.sugarG || 0, saltG: +t.saltG || 0, fiberG: +t.fiberG || 0,
+    });
+    setTargets({
+      kcal: +g.kcal || 0, proteinG: +g.proteinG || 0, carbG: +g.carbG || 0,
+      fatG: +g.fatG || 0, sugarG: +g.sugarG || 0, saltG: +g.saltG || 0, fiberG: +g.fiberG || 0,
+    });
+
+    setWaterMl(Number(w.data?.amountMl || 0));
+    setStreak(Number(s.data?.streak || 0));
+    setHot(Number(s.data?.streak || 0) >= 2);
+
+    const a = actRes.data || {};
+    updateActivity({
+      steps: a.steps || 0,
+      weightKg: a.weightKg ?? null,
+      workouts: a.workouts || [],
+    });
   }
+
+  useEffect(() => { loadData(); }, [date]);
   
   useEffect(()=>{ loadData(); },[date]);
-  useEffect(()=>{ listMyWorkouts({limit:50}).then(res=>setWorkOptions(((res?.data?.data||res?.data||{}).items||[]).map(mapWorkoutToOption))).catch(()=>{}); },[]);
+  useEffect(() => {
+      listMyWorkouts({ limit: 50 })
+        .then(res => {
+          const raw = (res?.data?.data || res?.data || {}).items || [];
+          setWorkOptions(raw.map(mapWorkoutToOption));
+        })
+        .catch(() => {});
+    }, []);
+
+    useEffect(() => {
+      apiGetWeightHistory(10)
+        .then(res => setWeightHistory(res.data?.history || []))
+        .catch(() => {});
+    }, []);
+
+    useEffect(() => {
+  (async () => {
+    try {
+      const res = await listMyWorkouts({ q: "", limit: 50, skip: 0 });
+      const raw = pickWorkoutRes(res);
+      const items = (raw.items || []).map(mapWorkoutToOption);
+      setWorkOptions(items);
+    } catch (err) {
+      console.error("Đã có lỗi xảy ra:", err);
+    }
+  })();
+}, []);
 
   /* ====== Handlers ====== */
-  const waterDelta = async(d) => { const want=Math.max(0,Math.min(10000,waterMl+d)); if(want!==waterMl){ await incWater({date,deltaMl:want-waterMl}); setWaterMl(want); }};
+  const waterDelta = async (d) => {
+    const want = Math.max(0, Math.min(10000, waterMl + d));
+    if (want !== waterMl) {
+      await incWater({ date, deltaMl: want - waterMl });
+      setWaterMl(want);
+    }
+  };
+
+  const handleSaveWorkouts = async (selected) => {
+    try {
+      await saveDailyWorkouts({ date, workoutIds: selected.map(w => w.id) });
+      updateActivity({ workouts: selected });
+      toast.success("Đã lưu lịch tập cho ngày này");
+      setModal(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Không lưu được lịch tập");
+    }
+  };
+
+  const handleSaveSteps = async (val) => {
+    try {
+      await setDailySteps({ date, steps: val });
+      updateActivity({ steps: val });
+      toast.success("Đã cập nhật bước chân");
+      setModal(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Không lưu được bước chân");
+    }
+  };
+
+  const handleSaveWeight = async (val) => {
+    try {
+      await setDailyWeight({ date, weightKg: val });
+      updateActivity({ weightKg: val });
+      // reload history để chart cập nhật
+      apiGetWeightHistory(10)
+        .then(res => setWeightHistory(res.data?.history || []))
+        .catch(() => {});
+      toast.success("Đã cập nhật cân nặng");
+      setModal(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Không lưu được cân nặng");
+    }
+  };
   const renderRing = () => {
   const r = 60, C = Math.PI * r, off = C * (1 - kcalUsedPct);
   return (
@@ -193,17 +307,60 @@ export default function Statistical() {
           <button className="st-btn-add-corner" onClick={()=>setModal('WEIGHT')}>+</button>
           <div className="st-weight-body">
             <div className="st-w-left"><div className="st-w-curr">{activity.weightKg||"--"} <span>kg</span></div><div className="st-w-lbl">Gần nhất</div></div>
-            <div className="st-w-chart">{!weightHistory.length?<span className="st-no-data">Chưa có dữ liệu</span>:
-              <div className="st-chart-viz"><div className="st-chart-line"/>{weightHistory.map((p,i)=><div key={p.date} className="st-cp" style={{left:`${(i/(Math.max(1,weightHistory.length-1)))*100}%`}}><div className="st-cdot"/><span className="st-ctip">{dayjs(p.date).format("DD")}·{p.weight}</span></div>)}</div>}
+            <div className="st-w-chart">
+              {!weightHistory.length ? (
+                <span className="st-no-data">Chưa có dữ liệu</span>
+              ) : (
+                <div className="st-chart-viz">
+                  <div className="st-chart-line" />
+                  {weightHistory.map((p, i) => (
+                    <div
+                      key={p.date}
+                      className="st-cp"
+                      style={{ left: `${(i / Math.max(1, weightHistory.length - 1)) * 100}%` }}
+                    >
+                      <div className="st-cdot" />
+                      <span className="st-ctip">
+                        {dayjs(p.date).format("DD")}·{p.weight}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* MODALS */}
-      {modal==='WORKOUT' && <WorkoutModal options={workOptions} initialSelectedIds={Array.from(selectedWorkoutIds)} onClose={()=>setModal(null)} onSave={s=>{updateActivity({workouts:s}); toast.success("Đã lưu"); setModal(null)}}/>}
-      {modal==='STEPS' && <SimpleInputModal title="Cập nhật bước chân" currentVal={activity.steps} unit="bước" step={100} onClose={()=>setModal(null)} onSave={v=>{updateActivity({steps:v}); toast.success("Đã lưu"); setModal(null)}}/>}
-      {modal==='WEIGHT' && <SimpleInputModal title="Cập nhật cân nặng" currentVal={activity.weightKg} unit="kg" step={0.1} onClose={()=>setModal(null)} onSave={v=>{updateActivity({weightKg:v}); toast.success("Đã lưu"); setModal(null)}}/>}
+      {modal === 'WORKOUT' && (
+        <WorkoutModal
+          options={workOptions}
+          initialSelectedIds={Array.from(selectedWorkoutIds)}
+          onClose={() => setModal(null)}
+          onSave={handleSaveWorkouts}
+        />
+      )}
+      {modal === 'STEPS' && (
+        <SimpleInputModal
+          title="Cập nhật bước chân"
+          currentVal={activity.steps}
+          unit="bước"
+          step={100}
+          onClose={() => setModal(null)}
+          onSave={handleSaveSteps}
+        />
+      )}
+      {modal === 'WEIGHT' && (
+        <SimpleInputModal
+          title="Cập nhật cân nặng"
+          currentVal={activity.weightKg}
+          unit="kg"
+          step={0.1}
+          onClose={() => setModal(null)}
+          onSave={handleSaveWeight}
+        />
+      )}
     </div></div>
   );
 }

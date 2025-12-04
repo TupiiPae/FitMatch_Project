@@ -253,6 +253,7 @@
   padding: 8px 10px;
   border-radius: 4px;
   cursor: pointer;
+  color: #111827;
 }
 .wl-item .menu-item:hover {
   background: #f3f4f6;

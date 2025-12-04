@@ -3,6 +3,7 @@ import "./Statistical.css"; // Dùng chung CSS cho đồng bộ
 
 export function WorkoutModal({ options, initialSelectedIds, onClose, onSave }) {
   const [ids, setIds] = useState(initialSelectedIds || []);
+  useEffect(() => { setIds(initialSelectedIds || []); }, [initialSelectedIds]);
   const toggle = (id) => setIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
   return (
     <div className="st-modal-backdrop" onClick={onClose}><div className="st-modal-card" onClick={e => e.stopPropagation()}>
