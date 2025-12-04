@@ -1,264 +1,145 @@
-.st-page {
-  color: #f9fafb;
-}
-.st-wrap {
-  padding: 24px;
-  max-width: 1800px;
-  margin: 0 auto;
-}
-.st-card {
-  background: #020617;
-  border: 1px solid #1f2937;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  height: 100%; /* Important for grid alignment */
-  display: flex;
-  flex-direction: column;
-}
-.st-card.relative { position: relative; }
-.h-full { height: 100%; }
+/* src/pages/Statistical/Statistical.css */
+.st-page { color: #f9fafb; --bg-card: #020617; --border: #1f2937; --primary: #ef4444; }
+.st-wrap { padding: 24px; max-width: 1800px; margin: 0 auto; }
+.st-btn { border-radius: 8px; border: 1px solid transparent; padding: 7px 12px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.st-btn.primary { background: var(--primary); color: #fff; } .st-btn.ghost { background: var(--bg-card); color: #e5e7eb; border-color: #4b5563; }
+.st-header { display: flex; justify-content: space-between; margin-bottom: 20px; } /* Header trang */
+.st-header h1 { font-size: 26px; font-weight: 700; color: #fff; margin: 0; } .st-header p { font-size: 13px; color: #9ca3af; margin: 0; }
 
-/* --- GRID LAYOUT SYSTEM (4 columns x 4 rows) --- */
-.st-grid-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr 1fr 1fr; /* Cột 1 cố định width, còn lại chia đều */
-  grid-template-rows: 180px 140px 120px 240px; /* Định nghĩa chiều cao các hàng */
-  gap: 16px;
-}
+/* GRID LAYOUT (4 cols x 4 rows) */
+.st-grid-layout { display: grid; grid-template-columns: 500px 1fr 300px 300px; grid-template-rows: 180px 140px 120px 400px; gap: 16px; }
+.st-card { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); height: 100%; display: flex; flex-direction: column; position: relative; }
+.st-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 30px; min-height: 24px; }
+.st-card-header.space-between { justify-content: space-between; }
+.st-card-title { font-size: 18px; font-weight: 700; color: #9ca3af; text-transform: uppercase; }
+.st-card-title.lg { font-size: 28px; color: #fff; text-transform: none; }
+.st-streak-badge { font-size: 20px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px; }
+.st-streak-badge i.hot { color: #ef4444; } .st-streak-badge i.cold { color: #9ca3af; }
 
-/* Responsive adjustments */
-@media (max-width: 1200px) {
-  .st-grid-layout {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto;
-  }
-  /* Fallback layout for tablets: reset grid placements manually if needed */
-}
+/* PLACEMENT */
+.st-col-overview { grid-column: 1 / 2; grid-row: 1 / 5; }
+.st-box-calories { grid-column: 2 / 3; grid-row: 1 / 3; }
+.st-box-workout { grid-column: 3 / 4; grid-row: 1 / 2; }
+.st-box-steps { grid-column: 4 / 5; grid-row: 1 / 2; }
+.st-box-water { grid-column: 3 / 5; grid-row: 2 / 3; }
+.st-box-nutrition { grid-column: 2 / 5; grid-row: 3 / 4; }
+.st-box-weight { grid-column: 2 / 5; grid-row: 4 / 5; }
 
-/* --- PLACEMENT (Đặt vị trí các box) --- */
+/* === DATE STRIP (NEW) === */
+.st-date-strip { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; gap: 4px; }
+.st-ds-nav { background: transparent; border: none; color: #9ca3af; font-size: 18px; cursor: pointer; padding: 0 4px; }
+.st-ds-nav:hover { color: #fff; }
+.st-ds-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 44px; height: 50px; border-radius: 20px; background: #111827; cursor: pointer; transition: all 0.2s; }
+.st-ds-item.active { background: #ef4444; color: #fff; transform: scale(1.05); }
+.st-ds-item .d-day { font-size: 16px; font-weight: 700; line-height: 1; }
+.st-ds-item .d-mo { font-size: 10px; opacity: 0.8; }
+.st-ds-item:not(.active) { color: #9ca3af; } .st-ds-item:not(.active):hover { background: #1f2937; color: #fff; }
 
-/* 1. Tổng quan: Cột 1, Hàng 1->5 (chiếm hết dọc) */
-.st-col-overview {
-  grid-column: 1 / 2;
-  grid-row: 1 / 5;
-}
+/* === MEAL LIST (NEW) === */
+.st-timeline-body { flex: 1; overflow-y: auto; padding-right: 4px;   scrollbar-width: none;}
+.st-ts-group { margin-bottom: 16px;}
+.st-ts-head { font-size: 13px; font-weight: 600; color: #f9fafb; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px dashed #334155; }
+.st-ts-list { display: flex; flex-direction: column; gap: 8px; align-items: center;}
+.st-meal-row { display: flex; align-items: center; gap: 10px; background: #111827; padding: 8px; border-radius: 10px; border: 1px solid #1f2937; width: 400px;}
+.st-meal-row img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; background: #000; }
+.st-meal-info { overflow: hidden; }
+.st-meal-info div { font-size: 13px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-meal-info span { font-size: 11px; color: #9ca3af; display: block; }
+.st-empty { font-size: 13px; color: #6b7280; text-align: center; margin-top: 20px; }
 
-/* 2. Mục tiêu Calo: Cột 2, Hàng 1-2 (chiếm 2 hàng) */
-.st-box-calories {
-  grid-column: 2 / 3;
-  grid-row: 1 / 3;
-}
+/* === BUTTON ADD CORNER === */
+.st-btn-add-corner { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 8px; background: #1e293b; border: 1px solid #334155; color: #fff; font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.st-btn-add-corner:hover { background: var(--primary); border-color: var(--primary); }
 
-/* 3. Tập luyện: Cột 3, Hàng 1 */
-.st-box-workout {
-  grid-column: 3 / 4;
-  grid-row: 1 / 2;
-}
+/* === STATISTICS BODY === */
+.st-stat-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.st-stat-big { font-size: 28px; font-weight: 800; color: #fff; }
+.st-stat-big i { color: #f97316; margin-right: 8px; }
+.st-stat-sub { font-size: 13px; color: #9ca3af; margin-bottom: 8px; }
+.st-prog-bar { height: 6px; background: #111827; border-radius: 4px; overflow: hidden; } .st-prog-bar div { height: 100%; background: #22c55e; }
 
-/* 4. Bước chân: Cột 4, Hàng 1 */
-.st-box-steps {
-  grid-column: 4 / 5;
-  grid-row: 1 / 2;
-}
+/* === CALORIES & WATER === */
+.st-cal-body{display:flex;flex-direction:column;align-items:center;justify-content:space-between;flex:1;padding:4px 0;gap:8px;}
+.st-cal-ring-wrap { width: 300px;height: 180px; position: relative; align-items: center; display: flex; justify-content: center; }
+.st-cal-ring svg{display:block;}
+.ring-bg{stroke:#111827;stroke-width:10;fill:none;}
+.ring-fg{stroke:#00BBFE;stroke-width:8;fill:none;stroke-linecap:square;transition:stroke-dashoffset .5s;}
+.st-cal-center{position:absolute;left:0;right:0;top:50px;display:flex;flex-direction:column;align-items:center;pointer-events:none;}
+.cc-val{font-size:22px;font-weight:800;color:#fff;line-height:1.1;}
+.cc-lbl{font-size:14px;color:#9ca3af;margin-top:2px;}
+.st-cal-meta{width:100%;border-top:1px solid #334155;padding-top:8px;display:flex;justify-content:space-around;gap:16px;}
+.st-cal-meta .c{display:flex;flex-direction:column;align-items:center;font-size:12px;color:#9ca3af;}
+.st-cal-meta .c .v{font-size:16px;font-weight:700;color:#fff;margin-bottom:2px;}
+.st-cal-meta .c .lb{font-size:11px;text-transform:none;}
 
-/* 5. Lượng nước: Cột 3-4, Hàng 2 (chiếm ngang phần còn lại của hàng 2) */
-.st-box-water {
-  grid-column: 3 / 5;
-  grid-row: 2 / 3;
-}
-
-/* 6. Dinh dưỡng: Cột 2-3-4 (dưới calo/nước), Hàng 3 */
-.st-box-nutrition {
-  grid-column: 2 / 5;
-  grid-row: 3 / 4;
-}
-
-/* 7. Cân nặng: Cột 2-3-4 (cuối cùng), Hàng 4 */
-.st-box-weight {
-  grid-column: 2 / 5;
-  grid-row: 4 / 5;
-}
-
-/* --- STYLING CHI TIẾT CÁC BOX --- */
-
-/* COMMON TEXT */
-.st-card-header {
-  font-size: 15px;
-  font-weight: 600;
-  color: #9ca3af;
-  margin-bottom: 8px;
-}
-.st-card-title-lg {
-  font-size: 24px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 16px;
-  display: flex; 
-  align-items: center; 
-  justify-content: space-between;
-}
-.st-fire-icon { font-size: 16px; color: #ef4444; }
-
-/* === TỔNG QUAN (DATE SLIDER & LIST) === */
-.st-date-slider {
-  display: flex;
+.panel-stt-water { height: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; }
+.wleft {   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: #111827;
-  padding: 6px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-.st-ds-arrow {
-  background: none; border: none; color: #9ca3af; cursor: pointer; padding: 4px 8px;
-}
-.st-ds-arrow:hover { color: #fff; }
-.st-ds-days {
-  display: flex; overflow: hidden; gap: 4px;
-}
-.st-ds-item {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 4px 8px; border-radius: 8px; cursor: pointer;
-  min-width: 36px;
-}
-.st-ds-item.active { background: #2563eb; color: #fff; }
-.st-ds-date { font-weight: 700; font-size: 14px; }
-.st-ds-month { font-size: 10px; opacity: 0.7; }
+  gap: 20px;
+  min-width: 0; } .wleft i {   font-size: 30px;
+  color: #f9fafb; }
+.wlabel {   font-size: 20px;
+  font-weight: 600;
+  color: #e5e7eb; } .wval {   margin-top: 2px;
+  font-weight: 700;
+  font-size: 24px;
+  color: #ef4444; }
+.wctl {   display: flex;
+  align-items: center;
+  gap: 10px; } .wctl button {   width: 40px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #ef4444;
+  background: #020617;
+  color: #f9fafb;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.12s ease; }
+  .wctl button:hover {     background: #ef4444;
+  color: #f9fafb; }
+.wu-wrap { display: flex; align-items: center; background: #111827; border-radius: 6px; padding: 0 6px; border: 1px solid #1f2937; }
+.wu-wrap input {   width: 120px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #111827;
+  padding: 0 10px;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  color: #f9fafb; } .wu-wrap span { font-size: 11px; color: #9ca3af; margin-left: 2px; }
 
-.st-overview-body {
-  flex: 1; display: flex; flex-direction: column; overflow: hidden;
-}
-.st-total-kcal-label {
-  font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #e5e7eb;
-}
-.st-log-list {
-  flex: 1; overflow-y: auto; padding-right: 4px;
-}
-.st-log-group { margin-bottom: 16px; }
-.st-log-hour { font-size: 12px; color: #6b7280; margin-bottom: 4px; border-left: 2px solid #374151; padding-left: 6px; }
-.st-log-item {
-  display: flex; gap: 10px; padding: 8px; background: #111827; border-radius: 10px; margin-bottom: 6px; align-items: center;
-}
-.st-log-item img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; background: #333; }
-.st-food-name { font-size: 13px; font-weight: 500; color: #f3f4f6; }
-.st-food-sub { font-size: 11px; color: #9ca3af; }
+/* === MACROS & WEIGHT === */
+.st-macro-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 30px; height: 100%; align-items: center; }
+.st-macro-item .h { display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-bottom: 4px; }
+.st-macro-item .bar { height: 6px; background: #111827; border-radius: 4px; overflow: hidden; }
+.st-macro-item .bar span { display: block; height: 100%; }
+.bar.red span{background:#ee6c20} .bar.purple span{background:#1460e4} .bar.green span{background:#c1f722} .bar.gray span{background:#fff} .bar.orange span{background:#E0E5EA} .bar.teal span{background:#4AAB49}
 
-/* === CALO GAUGE === */
-.st-cal-gauge-area {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-}
-.st-gauge-wrapper { position: relative; width: 140px; height: 80px; }
-.st-gauge-svg { display: block; overflow: visible; }
-.st-gauge-progress { transition: stroke-dashoffset 0.5s ease; }
-.st-gauge-text {
-  position: absolute; bottom: 0; left: 0; right: 0; text-align: center;
-}
-.st-gauge-val { font-size: 24px; font-weight: 800; color: #fff; line-height: 1; }
-.st-gauge-sub { font-size: 11px; color: #9ca3af; }
+.st-weight-body { display: flex; gap: 16px; height: 100%; align-items: center; }
+.st-w-left { width: 100px; } .st-w-curr { font-size: 28px; font-weight: 700; color: #fff; } .st-w-curr span { font-size: 14px; color: #9ca3af; font-weight: 400; } .st-w-lbl { font-size: 12px; color: #6b7280; }
+.st-w-chart { flex: 1; height: 80px; position: relative; }
+.st-chart-viz { width: 100%; height: 100%; position: relative; }
+.st-chart-line { position: absolute; top: 50%; width: 100%; height: 1px; background: #334155; }
+.st-cp { position: absolute; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
+.st-cdot { width: 8px; height: 8px; background: #14b8a6; border: 2px solid #fff; border-radius: 50%; }
+.st-ctip { position: absolute; top: -20px; font-size: 10px; background: #1e293b; padding: 1px 4px; border-radius: 4px; white-space: nowrap; color: #e2e8f0; }
+.st-no-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 12px; color: #64748b; }
 
-.st-cal-stats-row {
-  display: flex; justify-content: space-around; padding-top: 12px; border-top: 1px solid #1f2937;
-}
-.st-cal-stat { text-align: center; }
-.st-stat-val { font-weight: 700; color: #fff; font-size: 14px; }
-.st-stat-lbl { font-size: 11px; color: #6b7280; }
+/* === MODAL === */
+.st-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; }
+.st-modal-card { width: 450px; background: #0f172a; border-radius: 8px; border: 1px solid #334155; padding: 16px; color: #fff; } .st-modal-card.sm { width: 320px; }
+.st-modal-head { display: flex; justify-content: space-between; margin-bottom: 12px; } .st-modal-head h3 { margin: 0; font-size: 16px; }
+.st-close-btn { background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; }
+.st-modal-body { max-height: 400px; overflow-y: auto; }
+.st-worklist { display: flex; flex-direction: column; gap: 8px; }
+.st-workrow { display: flex; align-items: center; gap: 8px; padding: 8px; background: #1e293b; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+.st-workrow.is-selected { border-color: var(--primary); background: rgba(239,68,68,0.1); }
+.st-workrow-title { font-size: 14px; font-weight: 600; } .st-workrow-sub { font-size: 12px; color: #94a3b8; }
+.st-input-group { display: flex; align-items: center; gap: 8px; background: #1e293b; padding: 10px; border-radius: 8px; border: 1px solid #334155; }
+.st-input-group input { flex: 1; background: transparent; border: none; color: #fff; font-size: 18px; outline: none; }
+.st-modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 
-/* === WORKOUT & STEPS & WATER === */
-.st-btn-add-corner {
-  position: absolute; top: 12px; right: 12px;
-  width: 28px; height: 28px; border-radius: 50%;
-  border: 1px solid #374151; background: #111827; color: #fff;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s;
-}
-.st-btn-add-corner:hover { background: #2563eb; border-color: #2563eb; }
-
-.st-box-content { display: flex; flex-direction: column; height: 100%; justify-content: center; }
-.st-big-num { font-size: 28px; font-weight: 700; color: #fff; }
-.st-big-num small { font-size: 14px; color: #9ca3af; font-weight: 400; }
-.st-sub-text { font-size: 12px; color: #9ca3af; }
-
-.st-progress-bar-wrapper {
-  margin-top: 10px; height: 6px; background: #374151; border-radius: 99px; overflow: hidden;
-}
-.st-progress-bar { height: 100%; background: #22c55e; transition: width 0.3s; }
-
-/* Water specific */
-.st-water-flex {
-  display: flex; align-items: center; height: 100%; justify-content: space-between; padding: 0 10px;
-}
-.st-water-icon { font-size: 40px; margin-right: 16px; }
-.st-water-info { flex: 1; }
-.st-big-num-water { font-size: 32px; font-weight: 700; color: #3b82f6; }
-.st-big-num-water small { font-size: 16px; color: #9ca3af; }
-.st-water-controls {
-  display: flex; align-items: center; gap: 8px; background: #111827; padding: 4px; border-radius: 99px; border: 1px solid #374151;
-}
-.st-water-controls button {
-  width: 28px; height: 28px; border-radius: 50%; border: none; background: #2563eb; color: #fff; cursor: pointer;
-}
-.st-water-controls span { font-size: 12px; font-weight: 600; padding: 0 8px; }
-
-/* === NUTRITION (6 cols) === */
-.st-nutrition-grid {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; height: 100%; align-items: center;
-}
-.st-macro-col {
-  display: flex; flex-direction: column; gap: 6px;
-}
-.st-macro-header { font-size: 12px; color: #9ca3af; font-weight: 500; }
-.st-macro-bar-bg { height: 6px; background: #1f2937; border-radius: 99px; overflow: hidden; }
-.st-macro-bar-fill { height: 100%; }
-.st-macro-nums { font-size: 12px; }
-
-/* === WEIGHT CHART === */
-.st-weight-chart-area {
-  flex: 1; position: relative; margin-top: 10px;
-}
-.st-chart-container {
-  width: 100%; height: 100%; position: relative;
-}
-.st-chart-svg {
-  width: 100%; height: 100px; position: absolute; bottom: 20px; left: 0; overflow: visible;
-}
-.st-chart-dot-wrap {
-  position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center;
-}
-.st-chart-dot {
-  width: 10px; height: 10px; background: #14b8a6; border: 2px solid #fff; border-radius: 50%;
-}
-.st-chart-tooltip {
-  position: absolute; bottom: 14px; background: #111827; border: 1px solid #374151; padding: 2px 6px; border-radius: 4px; font-size: 10px; white-space: nowrap;
-}
-.st-chart-date {
-  position: absolute; top: 14px; font-size: 10px; color: #6b7280; white-space: nowrap;
-}
-
-/* === MODAL STYLES === */
-.st-modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-  display: flex; align-items: center; justify-content: center; z-index: 100;
-}
-.st-modal-content {
-  background: #0f172a; padding: 20px; border-radius: 8px; width: 500px; max-width: 90%;
-  border: 1px solid #334155; color: #fff;
-}
-.st-modal-content.sm { width: 320px; }
-.st-modal-content h3 { margin-top: 0; }
-.st-modal-list { max-height: 300px; overflow-y: auto; margin: 16px 0; display: flex; flex-direction: column; gap: 8px; }
-.st-opt-row {
-  padding: 10px; border: 1px solid #334155; border-radius: 8px; cursor: pointer;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.st-opt-row.active { border-color: #22c55e; background: rgba(34, 197, 94, 0.1); }
-.st-inp-full {
-  width: 100%; padding: 10px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #fff; margin: 16px 0;
-}
-.st-modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
-.st-modal-actions button {
-  padding: 8px 16px; border-radius: 8px; cursor: pointer; background: transparent; border: 1px solid #475569; color: #cbd5e1;
-}
-.st-modal-actions button.primary {
-  background: #ef4444; border-color: #ef4444; color: #fff;
-}
+/* RESPONSIVE */
+@media (max-width: 1200px) { .st-grid-layout { grid-template-columns: 1fr 1fr; grid-template-rows: auto; } .st-col-overview { grid-column: 1 / 2; grid-row: 1 / 3; } .st-box-calories { grid-column: 2 / 3; grid-row: 1 / 2; } .st-box-workout { grid-column: 1 / 2; grid-row: 3 / 4; } .st-box-steps { grid-column: 2 / 3; grid-row: 3 / 4; } .st-box-water { grid-column: 2 / 3; grid-row: 2 / 3; } .st-box-nutrition { grid-column: 1 / 3; grid-row: 4 / 5; } .st-box-weight { grid-column: 1 / 3; grid-row: 5 / 6; } }
+@media (max-width: 768px) { .st-grid-layout { display: flex; flex-direction: column; } .st-header { flex-direction: column; } }
