@@ -9,8 +9,9 @@ import {
   uploadAvatar,
   patchOnboarding,
   finalizeOnboarding,
+  uploadProgressPhoto, // << thêm
 } from "../controllers/user.controller.js";
-import { uploadAvatarSingle } from "../middleware/upload.js"; // multer single("avatar")
+import { uploadAvatarSingle } from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -25,11 +26,16 @@ router.delete("/", auth, deleteAccount);
 // ===== Avatar =====
 router.post("/avatar", auth, uploadAvatarSingle, uploadAvatar);
 
+// ===== Progress photos =====
+router.post(
+  "/progress-photo",
+  auth,
+  uploadAvatarSingle, // field "avatar"
+  uploadProgressPhoto
+);
+
 // ===== Onboarding =====
 router.patch("/onboarding", auth, patchOnboarding);
 router.post("/onboarding/finalize", auth, finalizeOnboarding);
-
-// (Tuỳ chọn) Alias cũ để tương thích FE cũ, có thể bỏ nếu không cần
-router.post("/onboarding/upsert", auth, patchOnboarding);
 
 export default router;

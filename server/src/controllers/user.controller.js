@@ -378,3 +378,83 @@ export const uploadAvatar = async (req,res)=>{
     return res.status(500).json({ success:false, message:"Lỗi máy chủ" });
   }
 };
+
+/** POST /api/user/progress-photo
+ *  - Upload ảnh tiến độ (front/side/back) lên Cloudinary
+ *  - Lưu vào profile.progressPhotos
+ *  - Dùng chung middleware uploadAvatarSingle (field "avatar")
+ */
+export const uploadProgressPhoto = async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Không có tệp ảnh" });
+    }
+
+    const rawType =
+      (req.body?.type || req.body?.view || "").toString().trim();
+    const allowed = ["front", "side", "back"];
+    if (!allowed.includes(rawType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Loại ảnh không hợp lệ (front / side / back)",
+      });
+    }
+
+    // Ngày chụp (optional)
+    let takenAt = undefined;
+    const tRaw = req.body?.takenAt;
+    if (tRaw) {
+      const d = new Date(tRaw);
+      if (!Number.isNaN(d.getTime())) takenAt = d;
+    }
+    if (!takenAt) takenAt = new Date();
+
+    // Upload Cloudinary (cùng 'vị trí' với avatar, chỉ khác folder)
+    const photoUrl = await uploadImageWithResize(
+      file.buffer,
+      "asset/folder/body-progress",
+      { width: 1024, height: 1024, fit: "cover" },
+      { quality: 85 }
+    );
+
+    const doc = {
+      view: rawType,
+      url: photoUrl,
+      takenAt,
+      createdAt: new Date(),
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { $push: { "profile.progressPhotos": doc } },
+      { new: true, runValidators: true }
+    ).select("_id username email role onboarded profile createdAt");
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
+    }
+
+    return res.json({
+      success: true,
+      photo: doc,
+      user: updatedUser,
+    });
+  } catch (e) {
+    const map = toValidationMap(e);
+    if (map)
+      return res.status(422).json({
+        success: false,
+        message: "Dữ liệu không hợp lệ",
+        errors: map,
+      });
+    console.error("uploadProgressPhoto lỗi:", e?.message || e);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi máy chủ" });
+  }
+};

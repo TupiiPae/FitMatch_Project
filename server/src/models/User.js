@@ -9,6 +9,26 @@ const PHONE_REGEX = /^\d{1,11}$/;
 /* ---------- Profile ---------- */
 const profileSchema = new mongoose.Schema({
   avatarUrl: { type: String, trim: true, maxlength: 500, default: undefined },
+
+  // 🔹 Ảnh tiến độ: mặt trước / mặt hông / mặt sau
+  progressPhotos: [
+    {
+      view: {
+        type: String,
+        enum: ["front", "side", "back"], // mặt trước / hông / sau
+        required: true,
+      },
+      url: {
+        type: String,
+        trim: true,
+        maxlength: 500,
+        required: true, // URL Cloudinary
+      },
+      takenAt: { type: Date }, // ngày chụp
+      createdAt: { type: Date, default: Date.now }, // ngày upload
+    },
+  ],
+
   nickname: {
     type: String,
     required: [true, "Vui lòng nhập biệt danh (nickname)"],

@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import api from "../../../lib/api";
 import { toast } from "react-toastify";
 import "./BodyProfile.css";
+import ProgressPhotoModal from "./ProgressPhotoModal";
 
 const calcAge = (dob) => {
   if (!dob) return "";
@@ -63,6 +64,9 @@ export default function BodyProfile() {
   });
   const [creatingGoal, setCreatingGoal] = useState(false);
 
+  // Modal thêm ảnh tiến độ
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+
   // Tab hình ảnh tiến độ
   const [photoTab, setPhotoTab] = useState("all");
 
@@ -76,7 +80,6 @@ export default function BodyProfile() {
         api
           .get("/user/onboarding/me")
           .catch((e) => {
-            // Nếu chưa có onboarding thì BE trả 404 → coi như chưa có dữ liệu mục tiêu
             if (e?.response?.status === 404) return null;
             throw e;
           }),
@@ -92,7 +95,7 @@ export default function BodyProfile() {
       });
 
       if (resOnb && resOnb.data?.data) {
-        setOnb(resOnb.data.data); // { _id, user, username, base, goals }
+        setOnb(resOnb.data.data);
       } else {
         setOnb(null);
       }
@@ -132,7 +135,6 @@ export default function BodyProfile() {
 
   const onChange = (e) => {
     const { name, value } = e.target;
-    // chỉ cho phép số + dấu chấm
     if (/^[0-9]*\.?[0-9]*$/.test(value) || value === "") {
       setForm((s) => ({ ...s, [name]: value }));
     }
@@ -150,9 +152,7 @@ export default function BodyProfile() {
   const onSave = async () => {
     if (!dirty) return;
 
-    // build payload theo dạng key phẳng giống trang Account
     const payload = {};
-
     if (form.heightCm !== "") {
       payload["profile.heightCm"] = Number(form.heightCm);
     }
@@ -163,7 +163,6 @@ export default function BodyProfile() {
       payload["profile.bodyFat"] = Number(form.bodyFat);
     }
 
-    // nếu không có giá trị hợp lệ nào thì khỏi call API
     if (Object.keys(payload).length === 0) {
       toast.error("Không có thay đổi hợp lệ để lưu.");
       return;
@@ -213,7 +212,7 @@ export default function BodyProfile() {
 
   const age = p.dob ? calcAge(p.dob) : "";
 
-  // ===== Data hiển thị bảng Mục tiêu cân nặng =====
+  // ===== Data bảng Mục tiêu cân nặng =====
   const goalType = currentGoal?.mucTieu;
   const goalLabel = goalType ? GOAL_LABELS[goalType] || goalType : "—";
   const goalTargetWeight =
@@ -309,6 +308,25 @@ export default function BodyProfile() {
     }
   };
 
+  // ===== Ảnh tiến độ =====
+  const progressPhotos = Array.isArray(p.progressPhotos)
+    ? p.progressPhotos
+    : [];
+
+  const filteredPhotos = useMemo(() => {
+    if (!progressPhotos.length) return [];
+    const arr =
+      photoTab === "all"
+        ? progressPhotos
+        : progressPhotos.filter((ph) => ph.view === photoTab);
+    // sort mới nhất lên trước
+    return [...arr].sort((a, b) => {
+      const ta = a.takenAt ? new Date(a.takenAt).getTime() : 0;
+      const tb = b.takenAt ? new Date(b.takenAt).getTime() : 0;
+      return tb - ta;
+    });
+  }, [progressPhotos, photoTab]);
+
   if (loading) {
     return (
       <div className="bp-page">
@@ -324,6 +342,9 @@ export default function BodyProfile() {
       </div>
     );
   }
+
+  const initialPhotoTabForModal =
+    photoTab === "all" ? "front" : photoTab;
 
   return (
     <div className="bp-page">
@@ -420,7 +441,6 @@ export default function BodyProfile() {
         </p>
 
         <div className="bp-goal-table">
-          {/* Hàng 1: Mục tiêu -> Cân nặng mục tiêu */}
           <div className="bp-row-goal bp-row-goal-head">
             <div className="bp-cell">Mục tiêu</div>
             <div className="bp-cell bp-cell-end">
@@ -430,28 +450,20 @@ export default function BodyProfile() {
                 : "xx kg"}
             </div>
           </div>
-
-          {/* Hàng 2: Mục tiêu hằng tuần */}
           <div className="bp-row-goal">
             <div className="bp-cell">Mục tiêu hằng tuần</div>
             <div className="bp-cell bp-cell-end">{weeklyText}</div>
           </div>
-
-          {/* Hàng 3: Cường độ vận động (label) */}
           <div className="bp-row-goal">
             <div className="bp-cell">Cường độ vận động</div>
             <div className="bp-cell bp-cell-end">
               {intensityLabel}
             </div>
           </div>
-
-          {/* Hàng 4: Calo mục tiêu (ước tính) */}
           <div className="bp-row-goal">
             <div className="bp-cell">Calo mục tiêu (ước tính)</div>
             <div className="bp-cell bp-cell-end">{kcalText}</div>
           </div>
-
-          {/* Hàng 5: Dự kiến hoàn thành */}
           <div className="bp-row-goal">
             <div className="bp-cell">Dự kiến hoàn thành</div>
             <div className="bp-cell bp-cell-end">
@@ -491,16 +503,53 @@ export default function BodyProfile() {
             ))}
           </div>
 
-          <button type="button" className="bp-add-btn">
+          <button
+            type="button"
+            className="bp-add-btn"
+            onClick={() => setShowPhotoModal(true)}
+          >
             + Thêm ảnh
           </button>
         </div>
 
         <div className="bp-progress-grid">
-          <div className="bp-progress-empty">
-            Chưa có ảnh tiến độ cho tab "
-            {PHOTO_TABS.find((x) => x.id === photoTab)?.label}".
-          </div>
+          {filteredPhotos.length === 0 ? (
+            <div className="bp-progress-empty">
+              Chưa có ảnh tiến độ cho tab "
+              {PHOTO_TABS.find((x) => x.id === photoTab)?.label}".
+            </div>
+          ) : (
+            <div className="bp-progress-list">
+              {filteredPhotos.map((ph, idx) => (
+                <div
+                  key={ph._id || ph.url || idx}
+                  className="bp-progress-item"
+                >
+                  <div className="bp-progress-imgwrap">
+                    <img
+                      src={ph.url}
+                      alt="Progress"
+                      className="bp-progress-img"
+                    />
+                  </div>
+                  <div className="bp-progress-meta">
+                    <span className="bp-progress-view">
+                      {ph.view === "front"
+                        ? "Mặt trước"
+                        : ph.view === "side"
+                        ? "Mặt hông"
+                        : "Mặt sau"}
+                    </span>
+                    <span className="bp-progress-date">
+                      {ph.takenAt
+                        ? dayjs(ph.takenAt).format("DD/MM/YYYY")
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -535,7 +584,7 @@ export default function BodyProfile() {
             <h3 className="bp-modal-title">Thiết lập mục tiêu mới</h3>
 
             <div className="bp-modal-grid">
-              <label>
+ <label>
                 Chiều cao (cm)
                 <input
                   value={goalForm.chieuCao}
@@ -663,6 +712,18 @@ export default function BodyProfile() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ===== Modal thêm ảnh tiến độ ===== */}
+      {showPhotoModal && (
+        <ProgressPhotoModal
+          initialTab={initialPhotoTabForModal}
+          onClose={() => setShowPhotoModal(false)}
+          onUploaded={async () => {
+            await loadMe();
+            setShowPhotoModal(false);
+          }}
+        />
       )}
     </div>
   );

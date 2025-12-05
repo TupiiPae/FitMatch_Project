@@ -363,6 +363,528 @@
   gap: 10px;
 }
 
+/* Trang Hồ sơ thể chất – dùng dark theme giống Account */
+.bp-page {
+  padding: 0 12px;
+  color: #e5e7eb;
+  font-size: 14px;
+}
+
+/* Trạng thái loading / error */
+.bp-loading {
+  color: #e5e7eb;
+}
+
+.bp-error {
+  color: #f97373;
+}
+
+/* ===== Titles & sections ===== */
+
+.bp-section + .bp-section {
+  margin-top: 32px;
+}
+
+.bp-title-main {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 18px;
+}
+
+.bp-title-sub {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.bp-desc {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ===== Fields & inputs (giống Account) ===== */
+
+.bp-row {
+  margin-bottom: 18px;
+}
+
+.bp-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.bp-row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.bp-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.bp-label {
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #f9fafb;
+}
+
+.bp-input {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #f9fafb;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.bp-input:hover {
+  border-color: #ef4444;
+}
+
+.bp-input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+}
+
+.bp-input-readonly {
+  cursor: default;
+  background-color: #221010;
+}
+
+.bp-input-readonly:focus {
+  border-color: #4b5563;
+  box-shadow: none;
+}
+
+/* Input + đơn vị bên cạnh */
+.bp-input-unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bp-input-unit .bp-input {
+  flex: 1 1 auto;
+}
+
+.bp-unit {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ===== Bảng mục tiêu cân nặng ===== */
+
+.bp-goal-table {
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #020617;
+}
+
+.bp-row-goal {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+}
+
+.bp-row-goal + .bp-row-goal {
+  border-top: 1px solid #1f2937;
+}
+
+.bp-row-goal-head {
+  background: #1e1e1e;
+  font-weight: 600;
+}
+
+.bp-cell {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.bp-cell-end {
+  text-align: right;
+}
+
+/* Nút "Thiết lập mục tiêu mới" dưới bảng */
+.bp-actions-row {
+  margin-top: 14px;
+}
+
+/* ===== Nút chung (bottom + modal + action) ===== */
+
+.bp-btn {
+  min-width: 120px;
+  height: 38px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  transition: background-color 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease, transform 0.05s ease;
+}
+
+.bp-btn:active {
+  transform: translateY(1px);
+}
+
+.bp-actions-row .bp-btn-primary {
+  width: 100%;
+}
+
+.bp-btn-primary {
+  background: #f00519;
+  color: #ffffff;
+}
+
+.bp-btn-primary:hover:not(:disabled) {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.bp-btn-outline {
+  background: transparent;
+  color: #e5e7eb;
+  border-color: #4b5563;
+}
+
+.bp-btn-outline:hover:not(:disabled) {
+  background: #111827;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.bp-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Nhóm nút Hủy / Lưu ở cuối */
+.bp-actions {
+  margin-top: 28px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* ===== Hình ảnh tiến độ ===== */
+
+.bp-progress-header {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bp-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #020617;
+  border: 1px solid #4b5563;
+}
+
+.bp-tab {
+  border: 0;
+  outline: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: transparent;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.bp-tab.active {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.bp-add-btn {
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 13px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.bp-add-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+/* Khung hiển thị ảnh */
+.bp-progress-grid {
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px dashed #4b5563;
+  padding: 12px;
+  min-height: 140px;
+}
+
+.bp-progress-empty {
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 24px 8px;
+}
+
+/* Grid ảnh */
+.bp-progress-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.bp-progress-item {
+  background: #020617;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.bp-progress-imgwrap {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: #020617;
+  overflow: hidden;
+}
+
+.bp-progress-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bp-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px 7px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.bp-progress-view {
+  text-transform: none;
+}
+
+.bp-progress-date {
+  opacity: 0.9;
+}
+
+/* ===== Modal chung ===== */
+
+.bp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.bp-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(2px);
+}
+
+.bp-modal-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(620px, calc(100% - 32px));
+  background: #020617;
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  padding: 18px 18px 16px;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.75);
+  color: #e5e7eb;
+}
+
+.bp-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.bp-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bp-modal-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.bp-modal-grid input,
+.bp-modal-grid select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #f9fafb;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bp-modal-grid input:hover,
+.bp-modal-grid select:hover {
+  border-color: #ef4444;
+}
+
+.bp-modal-grid input:focus,
+.bp-modal-grid select:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+}
+
+.bp-modal-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ===== Modal ảnh tiến độ ===== */
+
+.bp-photo-modal-card {
+  max-width: 520px;
+}
+
+.bp-photo-tabs {
+  display: inline-flex;
+  gap: 6px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #020617;
+  border: 1px solid #4b5563;
+  margin-bottom: 12px;
+}
+
+.bp-photo-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bp-photo-label {
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bp-photo-label input[type="file"],
+.bp-photo-label input[type="date"] {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #f9fafb;
+  font-size: 13px;
+}
+
+.bp-photo-preview {
+  margin-top: 6px;
+  border-radius: 10px;
+  border: 1px dashed #4b5563;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.bp-photo-img {
+  max-width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  display: block;
+}
+
+.bp-photo-placeholder {
+  font-size: 13px;
+  color: #9ca3af;
+  padding: 16px;
+  text-align: center;
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 960px) {
+  .bp-row-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .bp-page {
+    padding: 0 8px;
+  }
+
+  .bp-row-2,
+  .bp-row-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .bp-progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bp-modal-card {
+    width: calc(100% - 24px);
+  }
+
+  .bp-modal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bp-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .bp-modal-actions .bp-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bp-photo-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 /* ===== Responsive ===== */
 
 @media (max-width: 960px) {
