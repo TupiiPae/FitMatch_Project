@@ -271,7 +271,7 @@
 /* Khung hiển thị ảnh (tạm thời placeholder) */
 .bp-progress-grid {
   margin-top: 14px;
-  min-height: 350px;
+  min-height: 450px;
   border-radius: 12px;
   border: 1px dashed #4b5563;
   display: grid;
@@ -304,8 +304,8 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: min(620px, calc(100% - 32px));
-  background: #020617;
+  width: min(1020px, calc(100% - 32px));
+  background: #1e1e1e;
   border-radius: 14px;
   border: 1px solid #1f2937;
   padding: 18px 18px 16px;
@@ -484,7 +484,7 @@
 
 .bp-goal-table {
   border: 1px solid #1f2937;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   background: #020617;
 }
@@ -636,7 +636,7 @@
 /* Khung hiển thị ảnh */
 .bp-progress-grid {
   margin-top: 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px dashed #4b5563;
   padding: 12px;
   min-height: 140px;
@@ -645,31 +645,36 @@
 .bp-progress-empty {
   font-size: 13px;
   color: #9ca3af;
-  text-align: center;
+  align-items: center;
+  display: flex;
   padding: 24px 8px;
+  height: 300px;
 }
 
 /* Grid ảnh */
 .bp-progress-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr)); 
   gap: 12px;
 }
 
 .bp-progress-item {
   background: #020617;
-  border-radius: 10px;
+  border-radius: 4px;
   border: 1px solid #1f2937;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+/* ===== Hình ảnh tiến độ grid ===== */
+
 .bp-progress-imgwrap {
-  width: 100%;
   aspect-ratio: 3 / 4;
+  width: 100%;
   background: #020617;
   overflow: hidden;
+  /* bỏ aspect-ratio cứng nếu bạn đang có, để ảnh tự co theo tỷ lệ */
 }
 
 .bp-progress-img {
@@ -685,116 +690,181 @@
   padding: 6px 8px 7px;
   font-size: 11px;
   color: #9ca3af;
+  gap: 4px;
 }
 
-.bp-progress-view {
-  text-transform: none;
-}
-
-.bp-progress-date {
-  opacity: 0.9;
-}
-
-/* ===== Modal chung ===== */
-
-.bp-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-}
-
-.bp-modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(2px);
-}
-
-.bp-modal-card {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(620px, calc(100% - 32px));
-  background: #020617;
-  border-radius: 14px;
-  border: 1px solid #1f2937;
-  padding: 18px 18px 16px;
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.75);
-  color: #e5e7eb;
-}
-
-.bp-modal-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0 0 12px;
-}
-
-.bp-modal-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.bp-modal-grid > label {
+.bp-progress-meta-left {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+}
+
+.bp-progress-caption {
+  font-size: 11px;
+  color: #d1d5db;
+  word-break: break-word;
+}
+
+/* Icon bút chỉnh sửa */
+.bp-progress-item {
+  position: relative;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.bp-progress-edit {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(15, 23, 42, 0.85);
+  color: #e5e7eb;
   font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bp-progress-edit:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* ===== Modal ảnh tiến độ – layout hai cột ===== */
+
+.bp-photo-modal-card {
+  max-width: 840px;
+}
+
+.bp-photo-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 8px;
+}
+
+/* Cột trái */
+
+.bp-photo-left {
+  border-radius: 4px;
+  border: 1px dashed #4b5563;
+  background: #020617;
+  min-height: 260px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.bp-photo-dropzone {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 14px;
+}
+
+.bp-photo-left-readonly .bp-photo-dropzone {
+  cursor: default;
+}
+
+.bp-photo-drop-inner {
+  text-align: center;
   color: #e5e7eb;
 }
 
-.bp-modal-grid input,
-.bp-modal-grid select {
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid #4b5563;
-  background: #020617;
-  color: #f9fafb;
+.bp-photo-upload-icon {
+  font-size: 26px;
+  margin-bottom: 8px;
+}
+
+.bp-photo-upload-icon i {
+  font-size: 100px;
+}
+
+.bp-photo-drop-title {
   font-size: 14px;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-weight: 500;
 }
 
-.bp-modal-grid input:hover,
-.bp-modal-grid select:hover {
-  border-color: #ef4444;
+.bp-photo-drop-sub {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
 }
 
-.bp-modal-grid input:focus,
-.bp-modal-grid select:focus {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+.bp-photo-drop-note {
+  font-size: 11px;
+  color: #f97373;
+  margin-top: 6px;
 }
 
-.bp-modal-actions {
-  margin-top: 16px;
+/* Ảnh trong modal – không cắt */
+
+.bp-photo-img-full {
+  max-width: 100%;
+  max-height: 380px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Cột phải */
+
+.bp-photo-right {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
   gap: 10px;
-}
-
-/* ===== Modal ảnh tiến độ ===== */
-
-.bp-photo-modal-card {
-  max-width: 520px;
 }
 
 .bp-photo-tabs {
-  display: inline-flex;
-  gap: 6px;
-  padding: 2px;
-  border-radius: 999px;
-  background: #020617;
-  border: 1px solid #4b5563;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; /* Chia 3 cột đều nhau */
+  gap: 8px; /* Khoảng cách giữa các nút */
   margin-bottom: 12px;
 }
 
-.bp-photo-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.modal-bp-tab {
+  border: 1px solid #4b5563;
+  background-color: transparent;
+  color: #9ca3af;
+  border-radius: 99px; /* Bo tròn kiểu viên thuốc */
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap
+}
+
+.bp-photo-helper {
+  border-radius: 4px;
+  background: #020617;
+  border: 1px solid #4b5563;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.bp-photo-helper-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.bp-photo-helper-text {
+  color: #9ca3af;
+}
+
+.bp-photo-form-row {
+  display: flex;
   gap: 10px;
-  margin-bottom: 10px;
 }
 
 .bp-photo-label {
@@ -804,48 +874,149 @@
   gap: 6px;
 }
 
-.bp-photo-label input[type="file"],
+/* ===== Icon nằm bên trong ô date ===== */
+.bp-photo-label {
+  position: relative; /* cần để icon absolute */
+}
+
 .bp-photo-label input[type="date"] {
+  padding-right: 38px; /* chừa chỗ cho icon */
+}
+
+/* Ẩn icon calendar mặc định của trình duyệt */
+.bp-photo-label input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+/* Icon FontAwesome */
+.bp-date-icon {
+  position: absolute;
+  right: 8px;
+  bottom: 11.5px; /* căn xuống phù hợp padding */
+  font-size: 14px;
+  color: #9ca3af;
+  pointer-events: none; /* không chặn click mở calendar */
+}
+
+/* Khi focus input thì icon đổi màu */
+.bp-photo-label input[type="date"]:focus + .bp-date-icon {
+  color: #ef4444;
+}
+
+.bp-photo-label input[type="date"],
+.bp-photo-label textarea {
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px solid #4b5563;
   background: #020617;
   color: #f9fafb;
   font-size: 13px;
+  outline: none;
 }
 
-.bp-photo-preview {
-  margin-top: 6px;
-  border-radius: 10px;
-  border: 1px dashed #4b5563;
-  min-height: 160px;
+.bp-photo-label input[type="date"]:focus,
+.bp-photo-label textarea:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+}
+
+.bp-photo-caption-wrap {
+  position: relative;
+}
+
+.bp-photo-caption-counter {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Actions dưới cùng */
+
+.bp-photo-actions {
+  margin-top: 16px;
+  align-items: center;
+}
+
+.bp-photo-delete {
+  min-width: 100px;
+}
+
+.bp-photo-actions-right {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+/* ===== Modal xác nhận xoá ảnh tiến độ ===== */
+.bp-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.82);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  z-index: 70; /* cao hơn bp-modal-card */
 }
 
-.bp-photo-img {
-  max-width: 100%;
-  max-height: 280px;
-  object-fit: contain;
-  display: block;
+.bp-confirm-card {
+  width: min(380px, calc(100% - 40px));
+  background: #020617;
+  border-radius: 12px;
+  border: 1px solid #4b5563;
+  padding: 16px 18px 14px;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.9);
+  color: #e5e7eb;
 }
 
-.bp-photo-placeholder {
+.bp-confirm-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.bp-confirm-text {
   font-size: 13px;
-  color: #9ca3af;
-  padding: 16px;
-  text-align: center;
+  color: #d1d5db;
+  margin: 0 0 14px;
 }
 
-/* ===== Responsive ===== */
+.bp-confirm-text strong {
+  color: #fca5a5;
+}
 
-@media (max-width: 960px) {
-  .bp-row-4 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.bp-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* nút xoá vĩnh viễn nổi bật hơn một chút */
+.bp-confirm-danger {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.bp-confirm-danger:hover:not(:disabled) {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  .bp-photo-layout {
+    grid-template-columns: 1fr;
   }
 }
+
 
 @media (max-width: 640px) {
   .bp-page {

@@ -403,7 +403,7 @@ export const uploadProgressPhoto = async (req, res) => {
       });
     }
 
-    // Ngày chụp (optional)
+    // Ngày chụp
     let takenAt = undefined;
     const tRaw = req.body?.takenAt;
     if (tRaw) {
@@ -412,11 +412,15 @@ export const uploadProgressPhoto = async (req, res) => {
     }
     if (!takenAt) takenAt = new Date();
 
-    // Upload Cloudinary (cùng 'vị trí' với avatar, chỉ khác folder)
+    // Mô tả
+    let caption = (req.body?.caption || "").toString();
+    if (caption.length > 300) caption = caption.slice(0, 300);
+
+    // Upload Cloudinary
     const photoUrl = await uploadImageWithResize(
       file.buffer,
       "asset/folder/body-progress",
-      { width: 1024, height: 1024, fit: "cover" },
+      { width: 2048, height: 2048, fit: "inside" }, // không crop
       { quality: 85 }
     );
 
@@ -424,6 +428,7 @@ export const uploadProgressPhoto = async (req, res) => {
       view: rawType,
       url: photoUrl,
       takenAt,
+      caption: caption || undefined,
       createdAt: new Date(),
     };
 
@@ -439,9 +444,13 @@ export const uploadProgressPhoto = async (req, res) => {
         .json({ success: false, message: "Không tìm thấy người dùng" });
     }
 
+    // Lấy ảnh mới nhất (có _id) trong mảng progressPhotos
+    const arr = updatedUser.profile?.progressPhotos || [];
+    const newPhoto = arr[arr.length - 1] || null;
+
     return res.json({
       success: true,
-      photo: doc,
+      photo: newPhoto || doc, // đảm bảo FE luôn nhận được một object ảnh
       user: updatedUser,
     });
   } catch (e) {
@@ -453,6 +462,143 @@ export const uploadProgressPhoto = async (req, res) => {
         errors: map,
       });
     console.error("uploadProgressPhoto lỗi:", e?.message || e);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi máy chủ" });
+  }
+};
+
+/** PATCH /api/user/progress-photo/:photoId
+ *  Sửa: view (front/side/back), takenAt, caption
+ */
+export const updateProgressPhoto = async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    if (!photoId) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu photoId",
+      });
+    }
+
+    const { type, view, takenAt, caption } = req.body || {};
+    const newView = (type || view || "").toString().trim();
+
+    const update = {};
+    if (newView) {
+      const allowed = ["front", "side", "back"];
+      if (!allowed.includes(newView)) {
+        return res.status(400).json({
+          success: false,
+          message: "Loại ảnh không hợp lệ (front / side / back)",
+        });
+      }
+      update["profile.progressPhotos.$.view"] = newView;
+    }
+
+    if (takenAt) {
+      const d = new Date(takenAt);
+      if (Number.isNaN(d.getTime())) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Ngày chụp không hợp lệ" });
+      }
+      update["profile.progressPhotos.$.takenAt"] = d;
+    }
+
+    if (caption !== undefined) {
+      let cap = caption.toString();
+      if (cap.length > 300) cap = cap.slice(0, 300);
+      update["profile.progressPhotos.$.caption"] = cap || undefined;
+    }
+
+    if (!Object.keys(update).length) {
+      return res.status(400).json({
+        success: false,
+        message: "Không có dữ liệu nào để cập nhật",
+      });
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: req.userId, "profile.progressPhotos._id": photoId },
+      { $set: update },
+      { new: true, runValidators: true }
+    ).select("_id username email role onboarded profile createdAt");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy ảnh hoặc người dùng",
+      });
+    }
+
+    return res.json({ success: true, user: updatedUser });
+  } catch (e) {
+    const map = toValidationMap(e);
+    if (map)
+      return res.status(422).json({
+        success: false,
+        message: "Dữ liệu không hợp lệ",
+        errors: map,
+      });
+    console.error("updateProgressPhoto lỗi:", e?.message || e);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi máy chủ" });
+  }
+};
+
+
+export const deleteProgressPhoto = async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    if (!photoId) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu photoId",
+      });
+    }
+
+    // Lấy user để biết URL ảnh (để xoá Cloudinary)
+    const user = await User.findOne({
+      _id: req.userId,
+      "profile.progressPhotos._id": photoId,
+    })
+      .select("profile.progressPhotos")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy ảnh hoặc người dùng",
+      });
+    }
+
+    const ph =
+      user.profile?.progressPhotos?.find(
+        (p) => String(p._id) === String(photoId)
+      ) || null;
+    const url = ph?.url;
+
+    // Xoá khỏi mảng
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { $pull: { "profile.progressPhotos": { _id: photoId } } },
+      { new: true }
+    ).select("_id username email role onboarded profile createdAt");
+
+    // Xoá trên Cloudinary (không chặn response nếu lỗi)
+    if (url && url.includes("cloudinary.com")) {
+      try {
+        await deleteFile(url, "image");
+      } catch (e) {
+        console.error("deleteProgressPhoto Cloudinary lỗi:", e?.message || e);
+      }
+    }
+
+    return res.json({ success: true, user: updatedUser });
+  } catch (e) {
+    console.error("deleteProgressPhoto lỗi:", e?.message || e);
     return res
       .status(500)
       .json({ success: false, message: "Lỗi máy chủ" });

@@ -70,6 +70,12 @@ export default function BodyProfile() {
   // Tab hình ảnh tiến độ
   const [photoTab, setPhotoTab] = useState("all");
 
+    // Modal thêm ảnh mới
+  const [showCreatePhotoModal, setShowCreatePhotoModal] = useState(false);
+
+  // Modal chỉnh sửa ảnh
+  const [editingPhoto, setEditingPhoto] = useState(null);
+
   // ===== Load user + onboarding cùng lúc =====
   const loadMe = async () => {
     setLoading(true);
@@ -506,7 +512,7 @@ export default function BodyProfile() {
           <button
             type="button"
             className="bp-add-btn"
-            onClick={() => setShowPhotoModal(true)}
+            onClick={() => setShowCreatePhotoModal(true)}
           >
             + Thêm ảnh
           </button>
@@ -515,7 +521,7 @@ export default function BodyProfile() {
         <div className="bp-progress-grid">
           {filteredPhotos.length === 0 ? (
             <div className="bp-progress-empty">
-              Chưa có ảnh tiến độ cho tab "
+              Chưa có ảnh tiến độ cho "
               {PHOTO_TABS.find((x) => x.id === photoTab)?.label}".
             </div>
           ) : (
@@ -525,6 +531,15 @@ export default function BodyProfile() {
                   key={ph._id || ph.url || idx}
                   className="bp-progress-item"
                 >
+                  <button
+                    type="button"
+                    className="bp-progress-edit"
+                    title="Chỉnh sửa ảnh"
+                    onClick={() => setEditingPhoto(ph)}
+                  >
+                    <i className="fa-solid fa-pencil"></i>
+                  </button>
+
                   <div className="bp-progress-imgwrap">
                     <img
                       src={ph.url}
@@ -533,13 +548,15 @@ export default function BodyProfile() {
                     />
                   </div>
                   <div className="bp-progress-meta">
-                    <span className="bp-progress-view">
-                      {ph.view === "front"
-                        ? "Mặt trước"
-                        : ph.view === "side"
-                        ? "Mặt hông"
-                        : "Mặt sau"}
-                    </span>
+                    <div className="bp-progress-meta-left">
+                      <span className="bp-progress-view">
+                        {ph.view === "front"
+                          ? "Mặt trước"
+                          : ph.view === "side"
+                          ? "Mặt hông"
+                          : "Mặt sau"}
+                      </span>
+                    </div>
                     <span className="bp-progress-date">
                       {ph.takenAt
                         ? dayjs(ph.takenAt).format("DD/MM/YYYY")
@@ -584,7 +601,7 @@ export default function BodyProfile() {
             <h3 className="bp-modal-title">Thiết lập mục tiêu mới</h3>
 
             <div className="bp-modal-grid">
- <label>
+            <label>
                 Chiều cao (cm)
                 <input
                   value={goalForm.chieuCao}
@@ -714,14 +731,33 @@ export default function BodyProfile() {
         </div>
       )}
 
-      {/* ===== Modal thêm ảnh tiến độ ===== */}
-      {showPhotoModal && (
+ {/* Modal thêm ảnh tiến độ */}
+      {showCreatePhotoModal && !editingPhoto && (
         <ProgressPhotoModal
+          mode="create"
           initialTab={initialPhotoTabForModal}
-          onClose={() => setShowPhotoModal(false)}
+          onClose={() => setShowCreatePhotoModal(false)}
           onUploaded={async () => {
             await loadMe();
-            setShowPhotoModal(false);
+            setShowCreatePhotoModal(false);
+          }}
+        />
+      )}
+
+      {/* Modal chỉnh sửa ảnh tiến độ */}
+      {editingPhoto && (
+        <ProgressPhotoModal
+          mode="edit"
+          photo={editingPhoto}
+          initialTab={editingPhoto.view}
+          onClose={() => setEditingPhoto(null)}
+          onUploaded={async () => {
+            await loadMe();
+            setEditingPhoto(null);
+          }}
+          onDeleted={async () => {
+            await loadMe();
+            setEditingPhoto(null);
           }}
         />
       )}

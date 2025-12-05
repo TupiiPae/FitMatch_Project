@@ -9,7 +9,9 @@ import {
   uploadAvatar,
   patchOnboarding,
   finalizeOnboarding,
-  uploadProgressPhoto, // << thêm
+  uploadProgressPhoto,
+  updateProgressPhoto,
+  deleteProgressPhoto,
 } from "../controllers/user.controller.js";
 import { uploadAvatarSingle } from "../middleware/upload.js";
 
@@ -33,6 +35,8 @@ router.post(
   uploadAvatarSingle, // field "avatar"
   uploadProgressPhoto
 );
+router.patch("/progress-photo/:photoId", auth, updateProgressPhoto);
+router.delete("/progress-photo/:photoId", auth, deleteProgressPhoto);
 
 // ===== Onboarding =====
 router.patch("/onboarding", auth, patchOnboarding);
