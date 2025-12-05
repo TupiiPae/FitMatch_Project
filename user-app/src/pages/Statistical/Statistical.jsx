@@ -1,5 +1,5 @@
 // src/pages/Statistical/Statistical.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import "./Statistical.css";
 import { getDayLogs, getWater, incWater, getStreak } from "../../api/nutrition";
@@ -36,11 +36,41 @@ export default function Statistical() {
   const [weightHistory, setWeightHistory] = useState([]);
   const [workOptions, setWorkOptions] = useState([]);
   const [modal, setModal] = useState(null);
+
+    const [macroPage, setMacroPage] = useState(0); // 0: Đạm/Đường bột/Chất béo, 1: Muối/Đường/Chất xơ
+  const macroStartX = useRef(null);
+
+  const handleMacroSlideStart = (e) => {
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    macroStartX.current = x;
+  };
+  const handleMacroSlideEnd = (e) => {
+    if (macroStartX.current == null) return;
+    const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const dx = x - macroStartX.current;
+    const THRESHOLD = 40;
+    if (Math.abs(dx) > THRESHOLD) {
+      setMacroPage((p) => {
+        if (dx < 0) return Math.min(1, p + 1); // kéo sang trái -> trang sau
+        if (dx > 0) return Math.max(0, p - 1); // kéo sang phải -> trang trước
+        return p;
+      });
+    }
+    macroStartX.current = null;
+  };
   
 
   /* ====== Logic ====== */
   const selectedWorkoutIds = useMemo(
-    () => new Set((activity.workouts || []).map(w => w.id)),
+    () => new Set((activity.workouts || []).map((w) => w.id)),
+    [activity.workouts]
+  );
+
+  const workoutNamesText = useMemo(
+    () =>
+      (activity.workouts || [])
+        .map((w) => w.name || "(Không tên)")
+        .join(", "),
     [activity.workouts]
   );
   const totalBurnedKcal = useMemo(
@@ -196,6 +226,22 @@ async function loadData() {
   );
 };
 
+  const macroPages = useMemo(
+    () => [
+      [
+        { key: "protein", l: "Chất đạm", c: "red",   v: totals.proteinG, t: targets.proteinG, icon: "fa-solid fa-bolt" },
+        { key: "carb",    l: "Đường bột", c: "purple", v: totals.carbG,    t: targets.carbG,    icon: "fa-solid fa-wheat-awn" },
+        { key: "fat",     l: "Chất béo", c: "green", v: totals.fatG,     t: targets.fatG,     icon: "fa-solid fa-droplet" },
+      ],
+      [
+        { key: "salt",  l: "Muối",  c: "gray",   v: totals.saltG,  t: targets.saltG,  icon: "fa-solid fa-jar" },
+        { key: "sugar", l: "Đường", c: "orange", v: totals.sugarG, t: targets.sugarG, icon: "fa-solid fa-cubes" },
+        { key: "fiber", l: "Chất xơ", c: "teal",   v: totals.fiberG, t: targets.fiberG, icon: "fa-solid fa-leaf" },
+      ],
+    ],
+    [totals, targets]
+  );
+
   /* ====== Components Helpers ====== */
   const DateStrip = () => {
     const dObj = dayjs(date);
@@ -232,137 +278,311 @@ async function loadData() {
   };
 
   return (
-    <div className="st-page"><div className="st-wrap">
-      <div className="st-grid-layout">
-        {/* 1. Tổng quan */}
-        <div className="st-card st-col-overview">
-          <div className="st-card-header space-between">
-            <div className="st-card-title lg">Tổng quan</div>
-            <div className="st-streak-badge"><i className={"fa-solid fa-fire "+(hot?"hot":"cold")}/> {streak}</div>
+    <div className="st-page">
+      <div className="st-wrap">
+        {/* HEADER TRANG THỐNG KÊ */}
+        <div className="st-header">
+          <div>
+            <h1>Thống kê</h1>
+            <p>Tổng quan dinh dưỡng & hoạt động trong ngày của bạn</p>
           </div>
-          <DateStrip />
-          {!timeSlots.length ? <div className="st-empty">Chưa có món ăn.</div> : <div className="st-timeline-body">{timeSlots.map(({hour,items,totalKcal})=>(
-            <div key={hour} className="st-ts-group">
-              <div className="st-ts-head">{hour}:00 - {Math.round(totalKcal)} Calo</div>
-              <div className="st-ts-list">{items.map(it=>(
-                 <div key={it._id} className="st-meal-row"><img src={it.foodAbs} alt=""/><div className="st-meal-info"><div>{it.food?.name}</div><span>{Math.round(it.food?.kcal*it.quantity)} cal · x{it.quantity}</span></div></div>
-              ))}</div>
-            </div>
-          ))}</div>}
-        </div>
-
-        {/* 2. Mục tiêu Calo */}
-        <div className="st-card st-box-calories">
-          <div className="st-card-header"><div className="st-card-title">Mục tiêu Calo</div></div>
-          <div className="st-cal-body">
-            <div className="st-cal-ring-wrap">{renderRing()}</div>
-            <div className="st-cal-meta">
-              <div className="c"><div className="v">{kcalTarget}</div><div className="lb">Mục tiêu</div></div>
-              <div className="c"><div className="v">{kcalAte}</div><div className="lb">Đã nạp</div></div>
-              <div className="c"><div className="v">{kcalBurned}</div><div className="lb">Tập luyện</div></div>
-            </div>
+          <div className="st-header-right">
+            <span className="st-header-pill">
+              <i className="fa-regular fa-calendar" />
+              {dayjs(date).format("DD/MM/YYYY")}
+            </span>
           </div>
         </div>
 
-        {/* 3. Tập luyện */}
+        <div className="st-grid-layout">
+          {/* 1. Tổng quan */}
+          <div className="st-card st-col-overview">
+            <div className="st-card-header space-between">
+              <div className="st-card-title lg">Tổng quan</div>
+              <div className="st-streak-badge">
+                <i className={"fa-solid fa-fire " + (hot ? "hot" : "cold")} /> {streak}
+              </div>
+            </div>
+            <DateStrip />
+            {!timeSlots.length ? (
+              <div className="st-empty">Chưa có món ăn.</div>
+            ) : (
+              <div className="st-timeline-body">
+                {timeSlots.map(({ hour, items, totalKcal }) => (
+                  <div key={hour} className="st-ts-group">
+                    <div className="st-ts-head">
+                      {hour}:00 - {Math.round(totalKcal)} Calo
+                    </div>
+                    <div className="st-ts-list">
+                      {items.map((it) => (
+                        <div key={it._id} className="st-meal-row">
+                          <img src={it.foodAbs} alt="" />
+                          <div className="st-meal-info">
+                            <div>{it.food?.name}</div>
+                            <span>
+                              {Math.round(it.food?.kcal * it.quantity)} cal · x{it.quantity}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 2. Mục tiêu Calo */}
+          <div className="st-card st-box-calories">
+            <div className="st-card-header">
+              <div className="st-card-title">Mục tiêu Calo</div>
+            </div>
+            <div className="st-cal-body">
+              <div className="st-cal-ring-wrap">{renderRing()}</div>
+              <div className="st-cal-meta">
+                <div className="c">
+                  <div className="v">{kcalTarget}</div>
+                  <div className="lb">Mục tiêu</div>
+                </div>
+                <div className="c">
+                  <div className="v">{kcalAte}</div>
+                  <div className="lb">Đã nạp</div>
+                </div>
+                <div className="c">
+                  <div className="v">{kcalBurned}</div>
+                  <div className="lb">Tập luyện</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+                  {/* 3. Tập luyện */}
         <div className="st-card st-box-workout relative">
-          <div className="st-card-header"><div className="st-card-title">Tập luyện</div></div>
-          <button className="st-btn-add-corner" onClick={()=>setModal('WORKOUT')}>+</button>
+          <div className="st-card-header">
+            <div className="st-card-title">Tập luyện</div>
+          </div>
+          <button
+            className="st-btn-add-corner"
+            onClick={() => setModal("WORKOUT")}
+            title="Chọn lịch tập cho ngày này"
+          >
+            +
+          </button>
           <div className="st-stat-body">
-            <div className="st-stat-big"><i className="fa-solid fa-fire-flame-curved"/> {kcalBurned}</div>
-            <div className="st-stat-sub">{activity.workouts?.length||0} bài tập</div>
+            <div className="st-stat-big">
+              <i className="fa-solid fa-fire-flame-curved" /> {kcalBurned}
+            </div>
+            <div className="st-stat-sub">
+              {activity.workouts?.length || 0} bài tập
+            </div>
+            {activity.workouts?.length > 0 && (
+              <div className="st-workout-names" title={workoutNamesText}>
+                {workoutNamesText}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 4. Bước chân */}
-        <div className="st-card st-box-steps relative">
-          <div className="st-card-header"><div className="st-card-title">Bước chân</div></div>
-          <button className="st-btn-add-corner" onClick={()=>setModal('STEPS')}>+</button>
-          <div className="st-stat-body">
-            <div className="st-stat-big">{(activity.steps||0).toLocaleString()}</div>
-            <div className="st-stat-sub">/ {STEP_GOAL.toLocaleString()}</div>
-            <div className="st-prog-bar"><div style={{width:`${Math.min(100,((activity.steps||0)/STEP_GOAL)*100)}%`}}/></div>
+          {/* 4. Bước chân */}
+          <div className="st-card st-box-steps relative">
+            <div className="st-card-header">
+              <div className="st-card-title">Bước chân</div>
+            </div>
+            <button
+              className="st-btn-add-corner"
+              onClick={() => setModal("STEPS")}
+              title="Cập nhật số bước"
+            >
+              +
+            </button>
+            <div className="st-stat-body">
+              <div className="st-stat-big">
+                {(activity.steps || 0).toLocaleString()}
+              </div>
+              <div className="st-stat-sub">/ {STEP_GOAL.toLocaleString()} bước</div>
+              <div className="st-prog-bar">
+                <div
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      ((activity.steps || 0) / STEP_GOAL) * 100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* 5. Nước */}
-        <div className="st-card st-box-water">
-           <div className="panel-stt-water"><div className="wleft"><i className="fa-solid fa-glass-water"/><div><div className="wlabel">Uống nước</div><div className="wval">{waterMl} ml</div></div></div>
-           <div className="wctl"><button onClick={()=>waterDelta(-stepMl)}>-</button><div className="wu-wrap"><input type="number" value={stepMl} onChange={e=>setStepMl(+e.target.value)}/><span>ml</span></div><button onClick={()=>waterDelta(+stepMl)}>+</button></div></div>
-        </div>
+          {/* 5. Nước */}
+          <div className="st-card st-box-water">
+            <div className="panel-stt-water">
+              <div className="wleft">
+                <i className="fa-solid fa-glass-water" />
+                <div>
+                  <div className="wlabel">Uống nước</div>
+                  <div className="wval">{waterMl} ml</div>
+                </div>
+              </div>
+              <div className="wctl">
+                <button onClick={() => waterDelta(-stepMl)}>-</button>
+                <div className="wu-wrap">
+                  <input
+                    type="number"
+                    value={stepMl}
+                    onChange={(e) => setStepMl(+e.target.value || 0)}
+                  />
+                  <span>ml</span>
+                </div>
+                <button onClick={() => waterDelta(+stepMl)}>+</button>
+              </div>
+            </div>
+          </div>
 
         {/* 6. Dinh dưỡng */}
         <div className="st-card st-box-nutrition">
-          <div className="st-card-header"><div className="st-card-title">Dinh dưỡng</div></div>
-          <div className="st-macro-grid">
-            <MacroItem l="Đạm" c="red" v={totals.proteinG} t={targets.proteinG}/> <MacroItem l="Đ.Bột" c="purple" v={totals.carbG} t={targets.carbG}/>
-            <MacroItem l="Béo" c="green" v={totals.fatG} t={targets.fatG}/> <MacroItem l="Muối" c="gray" v={totals.saltG} t={targets.saltG}/>
-            <MacroItem l="Đường" c="orange" v={totals.sugarG} t={targets.sugarG}/> <MacroItem l="Xơ" c="teal" v={totals.fiberG} t={targets.fiberG}/>
+          <div className="st-card-header">
+            <div className="st-card-title">Dinh dưỡng</div>
+          </div>
+
+          <div
+            className="st-macro-slider"
+            onMouseDown={handleMacroSlideStart}
+            onMouseUp={handleMacroSlideEnd}
+            onTouchStart={handleMacroSlideStart}
+            onTouchEnd={handleMacroSlideEnd}
+          >
+            <div
+              className="st-macro-inner"
+              style={{ transform: `translateX(-${macroPage * 100}%)` }}
+            >
+              {macroPages.map((page, idx) => (
+                <div className="st-macro-page" key={idx}>
+                  {page.map((m) => (
+                    <MacroItem key={m.key} {...m} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="st-macro-dots">
+            {macroPages.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className={
+                  "st-macro-dot" + (macroPage === idx ? " is-active" : "")
+                }
+                onClick={() => setMacroPage(idx)}
+              />
+            ))}
           </div>
         </div>
 
-        {/* 7. Cân nặng */}
-        <div className="st-card st-box-weight relative">
-          <div className="st-card-header"><div className="st-card-title">Cân nặng (kg)</div></div>
-          <button className="st-btn-add-corner" onClick={()=>setModal('WEIGHT')}>+</button>
-          <div className="st-weight-body">
-            <div className="st-w-left"><div className="st-w-curr">{activity.weightKg||"--"} <span>kg</span></div><div className="st-w-lbl">Gần nhất</div></div>
-            <div className="st-w-chart">
-              {!weightHistory.length ? (
-                <span className="st-no-data">Chưa có dữ liệu</span>
-              ) : (
-                <div className="st-chart-viz">
-                  <div className="st-chart-line" />
-                  {weightHistory.map((p, i) => (
-                    <div
-                      key={p.date}
-                      className="st-cp"
-                      style={{ left: `${(i / Math.max(1, weightHistory.length - 1)) * 100}%` }}
-                    >
-                      <div className="st-cdot" />
-                      <span className="st-ctip">
-                        {dayjs(p.date).format("DD")}·{p.weight}
-                      </span>
-                    </div>
-                  ))}
+
+          {/* 7. Cân nặng */}
+          <div className="st-card st-box-weight relative">
+            <div className="st-card-header">
+              <div className="st-card-title">Cân nặng (kg)</div>
+            </div>
+            <button
+              className="st-btn-add-corner"
+              onClick={() => setModal("WEIGHT")}
+              title="Cập nhật cân nặng"
+            >
+              +
+            </button>
+            <div className="st-weight-body">
+              <div className="st-w-left">
+                <div className="st-w-curr">
+                  {activity.weightKg || "--"} <span>kg</span>
                 </div>
-              )}
+                <div className="st-w-lbl">Gần nhất</div>
+              </div>
+              <div className="st-w-chart">
+                {!weightHistory.length ? (
+                  <span className="st-no-data">Chưa có dữ liệu</span>
+                ) : (
+                  <div className="st-chart-viz">
+                    <div className="st-chart-line" />
+                    {weightHistory.map((p, i) => (
+                      <div
+                        key={p.date}
+                        className="st-cp"
+                        style={{
+                          left: `${
+                            (i / Math.max(1, weightHistory.length - 1)) * 100
+                          }%`,
+                        }}
+                      >
+                        <div className="st-cdot" />
+                        <span className="st-ctip">
+                          {dayjs(p.date).format("DD")}·{p.weight}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* MODALS */}
-      {modal === 'WORKOUT' && (
-        <WorkoutModal
-          options={workOptions}
-          initialSelectedIds={Array.from(selectedWorkoutIds)}
-          onClose={() => setModal(null)}
-          onSave={handleSaveWorkouts}
-        />
-      )}
-      {modal === 'STEPS' && (
-        <SimpleInputModal
-          title="Cập nhật bước chân"
-          currentVal={activity.steps}
-          unit="bước"
-          step={100}
-          onClose={() => setModal(null)}
-          onSave={handleSaveSteps}
-        />
-      )}
-      {modal === 'WEIGHT' && (
-        <SimpleInputModal
-          title="Cập nhật cân nặng"
-          currentVal={activity.weightKg}
-          unit="kg"
-          step={0.1}
-          onClose={() => setModal(null)}
-          onSave={handleSaveWeight}
-        />
-      )}
-    </div></div>
+        {/* MODALS */}
+        {modal === "WORKOUT" && (
+          <WorkoutModal
+            options={workOptions}
+            initialSelectedIds={Array.from(selectedWorkoutIds)}
+            onClose={() => setModal(null)}
+            onSave={handleSaveWorkouts}
+          />
+        )}
+        {modal === "STEPS" && (
+          <SimpleInputModal
+            title="Cập nhật bước chân"
+            currentVal={activity.steps}
+            unit="bước"
+            step={100}
+            onClose={() => setModal(null)}
+            onSave={handleSaveSteps}
+          />
+        )}
+        {modal === "WEIGHT" && (
+          <SimpleInputModal
+            title="Cập nhật cân nặng"
+            currentVal={activity.weightKg}
+            unit="kg"
+            step={0.1}
+            onClose={() => setModal(null)}
+            onSave={handleSaveWeight}
+          />
+        )}
+      </div>
+    </div>
   );
 }
 
-const MacroItem = ({ l, c, v, t }) => (<div className="st-macro-item"><div className="h"><span>{l}</span><small>{Math.round(v)}/{t}</small></div><div className={"bar "+c}><span style={{width:`${t?Math.min(100,(v/t)*100):0}%`}}/></div></div>);
+const MacroItem = ({ l, c, v, t, icon }) => {
+  const cur = Math.round(v || 0);
+  const target = t || 0;
+  const pct = target ? Math.min(100, (cur / target) * 100) : 0;
+  return (
+    <div className="st-macro-item">
+      <div className="st-macro-top">
+        {icon && (
+          <span className={"st-macro-icon " + c}>
+            <i className={icon} />
+          </span>
+        )}
+        <span className="st-macro-label">{l}</span>
+      </div>
+      <div className={"st-macro-bar bar " + c}>
+        <span style={{ width: `${pct}%` }} />
+      </div>
+      <div className="st-macro-val">
+        {cur}
+        <span> / {target}{target ? "g" : ""}</span>
+      </div>
+    </div>
+  );
+};
