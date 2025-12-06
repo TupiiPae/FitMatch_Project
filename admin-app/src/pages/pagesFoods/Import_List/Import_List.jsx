@@ -599,11 +599,18 @@ export default function ImportList() {
 
             {checkOk ? (
               <div className="im-msg ok">
-                File hợp lệ, có {checkedRows.length} dòng dữ liệu, sẵn sàng nhập
+                <div>
+                  File hợp lệ, có {checkedRows.length} dòng dữ liệu, sẵn sàng nhập
+                </div>
+                <div className="im-msg-sub">
+                  Nhấp nút <strong>Nhập</strong> để nhập dữ liệu.
+                </div>
               </div>
             ) : file ? (
               <div className="im-msg warn">
-                Vui lòng nhấn Kiểm tra trước khi nhập
+                {validationErrors.length > 0
+                  ? "Vui lòng kiểm tra và sửa các dữ liệu không hợp lệ"
+                  : "Vui lòng nhấp Kiểm tra trước khi nhập"}
               </div>
             ) : null}
 

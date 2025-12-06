@@ -627,18 +627,19 @@ html, body { font-size: var(--fs-base); }
   padding-left: 30px;
 }
 
-/* Hover + active */
-.fm-navitem:hover {
-  background: rgba(0, 128, 128, 0.06);
+.fm-navitem.is-active:hover {
+  background: #e0f2f1;
+  color: #1f2937;
+  font-weight: 800;
 }
-
 .fm-navitem.is-active {
   background: #e0f2f1;
-  color: #008080;
+  color: #1f2937;
+  font-weight: 800;
 }
 
 .fm-navitem.is-active .MuiListItemIcon-root {
-  color: #008080;
+  color: #1f2937;
 }
 
 /* Khi sidebar thu gọn */

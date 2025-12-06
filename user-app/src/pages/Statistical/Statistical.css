@@ -471,7 +471,7 @@
   stroke: #00BBFE;
   stroke-width: 8;
   fill: none;
-  stroke-linecap: round;
+  stroke-linecap: square;
   transition: stroke-dashoffset 0.45s ease-out;
 }
 
