@@ -14,7 +14,7 @@
 
 .ct-info-card {
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px solid #e5e7eb;
   padding: 24px 24px 20px;
   box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
@@ -44,11 +44,11 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
+  background: #fff;
+  border: 1px solid #ef4444;
   display: grid;
   place-items: center;
-  color: #f97316;
+  color: #ef4444;
   flex-shrink: 0;
 }
 
@@ -91,18 +91,17 @@
 }
 
 .ct-social-btn:hover {
-  background: #f97316;
+  background: #ef4444;
   color: #ffffff;
-  border-color: #f97316;
+  border-color: #ef4444;
   transform: translateY(-1px);
 }
 
 /* RIGHT CARD – FORM */
 
 .ct-form-card {
-  background: #fffaf2;
-  border-radius: 8px;
-  border: 1px solid #fed7aa;
+  background: #fadede;
+  border-radius: 4px;
   padding: 24px 24px 28px;
   box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
 }
@@ -141,7 +140,7 @@
 
 .ct-field input:focus,
 .ct-field textarea:focus {
-  border-color: #fb923c;
+  border-color: #ef4444;
   box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.25);
 }
 
@@ -188,14 +187,14 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  background: #f97316;
+  background: #f00519;
   color: #ffffff;
   transition: background 0.15s ease, transform 0.1s ease,
     box-shadow 0.15s ease;
 }
 
 .ct-submit-btn:hover:not(:disabled) {
-  background: #ea580c;
+  background: #ef4444;
   transform: translateY(-1px);
 }
 

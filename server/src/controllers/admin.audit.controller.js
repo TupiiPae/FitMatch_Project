@@ -54,3 +54,43 @@ export async function listAuditLogsForResource(req, res, next) {
     return next(err);
   }
 }
+
+// DELETE /api/admin/audit-logs/:id  (xóa 1 bản ghi)
+export async function deleteAuditLog(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Thiếu ID log" });
+    }
+
+    const doc = await AuditLog.findByIdAndDelete(id);
+    if (!doc) {
+      return res
+        .status(404)
+        .json(responseOk({ deleted: 0, message: "Không tìm thấy bản ghi" }));
+    }
+
+    return res.json(responseOk({ deleted: 1 }));
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// DELETE /api/admin/audit-logs  (xóa nhiều)
+export async function deleteManyAuditLogs(req, res, next) {
+  try {
+    const { ids } = req.body || {};
+    const arr = Array.isArray(ids) ? ids.filter(Boolean) : [];
+
+    if (!arr.length) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Danh sách ID trống" });
+    }
+
+    const r = await AuditLog.deleteMany({ _id: { $in: arr } });
+    return res.json(responseOk({ deleted: r.deletedCount || 0 }));
+  } catch (err) {
+    return next(err);
+  }
+}

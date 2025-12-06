@@ -102,11 +102,11 @@
 }
 
 .faq-section + .faq-section {
-  margin-top: 32px;
+  margin-top: 80px;
 }
 
 .faq-section-title {
-  font-size: 22px;
+  font-size: 32px;
   font-weight: 600;
   margin: 0 0 18px;
   color: #f9fafb;

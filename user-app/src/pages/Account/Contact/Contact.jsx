@@ -129,10 +129,10 @@ export default function ContactPage() {
         <div className="ct-info-card">
           <h2 className="ct-info-title">Địa Chỉ Liên hệ</h2>
           <p className="ct-info-sub">
-            Nếu bạn có liên hệ, hãy liên lạc với chúng tôi
+            Gửi lời nhắn, hoặc liên lạc trực tiếp với chúng tôi qua
           </p>
 
-          <div className="ct-info-block">
+          {/* <div className="ct-info-block">
             <div className="ct-info-icon">
               <i className="fa-solid fa-location-dot" />
             </div>
@@ -144,7 +144,7 @@ export default function ContactPage() {
                 phường 13, quận Bình Thạnh, TP. Hồ Chí Minh
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="ct-info-block">
             <div className="ct-info-icon">
@@ -152,7 +152,7 @@ export default function ContactPage() {
             </div>
             <div className="ct-info-text">
               <div className="ct-info-label">EMAIL:</div>
-              <div>qhdn@vlu.edu.vn</div>
+              <div>fitmatchservice@gmail.com</div>
             </div>
           </div>
 
@@ -162,7 +162,7 @@ export default function ContactPage() {
             </div>
             <div className="ct-info-text">
               <div className="ct-info-label">PHONE:</div>
-              <div>028. 7109 9236</div>
+              <div>085. 7314 462</div>
             </div>
           </div>
 

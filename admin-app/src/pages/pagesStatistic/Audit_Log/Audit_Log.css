@@ -111,6 +111,14 @@
 .btn.ghost {
   background: #fff;
 }
+.btn.danger {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+.btn.danger:hover {
+  background: #fecaca;
+}
 .btn:active {
   transform: translateY(1px);
 }
@@ -304,15 +312,16 @@
 .al-trow {
   display: grid;
   grid-template-columns:
-    60px   /* stt */
-    220px  /* admin */
-    120px  /* role */
-    140px  /* action */
-    160px  /* resource type */
-    260px  /* resource name */
-    220px  /* resource id */
-    170px  /* time */
-    80px;  /* op */
+    40px  /* checkbox */
+    60px  /* stt */
+    220px /* admin */
+    120px /* role */
+    140px /* action */
+    160px /* resource type */
+    260px /* resource name */
+    220px /* resource id */
+    170px /* time */
+    80px; /* op */
   align-items: center;
   column-gap: 12px;
   padding: 10px 12px;
@@ -333,6 +342,14 @@
 }
 .al-trow:last-child {
   border-bottom: none;
+}
+
+.cell.cb {
+  text-align: center;
+}
+.cell.cb input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
 }
 
 .cell.stt {
@@ -423,6 +440,13 @@
 }
 .iconbtn:hover {
   background: #F9FAFB;
+}
+.iconbtn.iconbtn-danger {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+.iconbtn.iconbtn-danger:hover {
+  background: #fee2e2;
 }
 
 /* Tag style */
@@ -558,12 +582,53 @@
   background: #f9fafb;
 }
 
+/* ===== Modal confirm delete ===== */
+.al-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.al-modal {
+  width: 420px;
+  max-width: 94vw;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  padding: 18px 18px 14px;
+}
+
+.al-modal h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.al-modal p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.al-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1200px) {
   .al-thead,
   .al-trow {
     grid-template-columns:
-      50px
+      36px  /* cb */
+      50px  /* stt */
       200px
       110px
       130px
@@ -582,7 +647,8 @@
   .al-thead,
   .al-trow {
     grid-template-columns:
-      40px
+      36px  /* cb */
+      40px  /* stt */
       180px
       100px
       130px
@@ -603,6 +669,9 @@
   .al-trow {
     grid-template-columns: 1fr 1fr;
     row-gap: 6px;
+  }
+  .cell.cb {
+    display: none;
   }
   .cell.stt {
     grid-column: 1;

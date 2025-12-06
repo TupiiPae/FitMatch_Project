@@ -633,7 +633,16 @@ export const changeMyAdminPassword = async ({ currentPassword, newPassword }) =>
 // =========================
 export const listAuditLogs = async (params = {}) => {
   const r = await api.get("/api/admin/audit-logs", { params });
-  // BE nên trả responseOk({ items, total, limit, skip })
+  return r.data?.data ?? r.data;
+};
+
+export const deleteAuditLog = async (id) => {
+  const r = await api.delete(`/api/admin/audit-logs/${id}`);
+  return r.data?.data ?? r.data;
+};
+
+export const deleteManyAuditLogs = async (ids = []) => {
+  const r = await api.delete("/api/admin/audit-logs", { data: { ids } });
   return r.data?.data ?? r.data;
 };
 

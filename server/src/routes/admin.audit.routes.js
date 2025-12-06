@@ -5,7 +5,10 @@ import { requireAtLeast } from "../middleware/requireAdminLevel.js";
 import {
   listAuditLogs,
   listAuditLogsForResource,
+  deleteAuditLog,
+  deleteManyAuditLogs,
 } from "../controllers/admin.audit.controller.js";
+
 
 const r = Router();
 
@@ -14,5 +17,7 @@ r.use(auth, requireAtLeast("admin_lv2"));
 
 r.get("/audit-logs", listAuditLogs);
 r.get("/audit-logs/resource/:id", listAuditLogsForResource);
+r.delete("/audit-logs/:id", deleteAuditLog);      // xóa 1
+r.delete("/audit-logs", deleteManyAuditLogs);     // xóa nhiều
 
 export default r;

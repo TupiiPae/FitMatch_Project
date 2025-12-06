@@ -2,7 +2,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { listAuditLogs } from "../../../lib/api";
+import {
+  listAuditLogs,
+  deleteAuditLog,
+  deleteManyAuditLogs,
+} from "../../../lib/api";
 import "./Audit_Log.css";
 
 /* --------- Helpers: mapping label tiếng Việt --------- */
@@ -57,30 +61,6 @@ function toRoleLabel(role) {
     return "Admin cấp 1";
   if (r === "admin_lv2" || r === "sub_admin") return "Admin cấp 2";
   return r;
-}
-
-function getEditPath(resourceType, id) {
-  if (!resourceType || !id) return null;
-  const rt = String(resourceType);
-
-  if (rt === "food" || rt === "foods") {
-    return `/foods/${id}/edit`;
-  }
-
-  if (rt === "suggestMenu" || rt === "suggest_menu") {
-    return `/foods/suggest-menu/${id}/edit`;
-  }
-
-  if (rt === "suggestPlan" || rt === "suggest_plan") {
-    return `/exercises/suggest-plan/${id}/edit`;
-  }
-
-  if (rt === "exercise" || rt === "exercise_strength" || rt === "exercise_cardio" || rt === "exercise_sport") {
-    return `/exercises/${id}/edit`;
-  }
-
-  // Các loại khác hiện chưa có trang edit riêng
-  return null;
 }
 
 // Multi-select dropdown đơn giản, giống phong cách select trong Strength_List
@@ -184,6 +164,10 @@ export default function Audit_Log() {
   /* ------------------ Pagination (client-side) ------------------ */
   const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(0);
+
+  /* ------------------ Multi-select (checkbox) & xóa ------------------ */
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [deleteModal, setDeleteModal] = useState(null); // { ids: [] }
 
   /* ------------------ Load data ------------------ */
   const load = async () => {
@@ -397,6 +381,15 @@ export default function Audit_Log() {
     pageSize,
   ]);
 
+  // Khi danh sách filter thay đổi, giữ lại các ID vẫn còn nhìn thấy
+  useEffect(() => {
+    setSelectedIds((prev) =>
+      prev.filter((id) =>
+        filteredItems.some((it) => (it._id || it.id) === id)
+      )
+    );
+  }, [filteredItems]);
+
   const handlePageChange = (delta) => {
     setPage((prev) => {
       const next = prev + delta;
@@ -418,6 +411,68 @@ export default function Audit_Log() {
     setFilterResources([]);
     setDateFrom("");
     setDateTo("");
+  };
+
+  /* ------------------ Checkbox + Delete handlers ------------------ */
+
+  const allChecked =
+    filteredItems.length > 0 &&
+    selectedIds.length ===
+      filteredItems.filter((it) => it._id || it.id).length;
+
+  const someChecked = selectedIds.length > 0 && !allChecked;
+
+  const toggleAll = () => {
+    if (allChecked) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(
+        filteredItems
+          .map((it) => it._id || it.id)
+          .filter(Boolean)
+      );
+    }
+  };
+
+  const toggleOne = (id) => {
+    if (!id) return;
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const openDeleteSingle = (it) => {
+    const id = it._id || it.id;
+    if (!id) return;
+    setDeleteModal({ ids: [id] });
+  };
+
+  const openDeleteMany = () => {
+    if (!selectedIds.length) return;
+    setDeleteModal({ ids: selectedIds });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal || !deleteModal.ids?.length) return;
+    const ids = deleteModal.ids;
+    try {
+      if (ids.length === 1) {
+        await deleteAuditLog(ids[0]);
+      } else {
+        await deleteManyAuditLogs(ids);
+      }
+      toast.success(
+        ids.length === 1
+          ? "Đã xóa 1 dòng nhật ký"
+          : `Đã xóa ${ids.length} dòng nhật ký`
+      );
+      setDeleteModal(null);
+      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
+      await load();
+    } catch (e) {
+      console.error(e);
+      toast.error("Xóa nhật ký thất bại");
+    }
   };
 
   /* ------------------ Render ------------------ */
@@ -456,6 +511,15 @@ export default function Audit_Log() {
             <button type="button" className="btn ghost" onClick={load}>
               <i className="fa-solid fa-rotate-right" />
               <span>Làm mới</span>
+            </button>
+            <button
+              type="button"
+              className="btn danger"
+              onClick={openDeleteMany}
+              disabled={!selectedIds.length}
+            >
+              <i className="fa-regular fa-trash-can" />
+              <span>Xóa nhiều</span>
             </button>
           </div>
         </div>
@@ -541,6 +605,16 @@ export default function Audit_Log() {
         {/* Table */}
         <div className="al-table">
           <div className="al-thead">
+            <div className="cell cb">
+              <input
+                type="checkbox"
+                checked={allChecked}
+                ref={(el) => {
+                  if (el) el.indeterminate = someChecked;
+                }}
+                onChange={toggleAll}
+              />
+            </div>
             <div className="cell stt">Stt</div>
             <div className="cell admin">Tên admin</div>
             <div className="cell role">Role</div>
@@ -563,6 +637,7 @@ export default function Audit_Log() {
           {!loading &&
             pageItems.map((it, idx) => {
               const rowIndex = safePage * pageSize + idx + 1;
+              const id = it._id || it.id;
 
               const adminName = getAdminName(it) || "—";
               const roleRaw = getAdminRole(it) || "";
@@ -577,10 +652,16 @@ export default function Audit_Log() {
               const resourceName = getResourceName(it) || "—";
               const resourceId = getResourceId(it);
 
-              const editPath = getEditPath(resourceTypeRaw, resourceId);
-
               return (
-                <div key={it._id || it.id} className="al-trow">
+                <div key={id} className="al-trow">
+                  <div className="cell cb">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(id)}
+                      onChange={() => toggleOne(id)}
+                    />
+                  </div>
+
                   <div className="cell stt">{rowIndex}</div>
 
                   <div className="cell admin">
@@ -649,18 +730,14 @@ export default function Audit_Log() {
                   </div>
 
                   <div className="cell op">
-                    {editPath ? (
-                      <button
-                        type="button"
-                        className="iconbtn"
-                        title="Mở trang chỉnh sửa"
-                        onClick={() => nav(editPath)}
-                      >
-                        <i className="fa-regular fa-pen-to-square" />
-                      </button>
-                    ) : (
-                      <span className="al-op-disabled">—</span>
-                    )}
+                    <button
+                      type="button"
+                      className="iconbtn iconbtn-danger"
+                      title="Xóa dòng nhật ký này"
+                      onClick={() => openDeleteSingle(it)}
+                    >
+                      <i className="fa-regular fa-trash-can" />
+                    </button>
                   </div>
                 </div>
               );
@@ -701,6 +778,42 @@ export default function Audit_Log() {
           </div>
         </div>
       </div>
+
+      {/* Modal xác nhận xóa */}
+      {deleteModal && (
+        <div
+          className="al-modal-backdrop"
+          onClick={() => setDeleteModal(null)}
+        >
+          <div
+            className="al-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Xác nhận xóa</h3>
+            <p>
+              Chị có chắc chắn muốn xóa{" "}
+              {deleteModal.ids.length > 1
+                ? `${deleteModal.ids.length} dòng nhật ký đã chọn`
+                : "dòng nhật ký này"}
+              ? Hành động này không thể hoàn tác.
+            </p>
+            <div className="al-modal-actions">
+              <button
+                className="btn"
+                onClick={() => setDeleteModal(null)}
+              >
+                Hủy
+              </button>
+              <button
+                className="btn danger"
+                onClick={handleConfirmDelete}
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
