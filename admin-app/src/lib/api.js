@@ -660,10 +660,18 @@ export const getContactMessageAdmin = async (id) => {
   return r.data?.data ?? r.data;
 };
 
-export const updateContactMessageStatus = async (id, status) => {
-  const r = await api.patch(`/api/admin/contact-messages/${id}`, {
-    status,
-  });
+export const updateContactMessageStatus = async (id, data) => {
+  let body;
+
+  if (typeof data === "string") {
+    body = { status: data };
+  } else if (data && typeof data === "object") {
+    body = data;
+  } else {
+    body = {};
+  }
+
+  const r = await api.patch(`/api/admin/contact-messages/${id}`, body);
   return r.data?.data ?? r.data;
 };
 
