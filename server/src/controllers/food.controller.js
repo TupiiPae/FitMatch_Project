@@ -1,0 +1,482 @@
+// server/src/controllers/food.controller.js
+import path from "path";
+import fs from "fs";
+import sharp from "sharp";
+import Food from "../models/Food.js";
+import NutritionLog from "../models/NutritionLog.js";
+import SuggestMenu from "../models/SuggestMenu.js";
+import { responseOk } from "../utils/response.js";
+import { FOOD_DIR } from "../middleware/upload.js";
+import { uploadImageWithResize, deleteFile } from "../utils/cloudinary.js";
+import { logAdminAction } from "../utils/auditLog.js";
+
+const isNum = (v) => Number.isFinite(v);
+const toNumOrNull = (v) =>
+  v === undefined || v === null || v === ""
+    ? null
+    : Number.isFinite(Number(v))
+    ? Number(v)
+    : null;
+
+const ensureDir = () => {
+  try {
+    fs.mkdirSync(FOOD_DIR, { recursive: true });
+  } catch (_) {}
+};
+
+// ---- helper: map lỗi validate ----
+function toValidationMap(err) {
+  if (!err || err.name !== "ValidationError") return null;
+  const out = {};
+  for (const k of Object.keys(err.errors || {})) {
+    const e = err.errors[k];
+    const path = (e && e.path) || k;
+    out[path] = e.message || "Dữ liệu không hợp lệ";
+  }
+  return out;
+}
+
+// ---- helper: nhận diện admin (lv1/lv2/legacy) ----
+function isAdminRole(req) {
+  const role = String(req.userRole || "");
+  const level = Number(req.userLevel || 0);
+  return (
+    role === "admin" ||
+    role.startsWith("admin_") || // "admin_lv1" | "admin_lv2"
+    level >= 1
+  );
+}
+
+export async function listFoods(req, res) {
+  const userId = req.userId;
+  const isAdmin = isAdminRole(req);
+
+  const {
+    q,
+    status,
+    onlyMine,
+    favorites,
+    approvedFrom,
+    approvedTo,
+    limit = 30,
+    skip = 0,
+  } = req.query;
+
+  const match = {};
+  const and = [];
+
+  // ------- Quyền admin / user -------
+  if (isAdmin) {
+    if (status) and.push({ status }); // admin truyền gì thì lọc theo status đó
+  } else {
+    if (onlyMine) and.push({ createdBy: userId });
+    else and.push({ status: "approved" }); // user chỉ thấy món đã duyệt
+  }
+
+  if (favorites && userId) and.push({ likedBy: userId });
+  if (q) match.$text = { $search: q };
+
+  // ------- Lọc theo thời gian duyệt (approvedAt) -------
+  if (approvedFrom || approvedTo) {
+    // đảm bảo chỉ lấy món đã approved
+    and.push({ status: "approved" });
+    const range = {};
+    if (approvedFrom) range.$gte = new Date(approvedFrom);
+    if (approvedTo) {
+      const t = new Date(approvedTo);
+      t.setDate(t.getDate() + 1); // +1 ngày để inclusive
+      range.$lt = t;
+    }
+    and.push({ approvedAt: range });
+  }
+
+  // ------- Lọc theo min/max số (massG, kcal, proteinG, carbG, fatG) -------
+  const pushRange = (field, minRaw, maxRaw) => {
+    const min = toNumOrNull(minRaw);
+    const max = toNumOrNull(maxRaw);
+    if (min == null && max == null) return;
+
+    const cond = {};
+    if (min != null) cond.$gte = min;
+    if (max != null) cond.$lte = max;
+
+    and.push({ [field]: cond });
+  };
+
+  // Khớp đúng tên param FE đang gửi (Food_List.jsx):
+  // massGMin, massGMax, kcalMin, kcalMax,
+  // proteinGMin, proteinGMax, carbGMin, carbGMax, fatGMin, fatGMax
+  pushRange("massG",    req.query.massGMin,    req.query.massGMax);
+  pushRange("kcal",     req.query.kcalMin,     req.query.kcalMax);
+  pushRange("proteinG", req.query.proteinGMin, req.query.proteinGMax);
+  pushRange("carbG",    req.query.carbGMin,    req.query.carbGMax);
+  pushRange("fatG",     req.query.fatGMin,     req.query.fatGMax);
+
+  if (and.length) match.$and = and;
+
+  const proj = {
+    name: 1,
+    imageUrl: 1,
+    portionName: 1,
+    description: 1,
+    massG: 1,
+    unit: 1,
+    kcal: 1,
+    proteinG: 1,
+    carbG: 1,
+    fatG: 1,
+    saltG: 1,
+    sugarG: 1,
+    fiberG: 1,
+    likedBy: 1,
+    status: 1,
+    createdBy: 1,
+    createdByAdmin: 1,
+    approvedAt: 1,
+    approvedBy: 1,
+    updatedAt: 1,
+    createdAt: 1,
+    ...(q ? { score: { $meta: "textScore" } } : {}),
+  };
+
+  const sort = q ? { score: { $meta: "textScore" } } : { updatedAt: -1 };
+
+  const limitNum = Number(limit) || 30;
+  const skipNum  = Number(skip)  || 0;
+
+  // Lấy danh sách
+  const docs = await Food.find(match)
+    .sort(sort)
+    .skip(skipNum)
+    .limit(limitNum + 1) // để tính hasMore
+    .select(proj)
+    .lean();
+
+  const items   = docs.slice(0, limitNum);
+  const hasMore = docs.length > limitNum;
+
+  // Tổng số bản ghi theo filter (phục vụ phân trang + export)
+  const total   = await Food.countDocuments(match);
+
+  res.json({ items, hasMore, total, limit: limitNum, skip: skipNum });
+}
+
+
+export async function getFood(req, res) {
+  const d = await Food.findById(req.params.id).lean();
+  if (!d) return res.status(404).json({ message: "Not found" });
+  const isFavorite = req.userId
+    ? d.likedBy?.some((x) => String(x) === String(req.userId))
+    : false;
+  res.json({ ...d, isFavorite });
+}
+
+export async function createFood(req, res) {
+  try {
+    const userId = req.userId;
+    const isAdmin = isAdminRole(req);
+    const b = req.body || {};
+
+    const name = String(b.name || "").trim();
+    const mass = Number(b.massG);
+    const kcal = toNumOrNull(b.kcal);
+    
+    if (!name || !isNum(mass) || mass <= 0) {
+      return res.status(400).json({ message: "name & massG required" });
+    }
+    
+    if (kcal === null || kcal === undefined) {
+      return res.status(400).json({ message: "kcal is required" });
+    }
+
+    let imageUrl = b.imageUrl || null;
+    if (req.file) {
+      try {
+        imageUrl = await uploadImageWithResize(
+          req.file.buffer,
+          "asset/folder/foods",
+          { width: 800, height: 800, fit: "inside", withoutEnlargement: true },
+          { quality: 82 }
+        );
+      } catch (e) {
+        console.error("[food.upload]", e?.message || e);
+      }
+    }
+
+    const baseDoc = {
+      name,
+      imageUrl,
+      portionName: b.portionName || undefined,
+      description: typeof b.description === "string" ? b.description.trim() || undefined : undefined,
+      massG: mass,
+      unit: b.unit === "ml" ? "ml" : "g",
+      kcal,
+      proteinG: toNumOrNull(b.proteinG),
+      carbG: toNumOrNull(b.carbG),
+      fatG: toNumOrNull(b.fatG),
+      saltG: toNumOrNull(b.saltG),
+      sugarG: toNumOrNull(b.sugarG),
+      fiberG: toNumOrNull(b.fiberG),
+      sourceType: b.sourceType || (isAdmin ? "other" : "user_submitted"),
+    };
+
+    if (isAdmin) {
+      baseDoc.createdByAdmin = userId;
+      baseDoc.status = "approved";
+      baseDoc.approvedBy = userId;
+      baseDoc.approvedAt = new Date();
+    } else {
+      baseDoc.createdBy = userId;
+      baseDoc.status = "pending";
+    }
+
+    const doc = await Food.create(baseDoc);
+
+    // 🔍 Ghi nhật ký khi admin tạo món ăn
+    if (isAdmin) {
+      await logAdminAction(req, {
+        resourceType: "food",
+        resourceId: doc._id,
+        resourceName: doc.name,
+        action: "create",
+      });
+    }
+
+    if (isAdmin) {
+      return res.status(201).json({ message: "Created & approved", id: doc._id });
+    }
+    return res.status(202).json({ message: "Submitted for approval", id: doc._id });
+  } catch (err) {
+    const map = toValidationMap(err);
+    if (map)
+      return res
+        .status(422)
+        .json({ message: "Dữ liệu không hợp lệ", errors: map });
+    console.error("[createFood]", err?.message || err);
+    return res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+}
+
+export async function updateFood(req, res) {
+  try {
+    const userId = req.userId;
+    const doc = await Food.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: "Not found" });
+
+    const isOwner = String(doc.createdBy || "") === String(userId);
+    const isAdmin = isAdminRole(req);
+    if (!isOwner && !isAdmin)
+      return res.status(403).json({ message: "Forbidden" });
+
+    const b = req.body || {};
+    const set = {};
+
+    if (b.massG !== undefined) {
+      const m = Number(b.massG);
+      if (!isNum(m) || m <= 0)
+        return res.status(400).json({ message: "massG must be > 0" });
+      set.massG = m;
+    }
+    if (b.unit !== undefined) set.unit = b.unit === "ml" ? "ml" : "g";
+
+    ["name", "imageUrl", "portionName", "description", "sourceType"].forEach((k) => {
+      if (b[k] !== undefined) {
+        const v = typeof b[k] === "string" ? b[k].trim() : b[k];
+        if (k === "imageUrl" && v === "") return;
+        set[k] = v;
+      }
+    });
+    ["kcal", "proteinG", "carbG", "fatG", "saltG", "sugarG", "fiberG"].forEach((k) => {
+      if (b[k] !== undefined) set[k] = toNumOrNull(b[k]);
+    });
+
+    if (req.file) {
+      try {
+        if (doc.imageUrl && doc.imageUrl.includes("cloudinary.com")) {
+          await deleteFile(doc.imageUrl, "image").catch(() => {});
+        }
+        
+        const newImageUrl = await uploadImageWithResize(
+          req.file.buffer,
+          "asset/folder/foods",
+          { width: 800, height: 800, fit: "inside", withoutEnlargement: true },
+          { quality: 82 }
+        );
+        set.imageUrl = newImageUrl;
+      } catch (e) {
+        console.error("[food.upload][update]", e?.message || e);
+      }
+    }
+
+    // Admin có thể chỉnh status, nhưng log chung là "update"
+    if (isAdmin && b.status && ["pending", "approved", "rejected"].includes(b.status)) {
+      set.status = b.status;
+      if (b.status === "approved") {
+        if (!("approvedAt" in set)) set.approvedAt = new Date();
+        if (!("approvedBy" in set)) set.approvedBy = userId;
+      } else if (b.status === "rejected") {
+        const raw = String(b.rejectionReason ?? "").trim();
+        if (!raw) {
+          return res.status(400).json({ message: "Vui lòng nhập lý do từ chối (1–500 ký tự)" });
+        }
+        set.rejectionReason = raw.slice(0, 500);
+      }
+    }
+
+    await Food.findByIdAndUpdate(doc._id, { $set: set }, { runValidators: true });
+
+    // 🔍 Ghi nhật ký khi admin cập nhật món ăn
+    if (isAdmin) {
+      await logAdminAction(req, {
+        resourceType: "food",
+        resourceId: doc._id,
+        resourceName: set.name || doc.name,
+        action: "update",
+      });
+    }
+
+    return res.json(responseOk());
+  } catch (err) {
+    const map = toValidationMap(err);
+    if (map)
+      return res
+        .status(422)
+        .json({ message: "Dữ liệu không hợp lệ", errors: map });
+    console.error("[updateFood]", err?.message || err);
+    return res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+}
+
+export async function deleteFood(req, res) {
+  const userId = req.userId;
+  const doc = await Food.findById(req.params.id);
+  if (!doc) return res.status(404).json({ message: "Not found" });
+
+  const isOwner = String(doc.createdBy || "") === String(userId);
+  const isAdmin = isAdminRole(req);
+  if (!isOwner && !isAdmin) return res.status(403).json({ message: "Forbidden" });
+
+  const menus = await SuggestMenu.find(
+    { "days.meals.items.food": doc._id },
+    { _id: 1, name: 1 }
+  ).lean();
+
+  if (menus.length > 0) {
+    const names = menus
+      .map((m) => m.name || `#${String(m._id).slice(-6)}`)
+      .join(", ");
+
+    return res.status(400).json({
+      message: `Món ăn này đang được sử dụng trong ${menus.length} thực đơn gợi ý: ${names}. Vui lòng gỡ món ra khỏi các thực đơn đó trước khi xoá.`,
+      menus: menus.map((m) => ({
+        id: m._id,
+        name: m.name,
+      })),
+    });
+  }
+
+  await Food.deleteOne({ _id: doc._id });
+
+  // 🔍 Audit log khi admin xoá món ăn
+  if (isAdmin) {
+    await logAdminAction(req, {
+      resourceType: "food",
+      resourceId: doc._id,
+      resourceName: doc.name,
+      action: "delete",
+    });
+  }
+
+  return res.json(responseOk());
+}
+
+export async function approveFood(req, res) {
+  const adminId = req.userId;
+  const id = req.params.id;
+  const doc = await Food.findByIdAndUpdate(
+    id,
+    { status: "approved", approvedAt: new Date(), approvedBy: adminId, rejectionReason: undefined },
+    { new: true, runValidators: true }
+  ).lean();
+  if (!doc) return res.status(404).json({ message: "Not found" });
+
+  // 🔍 Audit log duyệt món ăn
+  await logAdminAction(req, {
+    resourceType: "food",
+    resourceId: doc._id,
+    resourceName: doc.name,
+    action: "approve",
+  });
+
+  res.json(doc);
+}
+
+export async function rejectFood(req, res) {
+  const id = req.params.id;
+  const raw = String(req.body?.reason ?? "").trim();
+  if (!raw) {
+    return res.status(400).json({ message: "Vui lòng nhập lý do từ chối" });
+  }
+  const reason = raw.slice(0, 500);
+  const doc = await Food.findByIdAndUpdate(
+    id,
+    { status: "rejected", rejectionReason: reason || undefined },
+    { new: true, runValidators: true }
+  ).lean();
+  if (!doc) return res.status(404).json({ message: "Not found" });
+
+  // 🔍 Audit log từ chối món ăn
+  await logAdminAction(req, {
+    resourceType: "food",
+    resourceId: doc._id,
+    resourceName: doc.name,
+    action: "reject",
+    meta: { reason },
+  });
+
+  res.json(doc);
+}
+
+export async function toggleFavorite(req, res) {
+  const userId = req.userId;
+  const f = await Food.findById(req.params.id);
+  if (!f) return res.status(404).json({ message: "Not found" });
+  const has = f.likedBy.some((x) => String(x) === String(userId));
+  f.likedBy = has
+    ? f.likedBy.filter((x) => String(x) !== String(userId))
+    : [...f.likedBy, userId];
+  await f.save();
+  res.json({ isFavorite: !has });
+}
+
+export async function recordView(req, res) {
+  const userId = req.userId;
+  const f = await Food.findById(req.params.id);
+  if (!f) return res.status(404).json({ message: "Not found" });
+  f.views += 1;
+  const i = f.viewedBy.findIndex((v) => String(v.user) === String(userId));
+  if (i >= 0) {
+    f.viewedBy[i].lastViewedAt = new Date();
+    f.viewedBy[i].count += 1;
+  } else {
+    f.viewedBy.push({ user: userId, lastViewedAt: new Date(), count: 1 });
+  }
+  await f.save();
+  res.json(responseOk());
+}
+
+export async function createLog(req, res) {
+  const userId = req.userId;
+  const { foodId, date, hour, quantity = 1, massG } = req.body || {};
+  if (!foodId || !date || hour == null)
+    return res.status(400).json({ message: "foodId, date, hour required" });
+  await NutritionLog.create({
+    user: userId,
+    food: foodId,
+    date,
+    hour,
+    quantity,
+    massG: massG ?? undefined,
+  });
+  res.json(responseOk());
+}

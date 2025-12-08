@@ -1,0 +1,9 @@
+.cm-detail-list {
+  margin-top: 8px;
+  padding-left: 18px;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+.cm-detail-list li + li {
+  margin-top: 2px;
+}

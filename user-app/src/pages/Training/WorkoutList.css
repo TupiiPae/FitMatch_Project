@@ -1,0 +1,558 @@
+.wl-wrap {
+  min-height: 100%;
+  margin: 0 auto;
+  max-width: 1400px;
+}
+
+/* ===== HEAD ===== */
+.wl-head {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  padding-bottom: 12px;
+  z-index: 5;
+  width: 100%;
+  margin: 20px auto 20px auto;
+}
+
+/* Search trong WorkoutList: đồng bộ với RecordMeal .search */
+.wl-head .search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background-color: #333333;
+  height: 44px;
+  border-radius: 8px;
+  padding: 0 16px;
+  color: #aaa;
+  max-width: 700px;
+}
+.wl-head .search i {
+  color: #aaa;
+  font-size: 14px;
+  margin-right: 10px;
+}
+.wl-head .search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #eee;
+  width: 100%;
+  font-size: 14px;
+}
+.wl-head .search input::placeholder {
+  color: #888;
+}
+
+/* Nút tạo lịch tập: dùng màu đỏ chủ đạo giống RecordMeal */
+.wl-create-btn {
+  font-size: 16px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  color: #fff;
+  background-color: #f00519;
+  padding: 0 10px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+.wl-create-btn:hover {
+  color: #002c3e;
+  background-color: #fff;
+}
+
+.wl-linee {
+  border: 0;
+  border-top: 1px solid #9ca3af;
+}
+
+/* ===== Frame danh sách – đồng bộ với nm-list-frame ===== */
+.wl-list-title {
+  color: #d30016;
+  font-size: 30px;
+  font-weight: 700;
+  padding-top: 58px;
+}
+
+.wl-list-desc {
+  margin-top: 4px;
+  color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.wl-list-frame {
+  border: 1px solid #ffffff;
+  background: #1e1e1e;
+  border-radius: 4px;
+  padding: 20px;
+  width: 100%;
+  margin-top: 20px;
+
+  /* cho phép scroll trong frame khi dài */
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  cursor: grab;
+}
+.wl-list-frame.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.wl-more {
+  margin-top: 12px;
+  text-align: center;
+}
+.wl-more button {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid #002c3e80;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  color: #111827;
+}
+.wl-more button:hover {
+  background: #f9fafb;
+}
+
+/* Section head + line (giữ nguyên layout) */
+.wl-sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.wl-sec-title {
+  font-weight: 700;
+  text-align: left;
+  font-size: 18px;
+  color: #ffffff;
+  border-radius: 4px;
+}
+.wl-line {
+  border: 0;
+  border-top: 1px solid #002c3e55;
+  margin: 50px 200px 20px 200px;
+}
+
+.wl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: grab;
+}
+.wl-list.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.wl-empty {
+  color: #e5e7eb;
+  padding: 12px;
+  margin: 0 150px 0 150px;
+}
+.wl-muted {
+  color: #94a3b8;
+  font-style: italic;
+  margin: 6px 0 12px;
+}
+
+/* ===== ITEM CARD – đồng bộ palette như nm-item ===== */
+.wl-item {
+  border: 2px solid #1f2937;
+  border-radius: 8px;
+  padding: 14px 14px 10px;
+  background: #1e1e1e;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
+}
+.wl-item:hover {
+  border-color: #f00519;
+}
+
+/* TOP ROW: title + note + menu */
+.wl-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.wl-tmeta {
+  min-width: 0;
+}
+.wl-title {
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.25;
+  margin-bottom: 4px;
+  color: #ffffff;
+  padding-left: 20px;
+  text-align: left;
+}
+.wl-note {
+  color: #e5e7eb;
+  font-size: 16px;
+  line-height: 1.3;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  padding-left: 20px;
+}
+
+/* Actions (menu 3 chấm) – scope theo wl để không ảnh hưởng trang khác */
+.wl-acts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.more-wrap {
+  position: relative;
+}
+.wl-item .more-btn {
+  width: 36px;
+  height: 36px;
+  background: #111827;
+  border-radius: 999px;
+  border: 1px solid #1f2937;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.wl-item .more-btn:hover {
+  background: #1f2937;
+}
+
+.wl-item .menuWL {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  min-width: 200px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  padding: 6px;
+  z-index: 10;
+}
+.wl-item .menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #ffffff;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #111827;
+}
+.wl-item .menu-item:hover {
+  background: #f3f4f6;
+}
+.wl-item .menu-item.danger {
+  color: #dc2626;
+}
+
+/* BOTTOM ROW: metrics 4 cột + vạch dọc – chuyển sang tông tối */
+.wl-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding-top: 10px;
+}
+.wl-metrics .mcol {
+  text-align: center;
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+}
+.wl-metrics .mcol + .mcol {
+  border-left: 1px solid #374151;
+}
+.wl-metrics .num {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.wl-metrics .lab {
+  font-size: 14px;
+  color: #e5e7eb;
+}
+.wl-metrics .calo {
+  color: #f00519;
+}
+
+/* ===== Modal (backdrop dùng chung) ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.modal-card {
+  width: 520px;
+  max-width: 92vw;
+  background: #fff;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+/* Confirm delete (giữ tông sáng như RecordMeal) */
+.confirm-modal {
+  width: min(440px, 92vw);
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.cm-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.cm-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.cm-head h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+.cm-body {
+  padding: 14px 16px;
+  color: #374151;
+  text-align: left;
+}
+.cm-foot {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Buttons (giữ giống RecordMeal) */
+.btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+}
+.btn.ghost {
+  background: #fff;
+}
+.btn.bad {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #f4d0d0;
+}
+.btn.bad:hover {
+  background: #fee2e2;
+}
+
+/* ===== WORKOUT PLAN DETAIL MODAL – đồng bộ palette như DetailModal ===== */
+.wp-modal {
+  width: 620px;
+  max-width: 94vw;
+  border: 1px solid #111827;
+  border-radius: 16px;
+  padding: 16px;
+  position: relative;
+
+  max-height: 700px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  background: #1e1e1e;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+}
+
+.wp-close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #9ca3af;
+}
+.wp-close:hover {
+  color: #ffffff;
+}
+
+.wp-head {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 10px;
+  flex: 0 0 auto;
+}
+
+.wp-thumb {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #1f2937;
+  background: #000;
+}
+
+.wp-titlebox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wp-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.wp-sub {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* Chips – dùng nền tối + viền dashed giống fm-macro-box */
+.wp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+.wp-chips .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed #4b5563;
+  color: #e5e7eb;
+}
+.wp-chips .chip-red {
+  border-color: #f97373;
+  color: #fecaca;
+}
+.wp-chips .chip-blue {
+  border-color: #38bdf8;
+  color: #e0f2fe;
+}
+.wp-chips .chip-gray {
+  border-color: #4b5563;
+  color: #e5e7eb;
+}
+
+/* Exercise list box – giống fm-macro-box style */
+.wp-exlist {
+  border: 1px dashed #4b5563;
+  border-radius: 8px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  background: rgba(0, 0, 0, 0.4);
+
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Ẩn scrollbar cho giống DetailModal */
+.wp-exlist::-webkit-scrollbar {
+  display: none;
+}
+.wp-exlist::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+.wp-exrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.wp-eximg {
+  width: 80px;
+  height: 80px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #1f2937;
+  background: #000;
+  flex: 0 0 64px;
+}
+.wp-exmeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wp-exname {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  font-size: 18px;
+}
+.wp-exname:hover {
+  color: #f00519;
+}
+.wp-exsub {
+  color: #e5e7eb;
+  font-size: 16px;
+}
+
+/* Footer trong modal (nếu dùng) */
+.wp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  flex: 0 0 auto;
+}
+
+/* Khoá scroll nền khi mở modal */
+body.modal-open {
+  overflow: hidden;
+}

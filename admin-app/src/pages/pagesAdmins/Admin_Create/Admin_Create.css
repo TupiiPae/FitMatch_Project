@@ -1,0 +1,66 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+
+.admin-create-page {
+  font-family: "Roboto", sans-serif;
+}
+
+/* Lưới 2 cột giống trước đây */
+.admin-create-grid {
+  display: grid;
+  grid-template-columns: minmax(340px, 520px) 1fr;
+  gap: 16px;
+  padding: 0 12px 12px;
+}
+
+/* Form cột trái */
+.admin-create-form {
+  padding-top: 12px;
+}
+
+.admin-create-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Hint text */
+.hint {
+  font-size: 13px;
+  color: #475569;
+  padding: 8px 4px;
+  background-color: #f8fafc;
+  border-radius: 4px;
+  border: 1px dashed #e2e8f0;
+}
+.hint b {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Lỗi global (server trả về) */
+.error-global {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 10px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.ac-field-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .admin-create-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-create-aside {
+    display: none;
+  }
+}

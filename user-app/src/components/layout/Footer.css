@@ -1,0 +1,126 @@
+
+.fm-footer--mock07 {
+  background: #202020;
+  color: #111827;
+  border-top: 1px solid #9ca3af;
+  margin-top: 50px;
+  font-size: 14px;
+}
+
+/* Khung chính: 3 cột ngang */
+.fm-foot-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* ===== LEFT: Logo + copy ===== */
+.fm-foot-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fm-foot-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.fm-foot-logo-img {
+  height: 40px;
+  object-fit: contain;
+}
+
+.fm-foot-logo-text {
+  font-weight: 700;
+  font-size: 18px;
+  color: #002c3e;
+}
+
+.fm-foot-copy {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ===== CENTER: Nav ===== */
+.fm-foot-nav {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.fm-foot-nav a {
+  text-decoration: none;
+  font-size: 16px;
+  color: #e5e7eb;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+
+
+/* ===== RIGHT: Social icons ===== */
+.fm-foot-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fm-foot-social {
+  display: flex;
+  gap: 10px;
+}
+
+/* Vòng tròn icon giống mock, dùng accent FitMatch */
+.fm-foot-social a {
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease, transform 0.15s ease;
+}
+
+.fm-foot-social a:hover {
+  background: #ef4444;
+  border-color: #fff;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .fm-foot-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+  }
+
+  .fm-foot-left {
+    align-items: center;
+  }
+
+  .fm-foot-right {
+    justify-content: center;
+    width: 100%;
+  }
+}

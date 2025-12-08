@@ -1,0 +1,302 @@
+/* Trang Tùy chỉnh mục tiêu – dark theme giống BodyProfile */
+.gc-page {
+  padding: 0 12px;
+  color: #e5e7eb;
+  font-size: 14px;
+}
+
+/* Sections & titles */
+.gc-section + .gc-section {
+  margin-top: 32px;
+}
+
+.gc-title-main {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 18px;
+}
+
+.gc-title-sub {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
+
+/* Giới hạn bề rộng khối KPI */
+.gc-page {
+  --goal-frame-max: 920px;
+}
+
+/* Khung KPI Calo + Macro – giống khung bảng ở BodyProfile */
+.gc-page .goal-frame {
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  padding: 12px 16px;
+  background: #020617;
+  margin: 0 auto 14px;
+  max-width: var(--goal-frame-max);
+}
+
+/* 4 phần tử căn đều – grid 4 cột, canh giữa từng ô */
+.gc-page .goal-row-center {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  justify-items: center;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Calo mục tiêu – box nhỏ, tối đồng bộ BodyProfile */
+.gc-page .kpi-cal {
+  width: 200px;
+  height: 92px;
+  background: #020617;
+  border-radius: 10px;
+  border: 1px solid #4b5563;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.gc-page .cal-val {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.gc-page .cal-sub {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* Macro ring */
+.gc-page .kpi-macro {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+}
+
+.gc-page .kpi-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+/* Vòng tròn macro */
+.gc-page .ring {
+  --size: 70px;
+  --thick: 10px;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(
+    var(--tone, #22c55e) calc(var(--p, 0) * 1%),
+    #1f2937 0
+  );
+}
+
+/* Mặt nạ trong */
+.gc-page .ring::after {
+  content: "";
+  position: absolute;
+  inset: var(--thick);
+  background: #020617;
+  border-radius: 50%;
+  z-index: 0;
+}
+
+/* Số % ở giữa – luôn trên cùng */
+.gc-page .ring-text {
+  position: relative;
+  z-index: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f9fafb;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Tone màu theo loại */
+.gc-page .tone-prot .ring {
+  --tone: #ff4602;
+} /* đạm */
+.gc-page .tone-carb .ring {
+  --tone: #6c63ff;
+} /* carb */
+.gc-page .tone-fat .ring {
+  --tone: #a1a100;
+} /* béo */
+
+/* Fallback class phần trăm (nếu var(--p) không ăn) */
+.gc-page .ring.pct-0 {
+  background: conic-gradient(var(--tone, #22c55e) 0%, #1f2937 0);
+}
+.gc-page .ring.pct-10 {
+  background: conic-gradient(var(--tone, #22c55e) 10%, #1f2937 0);
+}
+.gc-page .ring.pct-20 {
+  background: conic-gradient(var(--tone, #22c55e) 20%, #1f2937 0);
+}
+.gc-page .ring.pct-30 {
+  background: conic-gradient(var(--tone, #22c55e) 30%, #1f2937 0);
+}
+.gc-page .ring.pct-40 {
+  background: conic-gradient(var(--tone, #22c55e) 40%, #1f2937 0);
+}
+.gc-page .ring.pct-50 {
+  background: conic-gradient(var(--tone, #22c55e) 50%, #1f2937 0);
+}
+.gc-page .ring.pct-60 {
+  background: conic-gradient(var(--tone, #22c55e) 60%, #1f2937 0);
+}
+.gc-page .ring.pct-70 {
+  background: conic-gradient(var(--tone, #22c55e) 70%, #1f2937 0);
+}
+.gc-page .ring.pct-80 {
+  background: conic-gradient(var(--tone, #22c55e) 80%, #1f2937 0);
+}
+.gc-page .ring.pct-90 {
+  background: conic-gradient(var(--tone, #22c55e) 90%, #1f2937 0);
+}
+.gc-page .ring.pct-100 {
+  background: conic-gradient(var(--tone, #22c55e) 100%, #1f2937 0);
+}
+
+/* BMR/TDEE – khung giống bảng trong BodyProfile */
+.gc-page .goal-facts {
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #020617;
+  margin-top: 12px;
+}
+
+.gc-page .goal-facts.filled .fact-row {
+  background: #020617;
+  border-bottom: 1px solid #1f2937;
+}
+
+.gc-page .goal-facts.filled .fact-row + .fact-row {
+  border-top: 1px solid #1f2937;
+}
+
+.gc-page .fact-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: 8px 10px;
+}
+
+.gc-page .fact-row span {
+  color: #e5e7eb;
+  font-size: 14px;
+}
+
+.gc-page .fact-row strong {
+  font-weight: 700;
+}
+
+/* Accordion – dark theme */
+.gc-page .goal-acc {
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #020617;
+}
+
+.gc-page .acc-head {
+  background: #111827;
+  padding: 10px 12px;
+  font-weight: 700;
+  border-bottom: 1px solid #1f2937;
+}
+
+.gc-page .acc-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #020617;
+  border: 0;
+  cursor: pointer;
+  border-top: 1px solid #1f2937;
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+.gc-page .acc-row:hover {
+  background: #111827;
+}
+
+.gc-page .acc-row .chev {
+  transition: transform 0.2s ease;
+  color: #9ca3af;
+}
+
+.gc-page .acc-row.is-open .chev {
+  transform: rotate(90deg);
+}
+
+.gc-page .acc-panel {
+  padding: 12px;
+  border-top: 1px dashed #4b5563;
+  background: #020617;
+}
+
+/* Nút trong accordion – đồng bộ style nút BodyProfile */
+.gc-page .btn-success {
+  background: #f00519;
+  color: #ffffff;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease, transform 0.05s ease;
+}
+
+.gc-page .btn-success:active {
+  transform: translateY(1px);
+}
+
+.gc-page .btn-success:hover:not(:disabled) {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.gc-page .btn-success:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .gc-page .goal-row-center {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .gc-page {
+    padding: 0 8px;
+  }
+
+  .gc-page .goal-row-center {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .gc-page .kpi-cal {
+    width: 100%;
+    max-width: 320px;
+  }
+}

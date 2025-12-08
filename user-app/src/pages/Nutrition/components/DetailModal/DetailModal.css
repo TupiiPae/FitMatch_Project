@@ -1,0 +1,202 @@
+.detail-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Khung modal chính */
+.food-modal-new {
+  display: flex;
+  flex-direction: row;
+  width: 1000px;
+  height: 800px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+/* CỘT TRÁI: HÌNH ẢNH LỚN */
+.fm-col-left {
+  width: 50%;
+  background: #000;
+  position: relative;
+  
+}
+
+.fm-col-left img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* CỘT PHẢI: CONTENT */
+.fm-col-right {
+  width: 55%;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  color: #fff;
+
+}
+
+/* Nút đóng X góc phải */
+.close-icon-btn {
+  position: absolute;
+  top: 1px;
+  right: 4px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 10;
+  transition: color 0.2s;
+}
+.close-icon-btn:hover {
+  color: #fff;
+}
+
+/* Phần nội dung cuộn được (trừ nút bottom) */
+.fm-scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-bottom: 20px;
+}
+
+/* Custom scrollbar */
+.fm-scroll-content::-webkit-scrollbar {
+  display: none;
+}
+.fm-scroll-content::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+/* Header Info */
+.fm-title-lg {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.fm-sub-text {
+  font-size: 15px;
+  color: #9ca3af;
+}
+
+/* BOX CHỈ SỐ (giống card nhỏ bên trong, viền dashed) */
+.fm-macro-box {
+  border: 1px dashed #4b5563;
+  border-radius: 8px;
+  padding: 18px 22px;
+  margin: 0 24px 0 24px;
+  background: rgba(0, 0, 0, 0.4);
+  max-width: 420px;
+}
+
+/* Mỗi hàng: label trái, value phải */
+.macro-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.macro-item + .macro-item {
+  border-top: 1px dashed rgba(75, 85, 99, 0.6);
+  margin-top: 4px;
+  padding-top: 10px;
+}
+
+.macro-item .lbl {
+  color: #e5e7eb;
+  font-weight: 400;
+}
+
+.macro-item .val {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Phần Mô tả / Hướng dẫn */
+.fm-description-section h4 {
+  font-size: 16px;
+  color: #f00519; /* đỏ giống hình */
+  margin: 20px 0 8px 0;
+  font-weight: 700;
+}
+
+.desc-text {
+  font-size: 14px;
+  color: #d1d5db;
+  line-height: 1.6;
+  min-height: 60px; /* vẫn chừa khoảng trống kể cả khi chưa có mô tả */
+}
+
+/* Nút Add Bottom */
+.fm-bottom-action {
+  margin-top: auto;
+}
+
+.btn-add-log {
+  width: 100%;
+  height: 48px;
+  border-radius: 8px;
+  border: none;
+  background-color: #f00519;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+.btn-add-log i {
+    font-size: 20px;
+}
+
+.btn-add-log:hover {
+  background-color: #d30016;
+}
+
+/* Responsive: modal dọc trên mobile */
+@media (max-width: 768px) {
+  .food-modal-new {
+    flex-direction: column;
+    width: 95vw;
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .fm-col-left {
+    width: 100%;
+    height: 200px;
+  }
+  .fm-col-right {
+    width: 100%;
+    padding: 20px;
+  }
+}
+
+/* (giữ lại nếu còn dùng ở nơi khác) */
+@media (max-width: 640px) {
+  .fm-head { grid-template-columns: 84px 1fr; }
+  .fm-thumb { width: 84px; height: 84px; }
+  .fm-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,21 @@
+/* Container chính, đồng bộ 1700px với các trang khác */
+.home-container-fill {
+    min-height: 100%;
+    margin-top: -16px;
+    margin-bottom: -150px;
+}
+
+/* Card chứa ảnh banner, đồng bộ style */
+.home-image-banner {
+  background: #fff;
+  /* Quan trọng: Cho phép ảnh fill */
+  line-height: 0; /* Bỏ khoảng trống dưới ảnh */
+  overflow: hidden; /* Đảm bảo ảnh bo góc */
+  border-bottom: 1px solid #9ca3af;
+}
+
+.home-image-banner img {
+  width: 100%; /* Fill 100% chiều rộng card */
+  height: auto; /* Giữ tỷ lệ */
+  display: block; /* Bỏ khoảng trống dưới ảnh */
+}

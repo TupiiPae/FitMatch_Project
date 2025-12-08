@@ -1,0 +1,231 @@
+.in-wrap {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #121212 40%, #ef4444);
+  display: flex;
+  flex-direction: column;
+}
+
+.in-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  padding: 0 40px;
+  background: transparent;
+}
+
+.in-main {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: 16px 16px 40px;
+}
+
+.in-card {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px 24px 26px;
+  border: 1px solid rgba(15, 23, 42, 0.7);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+
+.in-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.in-desc {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Options */
+.in-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.in-option {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.in-option:hover {
+  border-color: #e5e7eb;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.in-option.active {
+  border-color: #ef4444;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35);
+  background: #fef2f2;
+}
+
+/* head */
+.in-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px 1fr 20px;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* radio */
+.in-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.in-option.active .in-radio {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.in-dot {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+  border-radius: 50%;
+}
+
+.in-option.active .in-dot {
+  background: #ef4444;
+}
+
+/* chevron */
+.in-chevron {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #94a3b8;
+  border-bottom: 2px solid #94a3b8;
+  transform: rotate(-45deg);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  justify-self: end;
+}
+
+.in-option.active .in-chevron {
+  transform: rotate(45deg);
+  border-color: #ef4444;
+}
+
+/* panel */
+.in-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease, padding 0.2s ease, opacity 0.2s ease;
+  padding: 0 16px;
+  opacity: 0;
+}
+
+.in-option.active .in-panel {
+  padding: 6px 16px 14px;
+  opacity: 1;
+}
+
+.in-panel ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.in-panel li {
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 4px 0;
+}
+
+/* Error & actions */
+.in-error {
+  margin-top: 10px;
+  color: #d32f2f;
+  font-size: 12px;
+}
+
+.in-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+/* Buttons */
+.btn {
+  min-width: 120px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.05s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-outline {
+  background: #111827;
+  border: 1px solid #9ca3af;
+  color: #e5e7eb;
+}
+
+.btn-outline:hover {
+  border-color: #f97373;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.6);
+}
+
+.btn-primary {
+  background: #f00519;
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.btn-primary:hover {
+  background: #ef4444;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.55);
+}
+
+.btn-primary:disabled {
+  background: #f97373;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 560px) {
+  .in-card {
+    padding: 20px 16px;
+  }
+  .in-actions {
+    width: 100%;
+    justify-content: center;
+  }
+  .btn {
+    flex: 1;
+    max-width: 260px;
+  }
+}

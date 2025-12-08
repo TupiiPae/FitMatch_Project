@@ -1,0 +1,274 @@
+/* Nền & layout giống tông Welcome */
+.nk-wrap {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #121212 40%, #ef4444);
+  display: flex;
+  flex-direction: column;
+}
+
+/* top bar với logo, trên nền trong suốt */
+.nk-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  padding: 0 40px;
+  background: transparent;
+}
+
+.nk-logo {
+  height: 44px;
+}
+
+/* center area */
+.nk-main {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: 16px 16px 40px;
+}
+
+/* card trắng nổi trên nền tối */
+.nk-card {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px 24px 26px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  text-align: left;
+  border: 1px solid rgba(15, 23, 42, 0.7);
+  color: #111827;
+}
+
+.nk-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.nk-desc {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.nk-field {
+  margin-top: 8px;
+}
+
+/* Input chung (custom cho non-MUI nếu cần) */
+.nk-input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 0 14px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  background: #fff;
+}
+
+.nk-input-large {
+  height: 52px;
+  font-size: 16px;
+  border-color: #4b5563;
+}
+
+.nk-input::placeholder {
+  color: #9ca3af;
+}
+
+.nk-input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.nk-input-wrap {
+  text-align: left;
+}
+
+.nk-hint {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* Hai cột: giới tính (trái) - ngày sinh (phải) */
+.nk-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.nk-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.nk-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+/* Radio card Giới tính */
+.nk-sex-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sex-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  color: #111827;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.05s;
+  background: #ffffff;
+}
+
+.sex-card:active {
+  transform: translateY(1px);
+}
+
+.sex-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sex-icon {
+  display: inline-flex;
+  color: #6b7280;
+}
+
+.sex-text {
+  font-weight: 500;
+}
+
+.sex-card:hover {
+  border-color: #f97373;
+}
+
+.sex-card.active {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #0f172a;
+}
+
+.sex-card.active .sex-icon {
+  color: #ef4444;
+}
+
+/* Cân nặng & chiều cao: cùng hàng */
+.nk-metrics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+/* Màu lỗi bên dưới radio giới tính */
+.nk-error {
+  margin-top: 6px;
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* Ẩn hoàn toàn dòng helper (MUI) khi rỗng để không chiếm khoảng trống */
+.nk-field .MuiFormHelperText-root:empty,
+.nk-dob .MuiFormHelperText-root:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+  height: 0;
+}
+
+/* actions (under card) */
+.nk-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+/* Buttons – đồng bộ màu với Welcome */
+.btn {
+  min-width: 120px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.05s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-outline {
+  background: #111827;
+  border: 1px solid #9ca3af;
+  color: #e5e7eb;
+}
+
+.btn-outline:hover {
+  border-color: #f97373;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.6);
+}
+
+.btn-primary {
+  background: #f00519;
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.btn-primary:hover {
+  color: #ffffff;
+  background: #ef4444;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.55);
+}
+
+.btn-primary:disabled {
+  background: #f97373;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 720px) {
+  .nk-two-col,
+  .nk-metrics-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .nk-card {
+    padding: 20px 16px;
+  }
+  .nk-actions {
+    width: 100%;
+    justify-content: center;
+  }
+  .btn {
+    flex: 1;
+    max-width: 260px;
+  }
+}

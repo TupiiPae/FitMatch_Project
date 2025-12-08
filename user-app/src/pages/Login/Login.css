@@ -1,0 +1,151 @@
+/* ===== Auth – Unified form style (Login, Register, Reset) ===== */
+/* Mọi style đều scope trong .auth-container để an toàn */
+.auth-container .auth-form * { box-sizing: border-box; }
+
+/* Tiêu đề & mô tả chung */
+.auth-container .auth-form h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #1f1f1f;
+  margin: 0 0 6px;
+  letter-spacing: .3px;
+  text-align: center;
+}
+.auth-container .auth-form > span,
+.auth-container .auth-form > p {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280; /* gray-500 */
+  margin: 4px 0 14px;
+}
+
+/* Ô nhập theo template: nền xám nhạt, bo tròn, placeholder */
+.auth-container .auth-input {
+  background-color: #eee;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+  margin: 8px 0;
+  color: #111827;
+}
+.auth-container .auth-input::placeholder { color: #6b7280; }
+
+/* Lỗi hiển thị gọn bên dưới input */
+.auth-container .error-message {
+  display: block;
+  color: #dc2626; /* red-600 */
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* Checkbox hàng “Ghi nhớ đăng nhập” */
+.auth-container .auth-form .checkbox-row{
+  width:100%;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin-top: 8px;
+}
+.auth-container .auth-form .checkbox-row label{
+  display:flex; align-items:center; gap:8px; font-size: 14px; color:#374151;
+}
+.auth-container .auth-form input[type="checkbox"]{
+  width:16px; height:16px; accent-color:#512da8;
+}
+
+/* Link phụ (Quên mật khẩu, Đăng nhập/Đăng ký) */
+.auth-container .forgot-password,
+.auth-container .create-account {
+  background: none;
+  border: none;
+  color: #512da8;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+.auth-container .forgot-password:hover,
+.auth-container .create-account:hover { opacity: .9; }
+
+/* Nút chính – giữ class material-btn cho logic loading */
+.auth-container .material-btn{
+  width:100%;
+  background:#512da8;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:10px 54px;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  cursor:pointer;
+  margin-top: 12px;
+  min-height: 44px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  box-shadow: 0 5px 15px rgba(0,0,0,.12);
+}
+.auth-container .material-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(0,0,0,.16); }
+.auth-container .material-btn:active { transform: translateY(0); }
+
+.auth-container .material-btn .btn-text { position: relative; z-index: 1; }
+.auth-container .material-btn .btn-loader{
+  position:absolute; top:50%; left:50%;
+  transform: translate(-50%,-50%);
+  opacity:0; transition: opacity .2s;
+}
+.auth-container .material-btn.loading .btn-text{ opacity:0; }
+.auth-container .material-btn.loading .btn-loader{ opacity:1; }
+.auth-container .material-btn .loader-circle{
+  width:20px; height:20px; animation: rotate 2s linear infinite;
+}
+.auth-container .material-btn .loader-path{
+  stroke-dasharray: 90,150; stroke-dashoffset:0; stroke-linecap:round; animation: dash 1.5s ease-in-out infinite;
+}
+@keyframes rotate { 100% { transform: rotate(360deg); } }
+@keyframes dash {
+  0% { stroke-dasharray:1,150; stroke-dashoffset:0; }
+  50% { stroke-dasharray:90,150; stroke-dashoffset:-35; }
+  100% { stroke-dasharray:90,150; stroke-dashoffset:-124; }
+}
+
+/* Divider & social bar */
+.auth-container .divider{
+  width:100%; text-align:center; margin:18px 0; position:relative;
+}
+.auth-container .divider::before{
+  content:""; position:absolute; top:50%; left:0; right:0; height:1px; background:#e5e7eb; transform: translateY(-50%);
+}
+.auth-container .divider span{
+  background:#fff; color:#6b7280; padding:0 12px; font-size: 13px; position:relative; z-index:1;
+}
+
+.auth-container .auth-social{
+  margin: 12px 0 8px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.auth-container .auth-social .icon{
+  border: 1px solid #e5e7eb;
+  border-radius: 20%;
+  width: 40px; height: 40px;
+  display:inline-flex; align-items:center; justify-content:center;
+  color:#374151; background:#fff;
+  transition: transform .15s ease, box-shadow .15s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+.auth-container .auth-social .icon:hover{
+  transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,.12);
+}
+
+/* “Chưa có tài khoản? …” */
+.auth-container .signup-link{ width:100%; text-align:center; margin-top: 4px; }
+.auth-container .signup-link p{ font-size: 13px; color:#6b7280; }
+
+/* Mobile */
+@media (max-width: 480px){
+  .auth-container .auth-form { padding: 0 24px; }
+}

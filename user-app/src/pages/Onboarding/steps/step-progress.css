@@ -1,0 +1,80 @@
+/* Biến dùng chung */
+.sp{
+  --sp-dot: 28px;
+  --sp-line: 3px;
+  --sp-gray: #e5e7eb;
+  --sp-green:#d30016;
+  --sp-surface:#fff;
+  --sp-gap: 30px;       /* khoảng cách ngang giữa circle */
+  --sp-max: 760px;
+
+  /* THÊM 2 biến gap dọc */
+  --sp-top-gap: 6px;    /* khoảng cách với navbar (trên) */
+  --sp-bottom-gap: 20px; /* khoảng cách với box (dưới) */
+}
+
+/* khung */
+.sp{
+  max-width: var(--sp-max);
+  margin: var(--sp-top-gap) auto var(--sp-bottom-gap);
+}
+
+.sp-progress{
+  position: relative;           /* để đặt track tuyệt đối */
+  display: flex;
+  align-items: center;
+  gap: var(--sp-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* TRACK xám chạy giữa các circle, dừng ở mép 2 đầu */
+.sp-progress::before{
+  content:"";
+  position:absolute;
+  top: calc(var(--sp-dot)/2 - var(--sp-line)/2);
+  left: calc(var(--sp-dot)/2);
+  right: calc(var(--sp-dot)/2);
+  height: var(--sp-line);
+  background: var(--sp-gray);
+  z-index: 0;
+}
+
+.sp-progress::after{
+  content:"";
+  position:absolute;
+  top: calc(var(--sp-dot)/2 - var(--sp-line)/2);
+  left: calc(var(--sp-dot)/2);
+  height: var(--sp-line);
+  /* nhân tỉ lệ số (0..1) với chiều dài track */
+  width: calc((100% - var(--sp-dot)) * var(--sp-done, 0));
+  background: var(--sp-green);
+  z-index: 1; /* nằm trên ::before */
+}
+
+/* DOT ở trên track, che sạch đoạn line bên trong nhờ nền */
+.sp-dot{
+  position: relative;
+  z-index: 2;
+  display: grid; place-items: center;
+  width: var(--sp-dot); height: var(--sp-dot);
+  border-radius: 999px;
+  border: 2px solid var(--sp-gray);
+  background: var(--sp-surface);
+  box-shadow: 0 0 0 2px var(--sp-surface) inset; /* chắn mép line tuyệt đối */
+}
+
+/* trạng thái */
+.sp-step.is-complete .sp-dot{ background: var(--sp-green); border-color: var(--sp-green); color:#fff; box-shadow: none; }
+.sp-step.is-active .sp-dot{ border-color: var(--sp-green); }
+.sp-step.is-complete .sp-label{ color: var(--fm-text, #0f172a); }
+
+.sp-num{ font-size:12px; color: var(--fm-muted,#64748b); font-weight:600; }
+.sp-label{ margin-top:6px; font-size:12px; color: var(--fm-muted,#64748b); white-space:nowrap; }
+
+/* mobile tinh gọn */
+@media (max-width: 640px){
+  .sp{ --sp-dot: 26px; }
+  .sp-label{ font-size: 11px; }
+}

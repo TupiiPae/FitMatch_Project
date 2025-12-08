@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body, #root, .App { /* Thay selector cho đúng với cấu trúc của bạn */
+  /* height: 100vh; */ /* Bỏ dòng này */
+  min-height: 100vh; /* Dùng dòng này */
+  display: flex; /* Nếu bạn đang dùng flexbox layout */
+  flex-direction: column; /* Nếu bạn đang dùng flexbox layout */
+}
+
+body {
+  font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}

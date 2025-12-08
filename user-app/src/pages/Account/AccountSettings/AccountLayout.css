@@ -1,0 +1,347 @@
+/* ====== LAYOUT CHUNG TRANG TÀI KHOẢN (scoped) ====== */
+.acc-page.pf-wrap {
+  max-width: var(--nav-max-width);
+  margin: 40px auto 0 auto;
+  padding: 0 var(--nav-x-pad);
+}
+
+/* Header */
+.acc-page .pf-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+.acc-page .pf-user {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.acc-page .pf-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--fm-ring);
+  background: #020617;
+}
+.acc-page .pf-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.acc-page .pf-name {
+  font-weight: 700;
+  font-size: 18px;
+  color: #f9fafb;
+}
+.acc-page .pf-join {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* Body grid: sidebar + content (không chung card) */
+.acc-page .pf-body {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  column-gap: 28px;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+
+/* SIDEBAR */
+.acc-page .pf-side {
+  position: sticky;
+  top: calc(var(--nav-size) + 16px);
+  align-self: flex-start;
+  height: fit-content;
+  padding-right: 10px;
+}
+
+.acc-page .pf-side-title {
+  color: #9ca3af;
+  font-size: 12px;
+  margin: 10px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.acc-page .pf-side-item {
+  width: 100%;
+  text-align: left;
+  padding: 8px 0 8px 14px;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: #e5e7eb;
+  font-size: 16px;
+  display: block;
+  border-right: 3px solid transparent; /* line bên phải */
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+.acc-page .pf-side-item + .pf-side-item {
+  margin-top: 4px;
+}
+
+.acc-page .pf-side-item:hover,
+.acc-page .pf-side-item:focus-visible {
+  color: #f9fafb;
+  background: rgba(15, 23, 42, 0.85);
+  border-right-color: rgba(211, 0, 22, 0.5); /* hover line đỏ nhạt */
+}
+
+.acc-page .pf-side-item.is-active {
+  color: #f9fafb;
+  font-weight: 600;
+  background: rgba(15, 23, 42, 0.95);
+  border-right-color: var(--nav-accent); /* line đỏ bên phải */
+}
+
+/* CONTENT: có line chia layout */
+.acc-page .pf-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-left: 1px solid #1f2937; /* line chia sidebar & content */
+  padding-left: 50px;
+  height: 100%;
+}
+
+/* Card & typography bên trong content */
+/* .acc-page .card {
+  background: #020617;
+  border: 1px solid var(--fm-ring);
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+.acc-page .pf-title {
+  font-size: 20px;
+  margin: 0 0 12px;
+  color: #f9fafb;
+}
+.acc-page .pf-subtitle {
+  font-size: 14px;
+  margin: 12px 0 8px;
+  color: #f9fafb;
+}
+.acc-page .pf-desc {
+  color: #9ca3af;
+  font-size: 14px;
+  margin: 6px 0 14px;
+} */
+
+/* Form utils */
+/* .acc-page .pf-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.acc-page .pf-form-row label,
+.acc-page .pf-form-cell label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.acc-page .pf-form-row select,
+.acc-page .pf-form-row input,
+.acc-page .pf-unit input {
+  border: 1px solid var(--fm-ring);
+  border-radius: 8px;
+  padding: 8px 10px;
+  outline: none;
+  background: #020617;
+  color: #e5e7eb;
+}
+.acc-page .pf-form-row input::placeholder,
+.acc-page .pf-form-row select::placeholder {
+  color: #6b7280;
+}
+.acc-page .pf-form-5 {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.acc-page .pf-form-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.acc-page .pf-unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.acc-page .pf-unit span {
+  color: #9ca3af;
+  font-size: 12px;
+}
+.acc-page .pf-unit[data-muted] input {
+  background: #020617;
+}
+
+/* Table đơn giản */
+.acc-page .pf-table {
+  border: 1px solid var(--fm-ring);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.acc-page .pf-tr {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.acc-page .pf-tr + .pf-tr {
+  border-top: 1px solid var(--fm-ring);
+}
+.acc-page .pf-tr-head {
+  background: #020617;
+  font-weight: 600;
+}
+.acc-page .pf-td {
+  padding: 8px 10px;
+  color: #e5e7eb;
+}
+.acc-page .pf-td-end {
+  text-align: right;
+}
+
+/* Buttons */
+.acc-page .pf-actions {
+  margin-top: 12px;
+}
+.acc-page .pf-actions-right {
+  text-align: right;
+}
+.acc-page .btn-primary {
+  background: var(--nav-accent);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.acc-page .btn-primary:hover {
+  filter: brightness(1.05);
+}
+.acc-page .btn-secondary {
+  background: #111827;
+  color: #e5e7eb;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.acc-page .btn-secondary:hover {
+  filter: brightness(1.1);
+} */
+
+/* ===== Modal xác nhận Đăng xuất (giữ nguyên logic, chỉnh màu cho dark) ===== */
+.acc-page .logout-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+.acc-page .logout-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: saturate(120%) blur(1px);
+}
+.acc-page .logout-dialog {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, calc(100% - 24px));
+  border: 1px solid var(--fm-ring);
+  border-radius: 8px;
+  background: #020617;
+  padding: 20px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.8);
+}
+.acc-page .logout-title {
+  font-weight: 800;
+  font-size: 20px;
+  text-align: center;
+  margin-bottom: 8px;
+  color: #f9fafb;
+}
+.acc-page .logout-desc {
+  text-align: center;
+  color: #9ca3af;
+  margin: 0 0 18px;
+}
+.acc-page .logout-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.acc-page .logout-actions .btn-secondary {
+  background: #111827;
+  color: #e5e7eb;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+.acc-page .logout-actions .btn-secondary:hover {
+  filter: brightness(1.1);
+}
+.acc-page .logout-actions .btn-danger {
+  background: var(--nav-accent);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.acc-page .logout-actions .btn-danger:hover {
+  filter: brightness(1.05);
+}
+
+/* Ẩn footer khi đang ở AccountSettings */
+.acc-no-footer .fm-footer {
+  display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .acc-page .pf-form-5 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1024px) {
+  .acc-page .pf-form-5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 980px) {
+  .acc-page .pf-body {
+    grid-template-columns: 1fr;
+  }
+  .acc-page .pf-side {
+    position: static;
+    padding-right: 0;
+  }
+  .acc-page .pf-content {
+    border-left: none;
+    padding-left: 0;
+    margin-top: 8px;
+  }
+  .acc-page .pf-form-5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .acc-page .pf-form-5 {
+    grid-template-columns: 1fr;
+  }
+}

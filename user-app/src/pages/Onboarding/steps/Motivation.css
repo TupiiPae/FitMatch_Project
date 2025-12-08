@@ -1,0 +1,154 @@
+.mv-wrap {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #121212 40%, #ef4444);
+  display: flex;
+  flex-direction: column;
+}
+
+.mv-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  padding: 0 40px;
+  background: transparent;
+}
+
+.mv-main {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: 16px 16px 40px;
+}
+
+.mv-card {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px 24px 26px;
+  border: 1px solid rgba(15, 23, 42, 0.7);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+
+.mv-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.mv-sub {
+  color: #374151;
+  margin-bottom: 18px;
+}
+
+/* Box dùng background image */
+.mv-section {
+  width: 100%;
+  padding: 80px 20px; 
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)),
+              url("/images/bg-motivation.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px; 
+}
+
+/* Hộp nội dung bên trong: Hiệu ứng kính mờ (Glassmorphism) */
+.mv-box {
+  max-width: 700px; 
+  width: 100%;
+  
+  /* Style giống .lm-cta-box */
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  padding: 40px 32px;
+  text-align: center; 
+}
+
+/* Style cho đoạn văn bản */
+.mv-box p {
+  color: #e5e7eb;
+  font-size: 1.1rem; /* Tăng cỡ chữ lên chút cho dễ đọc */
+  line-height: 1.6;
+  margin-bottom: 20px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.mv-box p:last-child {
+  margin-bottom: 0;
+  font-weight: 500;
+  color: #fef2f2; /* Đoạn kết làm sáng hơn một chút */
+}
+
+/* actions + buttons */
+.mv-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.btn {
+  min-width: 120px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.05s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-outline {
+  background: #111827;
+  border: 1px solid #9ca3af;
+  color: #e5e7eb;
+}
+
+.btn-outline:hover {
+  border-color: #f97373;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.6);
+}
+
+.btn-primary {
+  background: #f00519;
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.btn-primary:hover {
+  background: #ef4444;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.55);
+}
+
+.btn-primary:disabled {
+  background: #f97373;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 560px) {
+  .mv-card {
+    padding: 20px 16px;
+  }
+  .mv-actions {
+    width: 100%;
+    justify-content: center;
+  }
+  .btn {
+    flex: 1;
+    max-width: 260px;
+  }
+}

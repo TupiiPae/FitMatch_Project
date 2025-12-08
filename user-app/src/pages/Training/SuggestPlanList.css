@@ -1,0 +1,172 @@
+/* Kế thừa .nm-wrap từ Exercises.css nên không cần định nghĩa lại background */
+
+/* Dropdown Filter 3 cột cho trang này */
+.spl-filter-cols {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 0 18px;
+}
+
+/* ===== LIST FRAME (DARK MODE) ===== */
+.spl-list-frame {
+  background: #1e1e1e; /* Nền tối */
+  border: 1px solid #fff;
+  border-radius: 4px;
+  padding: 20px;
+  width: 100%;
+  max-width: 1700px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 14px;
+}
+
+.spl-empty {
+  color: #9ca3af;
+  padding: 20px;
+  text-align: center;
+  font-style: italic;
+}
+
+/* ===== ITEM CARD (DARK MODE) ===== */
+.spl-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 4px solid #1f2937; /* Viền đậm giống Exercise Card */
+  border-radius: 12px;
+  padding: 12px 18px;
+  background: #221010; /* Nền card tối */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
+}
+
+.spl-item + .spl-item {
+  margin-top: 16px;
+}
+
+.spl-item:hover {
+  background: #221010;
+  border-color: #f00519; /* Hover đỏ */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(240, 5, 25, 0.15);
+}
+
+/* ẢNH BÊN TRÁI */
+.spl-img {
+  flex: 0 0 130px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.spl-img img {
+  width: 115px;
+  height: 115px; 
+  object-fit: cover;
+  border-radius: 8px;
+  border: none;
+  background: #000;
+}
+
+.spl-thumb-fallback {
+  width: 115px;
+  height: 80px;
+  border-radius: 8px;
+  border: 1px dashed #4b5563;
+  background: #374151;
+  display: grid;
+  place-items: center;
+  color: #9ca3af;
+  font-size: 24px;
+}
+
+/* TEXT CHÍNH */
+.spl-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.spl-plan-title {
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff; 
+}
+
+.spl-plan-note {
+  font-size: 14px;
+  color: #d1d5db; /* Xám sáng */
+  font-style: italic;
+}
+
+.spl-plan-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Sử dụng lại class ex-chip trong Exercises.css, 
+   nhưng nếu cần đè thì viết lại ở đây */
+.spl-plan-meta .ex-chip {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: #374151;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+  border-radius: 999px;
+}
+
+/* NÚT LƯU */
+.spl-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.spl-save-btn {
+  min-width: 90px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #f00519;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  border: none;
+  transition: background 0.2s;
+}
+
+.spl-save-btn:hover {
+  background: #f97373;
+  color: #fff;
+}
+
+.spl-save-btn.saved {
+  background: #374151;
+  color: #e5e7eb;
+  border: 1px solid #f20d0d;
+}
+.spl-save-btn.saved:hover {
+  background: #4b5563;
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .spl-item {
+    flex-wrap: wrap;
+  }
+  .spl-img {
+    flex-basis: 110px;
+  }
+  .spl-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+}

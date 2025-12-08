@@ -1,0 +1,219 @@
+/* ====== LAYOUT CHUNG TRANG HỒ SƠ ====== */
+.pf-wrap{
+  max-width: var(--nav-max-width);
+  margin: 40px auto 0 auto;
+  padding: 0 var(--nav-x-pad);
+}
+
+/* Header */
+.pf-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:30px;
+}
+.pf-user{
+  display:flex;
+  align-items:center;
+  gap:20px;
+}
+.pf-avatar{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  overflow:hidden;
+  border:1px solid var(--fm-ring);
+  background:#020617;
+}
+.pf-avatar img{
+  width:100%; height:100%; object-fit:cover;
+}
+.pf-name{
+  font-weight:700;
+  font-size:18px;
+  color:#f9fafb;
+}
+.pf-join{
+  font-size:14px;
+  color:#9ca3af;
+}
+.pf-cta{
+  background:#f00519;
+  color:#fff;
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.pf-cta:hover{ background:#fff; color:#002c3e; }
+
+/* Body grid: sidebar sticky + content dọc (giống AccountSettings) */
+.pf-body{
+  display:grid;
+  grid-template-columns:260px minmax(0,1fr);
+  column-gap:28px;
+  align-items:flex-start;
+  margin-top:8px;
+}
+
+/* ===== SIDEBAR: đồng bộ với AccountSettings ===== */
+.pf-side{
+  position:sticky;
+  top:calc(var(--nav-size) + 16px);
+  align-self:flex-start;
+  height:fit-content;
+  padding-right:10px;
+}
+
+.pf-side-title{
+  color:#9ca3af;
+  font-size:12px;
+  margin:10px 0 4px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  font-weight:600;
+}
+
+.pf-side-item{
+  width:100%;
+  text-align:left;
+  padding:8px 0 8px 14px;
+  border-radius:0;
+  background:transparent;
+  border:0;
+  cursor:pointer;
+  color:#e5e7eb;
+  font-size:16px;
+  display:block;
+  border-right:3px solid transparent;      /* line bên phải */
+  transition:color .18s ease,
+             background-color .18s ease,
+             border-color .18s ease;
+}
+.pf-side-item + .pf-side-item{
+  margin-top:4px;
+}
+
+.pf-side-item:hover,
+.pf-side-item:focus-visible{
+  color:#f9fafb;
+  background:rgba(15,23,42,.85);
+  border-right-color:rgba(211,0,22,.5);    /* hover line đỏ nhạt */
+}
+
+.pf-side-item.is-active{
+  color:#f9fafb;
+  font-weight:600;
+  background:rgba(15,23,42,.95);
+  border-right-color:var(--nav-accent);    /* line đỏ active */
+}
+
+/* CONTENT: có line chia layout giống AccountSettings */
+.pf-content{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  border-left:1px solid #1f2937;          /* line chia sidebar & content */
+  padding-left:26px;
+  height:100%;
+}
+
+/* Card & typography (giữ trắng như cũ) */
+.card{
+  background:#fff;
+  border:1px solid var(--fm-ring);
+  border-radius:10px;
+  padding:16px;
+  box-shadow:0 4px 20px rgba(0,0,0,.03);
+  border:1px solid #002C3E;
+}
+.pf-title{
+  font-size:20px;
+  margin:0 0 10px;
+  font-weight:700;
+  padding:0 12px;
+}
+.pf-subtitle{
+  margin:12px 0 8px;
+  font-size:15px;
+  font-weight:700;
+  color:#111827;
+}
+.pf-desc{
+  color:#6b7280;
+  font-size:14px;
+  margin:6px 0 14px;
+}
+
+/* Form utils (dùng chung cho cả 2 section) */
+.pf-form-row{ display:flex; flex-direction:column; gap:6px; margin-bottom:6px; }
+.pf-form-row label, .pf-form-cell label{ font-size:12px; color:#6b7280; }
+.pf-form-row select, .pf-form-row input, .pf-unit input{
+  border:1px solid var(--fm-ring);
+  border-radius:8px;
+  padding:8px 10px;
+  outline:none;
+  background:#fff;
+}
+.pf-form-5{
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0,1fr));
+  gap:8px;
+  margin-top:8px;
+}
+.pf-form-cell{ display:flex; flex-direction:column; gap:6px; }
+.pf-unit{ display:flex; align-items:center; gap:6px; }
+.pf-unit span{ color:#6b7280; font-size:12px; }
+.pf-unit[data-muted] input{ background:#f8fafc; }
+
+/* Table đơn giản */
+.pf-table{ border:1px solid var(--fm-ring); border-radius:8px; overflow:hidden; }
+.pf-tr{ display:grid; grid-template-columns:1fr 1fr; }
+.pf-tr + .pf-tr{ border-top:1px solid var(--fm-ring); }
+.pf-tr-head{ background:#f8fafc; font-weight:600; }
+.pf-td{ padding:8px 10px; }
+.pf-td-end{ text-align:right; }
+
+/* Buttons */
+.pf-actions{ margin-top:12px; }
+.pf-actions-right{ text-align:right; }
+.btn-primary{
+  background:#1f6feb;
+  color:#fff;
+  border:0;
+  border-radius:8px;
+  padding:10px 14px;
+  cursor:pointer;
+}
+.btn-primary:hover{ filter:brightness(0.95); }
+.btn-secondary{
+  background:#e5e7eb;
+  color:#111827;
+  border:0;
+  border-radius:8px;
+  padding:10px 14px;
+  cursor:pointer;
+}
+.btn-secondary:hover{ filter:brightness(0.97); }
+
+/* Responsive chung */
+@media (max-width:1200px){
+  .pf-form-5{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+}
+@media (max-width:1024px){
+  .pf-form-5{ grid-template-columns:repeat(3, minmax(0,1fr)); }
+}
+@media (max-width:980px){
+  .pf-body{ grid-template-columns:1fr; }
+  .pf-side{ position:static; padding-right:0; }
+  .pf-content{
+    border-left:none;
+    padding-left:0;
+    margin-top:8px;
+  }
+  .pf-form-5{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+}
+@media (max-width:640px){
+  .pf-form-5{ grid-template-columns:1fr; }
+}

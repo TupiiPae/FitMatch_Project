@@ -1,0 +1,502 @@
+/* ===== PAGE WRAPPER ===== */
+.smd-page {
+  color: #e5e7eb;
+}
+
+.smd-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Loading / error */
+.smd-state {
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.smd-error {
+  color: #f97373;
+}
+
+/* ===== BACK BUTTON ===== */
+.smd-back {
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #e5e7eb;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 18px;
+}
+
+.smd-back i {
+  font-size: 12px;
+}
+
+.smd-back:hover {
+  color: #ffffff;
+}
+
+.smd-back-inline {
+  margin-top: 12px;
+}
+
+/* ===== MAIN LAYOUT 2/3 - 1/3 ===== */
+.smd-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(320px, 1fr);
+  gap: 28px;
+  align-items: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .smd-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== LEFT SIDE ===== */
+.smd-left {
+  min-width: 0;
+}
+
+/* Hero image */
+.smd-hero-wrap {
+  overflow: hidden;
+  background: #020617;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+.smd-hero-box {
+  position: relative;
+  width: 100%;
+  padding-top: calc(9 / 16 * 100%);
+}
+
+.smd-hero-img,
+.smd-hero-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.smd-hero-img {
+  object-fit: cover;
+}
+
+.smd-hero-placeholder {
+  display: grid;
+  place-items: center;
+  color: #4b5563;
+  font-size: 28px;
+}
+
+/* Title + tags */
+.smd-title-row {
+  margin-top: 18px;
+}
+
+.smd-title {
+  margin: 0 0 10px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #f9fafb;
+}
+
+.smd-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.smd-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid #4b5563;
+  color: #e5e7eb;
+  background: #111827;
+}
+
+.smd-tag.main {
+  border-color: #ef4444;
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+/* Description */
+.smd-desc {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #e5e7eb;
+}
+
+/* ===== DAY TABS ===== */
+.smd-day-tabs {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid #27272f;
+  padding-bottom: 6px;
+}
+
+.smd-day-empty {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.smd-day-tab {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 6px 12px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+}
+
+.smd-day-tab:hover {
+  color: #e5e7eb;
+}
+
+.smd-day-tab.active {
+  color: #f9fafb;
+}
+
+.smd-day-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  bottom: -4px;
+  width: 40px;
+  height: 2px;
+  border-radius: 999px;
+  background: #f00519;
+}
+
+/* ===== DAY PANEL ===== */
+.smd-day-panel {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.smd-day-state {
+  padding: 14px 12px;
+  font-size: 13px;
+  color: #9ca3af;
+  border-radius: 4px;
+  background: #020617;
+  border: 1px dashed #4b5563;
+}
+
+/* ===== MEAL BOX ===== */
+.smd-meal {
+  padding: 14px 14px 12px;
+  border-radius: 10px;
+  background: #0b0b0f;
+  border: 1px solid #27272f;
+}
+
+.smd-meal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.smd-meal-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #111827;
+  color: #f9fafb;
+  border: 1px solid #f00519;
+}
+
+.smd-meal-kcal {
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+/* ===== FOOD LIST ===== */
+.smd-food-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.smd-food-empty {
+  padding: 8px 4px 2px;
+  font-size: 13px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.smd-food-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px;
+  border-radius: 4px;
+  background: #1e1e1e;
+  border: 1px solid #1f2937;
+  cursor: pointer;
+}
+
+.smd-food-row:hover {
+  border-color: #f00519;
+}
+
+.smd-food-thumb {
+  flex: 0 0 56px;
+}
+
+.smd-food-thumb img {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.smd-food-thumb-fallback {
+  width: 56px;
+  height: 56px;
+  border-radius: 4px;
+  border: 1px dashed #4b5563;
+  display: grid;
+  place-items: center;
+  color: #9ca3af;
+}
+
+.smd-food-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.smd-food-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.smd-food-sub {
+  font-size: 12px;
+  color: #e5e7eb;
+  margin-bottom: 3px;
+}
+
+.smd-food-macros-line {
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+/* Macro colors (tái sử dụng tone RecordMeal) */
+.smd-food-macros-line .protein,
+.smd-meal-kcal .protein,
+.smd-day-summary-line .protein {
+  color: #ee6c20;
+  font-weight: 700;
+}
+.smd-food-macros-line .carb,
+.smd-meal-kcal .carb,
+.smd-day-summary-line .carb {
+  color: #1460e4;
+  font-weight: 700;
+}
+.smd-food-macros-line .fat,
+.smd-meal-kcal .fat,
+.smd-day-summary-line .fat {
+  color: #c1f722;
+  font-weight: 700;
+}
+
+/* ===== RIGHT SIDE ===== */
+.smd-right {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  .smd-right {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+  }
+}
+
+/* Summary card */
+.smd-summary-card {
+  padding: 18px 18px 20px;
+  border-radius: 8px;
+  background: #0b0b0f;
+  border: 1px solid #27272f;
+}
+
+.smd-summary-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.smd-summary-sub {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* Tổng calo + macros */
+.smd-total-row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+  .smd-total-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.smd-total-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  border: 2px solid #f00519;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #f00519 0, #020617 55%);
+  box-shadow: 0 10px 32px rgba(240, 5, 25, 0.35);
+  text-align: center;
+}
+
+.smd-total-circle .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fee2e2;
+}
+.smd-total-circle .value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 2px 0 0;
+}
+.smd-total-circle .unit {
+  font-size: 11px;
+  color: #fee2e2;
+}
+
+.smd-macro-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.smd-macro-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.smd-macro-item .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.smd-macro-item .dot.protein {
+  background: #f34f2a;
+}
+.smd-macro-item .dot.carb {
+  background: #1460e4;
+}
+.smd-macro-item .dot.fat {
+  background: #c1f722;
+}
+
+.smd-macro-item .text .label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.smd-macro-item .text .value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+/* Day summary */
+.smd-day-summary {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed #27272f;
+}
+
+.smd-day-summary-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.smd-day-summary-label span {
+  color: #f9fafb;
+  font-weight: 600;
+}
+
+.smd-day-summary-line {
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+/* Meta info */
+.smd-summary-meta {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #1f2937;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.smd-summary-meta .meta-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.smd-summary-meta .meta-item .label {
+  color: #9ca3af;
+}
+
+.smd-summary-meta .meta-item .value {
+  color: #f9fafb;
+  font-weight: 500;
+}
