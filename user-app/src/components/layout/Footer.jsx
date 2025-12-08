@@ -39,7 +39,7 @@ export default function Footer() {
           <NavLink to="tai-khoan/chinh-sach-bao-mat" onClick={handleScrollTop}>Chính sách bảo mật</NavLink>
           <NavLink to="tai-khoan/dieu-khoan-dich-vu" onClick={handleScrollTop}>Điều khoản dịch vụ</NavLink>
           <NavLink to="/tai-khoan/faq" onClick={handleScrollTop}>FAQs</NavLink>
-          <NavLink to="tai-khoan/lien-he" onClick={handleScrollTop}>Liên hệ</NavLink>
+          <NavLink to="tai-khoan/lien-he" onClick={handleScrollTop}>Hỗ trợ</NavLink>
         </nav>
 
         {/* RIGHT: Social icons */}

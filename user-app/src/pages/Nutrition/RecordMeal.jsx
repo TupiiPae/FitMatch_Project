@@ -425,15 +425,15 @@ export default function RecordMeal() {
                   </div>
                   <div className="macro">
                     <span className="protein">
-                      <i className="fa-solid fa-drumstick-bite"></i>{" "}
+                      <i className="fa-solid fa-bolt"></i>{" "}
                       {gStr(it.proteinG)} g
                     </span>
                     <span className="carb">
-                      <i className="fa-solid fa-bread-slice"></i>{" "}
+                      <i className="fa-solid fa-wheat-awn"></i>{" "}
                       {gStr(it.carbG)} g
                     </span>
                     <span className="fat">
-                      <i className="fa-solid fa-bacon"></i>{" "}
+                      <i className="fa-solid fa-droplet"></i>{" "}
                       {gStr(it.fatG)} g
                     </span>
                   </div>

@@ -25,12 +25,10 @@
 .st-btn.primary {
   background: #ef4444;
   color: #fff;
-  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.45);
 }
 
 .st-btn.primary:hover {
   background: #f97373;
-  box-shadow: 0 14px 40px rgba(249, 115, 22, 0.55);
 }
 
 .st-btn.ghost {
@@ -383,7 +381,6 @@
   background: #ef4444;
   border-color: #ef4444;
   color: #ffffff;
-  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.6);
   transform: translateY(-1px) scale(1.03);
 }
 

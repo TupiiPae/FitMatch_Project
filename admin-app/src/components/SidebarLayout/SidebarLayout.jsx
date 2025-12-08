@@ -226,7 +226,7 @@ const buildManagementSections = (rawLevel) => {
 const SUPPORT_PAGES = [
   {
     key: "contact",
-    label: "Liên hệ",
+    label: "Hỗ trợ",
     to: "/contact",
     icon: <MailOutlineOutlinedIcon fontSize="small" />,
   },
