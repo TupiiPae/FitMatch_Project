@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import path from "path";
+import http from "http";
 
 import { connectDB } from "./config/db.js";
 
@@ -35,7 +35,6 @@ import adminContactRoutes from "./routes/admin.contact.routes.js";
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
 import { UPLOAD_ROOT } from "./middleware/upload.js";
-
 
 const app = express();
 
@@ -100,6 +99,7 @@ app.use((req, _res, next) => {
 
 // ===== Health check =====
 app.get("/", (_req, res) => res.send("FitMatch API v1"));
+app.get("/health", (_req, res) => res.json({ status: "ok" })); // 👈 tốt cho Render
 
 // ===== Auth routes =====
 app.use("/api/admin/auth", adminAuthRoutes);
@@ -125,7 +125,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminFoodsRoutes);
 app.use("/api/admin", adminExercisesRoutes);
 app.use("/api/admin", adminSuggestPlanRoutes);
-app.use("/api/admin", adminSuggestMenuRoutes); 
+app.use("/api/admin", adminSuggestMenuRoutes);
 app.use("/api/admin", adminAuditRoutes);
 app.use("/api/admin", adminContactRoutes);
 app.use("/api/admin", adminFaqRoutes);
@@ -173,7 +173,9 @@ if (isDev) {
 // ===== 404 for API =====
 app.use((req, res) => {
   if (req.originalUrl.startsWith("/api/")) {
-    return res.status(404).json({ success: false, message: "Không tìm thấy endpoint" });
+    return res
+      .status(404)
+      .json({ success: false, message: "Không tìm thấy endpoint" });
   }
   return res.status(404).send("Not found");
 });
@@ -191,14 +193,19 @@ app.use((err, _req, res, _next) => {
   }
 
   console.error("❌ Lỗi hệ thống:", err);
-  res.status(500).json({ success: false, message: "Lỗi máy chủ, vui lòng thử lại sau." });
+  res
+    .status(500)
+    .json({ success: false, message: "Lỗi máy chủ, vui lòng thử lại sau." });
 });
+
+// ===== HTTP server (ready cho Socket.IO sau này) =====
+const server = http.createServer(app);
 
 // ===== Start =====
 connectDB(MONGO)
   .then(() => {
-    app.listen(PORT, () => {
-      console.log(`🚀 FitMatch API đang chạy tại http://localhost:${PORT}`);
+    server.listen(PORT, () => {
+      console.log(`🚀 FitMatch API đang chạy trên cổng ${PORT}`);
     });
   })
   .catch((e) => {
@@ -206,4 +213,4 @@ connectDB(MONGO)
     process.exit(1);
   });
 
-export default app;
+export { app, server };
