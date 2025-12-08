@@ -72,7 +72,7 @@ export default function Profile() {
             <div className="pf-join">Đã tham gia từ {joinDate}</div>
           </div>
         </div>
-        <a className="pf-cta" onClick={() => nav("/tai-khoan/tai-khoan")}>Đi tới trang chỉnh sửa tài khoản</a>
+        <a type="button" className="pf-cta" onClick={() => nav("/tai-khoan/tai-khoan")}>Đi tới trang chỉnh sửa tài khoản</a>
       </div>
 
       <div className="pf-body">
