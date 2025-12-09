@@ -1,97 +1,75 @@
 // src/api/account.js
 import api from "../lib/api";
 
+// Helper bóc nhiều kiểu response khác nhau
+function unwrapUser(res) {
+  const data = res?.data;
+  if (!data) return null;
+
+  // Trường hợp cũ: { user: {...} }
+  if (data.user) return data.user;
+
+  // Trường hợp dùng responseOk: { ok: true, data: { user: {...} } }
+  if (data.data?.user) return data.data.user;
+
+  // Nếu BE trả thẳng user luôn: res.data = {...}
+  if (!data.ok && !data.data && !data.user) return data;
+
+  return null;
+}
+
 /**
  * GET /api/user/me
- * - Trả về object user (kèm profile, createdAt, ...)
- * - BE response: { user: {...} }
+ * BE có thể trả:
+ * - { user: {...} }  HOẶC
+ * - { ok: true, data: { user: {...} } }
  */
 export async function getMe() {
-  const res = await api.get("/api/user/me");
-  return res.data?.user ?? null;
+  // LƯU Ý: KHÔNG thêm /api ở đây vì baseURL đã là .../api rồi
+  const res = await api.get("/user/me");
+  return unwrapUser(res);
 }
 
-/**
- * PATCH /api/user/account
- * - Cập nhật các field root/profile theo đúng tên field BE.
- * - Ví dụ payload:
- *   { "email": "new@mail.com" }
- *   { "profile.nickname": "Tupae" }
- *   { "profile.calorieTarget": 2200 }
- *   {
- *     "profile.macroProtein": 20,
- *     "profile.macroCarb": 50,
- *     "profile.macroFat": 30
- *   }
- * - BE response: { success: true, user: {...} }
- */
 export async function updateAccount(payload) {
-  const res = await api.patch("/api/user/account", payload);
-  return res.data?.user ?? null;
+  const res = await api.patch("/user/account", payload);
+  // thường BE trả { user }, nhưng nếu chỉ cần kết quả mới thì:
+  return res.data?.user ?? unwrapUser(res) ?? null;
 }
 
-/**
- * (Tuỳ chọn) Helper truyền gọn object profile
- * rồi tự map thành "profile.xxx" theo BE.
- * Dùng: updateProfile({ nickname: "A", heightCm: 175 })
- */
 export async function updateProfile(profileObj = {}) {
   const flat = {};
   Object.entries(profileObj).forEach(([k, v]) => {
     flat[`profile.${k}`] = v;
   });
-  const res = await api.patch("/api/user/account", flat);
-  return res.data?.user ?? null;
+  const res = await api.patch("/user/account", flat);
+  return res.data?.user ?? unwrapUser(res) ?? null;
 }
 
-/**
- * DELETE /api/user
- * - Xoá toàn bộ dữ liệu & tài khoản
- * - BE response: { success: true, message, deleted? }
- */
 export async function deleteAccount() {
-  const res = await api.delete("/api/user");
+  const res = await api.delete("/user");
   return res.data ?? { success: true };
 }
 
-/* ---------- (tuỳ chọn) các helper hay dùng trong Account ---------- */
-
-/**
- * POST /api/user/change-password
- * payload: { currentPassword, newPassword }
- */
 export async function changePassword(payload) {
-  const res = await api.post("/api/user/change-password", payload);
+  const res = await api.post("/user/change-password", payload);
   return res.data;
 }
 
-/**
- * POST /api/user/avatar (multipart)
- * - field name: "avatar" (multer single("avatar"))
- * - Trả về { success, avatarUrl, user }
- */
 export async function uploadAvatar(file) {
   const form = new FormData();
   form.append("avatar", file);
-  const res = await api.post("/api/user/avatar", form, {
-    headers: { /* để axios tự set multipart boundary */ },
+  const res = await api.post("/user/avatar", form, {
+    headers: {},
   });
   return res.data;
 }
 
-/**
- * PATCH /api/user/onboarding
- * - Map thẳng các key BE (ví dụ "profile.heightCm", "profile.goal", ...)
- */
 export async function patchOnboarding(fields) {
-  const res = await api.patch("/api/user/onboarding", fields);
+  const res = await api.patch("/user/onboarding", fields);
   return res.data;
 }
 
-/**
- * POST /api/user/onboarding/finalize
- */
 export async function finalizeOnboarding() {
-  const res = await api.post("/api/user/onboarding/finalize");
+  const res = await api.post("/user/onboarding/finalize");
   return res.data;
 }

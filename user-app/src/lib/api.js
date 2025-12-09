@@ -37,7 +37,12 @@ export const apiCall = async (endpoint, opts = {}) => {
   return data;
 };
 
-export const api = axios.create({ baseURL: API_BASE });
+export const api = axios.create({
+  baseURL: API_BASE,
+  // Chấp nhận 304 là success (dùng chung data từ cache)
+  validateStatus: (status) =>
+    (status >= 200 && status < 300) || status === 304,
+});
 
 // Attach token + xử lý FormData
 api.interceptors.request.use((cfg) => {
