@@ -1,88 +1,106 @@
 // user-app/src/pages/Connect/TabNearby.jsx
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  listNearby,
+  createMatchRequest,
+} from "../../api/match";
+import { toast } from "react-toastify";
 
-/** Mock data gợi ý – chỉ dùng cho UI, sau này thay bằng API */
-const MOCK_SUGGESTIONS = [
-  {
-    id: "u1",
-    nickname: "Nhật Thiên",
-    age: 24,
-    gender: "male",
-    distanceKm: 2.1,
-    goal: "Tăng cơ",
-    goalKey: "lose_weight",
-    trainingTypes: ["Cardio", "Strength"],
-    frequency: "Rất năng động",
-    locationLabel: "Quận 1, TP.HCM",
-    bio: "Thích chạy bộ, HIIT và tập tạ cơ bản.",
-    imageUrl: "https://i.pinimg.com/736x/f4/8e/3b/f48e3b4a5aacfd596ff74e203bdbecb7.jpg", 
-  },
-  {
-    id: "u2",
-    nickname: "Nhật Hào",
-    age: 27,
-    gender: "male",
-    distanceKm: 4.8,
-    goal: "Tăng cơ",
-    goalKey: "muscle_gain",
-    trainingTypes: ["Strength"],
-    frequency: "Chăm chỉ tập luyện",
-    locationLabel: "Bình Thạnh, TP.HCM",
-    bio: "Ưu tiên tập kháng lực và compound.Ưu tiên tập kháng lực và compound.Ưu tiên tập kháng lực và compound.",
-    imageUrl: "https://i.pinimg.com/1200x/b0/07/34/b007344944aafec0d05a314614c80f07.jpg",
-  },
-  {
-    id: "u3",
-    nickname: "Ngọc Phước",
-    age: 22,
-    gender: "male",
-    distanceKm: 1.3,
-    goal: "Tăng cơ",
-    goalKey: "stay_fit",
-    trainingTypes: ["Cardio", "Yoga"],
-    frequency: "Chăm chỉ tập luyện",
-    locationLabel: "Quận 3, TP.HCM",
-    bio: "Ưa thích yoga nhẹ nhàng và đi bộ nhanh.",
-    imageUrl: "https://i.pinimg.com/1200x/2c/ed/ff/2cedff76c399563af28149ade2d922f7.jpg",
-  },
-  {
-    id: "u4",
-    nickname: "Team Runner Q7",
-    isGroup: true,
-    membersCount: 4,
-    gender: "mixed",
-    distanceKm: 6.2,
-    goal: "Chạy 5K mỗi tuần",
-    goalKey: "endurance",
-    trainingTypes: ["Cardio"],
-    frequency: "3 buổi/tuần",
-    locationLabel: "Quận 7, TP.HCM",
-    bio: "Nhóm chuyên chạy bộ, đang tuyển thêm 1–2 bạn.",
-    imageUrl: "https://i.pinimg.com/736x/62/fa/35/62fa3542956d6d598796cee854c651c0.jpg",
-  },
-];
-
-export default function TabNearby({ currentUser, connectionMode, locationRange }) {
+export default function TabNearby({
+  currentUser,
+  connectionMode,
+  locationRange,
+  ageRange,
+  genderFilter,
+  discoverable,
+}) {
   const nav = useNavigate();
   const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
   const [search, setSearch] = useState("");
 
-  /**
-   * Lọc danh sách:
-   *  - Hiện tại CHƯA filter theo mục tiêu/giới tính để dễ debug UI.
-   *  - Sau này có data thật có thể bật filter theo currentUser.goalKey & gender.
-   */
+  const [selfCard, setSelfCard] = useState(null);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // ===== Load từ API /match/nearby =====
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setErrorMsg("");
+
+        const res = await listNearby(connectionMode);
+        const payload = res?.data ?? res;
+
+        if (cancelled) return;
+
+        setSelfCard(payload?.self || null);
+        setItems(Array.isArray(payload?.items) ? payload.items : []);
+      } catch (e) {
+        if (cancelled) return;
+        console.error("listNearby error:", e);
+        const msg =
+          e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          "Không thể tải danh sách gợi ý xung quanh.";
+        setErrorMsg(msg);
+        setSelfCard(null);
+        setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [connectionMode]);
+
+  // ===== Filter danh sách theo range / age / gender / search =====
   const filteredList = useMemo(() => {
-    return MOCK_SUGGESTIONS.filter((u) => {
+    let base = items || [];
+
+    return base.filter((u) => {
       // Mode 1:1 hoặc Nhóm
       if (connectionMode === "one_to_one" && u.isGroup) return false;
       if (connectionMode === "group" && !u.isGroup) return false;
 
       // Vị trí
-      if (locationRange !== "any" && typeof u.distanceKm === "number") {
+      if (
+        locationRange !== "any" &&
+        typeof u.distanceKm === "number"
+      ) {
         const maxRange = Number(locationRange);
         if (u.distanceKm > maxRange) return false;
+      }
+
+      // Độ tuổi
+      if (ageRange !== "all" && typeof u.age === "number") {
+        const age = u.age;
+        if (ageRange === "18-21" && !(age >= 18 && age <= 21))
+          return false;
+        if (ageRange === "22-27" && !(age >= 22 && age <= 27))
+          return false;
+        if (ageRange === "28-35" && !(age >= 28 && age <= 35))
+          return false;
+        if (ageRange === "36-45" && !(age >= 36 && age <= 45))
+          return false;
+        if (ageRange === "45+" && age < 45) return false;
+      }
+
+      // Giới tính
+      if (
+        genderFilter !== "all" &&
+        !u.isGroup &&
+        u.gender &&
+        u.gender !== genderFilter
+      ) {
+        return false;
       }
 
       // Tìm kiếm text
@@ -102,9 +120,60 @@ export default function TabNearby({ currentUser, connectionMode, locationRange }
 
       return true;
     });
-  }, [connectionMode, locationRange, search]);
+  }, [
+    items,
+    connectionMode,
+    locationRange,
+    ageRange,
+    genderFilter,
+    search,
+  ]);
 
   const resultCount = filteredList.length;
+
+  // ===== Gửi lời mời kết nối =====
+  async function handleInvite(user) {
+    try {
+      if (!discoverable) {
+        toast.info(
+          "Hãy bật 'Cho phép mọi người tìm kiếm bạn' để kết nối dễ dàng hơn."
+        );
+      }
+
+      if (user.isGroup) {
+        // group
+        const res = await createMatchRequest({
+          type: "group",
+          targetRoomId: user.id,
+        });
+        const payload = res?.data ?? res;
+        if (payload?.request) {
+          toast.success("Đã gửi yêu cầu xin tham gia nhóm.");
+        } else {
+          toast.success("Đã gửi yêu cầu xin tham gia nhóm.");
+        }
+      } else {
+        // duo
+        const res = await createMatchRequest({
+          type: "duo",
+          targetUserId: user.id,
+        });
+        const payload = res?.data ?? res;
+        if (payload?.request) {
+          toast.success("Đã gửi lời mời kết nối.");
+        } else {
+          toast.success("Đã gửi lời mời kết nối.");
+        }
+      }
+    } catch (e) {
+      console.error("createMatchRequest error:", e);
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        "Không thể gửi lời mời. Vui lòng thử lại.";
+      toast.error(msg);
+    }
+  }
 
   return (
     <section className="cn-tab-nearby">
@@ -112,7 +181,9 @@ export default function TabNearby({ currentUser, connectionMode, locationRange }
       <div className="cn-main-toolbar">
         <div className="cn-main-toolbar-left">
           <span className="cn-result-text">
-            {resultCount} kết quả phù hợp quanh bạn
+            {loading
+              ? "Đang tìm gợi ý quanh bạn..."
+              : `${resultCount} kết quả phù hợp quanh bạn`}
           </span>
         </div>
         <div className="cn-main-toolbar-right">
@@ -128,7 +199,8 @@ export default function TabNearby({ currentUser, connectionMode, locationRange }
             <button
               type="button"
               className={
-                "cn-view-toggle-btn" + (viewMode === "grid" ? " is-active" : "")
+                "cn-view-toggle-btn" +
+                (viewMode === "grid" ? " is-active" : "")
               }
               onClick={() => setViewMode("grid")}
             >
@@ -137,7 +209,8 @@ export default function TabNearby({ currentUser, connectionMode, locationRange }
             <button
               type="button"
               className={
-                "cn-view-toggle-btn" + (viewMode === "list" ? " is-active" : "")
+                "cn-view-toggle-btn" +
+                (viewMode === "list" ? " is-active" : "")
               }
               onClick={() => setViewMode("list")}
             >
@@ -160,23 +233,51 @@ export default function TabNearby({ currentUser, connectionMode, locationRange }
         </div>
       </div>
 
+      {/* Thông báo lỗi nếu có */}
+      {errorMsg && (
+        <div className="cn-error">
+          <p>{errorMsg}</p>
+        </div>
+      )}
+
+      {/* Pinned card của chính mình (nếu có) */}
+      {selfCard && (
+        <div className="cn-self-card-wrap">
+          <div className="cn-self-card-title">
+            <span>Hồ sơ của bạn</span>
+          </div>
+          <ConnectCard
+            user={selfCard}
+            viewMode="list"
+            onInvite={null}
+          />
+        </div>
+      )}
+
       {/* Danh sách */}
-      {filteredList.length === 0 ? (
+      {filteredList.length === 0 && !loading ? (
         <div className="cn-empty">
           <p>
-            Chưa tìm thấy bạn tập phù hợp với bộ lọc hiện tại. Thử nới rộng
-            phạm vi hoặc thay đổi chế độ kết nối nhé.
+            Chưa tìm thấy bạn tập phù hợp với bộ lọc hiện tại. Thử nới
+            rộng phạm vi hoặc thay đổi chế độ kết nối nhé.
           </p>
         </div>
       ) : (
         <div
           className={
             "cn-card-list " +
-            (viewMode === "grid" ? "cn-card-list--grid" : "cn-card-list--list")
+            (viewMode === "grid"
+              ? "cn-card-list--grid"
+              : "cn-card-list--list")
           }
         >
           {filteredList.map((u) => (
-            <ConnectCard key={u.id} user={u} viewMode={viewMode} />
+            <ConnectCard
+              key={u.id}
+              user={u}
+              viewMode={viewMode}
+              onInvite={handleInvite}
+            />
           ))}
         </div>
       )}
@@ -186,7 +287,7 @@ export default function TabNearby({ currentUser, connectionMode, locationRange }
 
 /* ===== Card: Grid & List ===== */
 
-function ConnectCard({ user, viewMode }) {
+function ConnectCard({ user, viewMode, onInvite }) {
   const nav = useNavigate();
 
   const {
@@ -233,6 +334,10 @@ function ConnectCard({ user, viewMode }) {
     nav(`/ket-noi/ho-so/${id}`);
   };
 
+  const handleInviteClick = () => {
+    onInvite && onInvite(user);
+  };
+
   // ===== GRID STYLE (card có ảnh lớn) =====
   if (viewMode === "grid") {
     return (
@@ -252,7 +357,9 @@ function ConnectCard({ user, viewMode }) {
               {nickname}
             </button>
             {distanceShort && (
-              <div className="cn-card-img-distance">{distanceShort}</div>
+              <div className="cn-card-img-distance">
+                {distanceShort}
+              </div>
             )}
             {isGroup && (
               <div className="cn-card-img-badge">
@@ -263,7 +370,9 @@ function ConnectCard({ user, viewMode }) {
         </div>
 
         <div className="cn-card-body">
-          {metaLine && <div className="cn-card-meta-line">{metaLine}</div>}
+          {metaLine && (
+            <div className="cn-card-meta-line">{metaLine}</div>
+          )}
 
           <div className="cn-card-chip-row">
             {goalLabel && (
@@ -278,7 +387,11 @@ function ConnectCard({ user, viewMode }) {
 
           {/* Luôn nằm cuối card nhờ margin-top:auto trong CSS */}
           <div className="cn-card-actions">
-            <button type="button" className="cn-btn-primary">
+            <button
+              type="button"
+              className="cn-btn-primary"
+              onClick={handleInviteClick}
+            >
               {isGroup ? "Xin tham gia nhóm" : "Gửi lời mời kết nối"}
             </button>
             <button type="button" className="cn-btn-ghost">
@@ -350,7 +463,11 @@ function ConnectCard({ user, viewMode }) {
         {bio && <p className="cn-bio">{bio}</p>}
 
         <div className="cn-card-actions">
-          <button type="button" className="cn-btn-primary">
+          <button
+            type="button"
+            className="cn-btn-primary"
+            onClick={handleInviteClick}
+          >
             {isGroup ? "Xin tham gia nhóm" : "Gửi lời mời kết nối"}
           </button>
           <button type="button" className="cn-btn-ghost">
@@ -360,14 +477,4 @@ function ConnectCard({ user, viewMode }) {
       </div>
     </article>
   );
-}
-
-function getInitials(name) {
-  if (!name) return "FM";
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }

@@ -25,7 +25,7 @@ const progressPhotoSchema = new mongoose.Schema(
     createdAt: { type: Date, default: Date.now },
   },
   {
-    _id: true, // đảm bảo mỗi ảnh có _id riêng
+    _id: true,
   }
 );
 
@@ -34,7 +34,7 @@ const profileSchema = new mongoose.Schema(
   {
     avatarUrl: { type: String, trim: true, maxlength: 500, default: undefined },
 
-    // 🔹 Ảnh tiến độ: mặt trước / mặt hông / mặt sau
+    // 🔹 Ảnh tiến độ
     progressPhotos: {
       type: [progressPhotoSchema],
       default: [],
@@ -49,7 +49,7 @@ const profileSchema = new mongoose.Schema(
     goal: {
       type: String,
       enum: ["giam_can", "duy_tri", "tang_can", "giam_mo", "tang_co"],
-      default: undefined, // ❗ KHÔNG để "" để tránh lỗi enum
+      default: undefined,
     },
     heightCm: { type: Number, min: 100, max: 220 },
     weightKg: { type: Number, min: 30, max: 200 },
@@ -85,7 +85,7 @@ const profileSchema = new mongoose.Schema(
       ward: { type: String, trim: true, maxlength: 120 },
     },
 
-    // ❗ Không để default:"Point" nữa
+    // Location geo dựa trên địa chỉ
     location: {
       type: {
         type: String,
@@ -121,8 +121,7 @@ const userSchema = new mongoose.Schema(
       maxlength: [200, "Tên tài khoản tối đa 200 ký tự"],
       validate: {
         validator: (v) => USERNAME_REGEX.test(v),
-        message:
-          "Username chỉ gồm chữ và số (không chứa ký tự đặc biệt)",
+        message: "Username chỉ gồm chữ và số (không chứa ký tự đặc biệt)",
       },
     },
     email: {
@@ -144,8 +143,7 @@ const userSchema = new mongoose.Schema(
       validate: [
         {
           validator: (v) => !v || PHONE_REGEX.test(v),
-          message:
-            "Số điện thoại chỉ gồm chữ số và tối đa 11 ký tự",
+          message: "Số điện thoại chỉ gồm chữ số và tối đa 11 ký tự",
         },
         {
           validator: (v) =>
@@ -174,18 +172,47 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["user", "admin"], default: "user" },
     onboarded: { type: Boolean, default: false },
 
-    // 🔹 Thêm 2 field đánh dấu hoạt động
+    // 🔹 Thời điểm hoạt động
     lastLoginAt: { type: Date, default: undefined },
     lastActiveAt: { type: Date, default: undefined },
+
+    /* ========= CONNECT FEATURE ========= */
+
+    // Cho phép hiển thị trong "Tìm kiếm xung quanh"
+    connectDiscoverable: { type: Boolean, default: false },
+
+    // Đã có địa chỉ đủ để bật connect (set true khi lưu địa chỉ ở trang Tài khoản)
+    hasAddressForConnect: { type: Boolean, default: false },
+
+    // Text địa chỉ hiển thị nhanh trong Connect (vd: "Quận 1, TP.HCM")
+    connectLocationLabel: { type: String, trim: true, default: "" },
+
+    // Mục tiêu chính dùng trong Connect (snapshot từ BodyProfile / Onboarding)
+    connectGoalKey: { type: String, default: null },
+    connectGoalLabel: { type: String, trim: true, default: "" },
+
+    // Loại bài tập ưu tiên trong Connect
+    connectTrainingTypes: [{ type: String }], // ["Cardio","Strength",...]
+    connectTrainingFrequencyLabel: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    // Mô tả ngắn khi hiển thị trong Connect
+    connectBio: { type: String, trim: true, maxlength: 300, default: "" },
+
+    /* ========= PROFILE ========= */
 
     profile: profileSchema,
   },
   { timestamps: true }
 );
 
+// Index geo cho profile.location
 userSchema.index({ "profile.location": "2dsphere" });
 
-// Guard: nếu location tồn tại nhưng không đủ toạ độ -> loại bỏ để tránh lỗi insert
+// Guard: nếu location không đủ toạ độ -> bỏ
 userSchema.pre("save", function (next) {
   const loc = this.profile?.location;
   const ok =

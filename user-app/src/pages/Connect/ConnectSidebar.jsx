@@ -1,13 +1,16 @@
 // user-app/src/pages/Connect/ConnectSidebar.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Connect.css";
 import TabNearby from "./TabNearby";
 import TabMyConnections from "./TabMyConnections";
-import DuoConnect from "./DuoConnect";
+import { toast } from "react-toastify";
+
+import { getMe } from "../../api/account";
+import { getMatchStatus, updateDiscoverable } from "../../api/match";
 
 const LOCATION_RANGE_OPTIONS = [
-  { value: "any", label: "Không giới hạn" },
+  { value: "any", label: "Không giới hạn" }, // mặc định: tất cả
   { value: "20", label: "Trong vòng 20 km" },
   { value: "15", label: "Trong vòng 15 km" },
   { value: "10", label: "Trong vòng 10 km" },
@@ -24,26 +27,162 @@ const AGE_RANGE_OPTIONS = [
   { value: "45+", label: "Trên 45" },
 ];
 
+const GOAL_LABELS = {
+  giam_can: "Giảm cân",
+  duy_tri: "Duy trì",
+  tang_can: "Tăng cân",
+  giam_mo: "Giảm mỡ",
+  tang_co: "Tăng cơ",
+};
+
+function mapGoalLabel(goalKey, connectGoalLabel) {
+  if (connectGoalLabel) return connectGoalLabel;
+  if (!goalKey) return "";
+  return GOAL_LABELS[goalKey] || "";
+}
+
 export default function ConnectSideBar() {
   const nav = useNavigate();
 
-  // TODO: sau này lấy từ API / context
-  const currentUser = {
-    nickname: "Tuấn Phi",
-    gender: "male",
-    goalKey: "lose_weight",
-    goalLabel: "Tăng cơ",
-  };
-
-  // TODO: sau này check từ API
-  const hasConnections = false;
+  const [currentUser, setCurrentUser] = useState(null);
+  const [hasConnections] = useState(false); // TODO: dùng API sau
 
   const [activeTab, setActiveTab] = useState("nearby"); // "nearby" | "my-connections"
   const [connectionMode, setConnectionMode] = useState("one_to_one"); // "one_to_one" | "group"
-  const [locationRange, setLocationRange] = useState("20");
+
+  const [locationRange, setLocationRange] = useState("any"); // mặc định: tất cả
   const [ageRange, setAgeRange] = useState("all");
-  const [genderFilter, setGenderFilter] = useState("male"); // "all" | "male" | "female"
-  const [discoverable, setDiscoverable] = useState(false); // bật / tắt cho phép tìm kiếm
+  const [genderFilter, setGenderFilter] = useState("all"); // sẽ set theo giới tính user sau khi load
+
+  const [discoverable, setDiscoverable] = useState(false);
+  const [hasAddressForConnect, setHasAddressForConnect] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  // ===== Load thông tin user + trạng thái match =====
+  useEffect(() => {
+    let cancelled = false;
+
+    async function init() {
+      try {
+        setLoadingStatus(true);
+
+        const [me, status] = await Promise.all([
+          getMe().catch((e) => {
+            console.error("getMe error:", e);
+            return null;
+          }),
+          getMatchStatus().catch((e) => {
+            console.error("getMatchStatus error:", e);
+            return null;
+          }),
+        ]);
+
+        if (cancelled) return;
+
+        // ---- Map currentUser cho Connect ----
+        if (me) {
+          const profile = me.profile || {};
+          const addr = profile.address || {};
+
+          const age = calcAgeFromDob(profile.dob);
+          const locationLabel = buildLocationLabel(me, profile, addr);
+          const goalKey = me.connectGoalKey || profile.goal || null;
+          const goalLabel = mapGoalLabel(goalKey, me.connectGoalLabel);
+
+          const userForConnect = {
+            id: me.id || me._id,
+            username: me.username,
+            nickname:
+              profile.nickname || me.username || "Người dùng FitMatch",
+            gender: profile.sex || null,
+            age,
+            locationLabel,
+            goalKey,
+            goalLabel,
+            avatarUrl: profile.avatarUrl || null,
+          };
+
+          setCurrentUser(userForConnect);
+
+          // Mặc định filter giới tính = giới tính chủ tài khoản
+          if (profile.sex === "male" || profile.sex === "female") {
+            setGenderFilter(profile.sex);
+          } else {
+            setGenderFilter("all");
+          }
+        }
+
+        // ---- Map trạng thái connect (discoverable, địa chỉ) ----
+        if (status) {
+          const payload = status.data ?? status;
+          if (payload) {
+            setDiscoverable(!!payload.discoverable);
+            setHasAddressForConnect(!!payload.hasAddressForConnect);
+          }
+        }
+      } catch (e) {
+        console.error("ConnectSidebar init error:", e);
+        if (!cancelled) {
+          toast.error(
+            "Không thể tải dữ liệu kết nối. Vui lòng thử lại sau."
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingStatus(false);
+      }
+    }
+
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ===== Toggle discoverable =====
+  async function handleToggleDiscoverable() {
+    try {
+      // Nếu đang tắt -> bật lên nhưng chưa có địa chỉ
+      if (!discoverable && !hasAddressForConnect) {
+        toast.warn(
+          "Bạn cần cập nhật địa chỉ trong hồ sơ trước khi bật cho phép tìm kiếm."
+        );
+        nav("/tai-khoan/tai-khoan");
+        return;
+      }
+
+      const next = !discoverable;
+      setDiscoverable(next);
+
+      const res = await updateDiscoverable(next);
+      const payload = res?.data ?? res;
+
+      if (payload && typeof payload.discoverable === "boolean") {
+        setDiscoverable(payload.discoverable);
+      }
+
+      if (next) {
+        toast.success("Đã bật cho phép mọi người tìm kiếm bạn.");
+      } else {
+        toast.info("Đã tắt hiển thị hồ sơ trong kết quả tìm kiếm.");
+      }
+    } catch (e) {
+      console.error("updateDiscoverable error:", e);
+      setDiscoverable((v) => !v); // revert
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        "Không thể cập nhật trạng thái kết nối.";
+      toast.error(msg);
+    }
+  }
+
+  const displayUser = currentUser || {
+    nickname: "Người dùng FitMatch",
+    gender: null,
+    age: null,
+    locationLabel: "",
+    goalLabel: "",
+  };
 
   return (
     <div className="cn-page">
@@ -54,11 +193,30 @@ export default function ConnectSideBar() {
             {/* Header: Avatar + tên + toggle cho phép tìm kiếm */}
             <div className="cn-side-profile">
               <div className="cn-side-avatar">
-                {getInitials(currentUser?.nickname || "FM")}
+                {displayUser.avatarUrl ? (
+                  <img src={displayUser.avatarUrl} alt="avatar" />
+                ) : (
+                  getInitials(displayUser.nickname || "FM")
+                )}
               </div>
               <div>
                 <div className="cn-side-nickname">
-                  {currentUser?.nickname || "Người dùng FitMatch"}
+                  {displayUser.nickname || "Người dùng FitMatch"}
+                </div>
+
+                {/* Thông tin phụ: tuổi + vị trí */}
+                <div className="cn-side-meta">
+                  {displayUser.age ? (
+                    <span>{displayUser.age} tuổi</span>
+                  ) : (
+                    <span>Tuổi: Chưa cập nhật</span>
+                  )}
+                  {" · "}
+                  {displayUser.locationLabel ? (
+                    <span>{displayUser.locationLabel}</span>
+                  ) : (
+                    <span>Vị trí: Chưa cập nhật</span>
+                  )}
                 </div>
 
                 <div className="cn-side-discover">
@@ -70,17 +228,28 @@ export default function ConnectSideBar() {
                     className={
                       "cn-switch" + (discoverable ? " is-on" : "")
                     }
-                    onClick={() => setDiscoverable((v) => !v)}
+                    onClick={handleToggleDiscoverable}
+                    disabled={loadingStatus}
                   >
                     <span className="cn-switch-knob" />
                   </button>
                 </div>
 
-                {/* <div className="cn-side-sub">
-                  {discoverable
-                    ? "Hồ sơ của bạn đang hiển thị trong kết quả \"Tìm kiếm xung quanh\"."
-                    : "Bật lên để hồ sơ của bạn xuất hiện trong \"Tìm kiếm xung quanh\"."}
-                </div> */}
+                {hasAddressForConnect ? (
+                  <div className="cn-side-sub">
+                    {discoverable
+                      ? 'Hồ sơ của bạn đang hiển thị trong "Tìm kiếm xung quanh".'
+                      : 'Bật lên để hồ sơ của bạn xuất hiện trong "Tìm kiếm xung quanh".'}
+                  </div>
+                ) : (
+                  <div className="cn-side-sub">
+                    <span>
+                      Bạn cần cập nhật địa chỉ trong{" "}
+                      <strong>Thông tin của tôi</strong> trước khi bật
+                      kết nối xung quanh.
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -94,7 +263,9 @@ export default function ConnectSideBar() {
                 <span className="cn-side-link-icon">
                   <i className="fa-regular fa-user" />
                 </span>
-                <span className="cn-side-link-label">Hồ sơ thể chất của tôi</span>
+                <span className="cn-side-link-label">
+                  Hồ sơ thể chất của tôi
+                </span>
               </button>
 
               <button
@@ -105,7 +276,9 @@ export default function ConnectSideBar() {
                 <span className="cn-side-link-icon">
                   <i className="fa-solid fa-gear" />
                 </span>
-                <span className="cn-side-link-label">Thông tin của tôi</span>
+                <span className="cn-side-link-label">
+                  Thông tin của tôi
+                </span>
               </button>
 
               <hr className="cn-side-divider" />
@@ -113,14 +286,17 @@ export default function ConnectSideBar() {
               <button
                 type="button"
                 className={
-                  "cn-side-link" + (activeTab === "nearby" ? " is-active" : "")
+                  "cn-side-link" +
+                  (activeTab === "nearby" ? " is-active" : "")
                 }
                 onClick={() => setActiveTab("nearby")}
               >
                 <span className="cn-side-link-icon">
                   <i className="fa-solid fa-location-arrow" />
                 </span>
-                <span className="cn-side-link-label">Tìm kiếm xung quanh</span>
+                <span className="cn-side-link-label">
+                  Tìm kiếm xung quanh
+                </span>
               </button>
 
               <button
@@ -134,13 +310,10 @@ export default function ConnectSideBar() {
                 <span className="cn-side-link-icon">
                   <i className="fa-solid fa-users" />
                 </span>
-                <span className="cn-side-link-label">Kết nối của tôi</span>
+                <span className="cn-side-link-label">
+                  Kết nối của tôi
+                </span>
               </button>
-
-              {/* NOTE:
-                 Trước đây tab "Kết nối của tôi" bị disable khi chưa có kết nối.
-                 Hiện tại mở sẵn cho dễ test UI.
-                 TODO: Khi nối API, có thể dùng hasConnections để disable / show hint. */}
             </nav>
 
             {/* Khu Lọc */}
@@ -155,7 +328,9 @@ export default function ConnectSideBar() {
                     type="button"
                     className={
                       "cn-toggle-btn" +
-                      (connectionMode === "one_to_one" ? " is-active" : "")
+                      (connectionMode === "one_to_one"
+                        ? " is-active"
+                        : "")
                     }
                     onClick={() => setConnectionMode("one_to_one")}
                   >
@@ -245,7 +420,8 @@ export default function ConnectSideBar() {
                   </button>
                 </div>
                 <p className="cn-filter-hint">
-                  Giới tính của bạn: {getGenderLabel(currentUser?.gender)}
+                  Giới tính của bạn:{" "}
+                  {getGenderLabel(displayUser.gender)}
                 </p>
               </div>
 
@@ -259,12 +435,13 @@ export default function ConnectSideBar() {
                 </div>
                 <div className="cn-goal-chip-wrap">
                   <span className="cn-chip-static">
-                    {currentUser?.goalLabel || "Chưa thiết lập mục tiêu"}
+                    {displayUser.goalLabel || "Chưa thiết lập mục tiêu"}
                   </span>
                 </div>
                 <p className="cn-goal-hint">
-                  Thay đổi mục tiêu trong <strong>Hồ sơ thể chất</strong> để hệ thống
-                  gợi ý bạn tập phù hợp hơn.
+                  Thay đổi mục tiêu trong{" "}
+                  <strong>Hồ sơ thể chất</strong> để hệ thống gợi ý
+                  bạn tập phù hợp hơn.
                 </p>
               </div>
             </div>
@@ -276,19 +453,22 @@ export default function ConnectSideBar() {
           <header className="cn-main-header">
             <h1>Kết nối bạn tập</h1>
             <p>
-              Tìm kiếm những người có cùng mục tiêu và lịch tập, tạo nhóm tối đa 5
-              người để cùng nhau hoàn thành mục tiêu.
+              Tìm kiếm những người có cùng mục tiêu và lịch tập, tạo nhóm
+              tối đa 5 người để cùng nhau hoàn thành mục tiêu.
             </p>
           </header>
 
           {activeTab === "nearby" ? (
             <TabNearby
-              currentUser={currentUser}
+              currentUser={displayUser}
               connectionMode={connectionMode}
               locationRange={locationRange}
+              ageRange={ageRange}
+              genderFilter={genderFilter}
+              discoverable={discoverable}
             />
           ) : (
-            <TabMyConnections currentUser={currentUser} />
+            <TabMyConnections currentUser={displayUser} />
           )}
         </main>
       </div>
@@ -313,4 +493,26 @@ function getGenderLabel(gender) {
   if (gender === "female") return "Nữ";
   if (!gender) return "Chưa cập nhật";
   return "Khác";
+}
+
+function calcAgeFromDob(dob) {
+  if (!dob) return null;
+  const [y, m, d] = dob.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  const b = new Date(y, m - 1, d);
+  const t = new Date();
+  let age = t.getFullYear() - b.getFullYear();
+  const md = t.getMonth() - b.getMonth();
+  if (md < 0 || (md === 0 && t.getDate() < b.getDate())) age--;
+  if (!Number.isFinite(age) || age < 0 || age > 120) return null;
+  return age;
+}
+
+function buildLocationLabel(me, profile, addr) {
+  if (me && typeof me.connectLocationLabel === "string" && me.connectLocationLabel.trim()) {
+    return me.connectLocationLabel.trim();
+  }
+  if (!addr) return "";
+  const parts = [addr.district, addr.city].filter(Boolean);
+  return parts.join(", ");
 }

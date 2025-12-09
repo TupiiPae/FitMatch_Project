@@ -1,339 +1,304 @@
 // user-app/src/pages/Connect/TabMyConnections.jsx
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-/**
- * Lưu ý logic:
- * - Mỗi user chỉ tham gia 1 "phòng kết nối" tại 1 thời điểm.
- * - Tab "Kết nối của tôi" MẶC ĐỊNH disable, chỉ mở khi có ít nhất 1 request
- *   (gửi lời mời / nhận lời mời). Phần enable/disable nằm ở ConnectSideBar.
- *
- * Ở đây mock 3 loại request chờ duyệt:
- *  - incoming_user  : Có người dùng gửi lời mời kết nối
- *  - outgoing_user  : Bạn đã gửi lời mời kết nối 1:1
- *  - outgoing_group : Bạn đã gửi lời mời tham gia nhóm
- */
-const INITIAL_REQUESTS = [
-  {
-    id: "r1",
-    type: "outgoing_user",
-    nickname: "Nhật Thiên",
-    goal: "Giảm cân & săn chắc",
-    note: "Bạn đã gửi lời mời kết nối 1:1, đang chờ phản hồi.",
-    createdAtText: "2 giờ trước",
-    imageUrl:
-      "https://i.pinimg.com/736x/f4/8e/3b/f48e3b4a5aacfd596ff74e203bdbecb7.jpg",
-  },
-  {
-    id: "r2",
-    type: "outgoing_group",
-    groupName: "Morning Strength Club",
-    membersCount: 3,
-    schedule: "Full body · 3 buổi/tuần · Sáng",
-    note: "Bạn đã gửi lời mời tham gia nhóm, đang chờ quản lý nhóm duyệt.",
-    createdAtText: "Hôm qua",
-    imageUrl: "https://i.pinimg.com/736x/62/fa/35/62fa3542956d6d598796cee854c651c0.jpg",
-  },
-  {
-    id: "r3",
-    type: "incoming_user",
-    nickname: "Nhật Hào",
-    distanceKm: 2.1,
-    goal: "Tăng cơ & bền bỉ",
-    note: "Người dùng này muốn kết nối 1:1 với bạn.",
-    createdAtText: "Vừa xong",
-    imageUrl:
-      "https://i.pinimg.com/1200x/b0/07/34/b007344944aafec0d05a314614c80f07.jpg",
-  },
-];
+import { useEffect, useState } from "react";
+import {
+  getMyRequests,
+  acceptMatchRequest,
+  rejectMatchRequest,
+  cancelMatchRequest,
+} from "../../api/match";
+import { toast } from "react-toastify";
 
 export default function TabMyConnections({ currentUser }) {
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
-  const nav = useNavigate();
+  const [incoming, setIncoming] = useState([]);
+  const [outgoing, setOutgoing] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const incomingRequests = requests.filter((r) => r.type === "incoming_user");
-  const outgoingUserRequests = requests.filter(
-    (r) => r.type === "outgoing_user"
+  async function load() {
+    try {
+      setLoading(true);
+      setErrorMsg("");
+
+      const res = await getMyRequests();
+      const payload = res?.data ?? res;
+
+      setIncoming(Array.isArray(payload?.incoming) ? payload.incoming : []);
+      setOutgoing(Array.isArray(payload?.outgoing) ? payload.outgoing : []);
+    } catch (e) {
+      console.error("getMyRequests error:", e);
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        "Không thể tải danh sách lời mời.";
+      setErrorMsg(msg);
+      setIncoming([]);
+      setOutgoing([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function handleAccept(id) {
+    try {
+      await acceptMatchRequest(id);
+      toast.success("Đã chấp nhận lời mời.");
+      load();
+    } catch (e) {
+      console.error("acceptMatchRequest error:", e);
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        "Không thể chấp nhận lời mời.";
+      toast.error(msg);
+    }
+  }
+
+  async function handleReject(id) {
+    try {
+      await rejectMatchRequest(id);
+      toast.info("Đã từ chối lời mời.");
+      load();
+    } catch (e) {
+      console.error("rejectMatchRequest error:", e);
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        "Không thể từ chối lời mời.";
+      toast.error(msg);
+    }
+  }
+
+  async function handleCancel(id) {
+    try {
+      await cancelMatchRequest(id);
+      toast.info("Đã hủy lời mời.");
+      load();
+    } catch (e) {
+      console.error("cancelMatchRequest error:", e);
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        "Không thể hủy lời mời.";
+      toast.error(msg);
+    }
+  }
+
+  const hasIncoming = incoming.length > 0;
+  const hasOutgoing = outgoing.length > 0;
+
+  return (
+    <section className="cn-tab-requests">
+      <div className="cn-main-toolbar">
+        <div className="cn-main-toolbar-left">
+          <span className="cn-result-text">
+            Lời mời kết nối & yêu cầu tham gia nhóm
+          </span>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="cn-empty">
+          <p>Đang tải danh sách lời mời...</p>
+        </div>
+      )}
+
+      {errorMsg && !loading && (
+        <div className="cn-error">
+          <p>{errorMsg}</p>
+        </div>
+      )}
+
+      {!loading && !errorMsg && !hasIncoming && !hasOutgoing && (
+        <div className="cn-empty">
+          <p>
+            Hiện bạn chưa có lời mời kết nối nào. Hãy khám phá tab{" "}
+            <strong>Tìm kiếm xung quanh</strong> để gửi lời mời bạn tập
+            mới nhé.
+          </p>
+        </div>
+      )}
+
+      <div className="cn-requests-grid">
+        {/* INCOMING */}
+        <div className="cn-requests-column">
+          <h3 className="cn-requests-title">Lời mời đến</h3>
+          {incoming.map((req) => (
+            <RequestCardIncoming
+              key={req._id}
+              req={req}
+              onAccept={handleAccept}
+              onReject={handleReject}
+            />
+          ))}
+          {!hasIncoming && !loading && (
+            <p className="cn-requests-empty">Chưa có lời mời mới.</p>
+          )}
+        </div>
+
+        {/* OUTGOING */}
+        <div className="cn-requests-column">
+          <h3 className="cn-requests-title">Lời mời đã gửi</h3>
+          {outgoing.map((req) => (
+            <RequestCardOutgoing
+              key={req._id}
+              req={req}
+              onCancel={handleCancel}
+            />
+          ))}
+          {!hasOutgoing && !loading && (
+            <p className="cn-requests-empty">
+              Bạn chưa gửi lời mời kết nối nào.
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
   );
-  const outgoingGroupRequests = requests.filter(
-    (r) => r.type === "outgoing_group"
-  );
+}
 
-  const hasRequests =
-    incomingRequests.length +
-      outgoingUserRequests.length +
-      outgoingGroupRequests.length >
-    0;
+/* ===== Request cards ===== */
 
-  const removeRequest = (id) =>
-    setRequests((prev) => prev.filter((r) => r.id !== id));
+function RequestCardIncoming({ req, onAccept, onReject }) {
+  const fromUser = req.fromUser || {};
+  const profile = fromUser.profile || {};
+  const nickname =
+    profile.nickname || fromUser.username || "Người dùng FitMatch";
+  const avatarUrl = profile.avatarUrl;
+  const goalLabel =
+    fromUser.connectGoalLabel ||
+    (req.meta && req.meta.fromGoalLabel) ||
+    "";
 
-  const handleCancelInvite = (id) => {
-    // TODO: call API hủy lời mời nếu cần
-    removeRequest(id);
-  };
+  const createdAt = req.createdAt
+    ? new Date(req.createdAt).toLocaleString("vi-VN")
+    : "";
 
-  const handleRejectInvite = (id) => {
-    // TODO: call API từ chối nếu cần
-    removeRequest(id);
-  };
+  return (
+    <article className="cn-request-card">
+      <div className="cn-request-header">
+        <div className="cn-request-avatar">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={nickname}
+              className="cn-avatar-img"
+            />
+          ) : (
+            <div className="cn-avatar-placeholder">
+              {getInitials(nickname)}
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="cn-request-title">{nickname}</div>
+          {goalLabel && (
+            <div className="cn-request-sub">
+              Mục tiêu: <strong>{goalLabel}</strong>
+            </div>
+          )}
+          {createdAt && (
+            <div className="cn-request-time">Gửi lúc: {createdAt}</div>
+          )}
+        </div>
+      </div>
 
-  const handleAcceptDuo = (id) => {
-    // TODO:
-    //  - đưa 2 user vào cùng 1 "phòng kết nối 1:1"
-    //  - đóng / clear các request khác liên quan nếu cần
-    removeRequest(id);
-    nav("/ket-noi/duo"); // Giao diện kết nối 1:1 (DuoConnect)
-  };
+      {req.message && (
+        <p className="cn-request-message">“{req.message}”</p>
+      )}
 
-  const handleOpenTeamConnectDemo = () => {
-    // Chỉ dùng để xem UI Kết nối nhóm (demo)
-    nav("/ket-noi/nhom");
-  };
-
-  if (!hasRequests) {
-    return (
-      <section className="cn-myconnections">
-        <h2>Kết nối của tôi</h2>
-        <p className="cn-myconnections-sub">
-          Nơi quản lý các lời mời kết nối 1:1 và nhóm. Sau khi chấp nhận, bạn sẽ
-          được chuyển sang phòng kết nối tương ứng.
-        </p>
-        <p className="cn-myconnections-placeholder">
-          Hiện bạn chưa có bất kỳ lời mời kết nối nào. Hãy dùng tab{" "}
-          <strong>Tìm kiếm xung quanh</strong> để gửi lời mời hoặc tham gia
-          nhóm mới.
-        </p>
-
+      <div className="cn-request-actions">
+        <button
+          type="button"
+          className="cn-btn-primary"
+          onClick={() => onAccept(req._id)}
+        >
+          Chấp nhận
+        </button>
         <button
           type="button"
           className="cn-btn-ghost"
-          style={{ marginTop: 10 }}
-          onClick={handleOpenTeamConnectDemo}
+          onClick={() => onReject(req._id)}
         >
-          Xem giao diện Kết nối nhóm (demo)
+          Từ chối
         </button>
-      </section>
-    );
+      </div>
+    </article>
+  );
+}
+
+function RequestCardOutgoing({ req, onCancel }) {
+  const type = req.type; // "duo" | "group"
+  const toUser = req.toUser || null;
+  const toRoom = req.toRoom || null;
+
+  let title = "";
+  let subtitle = "";
+
+  if (type === "duo" && toUser) {
+    const profile = toUser.profile || {};
+    title =
+      profile.nickname || toUser.username || "Người dùng FitMatch";
+    subtitle = "Lời mời kết nối 1:1";
+  } else if (type === "group" && toRoom) {
+    title = toRoom.name || "Nhóm tập luyện";
+    const membersCount = toRoom.members?.length || 0;
+    subtitle = `Yêu cầu tham gia nhóm · ${membersCount} thành viên`;
+  } else {
+    title = "Yêu cầu kết nối";
   }
 
+  const createdAt = req.createdAt
+    ? new Date(req.createdAt).toLocaleString("vi-VN")
+    : "";
+
   return (
-    <section className="cn-myconnections">
-      <h2>Kết nối của tôi</h2>
-      <p className="cn-myconnections-sub">
-        Quản lý các lời mời kết nối đang chờ xử lý. Khi{" "}
-        <strong>Duyệt</strong>, bạn sẽ được chuyển sang phòng kết nối 1:1 hoặc
-        phòng nhóm tương ứng.
-      </p>
-
-      {/* ===== Box 1: Có người dùng gửi lời mời kết nối ===== */}
-      {incomingRequests.length > 0 && (
-        <div className="cn-myconnections-card">
-          <div className="cn-requests-section">
-            <h3 className="cn-requests-title">
-              Có người dùng gửi lời mời kết nối
-            </h3>
-            <p className="cn-requests-desc">
-              Khi bạn nhấp <strong>Duyệt</strong>, hệ thống sẽ tạo phòng kết nối
-              1:1 giữa bạn và người dùng đó.
-            </p>
-
-            <div className="cn-requests-list">
-              {incomingRequests.map((r) => {
-                const distanceText =
-                  typeof r.distanceKm === "number"
-                    ? `Cách bạn ~${r.distanceKm.toFixed(1)} km`
-                    : "";
-
-                return (
-                  <article key={r.id} className="cn-request-row">
-                    {r.imageUrl && (
-                      <div className="cn-request-thumb">
-                        <img
-                          src={r.imageUrl}
-                          alt={r.nickname || "Người dùng FitMatch"}
-                        />
-                      </div>
-                    )}
-
-                    <div className="cn-request-main-col">
-                      <div className="cn-request-type">Lời mời đến</div>
-                      <h4 className="cn-request-title">
-                        <strong>{r.nickname}</strong> muốn kết nối 1:1 với bạn
-                      </h4>
-                      <p className="cn-request-main">{r.note}</p>
-                      <p className="cn-request-meta">
-                        Mục tiêu tập luyện: {r.goal || "Chưa rõ"}
-                        {distanceText ? ` · ${distanceText}` : ""}
-                        </p>
-
-                        <div className="cn-request-footer">
-                        <span className="cn-request-meta">
-                            Nhận {r.createdAtText || "—"}
-                        </span>
-                        <span className="cn-request-status-pill cn-request-status-pending">
-                            Đang chờ bạn duyệt
-                        </span>
-                        </div>
-
-                      <div className="cn-request-actions">
-                        <button
-                          type="button"
-                          className="cn-btn-primary"
-                          onClick={() => handleAcceptDuo(r.id)}
-                        >
-                          Duyệt kết nối 1:1
-                        </button>
-                        <button
-                          type="button"
-                          className="cn-btn-ghost"
-                          onClick={() => handleRejectInvite(r.id)}
-                        >
-                          Từ chối
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
+    <article className="cn-request-card">
+      <div className="cn-request-header">
+        <div className="cn-request-avatar cn-request-avatar--small">
+          <span className="cn-avatar-placeholder">
+            {title ? title[0]?.toUpperCase() : "?"}
+          </span>
         </div>
+        <div>
+          <div className="cn-request-title">{title}</div>
+          {subtitle && (
+            <div className="cn-request-sub">{subtitle}</div>
+          )}
+          {createdAt && (
+            <div className="cn-request-time">Gửi lúc: {createdAt}</div>
+          )}
+        </div>
+      </div>
+
+      {req.message && (
+        <p className="cn-request-message">“{req.message}”</p>
       )}
 
-      {/* ===== Box 2: Bạn đã gửi lời mời kết nối 1:1 ===== */}
-      {outgoingUserRequests.length > 0 && (
-        <div className="cn-myconnections-card">
-          <div className="cn-requests-section">
-            <h3 className="cn-requests-title">
-              Bạn đã gửi lời mời kết nối 1:1
-            </h3>
-            <p className="cn-requests-desc">
-              Đây là các lời mời 1:1 mà bạn đã gửi cho người khác. Bạn chỉ có
-              thể <strong>hủy lời mời</strong>, không thể tự duyệt.
-            </p>
-
-            <div className="cn-requests-list">
-              {outgoingUserRequests.map((r) => (
-                <article key={r.id} className="cn-request-row">
-                  {r.imageUrl && (
-                    <div className="cn-request-thumb">
-                      <img
-                        src={r.imageUrl}
-                        alt={r.nickname || "Người dùng FitMatch"}
-                      />
-                    </div>
-                  )}
-
-                  <div className="cn-request-main-col">
-                    <div className="cn-request-type">Lời mời bạn gửi đi</div>
-                    <h4 className="cn-request-title">
-                      Gửi lời mời kết nối với người dùng{" "}
-                      <strong>{r.nickname}</strong>
-                    </h4>
-                    <p className="cn-request-main">{r.note}</p>
-                    {r.goal && (
-                    <p className="cn-request-meta">
-                        Mục tiêu của bạn tập: {r.goal}
-                    </p>
-                    )}
-
-                    <div className="cn-request-footer">
-                    <span className="cn-request-meta">
-                        Gửi {r.createdAtText || "—"}
-                    </span>
-                    <span className="cn-request-status-pill cn-request-status-pending">
-                        Đang chờ người dùng đồng ý
-                    </span>
-                    </div>
-
-                    <div className="cn-request-actions">
-                      <button
-                        type="button"
-                        className="cn-btn-primary"
-                        onClick={() => handleCancelInvite(r.id)}
-                      >
-                        Hủy lời mời kết nối
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== Box 3: Bạn đã gửi lời mời tham gia nhóm ===== */}
-      {outgoingGroupRequests.length > 0 && (
-        <div className="cn-myconnections-card">
-          <div className="cn-requests-section">
-            <h3 className="cn-requests-title">
-              Bạn đã gửi lời mời tham gia nhóm
-            </h3>
-            <p className="cn-requests-desc">
-              Đây là các lời mời tham gia phòng kết nối nhóm. Bạn chỉ có thể{" "}
-              <strong>hủy lời mời</strong>. Khi quản lý nhóm duyệt, bạn sẽ được
-              đưa vào phòng Kết nối nhóm.
-            </p>
-
-            <div className="cn-requests-list">
-              {outgoingGroupRequests.map((r) => (
-                <article key={r.id} className="cn-request-row">
-                  {r.imageUrl && (
-                    <div className="cn-request-thumb">
-                      <img
-                        src={r.imageUrl}
-                        alt={r.groupName || "Nhóm tập luyện"}
-                      />
-                    </div>
-                  )}
-
-                  <div className="cn-request-main-col">
-                    <div className="cn-request-type">Lời mời bạn gửi đi</div>
-                    <h4 className="cn-request-title">
-                      Gửi lời mời kết nối với Nhóm{" "}
-                      <strong>{r.groupName || "Nhóm"}</strong>
-                    </h4>
-                    <p className="cn-request-main">{r.note}</p>
-                    <p className="cn-request-meta">
-                    Thành viên hiện tại: {r.membersCount || 0} ·{" "}
-                    {r.schedule || "Lịch tập chưa cập nhật"}
-                    </p>
-
-                    <div className="cn-request-footer">
-                    <span className="cn-request-meta">
-                        Gửi {r.createdAtText || "—"}
-                    </span>
-                    <span className="cn-request-status-pill cn-request-status-pending">
-                        Đang chờ quản lý nhóm
-                    </span>
-                    </div>
-
-
-                    <div className="cn-request-actions">
-                      <button
-                        type="button"
-                        className="cn-btn-primary"
-                        onClick={() => handleCancelInvite(r.id)}
-                      >
-                        Hủy lời mời tham gia nhóm
-                      </button>
-                      <button
-                        type="button"
-                        className="cn-btn-ghost"
-                        onClick={handleOpenTeamConnectDemo}
-                      >
-                        Xem giao diện Kết nối nhóm
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
+      <div className="cn-request-actions">
+        <button
+          type="button"
+          className="cn-btn-ghost"
+          onClick={() => onCancel(req._id)}
+        >
+          Hủy lời mời
+        </button>
+      </div>
+    </article>
   );
+}
+
+/* ===== Helpers ===== */
+
+function getInitials(name) {
+  if (!name) return "FM";
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
