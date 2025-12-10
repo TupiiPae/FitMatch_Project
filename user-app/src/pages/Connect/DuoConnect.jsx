@@ -1,4 +1,3 @@
-// user-app/src/pages/Connect/DuoConnect.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./DuoConnect.css";
@@ -38,15 +37,12 @@ export default function DuoConnect({ onLeftRoom }) {
         const activeRoomType = statusData?.activeRoomType;
 
         if (!activeRoomId || activeRoomType !== "duo") {
-          const msg =
-            "Hiện bạn chưa tham gia phòng kết nối 1:1 nào.";
+          const msg = "Hiện bạn chưa tham gia phòng kết nối 1:1 nào.";
           toast.info(msg);
 
-          // Nếu đang được nhúng bên trong TabMyConnections
           if (typeof onLeftRoom === "function") {
             onLeftRoom();
           } else {
-            // Trường hợp dùng route riêng `/ket-noi/duo`
             nav("/ket-noi");
           }
           return;
@@ -141,21 +137,6 @@ export default function DuoConnect({ onLeftRoom }) {
     return { slotMe: m1, slotPartner: m2 };
   }, [room, myId]);
 
-  const roomStatusLabel =
-    room?.status === "closed"
-      ? "Đã đóng"
-      : room?.status === "full"
-      ? "Đã đủ thành viên"
-      : "Đang hoạt động";
-
-  const createdAtText = room?.createdAt
-    ? new Date(room.createdAt).toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
-    : "—";
-
   const handleOpenMenu = () => setMenuOpen((v) => !v);
   const handleCloseMenu = () => setMenuOpen(false);
 
@@ -177,7 +158,6 @@ export default function DuoConnect({ onLeftRoom }) {
       toast.info("Bạn đã rời khỏi phòng ghép đôi.");
       setLeaveModalOpen(false);
 
-      // nếu đang nhúng trong TabMyConnections
       if (typeof onLeftRoom === "function") {
         onLeftRoom();
       } else {
@@ -241,102 +221,52 @@ export default function DuoConnect({ onLeftRoom }) {
         </div>
       </header>
 
-      {/* ===== TAB BAR ===== */}
-      <div className="cn-duo-tabs">
-        <button
-          type="button"
-          className={
-            "cn-duo-tab" +
-            (activeTab === "connect" ? " is-active" : "")
-          }
-          onClick={() => setActiveTab("connect")}
-        >
-          Kết nối
-        </button>
-        <button
-          type="button"
-          className="cn-duo-tab is-disabled"
-          disabled
-        >
-          Trò chuyện
-          <span className="cn-duo-tab-badge">Sắp ra mắt</span>
-        </button>
+      {/* ===== PANEL: tab + main trong 1 box ===== */}
+      <div className="cn-duo-panel">
+        {/* ===== TAB BAR ===== */}
+        <div className="cn-duo-tabs">
+          <button
+            type="button"
+            className={
+              "cn-duo-tab" +
+              (activeTab === "connect" ? " is-active" : "")
+            }
+            onClick={() => setActiveTab("connect")}
+          >
+            Kết nối
+          </button>
+          <button
+            type="button"
+            className="cn-duo-tab is-disabled"
+            disabled
+          >
+            Trò chuyện
+            <span className="cn-duo-tab-badge">Sắp ra mắt</span>
+          </button>
+        </div>
+
+        {/* ===== MAIN (tab Kết nối) ===== */}
+        {activeTab === "connect" && (
+          <section className="cn-duo-main">
+            <div className="cn-duo-room-card">
+              {/* 2 user – căn giữa và chia đều */}
+              <div className="cn-duo-members-strip">
+                <DuoMemberSpot member={slotMe} label="Bạn" isMe />
+                <DuoMemberSpot
+                  member={slotPartner}
+                  label="Bạn ghép đôi"
+                />
+              </div>
+
+              {/* 2 SLIDER – avatar nằm trên DAY 1 */}
+              <div className="cn-duo-streak-rows">
+                <DuoStreakRow member={slotMe} />
+                <DuoStreakRow member={slotPartner} />
+              </div>
+            </div>
+          </section>
+        )}
       </div>
-
-      {/* ===== MAIN CARD (tab Kết nối) ===== */}
-      {activeTab === "connect" && (
-        <section className="cn-duo-main">
-          <div className="cn-duo-room-card">
-            <div className="cn-duo-room-top">
-              <div className="cn-duo-room-info">
-                {/* <h2 className="cn-duo-room-name">
-                  {room.name || "Phòng kết nối 1:1"}
-                </h2> */}
-                <p className="cn-duo-room-desc">
-                  {room.description ||
-                    "Kết nối này được tạo khi hai bạn đồng ý lời mời ghép đôi. Cùng nhau giữ thói quen tập luyện đều đặn nhé!"}
-                </p>
-
-                <div className="cn-duo-chips">
-                  <span className="cn-duo-chip">
-                    <i className="fa-regular fa-circle-dot" />
-                    <span>{roomStatusLabel}</span>
-                  </span>
-                  {room.locationLabel && (
-                    <span className="cn-duo-chip">
-                      <i className="fa-solid fa-location-dot" />
-                      <span>{room.locationLabel}</span>
-                    </span>
-                  )}
-                  {Array.isArray(room.trainingTypes) &&
-                    room.trainingTypes.map((t) => (
-                      <span
-                        key={t}
-                        className="cn-duo-chip cn-duo-chip-ghost"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                </div>
-              </div>
-
-              <div className="cn-duo-room-meta">
-                <div className="cn-duo-meta-item">
-                  <div className="cn-duo-meta-label">
-                    Ngày tạo phòng
-                  </div>
-                  <div className="cn-duo-meta-value">
-                    {createdAtText}
-                  </div>
-                </div>
-                <div className="cn-duo-meta-item">
-                  <div className="cn-duo-meta-label">
-                    Số thành viên hiện tại
-                  </div>
-                  <div className="cn-duo-meta-value">
-                    {Array.isArray(room.members)
-                      ? room.members.length
-                      : 0}{" "}
-                    / {room.maxMembers || 2}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ===== 2 SLOT THÀNH VIÊN ===== */}
-            <div className="cn-duo-slots">
-              <DuoSlot member={slotMe} label="Bạn" isMe />
-              <DuoSlot member={slotPartner} label="Bạn ghép đôi" />
-            </div>
-
-            <div className="cn-duo-footer-hint">
-              Gợi ý: Hãy thống nhất lịch tập, mục tiêu theo tuần và
-              cập nhật tiến độ trong các trang Thống kê, Nhật ký ăn
-              uống… để cùng nhau theo dõi kết quả.
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* ===== MODAL RỜI PHÒNG ===== */}
       {leaveModalOpen && (
@@ -381,21 +311,21 @@ export default function DuoConnect({ onLeftRoom }) {
   );
 }
 
-/* ===== SLOT COMPONENT ===== */
+/* ===== MEMBER SPOT (hàng trên) ===== */
 
-function DuoSlot({ member, label, isMe = false }) {
+function DuoMemberSpot({ member, label, isMe = false }) {
   if (!member) {
     return (
-      <div className="cn-duo-slot cn-duo-slot-empty">
-        <div className="cn-duo-slot-label">{label}</div>
-        <div className="cn-duo-avatar cn-duo-avatar-empty">
+      <div className="cn-duo-member-spot is-empty">
+        <div className="cn-duo-member-avatar cn-duo-member-avatar-empty">
           <i className="fa-regular fa-circle-user" />
         </div>
-        <div className="cn-duo-slot-name">Chỗ trống</div>
-        <p className="cn-duo-slot-empty-text">
-          Khi có người ghép đôi với bạn, thông tin sẽ hiển thị tại
-          đây.
-        </p>
+        <div className="cn-duo-member-text">
+          <div className="cn-duo-member-label-row">
+            <span className="cn-duo-member-label">{label}</span>
+          </div>
+          <div className="cn-duo-member-name">Chỗ trống</div>
+        </div>
       </div>
     );
   }
@@ -405,39 +335,64 @@ function DuoSlot({ member, label, isMe = false }) {
   return (
     <div
       className={
-        "cn-duo-slot" + (isMe ? " cn-duo-slot-me" : "")
+        "cn-duo-member-spot" + (isMe ? " is-me" : "")
       }
     >
-      <div className="cn-duo-slot-label">{label}</div>
-      <div className="cn-duo-avatar">
+      <div className="cn-duo-member-avatar">
         {member.avatarUrl ? (
           <img src={member.avatarUrl} alt={member.name} />
         ) : (
           <span>{initials}</span>
         )}
       </div>
-      <div className="cn-duo-slot-name">{member.name}</div>
-      {member.role === "owner" && (
-        <div className="cn-duo-slot-role-tag">
-          Quản lý phòng
+      <div className="cn-duo-member-text">
+        <div className="cn-duo-member-label-row">
+          <span className="cn-duo-member-label">{label}</span>
         </div>
-      )}
-
-      <div className="cn-duo-slot-status">
-        <span className="cn-duo-status-dot" />
-        Đang tham gia
+        <div className="cn-duo-member-name">{member.name}</div>
       </div>
+    </div>
+  );
+}
 
-      {member.joinedAt && (
-        <div className="cn-duo-slot-joined">
-          Tham gia{" "}
-          {new Date(member.joinedAt).toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })}
+/* ===== SLIDER ROW (hàng dưới) ===== */
+
+function DuoStreakRow({ member }) {
+  const hasMember = !!member;
+  const initials = member ? getInitials(member.name) : "FM";
+
+  return (
+    <div className="cn-duo-streak-row">
+      <div
+        className={
+          "cn-duo-streak-line" + (!hasMember ? " is-empty" : "")
+        }
+      >
+        {/* avatar nằm trên thanh ở điểm DAY 1 */}
+        <div
+          className={
+            "cn-duo-streak-avatar-onbar" +
+            (!hasMember ? " is-empty" : "")
+          }
+        >
+          {hasMember && member.avatarUrl ? (
+            <img src={member.avatarUrl} alt={member.name} />
+          ) : hasMember ? (
+            <span>{initials}</span>
+          ) : (
+            <i className="fa-regular fa-circle-user" />
+          )}
         </div>
-      )}
+
+        {/* thanh ngang */}
+        <div className="cn-duo-streak-bar" />
+
+        {/* chỉ còn DAY 1 */}
+        <div className="cn-duo-streak-day1">
+          <span className="cn-duo-streak-day1-arrow" />
+          <span className="cn-duo-streak-day1-label">DAY 1</span>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,3 @@
-/* user-app/src/pages/Connect/DuoConnect.css */
-
 /* ===== PAGE WRAPPER ===== */
 .cn-duo-page{
   padding: 4px 0 12px;
@@ -11,7 +9,7 @@
   color: #9ca3af;
 }
 
-/* ===== HEADER (giống tone cn-main-header) ===== */
+/* ===== HEADER ===== */
 .cn-duo-header{
   display: flex;
   justify-content: space-between;
@@ -39,26 +37,15 @@
   color: #fecaca;
 }
 
-.cn-duo-title{
-  font-size: 22px;
-  font-weight: 700;
-  margin: 6px 0 2px;
-  color: #f9fafb;
-}
-
-.cn-duo-sub{
-  font-size: 13px;
-  color: #9ca3af;
-  max-width: 520px;
-  margin: 0;
-}
-
 .cn-duo-header-right{
   position: relative;
 }
 
 /* nút 3 chấm */
 .cn-duo-more-btn{
+  border: none;
+  background: transparent;
+  cursor: pointer;
   color: #9ca3af;
   font-size: 18px;
 }
@@ -97,12 +84,22 @@
   color: #fca5a5;
 }
 
-/* ===== TABS (Kết nối / Trò chuyện) ===== */
+/* ===== PANEL (bọc tab + main trong box) ===== */
+.cn-duo-panel{
+  margin-top: 6px;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.45);
+  padding: 10px 14px 12px;
+}
+
+/* ===== TABS ===== */
 .cn-duo-tabs{
   display: flex;
   gap: 4px;
   border-bottom: 1px solid #1f2937;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .cn-duo-tab{
@@ -142,204 +139,182 @@
   color: #9ca3af;
 }
 
-/* ===== MAIN CARD ===== */
+/* ===== MAIN ===== */
 .cn-duo-main{
-  margin-top: 6px;
+  margin-top: 20px;
 }
 
+/* card bên trong chỉ dùng để bố cục, không thêm nền nữa */
 .cn-duo-room-card{
-  background: #020617;
-  border-radius: 8px;
-  border: 1px solid #1f2937;
-  box-shadow: 0 10px 35px rgba(0,0,0,0.45);
-  padding: 14px 14px 12px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 4px 0 4px;
   color: #e5e7eb;
 }
 
-.cn-duo-room-top{
+/* ===== HÀNG USER (2 box) ===== */
+
+.cn-duo-members-strip{
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
-  align-items: flex-start;
-}
-
-.cn-duo-room-info{
-  flex: 1.4;
-  min-width: 0;
-}
-
-.cn-duo-room-name{
-  font-size: 18px;
-  margin: 0 0 4px;
-  color: #f9fafb;
-}
-
-.cn-duo-room-desc{
-  font-size: 13px;
-  color: #9ca3af;
-  margin: 0 0 6px;
-}
-
-/* chip trạng thái, vị trí, loại hình */
-.cn-duo-chips{
-  display: flex;
+  align-items: center;
+  justify-content: center;   /* căn giữa cả dãy */
+  gap: 120px;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #1f2937;
 }
 
-.cn-duo-chip{
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: #020617;
-  border: 1px solid #4b5563;
-  color: #e5e7eb;
-}
-.cn-duo-chip i{
-  font-size: 10px;
-}
-.cn-duo-chip-ghost{
-  background: #111827;
-  border-style: dashed;
-  border-color: #4b5563;
-  color: #9ca3af;
-}
-
-/* block meta bên phải */
-.cn-duo-room-meta{
-  flex: 0.9;
-  display: grid;
-  gap: 8px;
-}
-
-.cn-duo-meta-item{
-  background: #020617;
-  border-radius: 8px;
-  border: 1px solid #1f2937;
-  padding: 8px 10px;
-}
-
-.cn-duo-meta-label{
-  font-size: 11px;
-  color: #9ca3af;
-}
-.cn-duo-meta-value{
-  font-size: 13px;
-  font-weight: 600;
-  color: #f9fafb;
-}
-
-/* ===== 2 SLOT THÀNH VIÊN ===== */
-.cn-duo-slots{
-  display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
-  gap: 12px;
-  margin-top: 6px;
-}
-
-.cn-duo-slot{
-  background: #020617;
-  border-radius: 8px;
-  border: 1px solid #1f2937;
-  padding: 12px 10px;
-  text-align: center;
-  min-height: 190px;
+.cn-duo-member-spot{
   display: flex;
-  flex-direction: column;
   align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 0 1 260px;           /* chia đều độ rộng */
 }
 
-.cn-duo-slot-me{
-  border-color: #22c55e;
-  box-shadow: 0 0 0 1px rgba(34,197,94,0.35);
+.cn-duo-member-spot.is-empty{
+  opacity: 0.6;
 }
 
-.cn-duo-slot-empty{
-  border-style: dashed;
-  border-color: #4b5563;
-  background: #020617;
+.cn-duo-member-spot.is-me .cn-duo-member-name{
+  color: #f97316;
 }
 
-.cn-duo-slot-label{
-  font-size: 11px;
-  color: #9ca3af;
-  margin-bottom: 6px;
-}
-
-/* avatar tròn bên trong slot */
-.cn-duo-avatar{
-  width: 72px;
-  height: 72px;
+.cn-duo-member-avatar{
+  width: 60px;
+  height: 60px;
   border-radius: 999px;
   background: #111827;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 22px;
+  font-size: 16px;
   color: #f97316;
   overflow: hidden;
-  margin-bottom: 8px;
+  flex-shrink: 0;
 }
-.cn-duo-avatar img{
+.cn-duo-member-avatar img{
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.cn-duo-avatar-empty{
+
+.cn-duo-member-avatar-empty{
   background: #020617;
   border: 1px dashed #4b5563;
   color: #4b5563;
-  font-size: 26px;
 }
 
-.cn-duo-slot-name{
+.cn-duo-member-text{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cn-duo-member-label-row{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cn-duo-member-label{
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.cn-duo-member-name{
   font-size: 14px;
   font-weight: 600;
   color: #f9fafb;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
-.cn-duo-slot-role-tag{
-  margin-top: 2px;
-  font-size: 11px;
-  color: #f97316;
+/* ===== 2 HÀNG SLIDER ===== */
+
+.cn-duo-streak-rows{
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-/* trạng thái “đang tham gia” */
-.cn-duo-slot-status{
-  margin-top: 8px;
-  font-size: 11px;
-  padding: 3px 10px;
+.cn-duo-streak-row{
+  padding: 12px 100px;
+}
+
+/* khối chứa avatar + thanh + DAY 1 */
+.cn-duo-streak-line{
+  position: relative;
+  padding-top: 46px; /* chừa chỗ cho avatar nằm trên */
+}
+
+.cn-duo-streak-line.is-empty{
+  opacity: 0.6;
+}
+
+/* avatar nằm trên thanh tại điểm DAY 1 (đầu bên trái) */
+.cn-duo-streak-avatar-onbar{
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
-  background: rgba(16,185,129,0.12);
-  color: #6ee7b7;
-  display: inline-flex;
+  background: #111827;
+  display: flex;
   align-items: center;
-  gap: 4px;
-}
-.cn-duo-status-dot{
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #22c55e;
-}
-
-.cn-duo-slot-joined{
-  margin-top: 6px;
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-.cn-duo-slot-empty-text{
+  justify-content: center;
+  color: #f97316;
   font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+}
+.cn-duo-streak-avatar-onbar img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cn-duo-streak-avatar-onbar.is-empty{
+  background: #020617;
+  border: 1px dashed #4b5563;
+  color: #4b5563;
+}
+
+/* thanh ngang */
+.cn-duo-streak-bar{
+  height: 4px;
+  border-radius: 999px;
+  background: #1f2937;
+}
+
+/* chỉ còn DAY 1 ở dưới */
+.cn-duo-streak-day1{
+  margin-top: 4px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cn-duo-streak-day1-arrow{
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #1f2937;
+  margin-left: 7px;  /* thẳng dưới avatar */
+  margin-bottom: 2px;
+}
+
+.cn-duo-streak-day1-label{
+  font-size: 10px;
   color: #9ca3af;
-  margin-top: 6px;
-  max-width: 200px;
+  margin-left: 2px;
+  text-transform: uppercase;
 }
 
 /* ===== FOOTER HINT ===== */
@@ -354,20 +329,14 @@
   .cn-duo-header{
     flex-direction: column;
   }
-  .cn-duo-room-top{
-    flex-direction: column;
-  }
-  .cn-duo-room-meta{
-    width: 100%;
-    grid-template-columns: repeat(2,minmax(0,1fr));
+
+  .cn-duo-header-right{
+    align-self: flex-end;
   }
 }
 
 @media (max-width: 640px){
-  .cn-duo-room-meta{
-    grid-template-columns: minmax(0,1fr);
-  }
-  .cn-duo-slots{
-    grid-template-columns: minmax(0,1fr);
+  .cn-duo-members-strip{
+    gap: 16px;
   }
 }
