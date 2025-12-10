@@ -79,6 +79,28 @@
   resize: vertical;
 }
 
+.acc-input-bio-wrapper {
+  position: relative;
+}
+
+/* Nếu đã có .acc-input-bio thì chỉ cần thêm padding-right,
+   không cần copy nguyên block này y chang */
+.acc-input-bio {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  padding-right: 70px; /* chừa chỗ cho số đếm */
+}
+
+/* Số đếm ký tự Bio – nằm góc phải dưới */
+.acc-bio-counter {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
 .acc-input:hover,
 .acc-select:hover,
 .acc-textarea:hover,

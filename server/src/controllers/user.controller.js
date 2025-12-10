@@ -41,7 +41,7 @@ function computeDerived(profile){
 
 /** GET /api/user/me */
 export const getMe = async (req,res)=>{
-  const me = await User.findById(req.userId).select("_id username email phone role onboarded blocked blockedReason profile createdAt").lean();
+  const me = await User.findById(req.userId).select("_id username email phone role onboarded blocked blockedReason profile connectBio createdAt").lean();
   if(!me) return res.status(404).json({ message:"Không tìm thấy người dùng" });
   const needBackfill = !!me.profile && (me.profile?.bmi==null || me.profile?.bmr==null || me.profile?.tdee==null);
   if(needBackfill){
@@ -123,7 +123,7 @@ export const finalizeOnboarding = async (_req,res)=>{ await User.findByIdAndUpda
 export const updateAccount = async (req,res)=>{
   try{
     const body = req.body || {};
-    const allowedRoot = ["email","phone"];
+    const allowedRoot = ["email","phone","connectBio"];
     const allowedProfileFlat = [
       "profile.nickname","profile.sex","profile.dob","profile.trainingIntensity",
       "profile.calorieTarget","profile.macroProtein","profile.macroCarb","profile.macroFat",
@@ -155,6 +155,7 @@ export const updateAccount = async (req,res)=>{
     }
     if(body.phone!==undefined) $set.phone = body.phone;
     if(body.email!==undefined) $set.email = body.email;
+    if(body.connectBio !== undefined) $set.connectBio = body.connectBio;
 
     // 3) Chuẩn hoá GeoJSON location
     let lng=null, lat=null;

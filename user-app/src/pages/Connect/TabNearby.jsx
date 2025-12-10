@@ -4,8 +4,12 @@ import { useNavigate } from "react-router-dom";
 import {
   listNearby,
   createMatchRequest,
+  getMyRequests,
+  acceptMatchRequest,
+  cancelMatchRequest,
 } from "../../api/match";
 import { toast } from "react-toastify";
+import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
 
 export default function TabNearby({
   currentUser,
@@ -14,17 +18,52 @@ export default function TabNearby({
   ageRange,
   genderFilter,
   discoverable,
+  onCreatedRequest,
 }) {
   const nav = useNavigate();
   const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
   const [search, setSearch] = useState("");
 
-  const [selfCard, setSelfCard] = useState(null);
+  const [selfCard, setSelfCard] = useState(null); // box xem trước của chủ tài khoản
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ===== Load từ API /match/nearby =====
+  // Map trạng thái request hiện tại
+  const [requestMaps, setRequestMaps] = useState({
+    incomingFromUser: {}, // { fromUserId: requestId } – người khác mời mình (duo)
+    outgoingToUser: {}, // { toUserId: requestId } – mình mời người ta (duo)
+    outgoingToRoom: {}, // { roomId: requestId } – mình xin join group
+  });
+
+  // Modal xác nhận
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    mode: null, // 'send_duo' | 'send_group' | 'cancel_duo' | 'cancel_group' | 'accept_duo'
+    target: null, // user / group card
+    requestId: null,
+  });
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const openConfirm = (mode, target, requestId) => {
+    setConfirmState({
+      open: true,
+      mode,
+      target,
+      requestId: requestId || null,
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmState({
+      open: false,
+      mode: null,
+      target: null,
+      requestId: null,
+    });
+  };
+
+  // ===== Load từ API /match/nearby + /match/requests =====
   useEffect(() => {
     let cancelled = false;
 
@@ -33,13 +72,57 @@ export default function TabNearby({
         setLoading(true);
         setErrorMsg("");
 
-        const res = await listNearby(connectionMode);
-        const payload = res?.data ?? res;
+        const [nearby, reqs] = await Promise.all([
+          listNearby(connectionMode),
+          getMyRequests().catch((err) => {
+            console.error("getMyRequests error:", err);
+            return null;
+          }),
+        ]);
 
         if (cancelled) return;
 
-        setSelfCard(payload?.self || null);
-        setItems(Array.isArray(payload?.items) ? payload.items : []);
+        setSelfCard(nearby?.self || null);
+        setItems(Array.isArray(nearby?.items) ? nearby.items : []);
+
+        // build map request
+        if (reqs) {
+          const incoming = Array.isArray(reqs.incoming)
+            ? reqs.incoming
+            : [];
+          const outgoing = Array.isArray(reqs.outgoing)
+            ? reqs.outgoing
+            : [];
+
+          const incomingFromUser = {};
+          incoming.forEach((r) => {
+            if (r.type === "duo" && r.fromUser?._id) {
+              incomingFromUser[r.fromUser._id] = r._id;
+            }
+          });
+
+          const outgoingToUser = {};
+          const outgoingToRoom = {};
+          outgoing.forEach((r) => {
+            if (r.type === "duo" && r.toUser?._id) {
+              outgoingToUser[r.toUser._id] = r._id;
+            } else if (r.type === "group" && r.toRoom?._id) {
+              outgoingToRoom[r.toRoom._id] = r._id;
+            }
+          });
+
+          setRequestMaps({
+            incomingFromUser,
+            outgoingToUser,
+            outgoingToRoom,
+          });
+        } else {
+          setRequestMaps({
+            incomingFromUser: {},
+            outgoingToUser: {},
+            outgoingToRoom: {},
+          });
+        }
       } catch (e) {
         if (cancelled) return;
         console.error("listNearby error:", e);
@@ -59,9 +142,9 @@ export default function TabNearby({
     return () => {
       cancelled = true;
     };
-  }, [connectionMode]);
+  }, [connectionMode, discoverable]); // bật/tắt discoverable → reload để self-card & request map cập nhật
 
-  // ===== Filter danh sách theo range / age / gender / search =====
+  // ===== Filter danh sách theo range / age / gender / search (chỉ áp dụng cho người khác) =====
   const filteredList = useMemo(() => {
     let base = items || [];
 
@@ -71,10 +154,7 @@ export default function TabNearby({
       if (connectionMode === "group" && !u.isGroup) return false;
 
       // Vị trí
-      if (
-        locationRange !== "any" &&
-        typeof u.distanceKm === "number"
-      ) {
+      if (locationRange !== "any" && typeof u.distanceKm === "number") {
         const maxRange = Number(locationRange);
         if (u.distanceKm > maxRange) return false;
       }
@@ -82,14 +162,10 @@ export default function TabNearby({
       // Độ tuổi
       if (ageRange !== "all" && typeof u.age === "number") {
         const age = u.age;
-        if (ageRange === "18-21" && !(age >= 18 && age <= 21))
-          return false;
-        if (ageRange === "22-27" && !(age >= 22 && age <= 27))
-          return false;
-        if (ageRange === "28-35" && !(age >= 28 && age <= 35))
-          return false;
-        if (ageRange === "36-45" && !(age >= 36 && age <= 45))
-          return false;
+        if (ageRange === "18-21" && !(age >= 18 && age <= 21)) return false;
+        if (ageRange === "22-27" && !(age >= 22 && age <= 27)) return false;
+        if (ageRange === "28-35" && !(age >= 28 && age <= 35)) return false;
+        if (ageRange === "36-45" && !(age >= 36 && age <= 45)) return false;
         if (ageRange === "45+" && age < 45) return false;
       }
 
@@ -120,149 +196,216 @@ export default function TabNearby({
 
       return true;
     });
-  }, [
-    items,
-    connectionMode,
-    locationRange,
-    ageRange,
-    genderFilter,
-    search,
-  ]);
+  }, [items, connectionMode, locationRange, ageRange, genderFilter, search]);
 
   const resultCount = filteredList.length;
 
-  // ===== Gửi lời mời kết nối =====
-  async function handleInvite(user) {
-    try {
-      if (!discoverable) {
-        toast.info(
-          "Hãy bật 'Cho phép mọi người tìm kiếm bạn' để kết nối dễ dàng hơn."
-        );
+  // Xác định state của nút trên từng card
+  const getInviteStateFor = (u) => {
+    if (u.isGroup) {
+      const reqId = requestMaps.outgoingToRoom[u.id];
+      if (reqId) {
+        return { type: "cancel_group", requestId: reqId };
       }
+      return { type: "send_group" };
+    } else {
+      const incomingId = requestMaps.incomingFromUser[u.id];
+      if (incomingId) {
+        return { type: "accept_duo", requestId: incomingId };
+      }
+      const outgoingId = requestMaps.outgoingToUser[u.id];
+      if (outgoingId) {
+        return { type: "cancel_duo", requestId: outgoingId };
+      }
+      return { type: "send_duo" };
+    }
+  };
 
-      if (user.isGroup) {
-        // group
-        const res = await createMatchRequest({
-          type: "group",
-          targetRoomId: user.id,
-        });
-        const payload = res?.data ?? res;
-        if (payload?.request) {
-          toast.success("Đã gửi yêu cầu xin tham gia nhóm.");
-        } else {
-          toast.success("Đã gửi yêu cầu xin tham gia nhóm.");
+  // ===== Xử lý khi bấm xác nhận trên modal =====
+  async function handleConfirm() {
+    if (!confirmState.open || !confirmState.mode || !confirmState.target) {
+      return;
+    }
+
+    const { mode, target, requestId } = confirmState;
+
+    try {
+      setConfirmLoading(true);
+
+      if (mode === "send_duo") {
+        // giống logic cũ: vẫn cho gửi, chỉ nhắc bật discoverable
+        if (!discoverable) {
+          toast.info(
+            "Hãy bật 'Cho phép mọi người tìm kiếm bạn' để kết nối dễ dàng hơn."
+          );
         }
-      } else {
-        // duo
+
         const res = await createMatchRequest({
           type: "duo",
-          targetUserId: user.id,
+          targetUserId: target.id,
         });
-        const payload = res?.data ?? res;
-        if (payload?.request) {
-          toast.success("Đã gửi lời mời kết nối.");
-        } else {
-          toast.success("Đã gửi lời mời kết nối.");
+
+        const reqDoc = res?.request || res?.data?.request || null;
+        const newId = reqDoc?._id || reqDoc?.id;
+
+        if (newId) {
+          setRequestMaps((prev) => ({
+            ...prev,
+            outgoingToUser: {
+              ...prev.outgoingToUser,
+              [target.id]: newId,
+            },
+          }));
         }
+
+        toast.success("Đã gửi lời mời kết nối.");
+      } else if (mode === "send_group") {
+        if (!discoverable) {
+          toast.info(
+            "Hãy bật 'Cho phép mọi người tìm kiếm bạn' để kết nối dễ dàng hơn."
+          );
+        }
+
+        const res = await createMatchRequest({
+          type: "group",
+          targetRoomId: target.id,
+        });
+
+        const reqDoc = res?.request || res?.data?.request || null;
+        const newId = reqDoc?._id || reqDoc?.id;
+
+        if (newId) {
+          setRequestMaps((prev) => ({
+            ...prev,
+            outgoingToRoom: {
+              ...prev.outgoingToRoom,
+              [target.id]: newId,
+            },
+          }));
+        }
+
+        toast.success("Đã gửi yêu cầu xin tham gia nhóm.");
+      } else if (mode === "cancel_duo") {
+        if (!requestId) return;
+
+        await cancelMatchRequest(requestId);
+
+        setRequestMaps((prev) => {
+          const outgoingToUser = { ...prev.outgoingToUser };
+          delete outgoingToUser[target.id];
+          return { ...prev, outgoingToUser };
+        });
+
+        toast.success("Đã hủy lời mời kết nối.");
+      } else if (mode === "cancel_group") {
+        if (!requestId) return;
+
+        await cancelMatchRequest(requestId);
+
+        setRequestMaps((prev) => {
+          const outgoingToRoom = { ...prev.outgoingToRoom };
+          delete outgoingToRoom[target.id];
+          return { ...prev, outgoingToRoom };
+        });
+
+        toast.success("Đã hủy yêu cầu tham gia nhóm.");
+      } else if (mode === "accept_duo") {
+        if (!requestId) return;
+
+        const res = await acceptMatchRequest(requestId);
+        // Nếu sau này muốn tự động điều hướng vào phòng:
+        // if (res?.roomId) nav(`/ket-noi/phong/${res.roomId}`);
+
+        setRequestMaps((prev) => {
+          const incomingFromUser = { ...prev.incomingFromUser };
+          delete incomingFromUser[target.id];
+          return { ...prev, incomingFromUser };
+        });
+
+        toast.success("Đã xác nhận lời mời kết nối.");
       }
+
+      onCreatedRequest && onCreatedRequest();
+      closeConfirm();
     } catch (e) {
-      console.error("createMatchRequest error:", e);
+      console.error("Confirm connect action error:", e);
       const msg =
         e?.response?.data?.message ||
         e?.response?.data?.error ||
-        "Không thể gửi lời mời. Vui lòng thử lại.";
+        "Không thể thực hiện thao tác. Vui lòng thử lại.";
       toast.error(msg);
+    } finally {
+      setConfirmLoading(false);
     }
   }
 
   return (
-    <section className="cn-tab-nearby">
-      {/* Toolbar: kết quả + tạo nhóm + toggle view */}
-      <div className="cn-main-toolbar">
-        <div className="cn-main-toolbar-left">
-          <span className="cn-result-text">
-            {loading
-              ? "Đang tìm gợi ý quanh bạn..."
-              : `${resultCount} kết quả phù hợp quanh bạn`}
-          </span>
-        </div>
-        <div className="cn-main-toolbar-right">
-          <button
-            className="cn-create-group-btn"
-            type="button"
-            onClick={() => nav("/ket-noi/tao-nhom")}
-          >
-            <span className="cn-create-group-icon">＋</span>
-            <span>Tạo nhóm mới (tối đa 5 người)</span>
-          </button>
-          <div className="cn-view-toggle">
+    <>
+      <section className="cn-tab-nearby">
+        {/* Toolbar: kết quả + tạo nhóm + toggle view */}
+        <div className="cn-main-toolbar">
+          <div className="cn-main-toolbar-left">
+            <span className="cn-result-text">
+              {loading
+                ? "Đang tìm gợi ý quanh bạn..."
+                : `${resultCount} kết quả phù hợp quanh bạn`}
+            </span>
+          </div>
+          <div className="cn-main-toolbar-right">
             <button
+              className="cn-create-group-btn"
               type="button"
-              className={
-                "cn-view-toggle-btn" +
-                (viewMode === "grid" ? " is-active" : "")
-              }
-              onClick={() => setViewMode("grid")}
+              onClick={() => nav("/ket-noi/tao-nhom")}
             >
-              <i className="fa-solid fa-table-cells-large" />
+              <span className="cn-create-group-icon">＋</span>
+              <span>Tạo nhóm mới (tối đa 5 người)</span>
             </button>
-            <button
-              type="button"
-              className={
-                "cn-view-toggle-btn" +
-                (viewMode === "list" ? " is-active" : "")
-              }
-              onClick={() => setViewMode("list")}
-            >
-              <i className="fa-solid fa-list" />
-            </button>
+            <div className="cn-view-toggle">
+              <button
+                type="button"
+                className={
+                  "cn-view-toggle-btn" +
+                  (viewMode === "grid" ? " is-active" : "")
+                }
+                onClick={() => setViewMode("grid")}
+              >
+                <i className="fa-solid fa-table-cells-large" />
+              </button>
+              <button
+                type="button"
+                className={
+                  "cn-view-toggle-btn" +
+                  (viewMode === "list" ? " is-active" : "")
+                }
+                onClick={() => setViewMode("list")}
+              >
+                <i className="fa-solid fa-list" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Thanh search */}
-      <div className="cn-main-search">
-        <div className="cn-search-input">
-          <i className="fa-solid fa-magnifying-glass" />
-          <input
-            type="text"
-            placeholder="Tìm theo tên, môn tập, mục tiêu..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Thông báo lỗi nếu có */}
-      {errorMsg && (
-        <div className="cn-error">
-          <p>{errorMsg}</p>
-        </div>
-      )}
-
-      {/* Pinned card của chính mình (nếu có) */}
-      {selfCard && (
-        <div className="cn-self-card-wrap">
-          <div className="cn-self-card-title">
-            <span>Hồ sơ của bạn</span>
+        {/* Thanh search */}
+        <div className="cn-main-search">
+          <div className="cn-search-input">
+            <i className="fa-solid fa-magnifying-glass" />
+            <input
+              type="text"
+              placeholder="Tìm theo tên, môn tập, mục tiêu..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
-          <ConnectCard
-            user={selfCard}
-            viewMode="list"
-            onInvite={null}
-          />
         </div>
-      )}
 
-      {/* Danh sách */}
-      {filteredList.length === 0 && !loading ? (
-        <div className="cn-empty">
-          <p>
-            Chưa tìm thấy bạn tập phù hợp với bộ lọc hiện tại. Thử nới
-            rộng phạm vi hoặc thay đổi chế độ kết nối nhé.
-          </p>
-        </div>
-      ) : (
+        {/* Thông báo lỗi nếu có */}
+        {errorMsg && (
+          <div className="cn-error">
+            <p>{errorMsg}</p>
+          </div>
+        )}
+
+        {/* Danh sách card (self-card GHIM + các user khác) */}
         <div
           className={
             "cn-card-list " +
@@ -271,23 +414,55 @@ export default function TabNearby({
               : "cn-card-list--list")
           }
         >
+          {selfCard && (
+            <ConnectCard
+              key="self"
+              user={selfCard}
+              viewMode={viewMode}
+              inviteState={null} // không có nút
+              onOpenConfirm={null}
+              isSelf={true} // icon ghim & không navigate
+            />
+          )}
+
           {filteredList.map((u) => (
             <ConnectCard
               key={u.id}
               user={u}
               viewMode={viewMode}
-              onInvite={handleInvite}
+              inviteState={getInviteStateFor(u)}
+              onOpenConfirm={openConfirm}
+              isSelf={false}
             />
           ))}
         </div>
-      )}
-    </section>
+
+        {!loading && filteredList.length === 0 && (
+          <div className="cn-empty" style={{ marginTop: 8 }}>
+            <p>
+              Chưa tìm thấy bạn tập phù hợp với bộ lọc hiện tại. Thử nới rộng
+              phạm vi hoặc thay đổi chế độ kết nối nhé.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Modal xác nhận gửi/hủy/xác nhận lời mời */}
+      <ConnectRequestConfirmModal
+        open={confirmState.open}
+        mode={confirmState.mode}
+        targetName={confirmState.target?.nickname || ""}
+        onClose={closeConfirm}
+        onConfirm={handleConfirm}
+        loading={confirmLoading}
+      />
+    </>
   );
 }
 
 /* ===== Card: Grid & List ===== */
 
-function ConnectCard({ user, viewMode, onInvite }) {
+function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf = false }) {
   const nav = useNavigate();
 
   const {
@@ -299,12 +474,15 @@ function ConnectCard({ user, viewMode, onInvite }) {
     goal,
     trainingTypes = [],
     frequency,
+    intensityLabel,
     locationLabel,
     bio,
     isGroup,
     membersCount,
     imageUrl,
   } = user;
+
+  const isPreview = isSelf || !onOpenConfirm;
 
   const genderLabel =
     !isGroup && gender === "male"
@@ -315,10 +493,13 @@ function ConnectCard({ user, viewMode, onInvite }) {
       ? "Khác"
       : "";
 
-  const distanceShort =
-    typeof distanceKm === "number"
-      ? `Cách bạn ${Math.round(distanceKm)} km`
-      : "";
+  // Chỉ hiện khoảng cách khi có địa chỉ & distance & không phải self-card
+  const hasLocation = !!locationLabel;
+  const showDistance =
+    !isSelf && typeof distanceKm === "number" && hasLocation;
+  const distanceLabel = showDistance
+    ? `Cách bạn ${Math.round(distanceKm)} km`
+    : "";
 
   const metaLineParts = [];
   if (!isGroup && age) metaLineParts.push(`${age} tuổi`);
@@ -327,39 +508,70 @@ function ConnectCard({ user, viewMode, onInvite }) {
   const metaLine = metaLineParts.join(" · ");
 
   const goalLabel = goal || "";
-  const levelLabel = frequency || "";
+  const levelLabel = intensityLabel || "";
+
+  // trạng thái nút
+  const inviteType = inviteState?.type || null;
+  const inviteReqId = inviteState?.requestId || null;
+
+  let primaryLabel = "";
+  let primaryClass = "cn-btn-primary";
+
+  if (inviteType === "accept_duo") {
+    primaryLabel = "Xác nhận lời mời kết nối";
+    primaryClass = "cn-btn-success"; // xanh
+  } else if (inviteType === "cancel_duo") {
+    primaryLabel = "Hủy lời mời kết nối";
+    primaryClass = "cn-btn-cancel";
+  } else if (inviteType === "cancel_group") {
+    primaryLabel = "Hủy yêu cầu tham gia nhóm";
+    primaryClass = "cn-btn-cancel";
+  } else if (inviteType === "send_group") {
+    primaryLabel = "Xin tham gia nhóm";
+    primaryClass = "cn-btn-primary";
+  } else if (inviteType === "send_duo") {
+    primaryLabel = "Gửi lời mời kết nối";
+    primaryClass = "cn-btn-primary";
+  }
 
   const goProfile = () => {
-    // TODO: sau này tạo route hồ sơ public, ví dụ: /ket-noi/ho-so/:id
+    if (isSelf) return;
     nav(`/ket-noi/ho-so/${id}`);
   };
 
-  const handleInviteClick = () => {
-    onInvite && onInvite(user);
+  const handlePrimaryClick = () => {
+    if (!inviteType || !onOpenConfirm) return;
+    onOpenConfirm(inviteType, user, inviteReqId);
   };
 
   // ===== GRID STYLE (card có ảnh lớn) =====
   if (viewMode === "grid") {
     return (
       <article className="cn-card cn-card--grid">
+        {isSelf && (
+          <div className="cn-card-pin" title="Hồ sơ của bạn">
+            <i className="fa-solid fa-thumbtack" />
+          </div>
+        )}
+
         <div className="cn-card-img-wrap">
-          <img
-            src={imageUrl}
-            alt={nickname}
-            className="cn-card-img"
-          />
+          <img src={imageUrl} alt={nickname} className="cn-card-img" />
           <div className="cn-card-img-overlay">
-            <button
-              type="button"
-              className="cn-card-img-name-btn"
-              onClick={goProfile}
-            >
-              {nickname}
-            </button>
-            {distanceShort && (
-              <div className="cn-card-img-distance">
-                {distanceShort}
+            {isPreview ? (
+              <div className="cn-card-img-name-btn cn-card-img-name-static">
+                {nickname}
               </div>
+            ) : (
+              <button
+                type="button"
+                className="cn-card-img-name-btn"
+                onClick={goProfile}
+              >
+                {nickname}
+              </button>
+            )}
+            {distanceLabel && (
+              <div className="cn-card-img-distance">{distanceLabel}</div>
             )}
             {isGroup && (
               <div className="cn-card-img-badge">
@@ -370,9 +582,7 @@ function ConnectCard({ user, viewMode, onInvite }) {
         </div>
 
         <div className="cn-card-body">
-          {metaLine && (
-            <div className="cn-card-meta-line">{metaLine}</div>
-          )}
+          {metaLine && <div className="cn-card-meta-line">{metaLine}</div>}
 
           <div className="cn-card-chip-row">
             {goalLabel && (
@@ -385,19 +595,20 @@ function ConnectCard({ user, viewMode, onInvite }) {
 
           {bio && <p className="cn-card-bio-text">{bio}</p>}
 
-          {/* Luôn nằm cuối card nhờ margin-top:auto trong CSS */}
-          <div className="cn-card-actions">
-            <button
-              type="button"
-              className="cn-btn-primary"
-              onClick={handleInviteClick}
-            >
-              {isGroup ? "Xin tham gia nhóm" : "Gửi lời mời kết nối"}
-            </button>
-            <button type="button" className="cn-btn-ghost">
-              <i className="fa-solid fa-flag"></i>
-            </button>
-          </div>
+          {!isSelf && inviteType && (
+            <div className="cn-card-actions">
+              <button
+                type="button"
+                className={primaryClass}
+                onClick={handlePrimaryClick}
+              >
+                {primaryLabel}
+              </button>
+              <button type="button" className="cn-btn-ghost">
+                <i className="fa-solid fa-flag"></i>
+              </button>
+            </div>
+          )}
         </div>
       </article>
     );
@@ -406,25 +617,31 @@ function ConnectCard({ user, viewMode, onInvite }) {
   // ===== LIST STYLE =====
   return (
     <article className="cn-card cn-card--list">
+      {isSelf && (
+        <div className="cn-card-pin" title="Hồ sơ của bạn">
+          <i className="fa-solid fa-thumbtack" />
+        </div>
+      )}
+
       <div className="cn-avatar">
-        <img
-          src={imageUrl}
-          alt={nickname}
-          className="cn-avatar-img"
-        />
+        <img src={imageUrl} alt={nickname} className="cn-avatar-img" />
       </div>
 
       <div className="cn-card-main">
         <div className="cn-card-header">
           <div>
             <div className="cn-nickname-row">
-              <button
-                type="button"
-                className="cn-name-link"
-                onClick={goProfile}
-              >
-                {nickname}
-              </button>
+              {isPreview ? (
+                <span className="cn-name-static">{nickname}</span>
+              ) : (
+                <button
+                  type="button"
+                  className="cn-name-link"
+                  onClick={goProfile}
+                >
+                  {nickname}
+                </button>
+              )}
               {isGroup && (
                 <span className="cn-badge cn-badge-group">
                   Nhóm · {membersCount} / 5
@@ -440,40 +657,46 @@ function ConnectCard({ user, viewMode, onInvite }) {
               {locationLabel && (
                 <span className="cn-meta">📍 {locationLabel}</span>
               )}
-              {typeof distanceKm === "number" && (
-                <span className="cn-meta">
-                  Cách bạn ~{distanceKm.toFixed(1)} km
-                </span>
+              {distanceLabel && (
+                <span className="cn-meta">{distanceLabel}</span>
               )}
             </div>
           </div>
         </div>
 
+        {/* Chip Mục tiêu + Cường độ vận động */}
         <div className="cn-goal-row">
-          <span className="cn-badge cn-badge-goal">{goal}</span>
-          {trainingTypes.length > 0 && (
-            <span className="cn-meta">
-              Ưu tiên: {trainingTypes.join(" · ")}
-            </span>
+          {goalLabel && (
+            <span className="cn-badge cn-badge-goal">{goalLabel}</span>
+          )}
+          {levelLabel && (
+            <span className="cn-badge cn-badge-level">{levelLabel}</span>
           )}
         </div>
 
-        {frequency && <p className="cn-frequency">{frequency}</p>}
+        {/* Ưu tiên môn tập */}
+        {trainingTypes.length > 0 && (
+          <p className="cn-frequency">
+            Ưu tiên: {trainingTypes.join(" · ")}
+          </p>
+        )}
 
         {bio && <p className="cn-bio">{bio}</p>}
 
-        <div className="cn-card-actions">
-          <button
-            type="button"
-            className="cn-btn-primary"
-            onClick={handleInviteClick}
-          >
-            {isGroup ? "Xin tham gia nhóm" : "Gửi lời mời kết nối"}
-          </button>
-          <button type="button" className="cn-btn-ghost">
-            Báo cáo
-          </button>
-        </div>
+        {!isSelf && inviteType && (
+          <div className="cn-card-actions">
+            <button
+              type="button"
+              className={primaryClass}
+              onClick={handlePrimaryClick}
+            >
+              {primaryLabel}
+            </button>
+            <button type="button" className="cn-btn-ghost">
+              Báo cáo
+            </button>
+          </div>
+        )}
       </div>
     </article>
   );

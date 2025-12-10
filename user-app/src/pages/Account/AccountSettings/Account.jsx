@@ -13,6 +13,7 @@ import regionsVN from "../../../data/locations/vn/regions.json";
 import regionCenters from "../../../data/locations/vn/region-centers.json";
 
 import { validateNickname, validateEmailGmail, validatePhone } from "../../../lib/validators";
+const BIO_MAX_LENGTH = 300;
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => {
@@ -90,7 +91,7 @@ export default function AccountInfo() {
       dob: p.dob || "",
       phone: user.phone || "",
       email: user.email || "",
-      bio: p.bio || "",
+      bio: user.connectBio || "",
     });
 
     setAddr({
@@ -314,7 +315,7 @@ export default function AccountInfo() {
       (form.dob || "") === (p.dob || "") &&
       (form.phone || "") === (user.phone || "") &&
       (form.email || "") === (user.email || "") &&
-      (form.bio || "") === (p.bio || "");
+      (form.bio || "") === (user.connectBio || "");
 
     const sameAddr =
       (addr.country || "") === (a.country || "") &&
@@ -344,7 +345,7 @@ export default function AccountInfo() {
       dob: p.dob || "",
       phone: user.phone || "",
       email: user.email || "",
-      bio: p.bio || "",
+      bio: user.connectBio || "",
     });
     setAddr({
       country: a.country || "",
@@ -377,7 +378,7 @@ export default function AccountInfo() {
         "profile.nickname": form.nickname,
         "profile.dob": form.dob,
         "profile.sex": form.sex,
-        "profile.bio": form.bio,
+        connectBio: form.bio,
         "profile.address.country": addr.country,
         "profile.address.countryCode": addr.countryCode,
         "profile.address.city": addr.city,
@@ -600,23 +601,27 @@ export default function AccountInfo() {
                 </div>
               </div>
             </div>
-
             {/* Bio */}
             <div className="acc-field-block">
               <label className="acc-label" htmlFor="acc-bio">
                 Bio
               </label>
-              <textarea
-                id="acc-bio"
-                name="bio"
-                className="acc-input-bio"
-                value={form.bio}
-                onChange={handleFormChange}
-                placeholder="Giới thiệu ngắn về bạn"
-              />
+              <div className="acc-input-bio-wrapper">
+                <textarea
+                  id="acc-bio"
+                  name="bio"
+                  className="acc-input-bio"
+                  value={form.bio}
+                  onChange={handleFormChange}
+                  placeholder="Giới thiệu ngắn về bạn"
+                  maxLength={BIO_MAX_LENGTH} // theo validate 300 ký tự
+                />
+                <div className="acc-bio-counter">
+                  {form.bio.length}/{BIO_MAX_LENGTH}
+                </div>
+              </div>
             </div>
           </section>
-
           <hr className="acct-divider" />
 
           {/* Email */}

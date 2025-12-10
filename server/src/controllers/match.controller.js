@@ -22,9 +22,21 @@ const GOAL_LABELS = {
   tang_co: "Tăng cơ",
 };
 
+const INTENSITY_LABELS = {
+  level_1: "Không tập luyện, ít vận động",
+  level_2: "Vận động nhẹ nhàng",
+  level_3: "Chăm chỉ tập luyện",
+  level_4: "Rất năng động",
+};
+
 function goalLabelFromKey(key) {
   if (!key) return null;
   return GOAL_LABELS[key] || null;
+}
+
+function intensityLabelFromKey(key) {
+  if (!key) return null;
+  return INTENSITY_LABELS[key] || null;
 }
 
 function calcAge(dobValue) {
@@ -73,6 +85,10 @@ function buildNearbyUserCard(user) {
 
   const frequency = user.connectTrainingFrequencyLabel || "";
 
+  // === INTENSITY giống BodyProfile (ưu tiên key trong profile) ===
+  const intensityKey = profile.trainingIntensity || null;
+  const intensityLabel = intensityLabelFromKey(intensityKey) || null;
+
   const locationLabel = buildLocationLabel(
     profile,
     user.connectLocationLabel
@@ -91,7 +107,9 @@ function buildNearbyUserCard(user) {
     goal: goalLabel,
     goalKey,
     trainingTypes,
-    frequency,
+    frequency,          // tần suất (nếu sau này muốn dùng)
+    intensityKey,
+    intensityLabel,     // <= label hiển thị trên chip
     locationLabel,
     bio,
     imageUrl,

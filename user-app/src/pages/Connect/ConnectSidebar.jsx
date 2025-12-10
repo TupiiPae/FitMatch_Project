@@ -7,10 +7,7 @@ import TabMyConnections from "./TabMyConnections";
 import { toast } from "react-toastify";
 
 import { getMe } from "../../api/account";
-import {
-  getMatchStatus,
-  updateDiscoverable,
-} from "../../api/match";
+import { getMatchStatus, updateDiscoverable } from "../../api/match";
 import api from "../../lib/api";
 
 // ===== Helpers =====
@@ -26,7 +23,6 @@ const toAbs = (u) => {
 
 function calcAge(dob) {
   if (!dob) return null;
-  // hỗ trợ cả "YYYY-MM-DD" và ISO "YYYY-MM-DDTHH:mm:ss"
   const [yStr, mStr, dStrRaw] = String(dob).split("-");
   const y = Number(yStr);
   const m = Number(mStr || 1);
@@ -66,13 +62,6 @@ const GOAL_LABELS = {
   tang_co: "Tăng cơ",
 };
 
-function buildAddressLabel(profile) {
-  const addr = profile?.address || {};
-  if (addr.district && addr.city) return `${addr.district}, ${addr.city}`;
-  if (addr.city) return addr.city;
-  return "";
-}
-
 function getInitials(name) {
   if (!name) return "FM";
   return name
@@ -99,6 +88,7 @@ export default function ConnectSidebar() {
   // trạng thái match
   const [discoverable, setDiscoverable] = useState(false);
   const [hasAddressForConnect, setHasAddressForConnect] = useState(false);
+  const [hasRequestsTabEnabled, setHasRequestsTabEnabled] = useState(false);
 
   // filters
   const [activeTab, setActiveTab] = useState("nearby"); // "nearby" | "my-connections"
@@ -108,6 +98,8 @@ export default function ConnectSidebar() {
   const [genderFilter, setGenderFilter] = useState("all");
 
   const [loading, setLoading] = useState(true);
+  const [updatingDiscoverable, setUpdatingDiscoverable] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // ===== Load user + match status =====
   useEffect(() => {
@@ -130,8 +122,6 @@ export default function ConnectSidebar() {
         if (me && typeof me === "object") {
           setUser(me);
           const p = me.profile || {};
-
-          // set default gender filter = giới tính user nếu có
           if (p.sex === "male" || p.sex === "female") {
             setGenderFilter(p.sex);
           } else {
@@ -140,8 +130,17 @@ export default function ConnectSidebar() {
         }
 
         if (statusPayload) {
-          setDiscoverable(!!statusPayload.discoverable);
-          setHasAddressForConnect(!!statusPayload.hasAddressForConnect);
+          const data =
+            statusPayload && statusPayload.data
+              ? statusPayload.data
+              : statusPayload; // phòng trường hợp api/match.js trả .data
+
+          setDiscoverable(!!data.discoverable);
+          setHasAddressForConnect(!!data.hasAddressForConnect);
+
+          if (data.pendingRequestsCount && data.pendingRequestsCount > 0) {
+            setHasRequestsTabEnabled(true);
+          }
         }
       } catch (e) {
         console.error("ConnectSidebar init error:", e);
@@ -169,57 +168,80 @@ export default function ConnectSidebar() {
 
   const displayGender = p.sex || null;
   const displayAge = calcAge(p.dob);
-  const displayLocation = buildAddressLabel(p);
 
   const goalKey = user?.connectGoalKey || p.goal || null;
   const goalLabel =
-    user?.connectGoalLabel ||
-    (goalKey && GOAL_LABELS[goalKey]) ||
-    "";
-
-  // ===== Toggle discoverable =====
-  const handleToggleDiscoverable = async () => {
-    try {
-      if (!discoverable && !hasAddressForConnect) {
-        toast.warn(
-          "Bạn cần cập nhật địa chỉ trong Thông tin tài khoản trước khi bật."
-        );
-        nav("/tai-khoan/tai-khoan");
-        return;
-      }
-
-      const next = !discoverable;
-      setDiscoverable(next);
-
-      const res = await updateDiscoverable(next); // trả { discoverable }
-      const payload = res?.data ?? res;
-
-      if (payload && typeof payload.discoverable === "boolean") {
-        setDiscoverable(payload.discoverable);
-      }
-
-      if (next) {
-        toast.success("Đã bật cho phép mọi người tìm kiếm bạn.");
-      } else {
-        toast.info("Đã tắt hiển thị hồ sơ trong kết quả tìm kiếm.");
-      }
-    } catch (e) {
-      console.error("updateDiscoverable error:", e);
-      setDiscoverable((v) => !v); // revert
-      toast.error(
-        e?.response?.data?.message ||
-          e?.response?.data?.error ||
-          "Không thể cập nhật trạng thái kết nối."
-      );
-    }
-  };
+    user?.connectGoalLabel || (goalKey && GOAL_LABELS[goalKey]) || "";
 
   const displayUser = {
     name: displayName,
     gender: displayGender,
     age: displayAge,
     goalLabel,
-    locationLabel: displayLocation,
+  };
+
+  // ===== Gọi API cập nhật discoverable (không set state trước) =====
+  const applyDiscoverable = async (value) => {
+    try {
+      setUpdatingDiscoverable(true);
+
+      const res = await updateDiscoverable(value);
+      const payload = res?.data ?? res;
+
+      const serverVal =
+        payload && typeof payload.discoverable === "boolean"
+          ? payload.discoverable
+          : value;
+
+      setDiscoverable(serverVal); // ==> TabNearby sẽ re-load sau khi BE cập nhật xong
+
+      if (serverVal) {
+        toast.success("Đã bật cho phép mọi người tìm kiếm bạn.");
+      } else {
+        toast.info("Đã tắt hiển thị hồ sơ trong kết quả tìm kiếm.");
+      }
+    } catch (e) {
+      console.error("updateDiscoverable error:", e);
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        "Không thể cập nhật trạng thái kết nối.";
+      toast.error(msg);
+    } finally {
+      setUpdatingDiscoverable(false);
+    }
+  };
+
+  // ===== Toggle discoverable =====
+  const handleToggleDiscoverable = () => {
+    if (updatingDiscoverable) return;
+
+    // Đang ON -> tắt luôn, không cần modal
+    if (discoverable) {
+      applyDiscoverable(false);
+      return;
+    }
+
+    // Bật từ OFF -> ON
+    if (!hasAddressForConnect) {
+      toast.warn(
+        "Bạn cần cập nhật địa chỉ trong Thông tin tài khoản trước khi bật."
+      );
+      nav("/tai-khoan/tai-khoan");
+      return;
+    }
+
+    // Có địa chỉ -> mở modal xác nhận
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmEnable = () => {
+    setShowConfirmModal(false);
+    applyDiscoverable(true);
+  };
+
+  const handleCancelEnable = () => {
+    setShowConfirmModal(false);
   };
 
   return (
@@ -250,34 +272,28 @@ export default function ConnectSidebar() {
                       "cn-switch" + (discoverable ? " is-on" : "")
                     }
                     onClick={handleToggleDiscoverable}
-                    disabled={loading}
+                    disabled={loading || updatingDiscoverable}
                   >
                     <span className="cn-switch-knob" />
                   </button>
                 </div>
-
-                {hasAddressForConnect ? (
-                  <div className="cn-side-sub">
-                    {discoverable
-                      ? 'Hồ sơ của bạn đang hiển thị trong "Tìm kiếm xung quanh".'
-                      : 'Bật lên để hồ sơ của bạn xuất hiện trong "Tìm kiếm xung quanh".'}
-                  </div>
-                ) : (
-                  <div className="cn-side-sub">
-                    Bạn cần nhập địa chỉ trong{" "}
-                    <strong>Thông tin tài khoản</strong> để dùng chức
-                    năng kết nối xung quanh.
-                  </div>
-                )}
-
-                {displayLocation && (
-                  <div className="cn-side-location">
-                    <i className="fa-solid fa-location-dot" />{" "}
-                    {displayLocation}
-                  </div>
-                )}
               </div>
             </div>
+
+            {/* Dòng mô tả bên dưới cả block avatar + name + toggle */}
+            {hasAddressForConnect ? (
+              <div className="cn-side-sub">
+                {discoverable
+                  ? 'Hồ sơ của bạn đang hiển thị trong "Tìm kiếm xung quanh".'
+                  : 'Bật lên để hồ sơ của bạn xuất hiện trong "Tìm kiếm xung quanh".'}
+              </div>
+            ) : (
+              <div className="cn-side-sub">
+                Bạn cần nhập địa chỉ trong{" "}
+                <strong>Thông tin tài khoản</strong> để dùng chức năng
+                kết nối xung quanh.
+              </div>
+            )}
 
             {/* Menu bên trái */}
             <nav className="cn-side-menu">
@@ -329,9 +345,19 @@ export default function ConnectSidebar() {
                 type="button"
                 className={
                   "cn-side-link" +
-                  (activeTab === "my-connections" ? " is-active" : "")
+                  (activeTab === "my-connections" ? " is-active" : "") +
+                  (!hasRequestsTabEnabled ? " is-disabled" : "")
                 }
-                onClick={() => setActiveTab("my-connections")}
+                disabled={!hasRequestsTabEnabled}
+                title={
+                  hasRequestsTabEnabled
+                    ? ""
+                    : "Tab này sẽ mở khi bạn có lời mời kết nối hoặc yêu cầu tham gia nhóm."
+                }
+                onClick={() => {
+                  if (!hasRequestsTabEnabled) return;
+                  setActiveTab("my-connections");
+                }}
               >
                 <span className="cn-side-link-icon">
                   <i className="fa-solid fa-users" />
@@ -446,8 +472,7 @@ export default function ConnectSidebar() {
                   </button>
                 </div>
                 <p className="cn-filter-hint">
-                  Giới tính của bạn:{" "}
-                  {getGenderLabel(displayUser.gender)}
+                  Giới tính của bạn: {getGenderLabel(displayUser.gender)}
                 </p>
               </div>
 
@@ -491,12 +516,57 @@ export default function ConnectSidebar() {
               ageRange={ageRange}
               genderFilter={genderFilter}
               discoverable={discoverable}
+              onCreatedRequest={() => setHasRequestsTabEnabled(true)}
             />
           ) : (
             <TabMyConnections currentUser={user} />
           )}
         </main>
       </div>
+
+      {/* ===== Modal xác nhận bật hiển thị tìm kiếm ===== */}
+      {showConfirmModal && (
+        <div
+          className="cn-modal-backdrop"
+          onClick={handleCancelEnable}
+        >
+          <div
+            className="cn-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="cn-modal-title">
+              Cho phép mọi người tìm kiếm bạn?
+            </h3>
+            <p className="cn-modal-text">
+              Khi bật tính năng này, hồ sơ của bạn sẽ xuất hiện trong mục{" "}
+              <strong>"Tìm kiếm xung quanh"</strong> để mọi người có thể
+              gửi lời mời kết nối hoặc mời bạn tham gia nhóm tập luyện.
+            </p>
+            <p className="cn-modal-text cn-modal-text-small">
+              Bạn có thể tắt bất cứ lúc nào. Thông tin liên hệ nhạy cảm
+              (email, mật khẩu, ...) sẽ không bị hiển thị công khai.
+            </p>
+            <div className="cn-modal-actions">
+              <button
+                type="button"
+                className="cn-btn-ghost"
+                onClick={handleCancelEnable}
+                disabled={updatingDiscoverable}
+              >
+                Để sau
+              </button>
+              <button
+                type="button"
+                className="cn-btn-primary"
+                onClick={handleConfirmEnable}
+                disabled={updatingDiscoverable}
+              >
+                Bật hiển thị
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

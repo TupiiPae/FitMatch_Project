@@ -52,6 +52,14 @@
   font-weight: 700;
   font-size: 18px;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.cn-side-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 999px;
 }
 
 .cn-side-nickname {
@@ -138,6 +146,17 @@
 
 .cn-side-link:hover {
   background: #111827;
+}
+
+.cn-side-link.is-disabled,
+.cn-side-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cn-side-link.is-disabled:hover,
+.cn-side-link:disabled:hover {
+  background: transparent;
 }
 
 .cn-side-link.is-active {
@@ -472,12 +491,44 @@
 
 /* Khung card chung */
 .cn-card {
+  position: relative; 
   border-radius: 14px;
   border: 1px solid #1f2937;
   background: #020617;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
   color: #e5e7eb;
   overflow: hidden;
+}
+
+.cn-card-pin {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #f9fafb;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.6);
+  z-index: 2;
+}
+
+.cn-card-pin i {
+  transform: rotate(25deg);
+}
+
+.cn-error {
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1px solid #b91c1c;
+  background: rgba(127, 29, 29, 0.35);
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #fecaca;
 }
 
 /* GRID mode (giống hình demo) */
@@ -541,13 +592,17 @@
   font-size: 11px;
 }
 
-/* Thân card grid */
 .cn-card-body {
   padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   flex: 1; /* để có thể đẩy actions xuống đáy */
+}
+
+/* Body card grid cao tối thiểu ~200px để chứa mô tả */
+.cn-card--grid .cn-card-body {
+  min-height: 200px;
 }
 
 .cn-card-meta-line {
@@ -586,6 +641,50 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.cn-btn-success {
+  border-radius: 4px;
+  border: 1px solid transparent;
+  flex: 1;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #16a34a; /* xanh lá */
+  color: #ffffff;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.cn-btn-success:hover {
+  background: #22c55e;
+}
+
+.cn-btn-success:active {
+  transform: translateY(1px);
+}
+
+.cn-btn-cancel {
+  border-radius: 4px;
+  border: 1px solid #4b5563;
+  flex: 1;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #4b5563;     /* xám đậm */
+  color: #e5e7eb;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.cn-btn-cancel:hover {
+  background: #6b7280;     /* xám sáng hơn khi hover */
+}
+
+.cn-btn-cancel:active {
+  transform: translateY(1px);
+}
+
+
 
 /* ===== LIST mode – avatar vuông ===== */
 
@@ -677,6 +776,13 @@
 .cn-badge-goal {
   background: #221010;
   color: #fca5a5;
+}
+
+/* NEW: chip Cường độ vận động trong list mode */
+.cn-badge-level {
+  background: #020617;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
 }
 
 /* Extra info list mode */
@@ -936,6 +1042,54 @@
 .cn-request-actions .cn-btn-ghost {
   flex: 1;
 }
+
+/* ===== Modal xác nhận bật hiển thị kết nối ===== */
+
+.cn-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.8);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cn-modal {
+  width: 420px;
+  max-width: calc(100% - 32px);
+  border-radius: 16px;
+  border: 1px solid #1f2937;
+  background: #020617;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.75);
+  padding: 18px 18px 14px;
+  color: #e5e7eb;
+}
+
+.cn-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f9fafb;
+  margin: 0 0 6px;
+}
+
+.cn-modal-text {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0 0 4px;
+}
+
+.cn-modal-text-small {
+  font-size: 12px;
+}
+
+.cn-modal-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 
 /* Responsive: 2 cột / 1 cột cho requests */
 @media (max-width: 1200px) {
