@@ -25,7 +25,7 @@
 
 .cn-filters {
   background: #020617;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #1f2937;
   padding: 16px 16px 18px;
   box-shadow: 0 14px 45px rgba(0, 0, 0, 0.45);
@@ -303,7 +303,7 @@
 .cn-side-goal-highlight {
   margin-top: 14px;
   padding: 10px 10px 9px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: radial-gradient(
       circle at top left,
       rgba(239, 68, 68, 0.18),
@@ -492,7 +492,7 @@
 /* Khung card chung */
 .cn-card {
   position: relative; 
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px solid #1f2937;
   background: #020617;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
@@ -806,14 +806,14 @@
 
 .cn-btn-primary {
   border-radius: 4px;
-  border: 1px solid transparent;
+  border: 1px solid #4b5563;
   flex: 1;
   padding: 7px 14px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  background: #f00519;
-  color: #ffffff;
+  background: #4b5563;     /* xám đậm */
+  color: #e5e7eb;
   transition: background-color 0.15s ease, transform 0.05s ease;
 }
 
@@ -828,8 +828,8 @@
 .cn-btn-ghost {
   border-radius: 4px;
   border: 1px solid #4b5563;
-  padding: 2px 10px;
-  font-size: 16px;
+  padding: 2px 16px;
+  font-size: 13px;
   cursor: pointer;
   background: transparent;
   color: #e5e7eb;
@@ -843,7 +843,7 @@
 
 /* Empty state */
 .cn-empty {
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px dashed #4b5563;
   padding: 16px;
   font-size: 13px;
@@ -871,7 +871,7 @@
 }
 
 .cn-myconnections-card {
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid #1f2937;
   background: #020617;
   padding: 14px 16px;
@@ -931,7 +931,7 @@
 
 /* Mỗi request là 1 card */
 .cn-request-row {
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid #1f2937;
   background: #020617;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
@@ -1058,7 +1058,7 @@
 .cn-modal {
   width: 420px;
   max-width: calc(100% - 32px);
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #1f2937;
   background: #020617;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.75);

@@ -67,7 +67,49 @@ function buildLocationLabel(profile, storedLabel) {
   return district || city || country || "";
 }
 
-function buildNearbyUserCard(user) {
+function buildAreaInfo(meProfile, otherProfile) {
+  if (!meProfile || !otherProfile) {
+    return { areaKey: null, areaLabel: "" };
+  }
+
+  const a = meProfile.address || {};
+  const b = otherProfile.address || {};
+
+  const norm = (v) => (v || "").toString().trim().toLowerCase();
+
+  const cityA = norm(a.city);
+  const cityB = norm(b.city);
+  const districtA = norm(a.district);
+  const districtB = norm(b.district);
+  const wardA = norm(a.ward);
+  const wardB = norm(b.ward);
+
+  // Không có thông tin địa chỉ → không tính khu vực
+  if (!cityA || !cityB) {
+    return { areaKey: null, areaLabel: "" };
+  }
+
+  if (cityA === cityB) {
+    if (districtA && districtB && districtA === districtB) {
+      if (wardA && wardB && wardA === wardB) {
+        return { areaKey: "same_ward", areaLabel: "Rất gần bạn" }; // cùng phường
+      }
+      return {
+        areaKey: "same_district",
+        areaLabel: "Trong quận của bạn", // cùng quận
+      };
+    }
+    return {
+      areaKey: "same_city",
+      areaLabel: "Cùng thành phố",
+    };
+  }
+
+  return { areaKey: "other", areaLabel: "Ngoài khu vực" };
+}
+
+
+function buildNearbyUserCard(user, meProfile) {
   const profile = user.profile || {};
   const nickname =
     profile.nickname || user.username || "Người dùng FitMatch";
@@ -85,7 +127,7 @@ function buildNearbyUserCard(user) {
 
   const frequency = user.connectTrainingFrequencyLabel || "";
 
-  // === INTENSITY giống BodyProfile (ưu tiên key trong profile) ===
+  // INTENSITY giống BodyProfile (ưu tiên key trong profile)
   const intensityKey = profile.trainingIntensity || null;
   const intensityLabel = intensityLabelFromKey(intensityKey) || null;
 
@@ -97,24 +139,30 @@ function buildNearbyUserCard(user) {
   const bio = user.connectBio || "";
   const imageUrl = profile.avatarUrl || null;
 
+  // 🔹 Tính khu vực so với chủ tài khoản
+  const { areaKey, areaLabel } = buildAreaInfo(meProfile, profile);
+
   return {
     id: user._id,
     isGroup: false,
     nickname,
     age,
     gender,
-    distanceKm: null, // TODO: tính theo geo sau
+    // distanceKm: null, // bỏ luôn, không dùng nữa
     goal: goalLabel,
     goalKey,
     trainingTypes,
-    frequency,          // tần suất (nếu sau này muốn dùng)
+    frequency,
     intensityKey,
-    intensityLabel,     // <= label hiển thị trên chip
+    intensityLabel,
     locationLabel,
     bio,
     imageUrl,
+    areaKey,   // "same_ward" | "same_district" | "same_city" | "other" | null
+    areaLabel, // Text hiển thị: "Rất gần bạn"...
   };
 }
+
 
 function buildNearbyGroupCard(room) {
   const membersCount = room.members?.length || 0;
@@ -124,7 +172,7 @@ function buildNearbyGroupCard(room) {
     isGroup: true,
     membersCount,
     gender: "mixed",
-    distanceKm: null,
+    // distanceKm: null,
     goal: room.goalKey || null,
     goalKey: room.goalKey || null,
     trainingTypes: room.trainingTypes || [],
@@ -132,6 +180,8 @@ function buildNearbyGroupCard(room) {
     locationLabel: room.locationLabel || "",
     bio: room.description || "",
     imageUrl: room.coverImageUrl || null,
+    areaKey: null,
+    areaLabel: "",
   };
 }
 
@@ -277,13 +327,20 @@ export async function listNearby(req, res, next) {
         .lean();
     }
 
-    const userCards = users.map(buildNearbyUserCard);
-    const groupCards = groups.map(buildNearbyGroupCard);
+    const userCards =
+      mode === "one_to_one"
+        ? users.map((u) => buildNearbyUserCard(u, me.profile))
+        : [];
+
+    const groupCards =
+      mode === "group" ? groups.map(buildNearbyGroupCard) : [];
 
     // Pinned card của chính chủ nếu discoverable
     let selfCard = null;
     if (me.connectDiscoverable) {
-      selfCard = buildNearbyUserCard(me);
+      selfCard = buildNearbyUserCard(me, me.profile);
+      selfCard.areaKey = "home";
+      selfCard.areaLabel = "Nhà";
     }
 
     return responseOk(res, {

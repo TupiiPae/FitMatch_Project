@@ -3,7 +3,7 @@ import React from "react";
 
 export default function ConnectRequestConfirmModal({
   open,
-  mode,          // 'send_duo' | 'send_group' | 'cancel_duo' | 'cancel_group' | 'accept_duo'
+  mode,          // 'send_duo' | 'send_group' | 'cancel_duo' | 'cancel_group' | 'accept_duo' | 'reject_duo'
   targetName,    // tên user / nhóm
   onClose,
   onConfirm,
@@ -39,6 +39,12 @@ export default function ConnectRequestConfirmModal({
       title = "Hủy yêu cầu tham gia nhóm?";
       desc = `Yêu cầu tham gia nhóm "${targetName}" đang chờ xét duyệt. Bạn có chắc chắn muốn hủy yêu cầu này?`;
       primaryLabel = "Hủy yêu cầu";
+      primaryClass = "cn-btn-primary";
+      break;
+    case "reject_duo":
+      title = "Từ chối lời mời kết nối?";
+      desc = `Bạn sắp từ chối lời mời kết nối từ ${targetName}. Sau khi từ chối, nếu muốn kết nối lại, hai bạn cần gửi lời mời mới.`;
+      primaryLabel = "Từ chối lời mời";
       primaryClass = "cn-btn-primary";
       break;
     case "accept_duo":

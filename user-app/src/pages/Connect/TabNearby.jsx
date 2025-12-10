@@ -153,10 +153,25 @@ export default function TabNearby({
       if (connectionMode === "one_to_one" && u.isGroup) return false;
       if (connectionMode === "group" && !u.isGroup) return false;
 
-      // Vị trí
-      if (locationRange !== "any" && typeof u.distanceKm === "number") {
-        const maxRange = Number(locationRange);
-        if (u.distanceKm > maxRange) return false;
+      // Vị trí theo "khu vực" (chỉ áp dụng cho user 1:1, group bỏ qua như cũ)
+      if (!u.isGroup && locationRange !== "any") {
+        const key = u.areaKey; // same_ward | same_district | same_city | other
+        if (!key) return false;
+
+        if (locationRange === "same_city") {
+          // chấp nhận cùng thành phố / cùng quận / cùng phường
+          if (!["same_city", "same_district", "same_ward"].includes(key)) {
+            return false;
+          }
+        } else if (locationRange === "same_district") {
+          // chấp nhận cùng quận hoặc cùng phường
+          if (!["same_district", "same_ward"].includes(key)) {
+            return false;
+          }
+        } else if (locationRange === "same_ward") {
+          // chỉ đúng phường
+          if (key !== "same_ward") return false;
+        }
       }
 
       // Độ tuổi
@@ -462,7 +477,13 @@ export default function TabNearby({
 
 /* ===== Card: Grid & List ===== */
 
-function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf = false }) {
+function ConnectCard({
+  user,
+  viewMode,
+  inviteState,
+  onOpenConfirm,
+  isSelf = false,
+}) {
   const nav = useNavigate();
 
   const {
@@ -470,7 +491,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf = fals
     nickname,
     age,
     gender,
-    distanceKm,
+    // distanceKm,        // không dùng nữa, có thể xoá luôn nếu muốn
     goal,
     trainingTypes = [],
     frequency,
@@ -480,6 +501,8 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf = fals
     isGroup,
     membersCount,
     imageUrl,
+    areaKey,
+    areaLabel,
   } = user;
 
   const isPreview = isSelf || !onOpenConfirm;
@@ -493,13 +516,8 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf = fals
       ? "Khác"
       : "";
 
-  // Chỉ hiện khoảng cách khi có địa chỉ & distance & không phải self-card
-  const hasLocation = !!locationLabel;
-  const showDistance =
-    !isSelf && typeof distanceKm === "number" && hasLocation;
-  const distanceLabel = showDistance
-    ? `Cách bạn ${Math.round(distanceKm)} km`
-    : "";
+  // Text khu vực: "Nhà" cho self-card, còn lại lấy từ areaLabel
+  const areaText = isSelf ? "Nhà" : areaLabel || "";
 
   const metaLineParts = [];
   if (!isGroup && age) metaLineParts.push(`${age} tuổi`);
@@ -522,7 +540,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf = fals
     primaryClass = "cn-btn-success"; // xanh
   } else if (inviteType === "cancel_duo") {
     primaryLabel = "Hủy lời mời kết nối";
-    primaryClass = "cn-btn-cancel";
+    primaryClass = "cn-btn-cancel"; // xám (class bạn đã style)
   } else if (inviteType === "cancel_group") {
     primaryLabel = "Hủy yêu cầu tham gia nhóm";
     primaryClass = "cn-btn-cancel";
@@ -570,9 +588,12 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf = fals
                 {nickname}
               </button>
             )}
-            {distanceLabel && (
-              <div className="cn-card-img-distance">{distanceLabel}</div>
+
+            {/* 🔹 Text khu vực trên overlay */}
+            {areaText && (
+              <div className="cn-card-img-distance">{areaText}</div>
             )}
+
             {isGroup && (
               <div className="cn-card-img-badge">
                 Nhóm · {membersCount || 1} / 5
@@ -648,17 +669,19 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf = fals
                 </span>
               )}
             </div>
+
             <div className="cn-meta-row">
               {!isGroup && age && (
                 <span className="cn-meta">
                   {age} tuổi · {genderLabel || "—"}
                 </span>
               )}
+
+              {/* 🔹 Dòng khu vực */}
+              {areaText && <span className="cn-meta">{areaText}</span>}
+
               {locationLabel && (
                 <span className="cn-meta">📍 {locationLabel}</span>
-              )}
-              {distanceLabel && (
-                <span className="cn-meta">{distanceLabel}</span>
               )}
             </div>
           </div>

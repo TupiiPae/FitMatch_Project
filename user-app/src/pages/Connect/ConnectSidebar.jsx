@@ -37,12 +37,10 @@ function calcAge(dob) {
 }
 
 const LOCATION_RANGE_OPTIONS = [
-  { value: "any", label: "Không giới hạn" },
-  { value: "20", label: "Trong vòng 20 km" },
-  { value: "15", label: "Trong vòng 15 km" },
-  { value: "10", label: "Trong vòng 10 km" },
-  { value: "5", label: "Trong vòng 5 km" },
-  { value: "3", label: "Trong vòng 3 km" },
+  { value: "any",          label: "Không giới hạn khu vực" },
+  { value: "same_city",    label: "Cùng thành phố" },
+  { value: "same_district",label: "Trong quận của bạn" },
+  { value: "same_ward",    label: "Rất gần bạn (cùng phường)" },
 ];
 
 const AGE_RANGE_OPTIONS = [
@@ -284,8 +282,8 @@ export default function ConnectSidebar() {
             {hasAddressForConnect ? (
               <div className="cn-side-sub">
                 {discoverable
-                  ? 'Hồ sơ của bạn đang hiển thị trong "Tìm kiếm xung quanh".'
-                  : 'Bật lên để hồ sơ của bạn xuất hiện trong "Tìm kiếm xung quanh".'}
+                  ? 'Bạn đang được hiển thị và có thể tìm kiếm trên cộng đồng.'
+                  : 'Bật chức năng kết nối để hồ sơ của bạn có thể được tìm kiếm trên cộng đồng.'}
               </div>
             ) : (
               <div className="cn-side-sub">
