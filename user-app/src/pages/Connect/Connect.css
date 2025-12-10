@@ -873,10 +873,6 @@
   margin-top: 6px;
 }
 
-/* Tab "Kết nối của tôi" */
-.cn-myconnections {
-  margin-top: 10px;
-}
 
 .cn-myconnections h2 {
   font-size: 18px;
@@ -895,7 +891,7 @@
   border-radius: 8px;
   border: 1px solid #1f2937;
   background: #020617;
-  padding: 14px 16px;
+  padding: 12px 16px;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
   color: #e5e7eb;
 }
@@ -924,11 +920,6 @@
 }
 
 /* ===== Lời mời kết nối (pending) trong TabMyConnections – GRID 3 cột ===== */
-
-.cn-requests-section {
-  margin-top: 8px;
-}
-
 .cn-requests-title {
   font-size: 14px;
   font-weight: 600;

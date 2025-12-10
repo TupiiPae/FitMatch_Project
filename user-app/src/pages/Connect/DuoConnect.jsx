@@ -8,7 +8,7 @@ import { getMatchStatus } from "../../api/match";
 import { getMe } from "../../api/account";
 import { toast } from "react-toastify";
 
-export default function DuoConnect() {
+export default function DuoConnect({ onLeftRoom }) {
   const nav = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,6 @@ export default function DuoConnect() {
       try {
         setLoading(true);
 
-        // getMatchStatus() đã unwrap → trả về object { discoverable, activeRoomId, ... }
         const [statusData, meRaw] = await Promise.all([
           getMatchStatus(),
           getMe().catch(() => null),
@@ -39,17 +38,24 @@ export default function DuoConnect() {
         const activeRoomType = statusData?.activeRoomType;
 
         if (!activeRoomId || activeRoomType !== "duo") {
-          toast.info("Hiện bạn chưa tham gia phòng kết nối 1:1 nào.");
-          nav("/ket-noi");
+          const msg =
+            "Hiện bạn chưa tham gia phòng kết nối 1:1 nào.";
+          toast.info(msg);
+
+          // Nếu đang được nhúng bên trong TabMyConnections
+          if (typeof onLeftRoom === "function") {
+            onLeftRoom();
+          } else {
+            // Trường hợp dùng route riêng `/ket-noi/duo`
+            nav("/ket-noi");
+          }
           return;
         }
 
         const meData = meRaw || null;
 
-        // ✳️ baseURL của axios đã là /api → KHÔNG thêm /api nữa
         const roomRes = await api.get(`/match/rooms/${activeRoomId}`);
         const payload = roomRes?.data ?? roomRes;
-        // responseOk(res, room) → { ok: true, data: room }
         const roomData = payload?.data ?? payload ?? null;
 
         if (cancelled) return;
@@ -64,7 +70,12 @@ export default function DuoConnect() {
             e?.response?.data?.error ||
             "Không thể tải thông tin phòng ghép đôi.";
           toast.error(msg);
-          nav("/ket-noi");
+
+          if (typeof onLeftRoom === "function") {
+            onLeftRoom();
+          } else {
+            nav("/ket-noi");
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -75,7 +86,7 @@ export default function DuoConnect() {
     return () => {
       cancelled = true;
     };
-  }, [nav]);
+  }, [nav, onLeftRoom]);
 
   const myId = me?._id || me?.id || null;
 
@@ -114,7 +125,6 @@ export default function DuoConnect() {
       return { slotMe: only, slotPartner: null };
     }
 
-    // 2 thành viên
     const m1 = normMember(members[0]);
     const m2 = normMember(members[1]);
 
@@ -163,11 +173,16 @@ export default function DuoConnect() {
     if (!room?._id) return;
     try {
       setLeaving(true);
-      // KHÔNG thêm /api nữa
       await api.post(`/match/rooms/${room._id}/leave`);
       toast.info("Bạn đã rời khỏi phòng ghép đôi.");
       setLeaveModalOpen(false);
-      nav("/ket-noi");
+
+      // nếu đang nhúng trong TabMyConnections
+      if (typeof onLeftRoom === "function") {
+        onLeftRoom();
+      } else {
+        nav("/ket-noi");
+      }
     } catch (e) {
       console.error("leaveMatchRoom error:", e);
       const msg =
@@ -189,7 +204,6 @@ export default function DuoConnect() {
   }
 
   if (!room) {
-    // Đã xử lý điều hướng ở trên; fallback tránh crash
     return null;
   }
 
@@ -199,11 +213,6 @@ export default function DuoConnect() {
       <header className="cn-duo-header">
         <div className="cn-duo-header-left">
           <div className="cn-duo-badge">Phòng ghép đôi 1:1</div>
-          <h1 className="cn-duo-title">Hành trình tập luyện của hai bạn</h1>
-          <p className="cn-duo-sub">
-            Sau khi ghép đôi, hai bạn có thể thống nhất lịch tập, mục tiêu và
-            cùng nhau duy trì động lực mỗi ngày.
-          </p>
         </div>
 
         <div className="cn-duo-header-right">
@@ -216,7 +225,10 @@ export default function DuoConnect() {
           </button>
 
           {menuOpen && (
-            <div className="cn-duo-menu" onMouseLeave={handleCloseMenu}>
+            <div
+              className="cn-duo-menu"
+              onMouseLeave={handleCloseMenu}
+            >
               <button
                 type="button"
                 className="cn-duo-menu-item cn-duo-menu-danger"
@@ -234,13 +246,18 @@ export default function DuoConnect() {
         <button
           type="button"
           className={
-            "cn-duo-tab" + (activeTab === "connect" ? " is-active" : "")
+            "cn-duo-tab" +
+            (activeTab === "connect" ? " is-active" : "")
           }
           onClick={() => setActiveTab("connect")}
         >
           Kết nối
         </button>
-        <button type="button" className="cn-duo-tab is-disabled" disabled>
+        <button
+          type="button"
+          className="cn-duo-tab is-disabled"
+          disabled
+        >
           Trò chuyện
           <span className="cn-duo-tab-badge">Sắp ra mắt</span>
         </button>
@@ -252,9 +269,9 @@ export default function DuoConnect() {
           <div className="cn-duo-room-card">
             <div className="cn-duo-room-top">
               <div className="cn-duo-room-info">
-                <h2 className="cn-duo-room-name">
+                {/* <h2 className="cn-duo-room-name">
                   {room.name || "Phòng kết nối 1:1"}
-                </h2>
+                </h2> */}
                 <p className="cn-duo-room-desc">
                   {room.description ||
                     "Kết nối này được tạo khi hai bạn đồng ý lời mời ghép đôi. Cùng nhau giữ thói quen tập luyện đều đặn nhé!"}
@@ -273,7 +290,10 @@ export default function DuoConnect() {
                   )}
                   {Array.isArray(room.trainingTypes) &&
                     room.trainingTypes.map((t) => (
-                      <span key={t} className="cn-duo-chip cn-duo-chip-ghost">
+                      <span
+                        key={t}
+                        className="cn-duo-chip cn-duo-chip-ghost"
+                      >
                         {t}
                       </span>
                     ))}
@@ -282,16 +302,22 @@ export default function DuoConnect() {
 
               <div className="cn-duo-room-meta">
                 <div className="cn-duo-meta-item">
-                  <div className="cn-duo-meta-label">Ngày tạo phòng</div>
-                  <div className="cn-duo-meta-value">{createdAtText}</div>
+                  <div className="cn-duo-meta-label">
+                    Ngày tạo phòng
+                  </div>
+                  <div className="cn-duo-meta-value">
+                    {createdAtText}
+                  </div>
                 </div>
                 <div className="cn-duo-meta-item">
                   <div className="cn-duo-meta-label">
                     Số thành viên hiện tại
                   </div>
                   <div className="cn-duo-meta-value">
-                    {Array.isArray(room.members) ? room.members.length : 0} /{" "}
-                    {room.maxMembers || 2}
+                    {Array.isArray(room.members)
+                      ? room.members.length
+                      : 0}{" "}
+                    / {room.maxMembers || 2}
                   </div>
                 </div>
               </div>
@@ -304,9 +330,9 @@ export default function DuoConnect() {
             </div>
 
             <div className="cn-duo-footer-hint">
-              Gợi ý: Hãy thống nhất lịch tập, mục tiêu theo tuần và cập nhật
-              tiến độ trong các trang Thống kê, Nhật ký ăn uống… để cùng nhau
-              theo dõi kết quả.
+              Gợi ý: Hãy thống nhất lịch tập, mục tiêu theo tuần và
+              cập nhật tiến độ trong các trang Thống kê, Nhật ký ăn
+              uống… để cùng nhau theo dõi kết quả.
             </div>
           </div>
         </section>
@@ -314,13 +340,21 @@ export default function DuoConnect() {
 
       {/* ===== MODAL RỜI PHÒNG ===== */}
       {leaveModalOpen && (
-        <div className="cn-modal-backdrop" onClick={handleCloseLeaveModal}>
-          <div className="cn-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="cn-modal-title">Rời khỏi phòng ghép đôi?</h3>
+        <div
+          className="cn-modal-backdrop"
+          onClick={handleCloseLeaveModal}
+        >
+          <div
+            className="cn-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="cn-modal-title">
+              Rời khỏi phòng ghép đôi?
+            </h3>
             <p className="cn-modal-text">
-              Sau khi rời phòng, bạn sẽ không còn được hiển thị trong kết nối
-              1:1 này nữa. Nếu muốn ghép đôi lại, hai bạn cần gửi lời mời kết
-              nối mới.
+              Sau khi rời phòng, bạn sẽ không còn được hiển thị
+              trong kết nối 1:1 này nữa. Nếu muốn ghép đôi lại, hai bạn
+              cần gửi lời mời kết nối mới.
             </p>
             <div className="cn-modal-actions">
               <button
@@ -359,7 +393,8 @@ function DuoSlot({ member, label, isMe = false }) {
         </div>
         <div className="cn-duo-slot-name">Chỗ trống</div>
         <p className="cn-duo-slot-empty-text">
-          Khi có người ghép đôi với bạn, thông tin sẽ hiển thị tại đây.
+          Khi có người ghép đôi với bạn, thông tin sẽ hiển thị tại
+          đây.
         </p>
       </div>
     );
@@ -368,7 +403,11 @@ function DuoSlot({ member, label, isMe = false }) {
   const initials = getInitials(member.name);
 
   return (
-    <div className={"cn-duo-slot" + (isMe ? " cn-duo-slot-me" : "")}>
+    <div
+      className={
+        "cn-duo-slot" + (isMe ? " cn-duo-slot-me" : "")
+      }
+    >
       <div className="cn-duo-slot-label">{label}</div>
       <div className="cn-duo-avatar">
         {member.avatarUrl ? (
@@ -379,7 +418,9 @@ function DuoSlot({ member, label, isMe = false }) {
       </div>
       <div className="cn-duo-slot-name">{member.name}</div>
       {member.role === "owner" && (
-        <div className="cn-duo-slot-role-tag">Quản lý phòng</div>
+        <div className="cn-duo-slot-role-tag">
+          Quản lý phòng
+        </div>
       )}
 
       <div className="cn-duo-slot-status">

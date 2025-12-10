@@ -9,8 +9,15 @@ import {
 } from "../../api/match";
 import { toast } from "react-toastify";
 import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
+import DuoConnect from "./DuoConnect"; // 👈 import thêm
 
-export default function TabMyConnections({ currentUser }) {
+export default function TabMyConnections({
+  currentUser,
+  activeRoomId,
+  activeRoomType,
+  onEnteredRoom,
+  onLeftRoom,
+}) {
   const nav = useNavigate();
 
   const [incoming, setIncoming] = useState([]);
@@ -18,7 +25,6 @@ export default function TabMyConnections({ currentUser }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Modal xác nhận chung (dùng lại như TabNearby)
   const [confirmState, setConfirmState] = useState({
     open: false,
     mode: null, // 'accept_duo' | 'reject_duo' | 'cancel_duo' | 'cancel_group'
@@ -53,8 +59,12 @@ export default function TabMyConnections({ currentUser }) {
       const res = await getMyRequests();
       const payload = res?.data ?? res;
 
-      setIncoming(Array.isArray(payload?.incoming) ? payload.incoming : []);
-      setOutgoing(Array.isArray(payload?.outgoing) ? payload.outgoing : []);
+      setIncoming(
+        Array.isArray(payload?.incoming) ? payload.incoming : []
+      );
+      setOutgoing(
+        Array.isArray(payload?.outgoing) ? payload.outgoing : []
+      );
     } catch (e) {
       console.error("getMyRequests error:", e);
       const msg =
@@ -73,21 +83,38 @@ export default function TabMyConnections({ currentUser }) {
     load();
   }, []);
 
+  // ===== callback khi rời phòng trong DuoConnect =====
+  const handleLeftRoomInternal = () => {
+    onLeftRoom && onLeftRoom();
+    // sau khi rời phòng, load lại list request (nếu có)
+    load();
+  };
+
   // Xử lý khi bấm nút xác nhận trong modal
   async function handleConfirm() {
     const { mode, requestId } = confirmState;
     if (!mode || !requestId) return;
 
-  try {
+    try {
       setConfirmLoading(true);
 
       if (mode === "accept_duo") {
         const res = await acceptMatchRequest(requestId);
+        const payload = res?.data ?? res;
+        const roomId =
+          payload?.roomId || payload?.data?.roomId || null;
+        const roomType =
+          payload?.roomType || payload?.data?.roomType || "duo";
+
         toast.success("Đã xác nhận lời mời kết nối.");
 
-        // 👉 Sau khi xác nhận xong, chuyển sang giao diện phòng ghép đôi
-        nav("/ket-noi/duo");
-        return; // thoát luôn, không cần load lại list request
+        // 👉 báo cho ConnectSidebar biết để chuyển sang DuoConnect
+        if (onEnteredRoom && roomId) {
+          onEnteredRoom(roomId, roomType);
+        }
+
+        closeConfirm();
+        return; // không cần load() lại vì sẽ chuyển sang giao diện phòng
       } else if (mode === "reject_duo") {
         await rejectMatchRequest(requestId);
         toast.info("Đã từ chối lời mời.");
@@ -99,7 +126,6 @@ export default function TabMyConnections({ currentUser }) {
         toast.info("Đã hủy yêu cầu tham gia nhóm.");
       }
 
-      // Các case còn lại vẫn reload list như cũ
       await load();
       closeConfirm();
     } catch (e) {
@@ -114,10 +140,13 @@ export default function TabMyConnections({ currentUser }) {
     }
   }
 
-  // Phân loại request giống UI mock cũ
   const incomingRequests = incoming.filter((r) => r.type === "duo");
-  const outgoingUserRequests = outgoing.filter((r) => r.type === "duo");
-  const outgoingGroupRequests = outgoing.filter((r) => r.type === "group");
+  const outgoingUserRequests = outgoing.filter(
+    (r) => r.type === "duo"
+  );
+  const outgoingGroupRequests = outgoing.filter(
+    (r) => r.type === "group"
+  );
 
   const hasRequests =
     incomingRequests.length +
@@ -129,14 +158,29 @@ export default function TabMyConnections({ currentUser }) {
     nav("/ket-noi/nhom");
   };
 
+  // 🔹 Nếu đang ở phòng duo → hiển thị giao diện DuoConnect
+  const isInDuoRoom =
+    !!activeRoomId && activeRoomType === "duo";
+
+  if (isInDuoRoom) {
+    return (
+      <section className="cn-myconnections">
+        {/* DuoConnect dùng chung giao diện, nhưng được nhúng vào TabMyConnections */}
+        <DuoConnect onLeftRoom={handleLeftRoomInternal} />
+      </section>
+    );
+  }
+
+  // 🔹 Còn lại: giao diện nhận & quản lý request như cũ
   return (
     <section className="cn-myconnections">
-      <h2>Kết nối của tôi</h2>
-      <p className="cn-myconnections-sub">
-        Quản lý các lời mời kết nối đang chờ xử lý. Khi{" "}
-        <strong>Xác nhận</strong>, bạn sẽ được chuyển sang phòng kết nối 1:1 hoặc
-        phòng nhóm tương ứng.
-      </p>
+      <header className="cn-main-header">
+        <h1>Các yêu cầu của bạn</h1>
+          <p>
+            Tìm kiếm những người có cùng mục tiêu và lịch tập, tạo
+            nhóm tối đa 5 người để cùng nhau hoàn thành mục tiêu.
+          </p>
+      </header>
 
       {loading && (
         <div className="cn-empty" style={{ marginTop: 6 }}>
@@ -177,8 +221,9 @@ export default function TabMyConnections({ currentUser }) {
               Có người dùng gửi lời mời kết nối
             </h3>
             <p className="cn-requests-desc">
-              Khi bạn nhấp <strong>Xác nhận lời mời kết nối</strong>, hệ thống
-              sẽ tạo phòng kết nối 1:1 giữa bạn và người dùng đó.
+              Khi bạn nhấp{" "}
+              <strong>Xác nhận lời mời kết nối</strong>, hệ thống sẽ tạo
+              phòng kết nối 1:1 giữa bạn và người dùng đó.
             </p>
 
             <div className="cn-requests-list">
@@ -194,13 +239,18 @@ export default function TabMyConnections({ currentUser }) {
                   req.meta?.fromGoalLabel ||
                   "Chưa rõ";
                 const avatarUrl = profile.avatarUrl || null;
-                const createdAtText = formatViDateTime(req.createdAt);
+                const createdAtText = formatViDateTime(
+                  req.createdAt
+                );
                 const note =
                   req.message ||
                   "Người dùng này muốn kết nối 1:1 với bạn.";
 
                 return (
-                  <article key={req._id} className="cn-request-row">
+                  <article
+                    key={req._id}
+                    className="cn-request-row"
+                  >
                     {avatarUrl && (
                       <div className="cn-request-thumb">
                         <img src={avatarUrl} alt={nickname} />
@@ -208,9 +258,12 @@ export default function TabMyConnections({ currentUser }) {
                     )}
 
                     <div className="cn-request-main-col">
-                      <div className="cn-request-type">Lời mời đến</div>
+                      <div className="cn-request-type">
+                        Lời mời đến
+                      </div>
                       <h4 className="cn-request-title">
-                        <strong>{nickname}</strong> muốn kết nối 1:1 với bạn
+                        <strong>{nickname}</strong> muốn kết nối 1:1
+                        với bạn
                       </h4>
                       <p className="cn-request-main">{note}</p>
                       <p className="cn-request-meta">
@@ -256,163 +309,197 @@ export default function TabMyConnections({ currentUser }) {
       )}
 
       {/* ===== Box 2: Bạn đã gửi lời mời kết nối 1:1 ===== */}
-      {!loading && !errorMsg && outgoingUserRequests.length > 0 && (
-        <div className="cn-myconnections-card">
-          <div className="cn-requests-section">
-            <h3 className="cn-requests-title">
-              Bạn đã gửi lời mời kết nối 1:1
-            </h3>
-            <p className="cn-requests-desc">
-              Đây là các lời mời 1:1 mà bạn đã gửi cho người khác. Bạn chỉ có
-              thể <strong>hủy lời mời</strong>, không thể tự duyệt.
-            </p>
+      {!loading &&
+        !errorMsg &&
+        outgoingUserRequests.length > 0 && (
+          <div className="cn-myconnections-card">
+            <div className="cn-requests-section">
+              <h3 className="cn-requests-title">
+                Bạn đã gửi lời mời kết nối 1:1
+              </h3>
+              <p className="cn-requests-desc">
+                Đây là các lời mời 1:1 mà bạn đã gửi cho người khác.
+                Bạn chỉ có thể <strong>hủy lời mời</strong>, không thể
+                tự duyệt.
+              </p>
 
-            <div className="cn-requests-list">
-              {outgoingUserRequests.map((req) => {
-                const toUser = req.toUser || {};
-                const profile = toUser.profile || {};
-                const nickname =
-                  profile.nickname ||
-                  toUser.username ||
-                  "Người dùng FitMatch";
-                const avatarUrl = profile.avatarUrl || null;
-                const createdAtText = formatViDateTime(req.createdAt);
-                const goalLabel =
-                  req.meta?.fromGoalLabel || "Chưa cập nhật";
-                const note =
-                  req.message ||
-                  "Bạn đã gửi lời mời kết nối 1:1, đang chờ phản hồi.";
+              <div className="cn-requests-list">
+                {outgoingUserRequests.map((req) => {
+                  const toUser = req.toUser || {};
+                  const profile = toUser.profile || {};
+                  const nickname =
+                    profile.nickname ||
+                    toUser.username ||
+                    "Người dùng FitMatch";
+                  const avatarUrl = profile.avatarUrl || null;
+                  const createdAtText = formatViDateTime(
+                    req.createdAt
+                  );
+                  const goalLabel =
+                    req.meta?.fromGoalLabel || "Chưa cập nhật";
+                  const note =
+                    req.message ||
+                    "Bạn đã gửi lời mời kết nối 1:1, đang chờ phản hồi.";
 
-                return (
-                  <article key={req._id} className="cn-request-row">
-                    {avatarUrl && (
-                      <div className="cn-request-thumb">
-                        <img src={avatarUrl} alt={nickname} />
-                      </div>
-                    )}
-
-                    <div className="cn-request-main-col">
-                      <div className="cn-request-type">Lời mời bạn gửi đi</div>
-                      <h4 className="cn-request-title">
-                        Gửi lời mời kết nối với người dùng{" "}
-                        <strong>{nickname}</strong>
-                      </h4>
-                      <p className="cn-request-main">{note}</p>
-                      {goalLabel && (
-                        <p className="cn-request-meta">
-                          Mục tiêu của bạn tập: {goalLabel}
-                        </p>
+                  return (
+                    <article
+                      key={req._id}
+                      className="cn-request-row"
+                    >
+                      {avatarUrl && (
+                        <div className="cn-request-thumb">
+                          <img src={avatarUrl} alt={nickname} />
+                        </div>
                       )}
 
-                      <div className="cn-request-footer">
-                        <span className="cn-request-meta">
-                          Gửi {createdAtText}
-                        </span>
-                        <span className="cn-request-status-pill cn-request-status-pending">
-                          Đang chờ người dùng đồng ý
-                        </span>
-                      </div>
+                      <div className="cn-request-main-col">
+                        <div className="cn-request-type">
+                          Lời mời bạn gửi đi
+                        </div>
+                        <h4 className="cn-request-title">
+                          Gửi lời mời kết nối với người dùng{" "}
+                          <strong>{nickname}</strong>
+                        </h4>
+                        <p className="cn-request-main">{note}</p>
+                        {goalLabel && (
+                          <p className="cn-request-meta">
+                            Mục tiêu của bạn tập: {goalLabel}
+                          </p>
+                        )}
 
-                      <div className="cn-request-actions">
-                        <button
-                          type="button"
-                          className="cn-btn-cancel"
-                          onClick={() =>
-                            openConfirm("cancel_duo", req, nickname)
-                          }
-                        >
-                          Hủy lời mời kết nối
-                        </button>
+                        <div className="cn-request-footer">
+                          <span className="cn-request-meta">
+                            Gửi {createdAtText}
+                          </span>
+                          <span className="cn-request-status-pill cn-request-status-pending">
+                            Đang chờ người dùng đồng ý
+                          </span>
+                        </div>
+
+                        <div className="cn-request-actions">
+                          <button
+                            type="button"
+                            className="cn-btn-cancel"
+                            onClick={() =>
+                              openConfirm(
+                                "cancel_duo",
+                                req,
+                                nickname
+                              )
+                            }
+                          >
+                            Hủy lời mời kết nối
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                );
-              })}
+                    </article>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* ===== Box 3: Bạn đã gửi lời mời tham gia nhóm ===== */}
-      {!loading && !errorMsg && outgoingGroupRequests.length > 0 && (
-        <div className="cn-myconnections-card">
-          <div className="cn-requests-section">
-            <h3 className="cn-requests-title">
-              Bạn đã gửi lời mời tham gia nhóm
-            </h3>
-            <p className="cn-requests-desc">
-              Đây là các lời mời tham gia phòng kết nối nhóm. Bạn chỉ có thể{" "}
-              <strong>hủy lời mời</strong>. Khi quản lý nhóm duyệt, bạn sẽ được
-              đưa vào phòng Kết nối nhóm.
-            </p>
+      {!loading &&
+        !errorMsg &&
+        outgoingGroupRequests.length > 0 && (
+          <div className="cn-myconnections-card">
+            <div className="cn-requests-section">
+              <h3 className="cn-requests-title">
+                Bạn đã gửi lời mời tham gia nhóm
+              </h3>
+              <p className="cn-requests-desc">
+                Đây là các lời mời tham gia phòng kết nối nhóm. Bạn chỉ
+                có thể <strong>hủy lời mời</strong>. Khi quản lý nhóm
+                duyệt, bạn sẽ được đưa vào phòng Kết nối nhóm.
+              </p>
 
-            <div className="cn-requests-list">
-              {outgoingGroupRequests.map((req) => {
-                const room = req.toRoom || {};
-                const groupName = room.name || "Nhóm tập luyện";
-                const imageUrl = room.coverImageUrl || null;
-                const membersCount = room.members?.length || 0;
-                const schedule =
-                  room.scheduleText || "Lịch tập chưa cập nhật";
-                const createdAtText = formatViDateTime(req.createdAt);
-                const note =
-                  req.message ||
-                  "Bạn đã gửi lời mời tham gia nhóm, đang chờ quản lý nhóm duyệt.";
+              <div className="cn-requests-list">
+                {outgoingGroupRequests.map((req) => {
+                  const room = req.toRoom || {};
+                  const groupName =
+                    room.name || "Nhóm tập luyện";
+                  const imageUrl = room.coverImageUrl || null;
+                  const membersCount =
+                    room.members?.length || 0;
+                  const schedule =
+                    room.scheduleText ||
+                    "Lịch tập chưa cập nhật";
+                  const createdAtText = formatViDateTime(
+                    req.createdAt
+                  );
+                  const note =
+                    req.message ||
+                    "Bạn đã gửi lời mời tham gia nhóm, đang chờ quản lý nhóm duyệt.";
 
-                return (
-                  <article key={req._id} className="cn-request-row">
-                    {imageUrl && (
-                      <div className="cn-request-thumb">
-                        <img src={imageUrl} alt={groupName} />
+                  return (
+                    <article
+                      key={req._id}
+                      className="cn-request-row"
+                    >
+                      {imageUrl && (
+                        <div className="cn-request-thumb">
+                          <img
+                            src={imageUrl}
+                            alt={groupName}
+                          />
+                        </div>
+                      )}
+
+                      <div className="cn-request-main-col">
+                        <div className="cn-request-type">
+                          Lời mời bạn gửi đi
+                        </div>
+                        <h4 className="cn-request-title">
+                          Gửi lời mời kết nối với Nhóm{" "}
+                          <strong>{groupName}</strong>
+                        </h4>
+                        <p className="cn-request-main">{note}</p>
+                        <p className="cn-request-meta">
+                          Thành viên hiện tại: {membersCount} ·{" "}
+                          {schedule}
+                        </p>
+
+                        <div className="cn-request-footer">
+                          <span className="cn-request-meta">
+                            Gửi {createdAtText}
+                          </span>
+                          <span className="cn-request-status-pill cn-request-status-pending">
+                            Đang chờ quản lý nhóm
+                          </span>
+                        </div>
+
+                        <div className="cn-request-actions">
+                          <button
+                            type="button"
+                            className="cn-btn-cancel"
+                            onClick={() =>
+                              openConfirm(
+                                "cancel_group",
+                                req,
+                                groupName
+                              )
+                            }
+                          >
+                            Hủy lời mời tham gia nhóm
+                          </button>
+                          <button
+                            type="button"
+                            className="cn-btn-ghost"
+                            onClick={handleOpenTeamConnectDemo}
+                          >
+                            Xem giao diện Kết nối nhóm
+                          </button>
+                        </div>
                       </div>
-                    )}
-
-                    <div className="cn-request-main-col">
-                      <div className="cn-request-type">Lời mời bạn gửi đi</div>
-                      <h4 className="cn-request-title">
-                        Gửi lời mời kết nối với Nhóm{" "}
-                        <strong>{groupName}</strong>
-                      </h4>
-                      <p className="cn-request-main">{note}</p>
-                      <p className="cn-request-meta">
-                        Thành viên hiện tại: {membersCount} · {schedule}
-                      </p>
-
-                      <div className="cn-request-footer">
-                        <span className="cn-request-meta">
-                          Gửi {createdAtText}
-                        </span>
-                        <span className="cn-request-status-pill cn-request-status-pending">
-                          Đang chờ quản lý nhóm
-                        </span>
-                      </div>
-
-                      <div className="cn-request-actions">
-                        <button
-                          type="button"
-                          className="cn-btn-cancel"
-                          onClick={() =>
-                            openConfirm("cancel_group", req, groupName)
-                          }
-                        >
-                          Hủy lời mời tham gia nhóm
-                        </button>
-                        <button
-                          type="button"
-                          className="cn-btn-ghost"
-                          onClick={handleOpenTeamConnectDemo}
-                        >
-                          Xem giao diện Kết nối nhóm
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+                    </article>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Modal xác nhận – dùng chung với TabNearby */}
       <ConnectRequestConfirmModal

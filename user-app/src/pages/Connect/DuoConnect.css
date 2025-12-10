@@ -1,84 +1,81 @@
 /* user-app/src/pages/Connect/DuoConnect.css */
 
+/* ===== PAGE WRAPPER ===== */
 .cn-duo-page{
-  max-width: 980px;
-  margin: 0 auto;
+  padding: 4px 0 12px;
 }
 
 .cn-duo-loading{
-  margin-top: 16px;
-  font-size: 14px;
-  color: #64748b;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9ca3af;
 }
 
-/* ===== Header ===== */
-
+/* ===== HEADER (giống tone cn-main-header) ===== */
 .cn-duo-header{
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .cn-duo-header-left{
   flex: 1;
+  min-width: 0;
 }
 
 .cn-duo-badge{
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
+  gap: 6px;
+  padding: 3px 10px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 600;
-  background: #ecfeff;
-  color: #0f766e;
-  border: 1px solid #a5f3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #221010;
+  border: 1px solid #ef4444;
+  color: #fecaca;
 }
 
 .cn-duo-title{
   font-size: 22px;
-  margin: 8px 0 4px;
-  color: #0f172a;
+  font-weight: 700;
+  margin: 6px 0 2px;
+  color: #f9fafb;
 }
 
 .cn-duo-sub{
   font-size: 13px;
-  color: #64748b;
+  color: #9ca3af;
   max-width: 520px;
+  margin: 0;
 }
 
 .cn-duo-header-right{
   position: relative;
 }
 
+/* nút 3 chấm */
 .cn-duo-more-btn{
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  color: #64748b;
+  color: #9ca3af;
+  font-size: 18px;
 }
 .cn-duo-more-btn:hover{
-  background: #f8fafc;
-  color: #0f172a;
+  color: #f9fafb;
 }
 
 /* menu 3 chấm */
 .cn-duo-menu{
   position: absolute;
-  top: 38px;
+  top: 28px;
   right: 0;
-  min-width: 160px;
-  background: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 16px 40px rgba(15,23,42,0.16);
-  border: 1px solid #e2e8f0;
+  min-width: 180px;
+  background: #020617;
+  border-radius: 4px;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.7);
+  border: 1px solid #1f2937;
   z-index: 20;
   padding: 4px;
 }
@@ -89,36 +86,36 @@
   text-align: left;
   font-size: 13px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
+  color: #e5e7eb;
 }
 .cn-duo-menu-item:hover{
-  background: #f1f5f9;
+  background: #111827;
 }
 .cn-duo-menu-danger{
-  color: #b91c1c;
+  color: #fca5a5;
 }
 
-/* ===== Tabs ===== */
-
+/* ===== TABS (Kết nối / Trò chuyện) ===== */
 .cn-duo-tabs{
   display: flex;
   gap: 4px;
-  border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 12px;
+  border-bottom: 1px solid #1f2937;
+  margin-bottom: 10px;
 }
 
 .cn-duo-tab{
   position: relative;
-  padding: 8px 14px;
+  padding: 7px 14px;
   border: none;
   background: transparent;
   font-size: 13px;
-  color: #64748b;
+  color: #9ca3af;
   cursor: pointer;
 }
 .cn-duo-tab.is-active{
-  color: #0f172a;
+  color: #f9fafb;
   font-weight: 600;
 }
 .cn-duo-tab.is-active::after{
@@ -129,10 +126,10 @@
   bottom: -1px;
   height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg,#22c55e,#14b8a6);
+  background: linear-gradient(90deg,#f97316,#ef4444);
 }
 .cn-duo-tab.is-disabled{
-  color: #cbd5f5;
+  color: #4b5563;
   cursor: default;
 }
 
@@ -141,47 +138,50 @@
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: #e5e7eb;
-  color: #4b5563;
+  background: #111827;
+  color: #9ca3af;
 }
 
-/* ===== Main card ===== */
-
+/* ===== MAIN CARD ===== */
 .cn-duo-main{
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .cn-duo-room-card{
-  background: #ffffff;
-  border-radius: 18px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 16px 40px rgba(15,23,42,0.06);
-  padding: 18px 20px 16px;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.45);
+  padding: 14px 14px 12px;
+  color: #e5e7eb;
 }
 
 .cn-duo-room-top{
   display: flex;
   justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 12px;
+  align-items: flex-start;
 }
 
 .cn-duo-room-info{
   flex: 1.4;
+  min-width: 0;
 }
 
 .cn-duo-room-name{
   font-size: 18px;
   margin: 0 0 4px;
-  color: #0f172a;
+  color: #f9fafb;
 }
 
 .cn-duo-room-desc{
   font-size: 13px;
-  color: #64748b;
-  margin: 0 0 8px;
+  color: #9ca3af;
+  margin: 0 0 6px;
 }
 
+/* chip trạng thái, vị trí, loại hình */
 .cn-duo-chips{
   display: flex;
   flex-wrap: wrap;
@@ -194,22 +194,23 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  padding: 3px 8px;
+  padding: 4px 9px;
   border-radius: 999px;
-  background: #ecfeff;
-  border: 1px dashed #a5f3fc;
-  color: #0f766e;
+  background: #020617;
+  border: 1px solid #4b5563;
+  color: #e5e7eb;
 }
 .cn-duo-chip i{
   font-size: 10px;
 }
 .cn-duo-chip-ghost{
-  background: #f1f5f9;
-  border-style: solid;
-  border-color: #e5e7eb;
-  color: #475569;
+  background: #111827;
+  border-style: dashed;
+  border-color: #4b5563;
+  color: #9ca3af;
 }
 
+/* block meta bên phải */
 .cn-duo-room-meta{
   flex: 0.9;
   display: grid;
@@ -217,34 +218,34 @@
 }
 
 .cn-duo-meta-item{
-  background: #f8fafc;
-  border-radius: 10px;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
   padding: 8px 10px;
 }
 
 .cn-duo-meta-label{
   font-size: 11px;
-  color: #94a3b8;
+  color: #9ca3af;
 }
 .cn-duo-meta-value{
   font-size: 13px;
   font-weight: 600;
-  color: #0f172a;
+  color: #f9fafb;
 }
 
-/* ===== Slots ===== */
-
+/* ===== 2 SLOT THÀNH VIÊN ===== */
 .cn-duo-slots{
   display: grid;
   grid-template-columns: repeat(2,minmax(0,1fr));
-  gap: 14px;
+  gap: 12px;
   margin-top: 6px;
 }
 
 .cn-duo-slot{
-  background: #f8fafc;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
   padding: 12px 10px;
   text-align: center;
   min-height: 190px;
@@ -252,32 +253,36 @@
   flex-direction: column;
   align-items: center;
 }
+
 .cn-duo-slot-me{
-  background: #ecfdf3;
-  border-color: #bbf7d0;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px rgba(34,197,94,0.35);
 }
+
 .cn-duo-slot-empty{
   border-style: dashed;
-  background: #f9fafb;
+  border-color: #4b5563;
+  background: #020617;
 }
 
 .cn-duo-slot-label{
   font-size: 11px;
-  color: #6b7280;
+  color: #9ca3af;
   margin-bottom: 6px;
 }
 
+/* avatar tròn bên trong slot */
 .cn-duo-avatar{
   width: 72px;
   height: 72px;
   border-radius: 999px;
-  background: #e5e7eb;
+  background: #111827;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 22px;
-  color: #4b5563;
+  color: #f97316;
   overflow: hidden;
   margin-bottom: 8px;
 }
@@ -287,29 +292,32 @@
   object-fit: cover;
 }
 .cn-duo-avatar-empty{
+  background: #020617;
+  border: 1px dashed #4b5563;
+  color: #4b5563;
   font-size: 26px;
-  color: #cbd5e1;
 }
 
 .cn-duo-slot-name{
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: #f9fafb;
 }
 
 .cn-duo-slot-role-tag{
   margin-top: 2px;
   font-size: 11px;
-  color: #0f766e;
+  color: #f97316;
 }
 
+/* trạng thái “đang tham gia” */
 .cn-duo-slot-status{
   margin-top: 8px;
   font-size: 11px;
   padding: 3px 10px;
   border-radius: 999px;
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(16,185,129,0.12);
+  color: #6ee7b7;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -324,34 +332,42 @@
 .cn-duo-slot-joined{
   margin-top: 6px;
   font-size: 11px;
-  color: #6b7280;
+  color: #9ca3af;
 }
 
 .cn-duo-slot-empty-text{
   font-size: 13px;
   color: #9ca3af;
   margin-top: 6px;
-  max-width: 180px;
+  max-width: 200px;
 }
 
-/* ===== Footer hint ===== */
-
+/* ===== FOOTER HINT ===== */
 .cn-duo-footer-hint{
   margin-top: 10px;
   font-size: 12px;
   color: #9ca3af;
 }
 
-/* ===== Responsive ===== */
-
-@media (max-width: 768px){
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px){
   .cn-duo-header{
     flex-direction: column;
   }
   .cn-duo-room-top{
     flex-direction: column;
   }
+  .cn-duo-room-meta{
+    width: 100%;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width: 640px){
+  .cn-duo-room-meta{
+    grid-template-columns: minmax(0,1fr);
+  }
   .cn-duo-slots{
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0,1fr);
   }
 }

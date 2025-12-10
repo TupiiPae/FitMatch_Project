@@ -20,28 +20,27 @@ export default function TabNearby({
   discoverable,
   goalFilter,
   onCreatedRequest,
+  onEnteredRoom, // 👈 thêm
 }) {
   const nav = useNavigate();
   const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
   const [search, setSearch] = useState("");
 
-  const [selfCard, setSelfCard] = useState(null); // box xem trước của chủ tài khoản
+  const [selfCard, setSelfCard] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Map trạng thái request hiện tại
   const [requestMaps, setRequestMaps] = useState({
-    incomingFromUser: {}, // { fromUserId: requestId } – người khác mời mình (duo)
-    outgoingToUser: {}, // { toUserId: requestId } – mình mời người ta (duo)
-    outgoingToRoom: {}, // { roomId: requestId } – mình xin join group
+    incomingFromUser: {},
+    outgoingToUser: {},
+    outgoingToRoom: {},
   });
 
-  // Modal xác nhận
   const [confirmState, setConfirmState] = useState({
     open: false,
-    mode: null, // 'send_duo' | 'send_group' | 'cancel_duo' | 'cancel_group' | 'accept_duo'
-    target: null, // user / group card
+    mode: null,
+    target: null,
     requestId: null,
   });
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -86,7 +85,6 @@ export default function TabNearby({
         setSelfCard(nearby?.self || null);
         setItems(Array.isArray(nearby?.items) ? nearby.items : []);
 
-        // build map request
         if (reqs) {
           const incoming = Array.isArray(reqs.incoming)
             ? reqs.incoming
@@ -143,28 +141,24 @@ export default function TabNearby({
     return () => {
       cancelled = true;
     };
-  }, [connectionMode, discoverable]); // bật/tắt discoverable → reload để self-card & request map cập nhật
+  }, [connectionMode, discoverable]);
 
-  // ===== Filter danh sách theo range / age / gender / search (chỉ áp dụng cho người khác) =====
+  // ===== Filter =====
   const filteredList = useMemo(() => {
     let base = items || [];
 
     return base.filter((u) => {
-      // Mode 1:1 hoặc Nhóm
       if (connectionMode === "one_to_one" && u.isGroup) return false;
       if (connectionMode === "group" && !u.isGroup) return false;
 
-      // 🔹 Lọc theo Mục tiêu: nếu chủ tài khoản có goalFilter,
-      // chỉ hiển thị user/nhóm có goal trùng (so sánh theo label)
       if (goalFilter) {
         const userGoal = (u.goal || "").trim().toLowerCase();
         const myGoal = goalFilter.trim().toLowerCase();
         if (!userGoal || userGoal !== myGoal) return false;
       }
 
-      // Vị trí theo "khu vực" (chỉ áp dụng cho user 1:1, group bỏ qua như cũ)
       if (!u.isGroup && locationRange !== "any") {
-        const key = u.areaKey; // same_ward | same_district | same_city | other
+        const key = u.areaKey;
         if (!key) return false;
 
         if (locationRange === "same_city") {
@@ -180,7 +174,6 @@ export default function TabNearby({
         }
       }
 
-      // Độ tuổi
       if (ageRange !== "all" && typeof u.age === "number") {
         const age = u.age;
         if (ageRange === "18-21" && !(age >= 18 && age <= 21)) return false;
@@ -190,7 +183,6 @@ export default function TabNearby({
         if (ageRange === "45+" && age < 45) return false;
       }
 
-      // Giới tính
       if (
         genderFilter !== "all" &&
         !u.isGroup &&
@@ -200,7 +192,6 @@ export default function TabNearby({
         return false;
       }
 
-      // Tìm kiếm text
       if (search.trim()) {
         const txt = search.toLowerCase();
         const haystack = [
@@ -224,12 +215,11 @@ export default function TabNearby({
     ageRange,
     genderFilter,
     search,
-    goalFilter,           // 🔹 nhớ thêm vào dependency
+    goalFilter,
   ]);
 
   const resultCount = filteredList.length;
 
-  // Xác định state của nút trên từng card
   const getInviteStateFor = (u) => {
     if (u.isGroup) {
       const reqId = requestMaps.outgoingToRoom[u.id];
@@ -250,7 +240,7 @@ export default function TabNearby({
     }
   };
 
-  // ===== Xử lý khi bấm xác nhận trên modal =====
+  // ===== Xử lý modal confirm =====
   async function handleConfirm() {
     if (!confirmState.open || !confirmState.mode || !confirmState.target) {
       return;
@@ -262,7 +252,6 @@ export default function TabNearby({
       setConfirmLoading(true);
 
       if (mode === "send_duo") {
-        // giống logic cũ: vẫn cho gửi, chỉ nhắc bật discoverable
         if (!discoverable) {
           toast.info(
             "Hãy bật 'Cho phép mọi người tìm kiếm bạn' để kết nối dễ dàng hơn."
@@ -342,8 +331,11 @@ export default function TabNearby({
         if (!requestId) return;
 
         const res = await acceptMatchRequest(requestId);
-        // Nếu sau này muốn tự động điều hướng vào phòng:
-        // if (res?.roomId) nav(`/ket-noi/phong/${res.roomId}`);
+        const payload = res?.data ?? res;
+        const roomId =
+          payload?.roomId || payload?.data?.roomId || null;
+        const roomType =
+          payload?.roomType || payload?.data?.roomType || "duo";
 
         setRequestMaps((prev) => {
           const incomingFromUser = { ...prev.incomingFromUser };
@@ -352,6 +344,11 @@ export default function TabNearby({
         });
 
         toast.success("Đã xác nhận lời mời kết nối.");
+
+        // 👉 báo cho ConnectSidebar biết để chuyển sang tab "Kết nối của tôi" + DuoConnect
+        if (onEnteredRoom && roomId) {
+          onEnteredRoom(roomId, roomType);
+        }
       }
 
       onCreatedRequest && onCreatedRequest();
@@ -370,6 +367,13 @@ export default function TabNearby({
 
   return (
     <>
+      <header className="cn-main-header">
+        <h1>Kết nối bạn tập</h1>
+          <p>
+            Tìm kiếm những người có cùng mục tiêu và lịch tập, tạo
+            nhóm tối đa 5 người để cùng nhau hoàn thành mục tiêu.
+          </p>
+      </header>
       <section className="cn-tab-nearby">
         {/* Toolbar: kết quả + tạo nhóm + toggle view */}
         <div className="cn-main-toolbar">

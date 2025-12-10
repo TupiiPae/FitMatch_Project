@@ -37,10 +37,10 @@ function calcAge(dob) {
 }
 
 const LOCATION_RANGE_OPTIONS = [
-  { value: "any",          label: "Không giới hạn khu vực" },
-  { value: "same_city",    label: "Cùng thành phố" },
-  { value: "same_district",label: "Trong quận của bạn" },
-  { value: "same_ward",    label: "Rất gần bạn (cùng phường)" },
+  { value: "any", label: "Không giới hạn khu vực" },
+  { value: "same_city", label: "Cùng thành phố" },
+  { value: "same_district", label: "Trong quận của bạn" },
+  { value: "same_ward", label: "Rất gần bạn (cùng phường)" },
 ];
 
 const AGE_RANGE_OPTIONS = [
@@ -88,7 +88,7 @@ export default function ConnectSidebar() {
   const [hasAddressForConnect, setHasAddressForConnect] = useState(false);
   const [hasRequestsTabEnabled, setHasRequestsTabEnabled] = useState(false);
 
-  // filters
+  // tab / filter
   const [activeTab, setActiveTab] = useState("nearby"); // "nearby" | "my-connections"
   const [connectionMode, setConnectionMode] = useState("one_to_one");
   const [locationRange, setLocationRange] = useState("any");
@@ -99,68 +99,79 @@ export default function ConnectSidebar() {
   const [updatingDiscoverable, setUpdatingDiscoverable] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+  // 🔹 trạng thái phòng đang tham gia (nếu có)
+  const [activeRoomId, setActiveRoomId] = useState(null);
+  const [activeRoomType, setActiveRoomType] = useState(null);
+
   // ===== Load user + match status =====
   useEffect(() => {
-  let cancelled = false;
+    let cancelled = false;
 
-  (async () => {
-    try {
-      setLoading(true);
+    (async () => {
+      try {
+        setLoading(true);
 
-      const [me, statusPayload] = await Promise.all([
-        getMe(),
-        getMatchStatus().catch((e) => {
-          console.error("getMatchStatus error:", e);
-          return null;
-        }),
-      ]);
+        const [me, statusPayload] = await Promise.all([
+          getMe(),
+          getMatchStatus().catch((e) => {
+            console.error("getMatchStatus error:", e);
+            return null;
+          }),
+        ]);
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      if (me && typeof me === "object") {
-        setUser(me);
-        const p = me.profile || {};
-        if (p.sex === "male" || p.sex === "female") {
-          setGenderFilter(p.sex);
-        } else {
-          setGenderFilter("all");
+        if (me && typeof me === "object") {
+          setUser(me);
+          const p = me.profile || {};
+          if (p.sex === "male" || p.sex === "female") {
+            setGenderFilter(p.sex);
+          } else {
+            setGenderFilter("all");
+          }
         }
+
+        if (statusPayload) {
+          const data =
+            statusPayload && statusPayload.data
+              ? statusPayload.data
+              : statusPayload;
+
+          setDiscoverable(!!data.discoverable);
+          setHasAddressForConnect(!!data.hasAddressForConnect);
+
+          const roomId = data.activeRoomId || null;
+          const roomType = data.activeRoomType || null;
+
+          setActiveRoomId(roomId);
+          setActiveRoomType(roomType);
+
+          // nếu có pending request hoặc đã có phòng → bật tab "Kết nối của tôi"
+          if (
+            (data.pendingRequestsCount &&
+              data.pendingRequestsCount > 0) ||
+            roomId
+          ) {
+            setHasRequestsTabEnabled(true);
+          }
+
+          // nếu đang ở phòng duo → mặc định mở tab "Kết nối của tôi"
+          if (roomId && roomType === "duo") {
+            setActiveTab("my-connections");
+          }
+        }
+      } catch (e) {
+        console.error("ConnectSidebar init error:", e);
+        toast.error("Không thể tải dữ liệu kết nối.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
+    })();
 
-      if (statusPayload) {
-        const data =
-          statusPayload && statusPayload.data
-            ? statusPayload.data
-            : statusPayload;
-
-        setDiscoverable(!!data.discoverable);
-        setHasAddressForConnect(!!data.hasAddressForConnect);
-
-        // 🔹 lưu room hiện tại
-        setActiveRoomId(data.activeRoomId || null);
-        setActiveRoomType(data.activeRoomType || null);
-
-        if (data.pendingRequestsCount && data.pendingRequestsCount > 0) {
-          setHasRequestsTabEnabled(true);
-        }
-
-        // 🔹 Nếu đang ở room duo → điều hướng sang giao diện phòng
-        if (data.activeRoomId && data.activeRoomType === "duo") {
-          nav("/ket-noi/duo");
-        }
-      }
-    } catch (e) {
-      console.error("ConnectSidebar init error:", e);
-      toast.error("Không thể tải dữ liệu kết nối.");
-    } finally {
-      if (!cancelled) setLoading(false);
-    }
-  })();
-
-  return () => {
-    cancelled = true;
-  };
-}, [nav]);
+    return () => {
+      cancelled = true;
+    };
+  }, [nav]);
 
   // ===== Derived info từ user =====
   const p = user?.profile || {};
@@ -187,7 +198,7 @@ export default function ConnectSidebar() {
     goalLabel,
   };
 
-  // ===== Gọi API cập nhật discoverable (không set state trước) =====
+  // ===== Gọi API cập nhật discoverable =====
   const applyDiscoverable = async (value) => {
     try {
       setUpdatingDiscoverable(true);
@@ -200,7 +211,7 @@ export default function ConnectSidebar() {
           ? payload.discoverable
           : value;
 
-      setDiscoverable(serverVal); // ==> TabNearby sẽ re-load sau khi BE cập nhật xong
+      setDiscoverable(serverVal);
 
       if (serverVal) {
         toast.success("Đã bật cho phép mọi người tìm kiếm bạn.");
@@ -223,7 +234,7 @@ export default function ConnectSidebar() {
   const handleToggleDiscoverable = () => {
     if (updatingDiscoverable) return;
 
-    // Đang ON -> tắt luôn, không cần modal
+    // Đang ON -> tắt luôn
     if (discoverable) {
       applyDiscoverable(false);
       return;
@@ -251,8 +262,21 @@ export default function ConnectSidebar() {
     setShowConfirmModal(false);
   };
 
-  const [activeRoomId, setActiveRoomId] = useState(null);
-  const [activeRoomType, setActiveRoomType] = useState(null);
+  // ===== Callback khi VÀO phòng (accept lời mời, …) =====
+  const handleEnteredRoom = (roomId, roomType = "duo") => {
+    if (!roomId) return;
+    setActiveRoomId(roomId);
+    setActiveRoomType(roomType);
+    setHasRequestsTabEnabled(true);
+    setActiveTab("my-connections");
+  };
+
+  // ===== Callback khi RỜI phòng =====
+  const handleLeftRoom = () => {
+    setActiveRoomId(null);
+    setActiveRoomType(null);
+    // giữ nguyên hasRequestsTabEnabled để vẫn xem được tab Kết nối của tôi
+  };
 
   return (
     <div className="cn-page">
@@ -270,7 +294,9 @@ export default function ConnectSidebar() {
                 )}
               </div>
               <div>
-                <div className="cn-side-nickname">{displayUser.name}</div>
+                <div className="cn-side-nickname">
+                  {displayUser.name}
+                </div>
 
                 <div className="cn-side-discover">
                   <span className="cn-side-discover-label">
@@ -290,12 +316,12 @@ export default function ConnectSidebar() {
               </div>
             </div>
 
-            {/* Dòng mô tả bên dưới cả block avatar + name + toggle */}
+            {/* Dòng mô tả dưới avatar + toggle */}
             {hasAddressForConnect ? (
               <div className="cn-side-sub">
                 {discoverable
-                  ? 'Bạn đang được hiển thị và có thể tìm kiếm trên cộng đồng.'
-                  : 'Bật chức năng kết nối để hồ sơ của bạn có thể được tìm kiếm trên cộng đồng.'}
+                  ? "Bạn đang được hiển thị và có thể tìm kiếm trên cộng đồng."
+                  : "Bật chức năng kết nối để hồ sơ của bạn có thể được tìm kiếm trên cộng đồng."}
               </div>
             ) : (
               <div className="cn-side-sub">
@@ -362,7 +388,7 @@ export default function ConnectSidebar() {
                 title={
                   hasRequestsTabEnabled
                     ? ""
-                    : "Tab này sẽ mở khi bạn có lời mời kết nối hoặc yêu cầu tham gia nhóm."
+                    : "Tab này sẽ mở khi bạn có lời mời kết nối hoặc tham gia phòng."
                 }
                 onClick={() => {
                   if (!hasRequestsTabEnabled) return;
@@ -417,7 +443,9 @@ export default function ConnectSidebar() {
                 <select
                   className="cn-location-select"
                   value={locationRange}
-                  onChange={(e) => setLocationRange(e.target.value)}
+                  onChange={(e) =>
+                    setLocationRange(e.target.value)
+                  }
                 >
                   {LOCATION_RANGE_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
@@ -482,7 +510,8 @@ export default function ConnectSidebar() {
                   </button>
                 </div>
                 <p className="cn-filter-hint">
-                  Giới tính của bạn: {getGenderLabel(displayUser.gender)}
+                  Giới tính của bạn:{" "}
+                  {getGenderLabel(displayUser.gender)}
                 </p>
               </div>
 
@@ -510,14 +539,6 @@ export default function ConnectSidebar() {
 
         {/* ===== MAIN CONTENT ===== */}
         <main className="cn-main">
-          <header className="cn-main-header">
-            <h1>Kết nối bạn tập</h1>
-            <p>
-              Tìm kiếm những người có cùng mục tiêu và lịch tập, tạo
-              nhóm tối đa 5 người để cùng nhau hoàn thành mục tiêu.
-            </p>
-          </header>
-
           {activeTab === "nearby" ? (
             <TabNearby
               currentUser={user}
@@ -528,9 +549,16 @@ export default function ConnectSidebar() {
               discoverable={discoverable}
               goalFilter={displayUser.goalLabel || ""}
               onCreatedRequest={() => setHasRequestsTabEnabled(true)}
+              onEnteredRoom={handleEnteredRoom}
             />
           ) : (
-            <TabMyConnections currentUser={user} />
+            <TabMyConnections
+              currentUser={user}
+              activeRoomId={activeRoomId}
+              activeRoomType={activeRoomType}
+              onEnteredRoom={handleEnteredRoom}
+              onLeftRoom={handleLeftRoom}
+            />
           )}
         </main>
       </div>
