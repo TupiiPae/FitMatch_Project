@@ -806,6 +806,27 @@
 
 .cn-btn-primary {
   border-radius: 4px;
+  border: 1px solid transparent;
+  flex: 1;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #f00519;
+  color: #ffffff;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.cn-btn-primary:hover {
+  background: #ef4444;
+}
+
+.cn-btn-primary:active {
+  transform: translateY(1px);
+}
+
+.cn-btn-reject {
+  border-radius: 4px;
   border: 1px solid #4b5563;
   flex: 1;
   padding: 7px 14px;
@@ -817,11 +838,11 @@
   transition: background-color 0.15s ease, transform 0.05s ease;
 }
 
-.cn-btn-primary:hover {
+.cn-btn-reject:hover {
   background: #ef4444;
 }
 
-.cn-btn-primary:active {
+.cn-btn-reject:active {
   transform: translateY(1px);
 }
 

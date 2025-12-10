@@ -33,7 +33,7 @@ export default function ConnectRequestConfirmModal({
       title = "Hủy lời mời kết nối?";
       desc = `Lời mời kết nối đang chờ phản hồi từ ${targetName}. Bạn có chắc chắn muốn hủy lời mời này?`;
       primaryLabel = "Hủy lời mời";
-      primaryClass = "cn-btn-primary";
+      primaryClass = "cn-btn-reject";
       break;
     case "cancel_group":
       title = "Hủy yêu cầu tham gia nhóm?";
@@ -45,7 +45,7 @@ export default function ConnectRequestConfirmModal({
       title = "Từ chối lời mời kết nối?";
       desc = `Bạn sắp từ chối lời mời kết nối từ ${targetName}. Sau khi từ chối, nếu muốn kết nối lại, hai bạn cần gửi lời mời mới.`;
       primaryLabel = "Từ chối lời mời";
-      primaryClass = "cn-btn-primary";
+      primaryClass = "cn-btn-reject";
       break;
     case "accept_duo":
       title = "Xác nhận lời mời kết nối?";

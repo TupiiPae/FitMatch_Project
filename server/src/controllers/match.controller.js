@@ -722,3 +722,109 @@ export async function cancelRequest(req, res, next) {
     next(err);
   }
 }
+
+/* ========= NEW: LẤY CHI TIẾT PHÒNG & RỜI PHÒNG ========= */
+
+// GET /api/match/rooms/:id
+export async function getRoomDetail(req, res, next) {
+  try {
+    const userId = getUserIdFromReq(req);
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized" });
+    }
+
+    const { id } = req.params;
+
+    const room = await MatchRoom.findById(id)
+      .populate({
+        path: "members.user",
+        select:
+          "username email profile.nickname profile.avatarUrl profile.sex profile.dob connectGoalKey connectGoalLabel profile.goal profile.trainingIntensity",
+      })
+      .lean();
+
+    if (!room) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy phòng kết nối" });
+    }
+
+    const isMember = (room.members || []).some((m) => {
+      const u = m.user || {};
+      const uid = u._id || u.id || u;
+      return String(uid) === String(userId);
+    });
+
+    if (!isMember) {
+      return res.status(403).json({
+        success: false,
+        message: "Bạn không thuộc phòng kết nối này.",
+      });
+    }
+
+    // Trả thẳng room → FE dùng roomRes.data.data là object room
+    return responseOk(res, room);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/match/rooms/:id/leave
+export async function leaveMatchRoom(req, res, next) {
+  try {
+    const userId = getUserIdFromReq(req);
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized" });
+    }
+
+    const { id } = req.params;
+
+    const room = await MatchRoom.findById(id);
+    if (!room) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy phòng kết nối" });
+    }
+
+    const idx = room.members.findIndex(
+      (m) => String(m.user) === String(userId)
+    );
+    if (idx === -1) {
+      return res.status(403).json({
+        success: false,
+        message: "Bạn không thuộc phòng kết nối này.",
+      });
+    }
+
+    // Xoá member khỏi phòng
+    room.members.splice(idx, 1);
+
+    if (room.members.length === 0) {
+      // Không còn ai → đóng phòng
+      room.status = "closed";
+      room.closedAt = new Date();
+    } else {
+      // Vẫn còn người → để phòng active (duo chỉ còn 1 slot trống)
+      if (room.members.length >= room.maxMembers) {
+        room.status = "full";
+      } else {
+        room.status = "active";
+        room.closedAt = null;
+      }
+    }
+
+    await room.save();
+
+    return responseOk(res, {
+      roomId: room._id,
+      status: room.status,
+      remainingMembers: room.members.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+}

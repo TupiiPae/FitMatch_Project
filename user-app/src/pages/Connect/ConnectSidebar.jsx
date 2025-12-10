@@ -101,57 +101,66 @@ export default function ConnectSidebar() {
 
   // ===== Load user + match status =====
   useEffect(() => {
-    let cancelled = false;
+  let cancelled = false;
 
-    (async () => {
-      try {
-        setLoading(true);
+  (async () => {
+    try {
+      setLoading(true);
 
-        const [me, statusPayload] = await Promise.all([
-          getMe(), // trả về object user
-          getMatchStatus().catch((e) => {
-            console.error("getMatchStatus error:", e);
-            return null;
-          }),
-        ]);
+      const [me, statusPayload] = await Promise.all([
+        getMe(),
+        getMatchStatus().catch((e) => {
+          console.error("getMatchStatus error:", e);
+          return null;
+        }),
+      ]);
 
-        if (cancelled) return;
+      if (cancelled) return;
 
-        if (me && typeof me === "object") {
-          setUser(me);
-          const p = me.profile || {};
-          if (p.sex === "male" || p.sex === "female") {
-            setGenderFilter(p.sex);
-          } else {
-            setGenderFilter("all");
-          }
+      if (me && typeof me === "object") {
+        setUser(me);
+        const p = me.profile || {};
+        if (p.sex === "male" || p.sex === "female") {
+          setGenderFilter(p.sex);
+        } else {
+          setGenderFilter("all");
         }
-
-        if (statusPayload) {
-          const data =
-            statusPayload && statusPayload.data
-              ? statusPayload.data
-              : statusPayload; // phòng trường hợp api/match.js trả .data
-
-          setDiscoverable(!!data.discoverable);
-          setHasAddressForConnect(!!data.hasAddressForConnect);
-
-          if (data.pendingRequestsCount && data.pendingRequestsCount > 0) {
-            setHasRequestsTabEnabled(true);
-          }
-        }
-      } catch (e) {
-        console.error("ConnectSidebar init error:", e);
-        toast.error("Không thể tải dữ liệu kết nối.");
-      } finally {
-        if (!cancelled) setLoading(false);
       }
-    })();
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      if (statusPayload) {
+        const data =
+          statusPayload && statusPayload.data
+            ? statusPayload.data
+            : statusPayload;
+
+        setDiscoverable(!!data.discoverable);
+        setHasAddressForConnect(!!data.hasAddressForConnect);
+
+        // 🔹 lưu room hiện tại
+        setActiveRoomId(data.activeRoomId || null);
+        setActiveRoomType(data.activeRoomType || null);
+
+        if (data.pendingRequestsCount && data.pendingRequestsCount > 0) {
+          setHasRequestsTabEnabled(true);
+        }
+
+        // 🔹 Nếu đang ở room duo → điều hướng sang giao diện phòng
+        if (data.activeRoomId && data.activeRoomType === "duo") {
+          nav("/ket-noi/duo");
+        }
+      }
+    } catch (e) {
+      console.error("ConnectSidebar init error:", e);
+      toast.error("Không thể tải dữ liệu kết nối.");
+    } finally {
+      if (!cancelled) setLoading(false);
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+  };
+}, [nav]);
 
   // ===== Derived info từ user =====
   const p = user?.profile || {};
@@ -241,6 +250,9 @@ export default function ConnectSidebar() {
   const handleCancelEnable = () => {
     setShowConfirmModal(false);
   };
+
+  const [activeRoomId, setActiveRoomId] = useState(null);
+  const [activeRoomType, setActiveRoomType] = useState(null);
 
   return (
     <div className="cn-page">
@@ -514,6 +526,7 @@ export default function ConnectSidebar() {
               ageRange={ageRange}
               genderFilter={genderFilter}
               discoverable={discoverable}
+              goalFilter={displayUser.goalLabel || ""}
               onCreatedRequest={() => setHasRequestsTabEnabled(true)}
             />
           ) : (

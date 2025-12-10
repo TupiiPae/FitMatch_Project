@@ -18,6 +18,7 @@ export default function TabNearby({
   ageRange,
   genderFilter,
   discoverable,
+  goalFilter,
   onCreatedRequest,
 }) {
   const nav = useNavigate();
@@ -153,23 +154,28 @@ export default function TabNearby({
       if (connectionMode === "one_to_one" && u.isGroup) return false;
       if (connectionMode === "group" && !u.isGroup) return false;
 
+      // 🔹 Lọc theo Mục tiêu: nếu chủ tài khoản có goalFilter,
+      // chỉ hiển thị user/nhóm có goal trùng (so sánh theo label)
+      if (goalFilter) {
+        const userGoal = (u.goal || "").trim().toLowerCase();
+        const myGoal = goalFilter.trim().toLowerCase();
+        if (!userGoal || userGoal !== myGoal) return false;
+      }
+
       // Vị trí theo "khu vực" (chỉ áp dụng cho user 1:1, group bỏ qua như cũ)
       if (!u.isGroup && locationRange !== "any") {
         const key = u.areaKey; // same_ward | same_district | same_city | other
         if (!key) return false;
 
         if (locationRange === "same_city") {
-          // chấp nhận cùng thành phố / cùng quận / cùng phường
           if (!["same_city", "same_district", "same_ward"].includes(key)) {
             return false;
           }
         } else if (locationRange === "same_district") {
-          // chấp nhận cùng quận hoặc cùng phường
           if (!["same_district", "same_ward"].includes(key)) {
             return false;
           }
         } else if (locationRange === "same_ward") {
-          // chỉ đúng phường
           if (key !== "same_ward") return false;
         }
       }
@@ -211,7 +217,15 @@ export default function TabNearby({
 
       return true;
     });
-  }, [items, connectionMode, locationRange, ageRange, genderFilter, search]);
+  }, [
+    items,
+    connectionMode,
+    locationRange,
+    ageRange,
+    genderFilter,
+    search,
+    goalFilter,           // 🔹 nhớ thêm vào dependency
+  ]);
 
   const resultCount = filteredList.length;
 

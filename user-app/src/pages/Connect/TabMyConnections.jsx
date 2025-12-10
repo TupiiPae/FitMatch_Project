@@ -78,13 +78,16 @@ export default function TabMyConnections({ currentUser }) {
     const { mode, requestId } = confirmState;
     if (!mode || !requestId) return;
 
-    try {
+  try {
       setConfirmLoading(true);
 
       if (mode === "accept_duo") {
-        await acceptMatchRequest(requestId);
+        const res = await acceptMatchRequest(requestId);
         toast.success("Đã xác nhận lời mời kết nối.");
-        // Sau này nếu muốn điều hướng vào phòng, có thể lấy roomId từ response
+
+        // 👉 Sau khi xác nhận xong, chuyển sang giao diện phòng ghép đôi
+        nav("/ket-noi/duo");
+        return; // thoát luôn, không cần load lại list request
       } else if (mode === "reject_duo") {
         await rejectMatchRequest(requestId);
         toast.info("Đã từ chối lời mời.");
@@ -96,6 +99,7 @@ export default function TabMyConnections({ currentUser }) {
         toast.info("Đã hủy yêu cầu tham gia nhóm.");
       }
 
+      // Các case còn lại vẫn reload list như cũ
       await load();
       closeConfirm();
     } catch (e) {

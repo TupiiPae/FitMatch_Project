@@ -10,6 +10,8 @@ import {
   acceptRequest,
   rejectRequest,
   cancelRequest,
+  getRoomDetail,       // 👈 thêm
+  leaveMatchRoom,      // 👈 thêm
 } from "../controllers/match.controller.js";
 
 const router = Router();
@@ -32,5 +34,9 @@ router.get("/match/requests", listMyRequests);
 router.patch("/match/requests/:id/accept", acceptRequest);
 router.patch("/match/requests/:id/reject", rejectRequest);
 router.patch("/match/requests/:id/cancel", cancelRequest);
+
+// 🔹 Duo / group room
+router.get("/match/rooms/:id", getRoomDetail);
+router.post("/match/rooms/:id/leave", leaveMatchRoom);
 
 export default router;
