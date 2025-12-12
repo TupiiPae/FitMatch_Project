@@ -19,10 +19,10 @@ const toAbs = (u) => {
 
 const CAL_FILTERS = [
   { id: "all", label: "Tất cả" },
-  { id: "2000-2200", label: "2000-2200 Cal", from: 2000, to: 2200 },
-  { id: "2200-2400", label: "2200-2400 Cal", from: 2200, to: 2400 },
-  { id: "2400-2600", label: "2400-2600 Cal", from: 2400, to: 2600 },
-  { id: "2600-2800", label: "2600-2800 Cal", from: 2600, to: 2800 },
+  { id: "2000-2200", label: "2000-2200 Cal/ngày", from: 2000, to: 2200 },
+  { id: "2200-2400", label: "2200-2400 Cal/ngày", from: 2200, to: 2400 },
+  { id: "2400-2600", label: "2400-2600 Cal/ngày", from: 2400, to: 2600 },
+  { id: "2600-2800", label: "2600-2800 Cal/ngày", from: 2600, to: 2800 },
 ];
 
 function normalizeName(s = "") {
@@ -33,17 +33,33 @@ function normalizeName(s = "") {
     .trim();
 }
 
+// 👉 Helper: số ngày của thực đơn (ít nhất là 1 ngày)
+function getNumDays(menu) {
+  const fromField =
+    typeof menu.numDays === "number" && menu.numDays > 0 ? menu.numDays : null;
+  const fromArray = Array.isArray(menu.days) && menu.days.length > 0 ? menu.days.length : null;
+  const num = fromField ?? fromArray ?? 1;
+  return num > 0 ? num : 1;
+}
+
+/**
+ * 👉 getTotals: trả về GIÁ TRỊ TRUNG BÌNH / NGÀY
+ * - Dùng tổng Calorie/macros chia cho số ngày (numDays)
+ */
 function getTotals(menu) {
-  const totalKcal = menu.totalKcal ?? menu.totalCalories ?? menu.kcal ?? 0;
-  const proteinG = menu.totalProteinG ?? menu.proteinG ?? 0;
-  const carbG = menu.totalCarbG ?? menu.carbG ?? 0;
-  const fatG = menu.totalFatG ?? menu.fatG ?? 0;
+  const totalKcalRaw = menu.totalKcal ?? menu.totalCalories ?? menu.kcal ?? 0;
+  const proteinRaw = menu.totalProteinG ?? menu.proteinG ?? 0;
+  const carbRaw = menu.totalCarbG ?? menu.carbG ?? 0;
+  const fatRaw = menu.totalFatG ?? menu.fatG ?? 0;
+
+  const days = getNumDays(menu);
 
   return {
-    totalKcal: Math.round(Number(totalKcal) || 0),
-    proteinG: Math.round(Number(proteinG) || 0),
-    carbG: Math.round(Number(carbG) || 0),
-    fatG: Math.round(Number(fatG) || 0),
+    // trung bình / ngày
+    totalKcal: Math.round((Number(totalKcalRaw) || 0) / days),
+    proteinG: Math.round((Number(proteinRaw) || 0) / days),
+    carbG: Math.round((Number(carbRaw) || 0) / days),
+    fatG: Math.round((Number(fatRaw) || 0) / days),
   };
 }
 
@@ -126,7 +142,7 @@ export default function SuggestMenuList() {
     load();
   }, []);
 
-  // ---- Filter theo search + khoảng Calorie ----
+  // ---- Filter theo search + khoảng Calorie (đã dùng Calorie/ngày) ----
   const filteredItems = useMemo(() => {
     const qNorm = normalizeName(q);
     const qDigits = q.replace(/\D/g, "");
@@ -134,9 +150,9 @@ export default function SuggestMenuList() {
     const range = CAL_FILTERS.find((x) => x.id === calFilter);
 
     return (items || []).filter((m) => {
-      const { totalKcal } = getTotals(m);
+      const { totalKcal } = getTotals(m); // totalKcal/ngày
 
-      // Filter theo calorie chip
+      // Filter theo calorie chip (theo Cal/ngày)
       if (range && range.id !== "all") {
         if (typeof range.from === "number" && totalKcal < range.from) {
           return false;
@@ -220,7 +236,7 @@ export default function SuggestMenuList() {
           <div className="search smu-search">
             <i className="fa-solid fa-magnifying-glass" />
             <input
-              placeholder="Tìm kiếm theo tên thực đơn hoặc tổng Calorie..."
+              placeholder="Tìm kiếm theo tên thực đơn hoặc tổng Calorie/ngày..."
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -228,7 +244,7 @@ export default function SuggestMenuList() {
         </div>
 
         {/* Filter by Calories */}
-        <div className="smu-filter-label">Lọc theo tổng Calorie</div>
+        <div className="smu-filter-label">Lọc theo tổng Calorie/ngày</div>
         <div className="smu-chip-row">
           {CAL_FILTERS.map((f) => (
             <button
@@ -259,9 +275,9 @@ export default function SuggestMenuList() {
         {!loading && filteredItems.length > 0 && (
           <div className="smu-card-row" ref={sliderRef}>
             {filteredItems.map((m) => {
-              const totals = getTotals(m);
+              const totals = getTotals(m); // Calorie & macros /ngày
               const cate = m.category || "Chưa phân loại";
-              const numDays = m.numDays || m.days?.length || 0;
+              const numDays = getNumDays(m);
 
               return (
                 <div
@@ -289,18 +305,18 @@ export default function SuggestMenuList() {
                     <div className="smu-card-tags">
                       <span className="ex-chip">{cate}</span>
                       <span className="ex-chip">
-                        {numDays || 1} ngày
+                        {numDays} ngày
                       </span>
                     </div>
 
                     <div className="smu-card-kcal">
-                     Calorie: {totals.totalKcal.toLocaleString()} Cal
+                      Tổng Calorie: {totals.totalKcal.toLocaleString()} Cal/ngày
                     </div>
 
                     <div className="smu-card-macros">
-                      <span>Đạm: {totals.proteinG} g | </span>
-                      <span>Đường bột: {totals.carbG} g | </span>
-                      <span>Chất béo: {totals.fatG} g</span>
+                      <span>Đạm: {totals.proteinG}g | </span>
+                      <span>Đường bột: {totals.carbG}g | </span>
+                      <span>Chất béo: {totals.fatG}g</span>
                     </div>
                   </div>
 
@@ -363,9 +379,9 @@ export default function SuggestMenuList() {
         {savedItems.length > 0 && (
           <div className="smu-saved-list">
             {savedItems.map((m) => {
-              const totals = getTotals(m);
+              const totals = getTotals(m); // /ngày
               const cate = m.category || "Chưa phân loại";
-              const numDays = m.numDays || m.days?.length || 0;
+              const numDays = getNumDays(m);
 
               return (
                 <div
@@ -390,24 +406,24 @@ export default function SuggestMenuList() {
                     <div className="smu-saved-tags">
                       <span className="ex-chip">{cate}</span>
                       <span className="ex-chip">
-                        {numDays || 1} ngày
+                        {numDays} ngày
                       </span>
                     </div>
                     <div className="smu-saved-kcal">
-                      Calorie: {totals.totalKcal.toLocaleString()} Cal
+                      Tổng Calorie: {totals.totalKcal.toLocaleString()} Cal/ngày
                     </div>
                     <div className="smu-saved-macros">
                       <span className="protein">
                         <i className="fa-solid fa-drumstick-bite" />{" "}
-                        {totals.proteinG} g
+                        {totals.proteinG} g/ngày
                       </span>
                       <span className="carb">
                         <i className="fa-solid fa-bread-slice" />{" "}
-                        {totals.carbG} g
+                        {totals.carbG} g/ngày
                       </span>
                       <span className="fat">
                         <i className="fa-solid fa-bacon" />{" "}
-                        {totals.fatG} g
+                        {totals.fatG} g/ngày
                       </span>
                     </div>
                   </div>

@@ -1,6 +1,5 @@
 .st-page {
   color: #f9fafb;
-
   --bg-card: #020617;
   --border: #1f2937;
   --primary: #ef4444;
@@ -11,7 +10,7 @@
   margin: 0 auto;
 }
 
-/* Nút chung – có thể dùng sau này */
+/* Nút chung */
 .st-btn {
   border-radius: 999px;
   border: 1px solid transparent;
@@ -26,7 +25,6 @@
   background: #ef4444;
   color: #fff;
 }
-
 .st-btn.primary:hover {
   background: #f97373;
 }
@@ -36,13 +34,12 @@
   color: #e5e7eb;
   border-color: #4b5563;
 }
-
 .st-btn.ghost:hover {
   border-color: #ef4444;
   color: #fff;
 }
 
-/* Header trang Thống kê */
+/* Header */
 .st-header {
   display: flex;
   justify-content: space-between;
@@ -50,26 +47,22 @@
   align-items: flex-end;
   gap: 12px;
 }
-
 .st-header h1 {
   font-size: 26px;
   font-weight: 700;
   color: #f9fafb;
   margin: 0 0 4px;
 }
-
 .st-header p {
   font-size: 13px;
   color: #9ca3af;
   margin: 0;
 }
-
 .st-header-right {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .st-header-pill {
   display: inline-flex;
   align-items: center;
@@ -81,22 +74,22 @@
   color: #e5e7eb;
   border: 1px solid #1f2937;
 }
-
 .st-header-pill i {
   color: #ef4444;
 }
 
-/* GRID LAYOUT (4 cols x 4 rows) */
+/* GRID LAYOUT – 3 cột x 3 hàng */
 .st-grid-layout {
   display: grid;
-  grid-template-columns: 500px 1fr 300px 300px;
-  grid-template-rows: 180px 140px 220px 400px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.05fr) minmax(0, 0.65fr);
+  grid-template-rows: auto auto 260px; /* hàng 1 auto để không tràn */
+  gap: 30px;
 }
 
+/* Card chung */
 .st-card {
   background: var(--bg-card);
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   padding: 16px;
   box-shadow: 0 14px 45px rgba(0, 0, 0, 0.45);
@@ -107,7 +100,6 @@
   transition: border-color 0.18s ease-out, transform 0.18s ease-out,
     box-shadow 0.18s ease-out, background-color 0.18s ease-out;
 }
-
 .st-card:hover {
   border-color: #4b5563;
   transform: translateY(-2px);
@@ -121,7 +113,6 @@
   margin-bottom: 24px;
   min-height: 24px;
 }
-
 .st-card-header.space-between {
   justify-content: space-between;
 }
@@ -133,13 +124,13 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-
 .st-card-title.lg {
   font-size: 22px;
   color: #f9fafb;
   text-transform: none;
 }
 
+/* Badge streak */
 .st-streak-badge {
   font-size: 18px;
   font-weight: 700;
@@ -152,49 +143,70 @@
   background: #020617;
   border: 1px solid #facc15;
 }
-
 .st-streak-badge i.hot {
   color: red;
 }
-
 .st-streak-badge i.cold {
   color: #9ca3af;
 }
 
-/* PLACEMENT */
+/* Vị trí trong grid chính */
 .st-col-overview {
-  grid-column: 1 / 2;
-  grid-row: 1 / 5;
-}
-
-.st-box-calories {
-  grid-column: 2 / 3;
-  grid-row: 1 / 3;
-}
-
-.st-box-workout {
   grid-column: 3 / 4;
-  grid-row: 1 / 2;
+  grid-row: 1 / 4;
 }
 
-.st-box-steps {
-  grid-column: 4 / 5;
+.st-row-top {
+  grid-column: 1 / 3;
   grid-row: 1 / 2;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
 }
 
-.st-box-water {
-  grid-column: 3 / 5;
+/* Hàng 2: nước / bước / tập luyện */
+.st-row-middle {
+  grid-column: 1 / 3;
   grid-row: 2 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.st-box-nutrition {
-  grid-column: 2 / 5;
+.st-row-middle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.st-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.st-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #e5e7eb;
+}
+
+.st-section-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Hàng 3: thực đơn gợi ý (2/3) + bài tập (1/3) */
+.st-row-bottom {
+  grid-column: 1 / 3;
   grid-row: 3 / 4;
-}
-
-.st-box-weight {
-  grid-column: 2 / 5;
-  grid-row: 4 / 5;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
 }
 
 /* === DATE STRIP === */
@@ -209,7 +221,6 @@
   background: #020617;
   border: 1px solid #1f2937;
 }
-
 .st-ds-nav {
   background: transparent;
   border: none;
@@ -220,12 +231,10 @@
   border-radius: 999px;
   transition: all 0.15s ease-out;
 }
-
 .st-ds-nav:hover {
   color: #f9fafb;
   background: #111827;
 }
-
 .st-ds-item {
   display: flex;
   flex-direction: column;
@@ -233,34 +242,29 @@
   justify-content: center;
   width: 48px;
   height: 52px;
-  border-radius: 20px;
+  border-radius: 8px;
   background: #020617;
   cursor: pointer;
   transition: all 0.18s ease-out;
 }
-
 .st-ds-item.active {
   background: #ef4444;
   color: #fff;
   transform: translateY(-1px);
   box-shadow: 0 10px 30px rgba(239, 68, 68, 0.6);
 }
-
 .st-ds-item .d-day {
   font-size: 16px;
   font-weight: 700;
   line-height: 1;
 }
-
 .st-ds-item .d-mo {
   font-size: 10px;
   opacity: 0.85;
 }
-
 .st-ds-item:not(.active) {
   color: #9ca3af;
 }
-
 .st-ds-item:not(.active):hover {
   background: #111827;
   color: #f9fafb;
@@ -274,20 +278,16 @@
   scrollbar-width: thin;
   scrollbar-color: #4b5563 transparent;
 }
-
 .st-timeline-body::-webkit-scrollbar {
   width: 6px;
 }
-
 .st-timeline-body::-webkit-scrollbar-thumb {
   background: #4b5563;
   border-radius: 999px;
 }
-
 .st-ts-group {
   margin-bottom: 16px;
 }
-
 .st-ts-head {
   font-size: 13px;
   font-weight: 600;
@@ -296,27 +296,24 @@
   padding-bottom: 4px;
   border-bottom: 1px dashed #334155;
 }
-
 .st-ts-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
   align-items: center;
 }
-
 .st-meal-row {
   display: flex;
   align-items: center;
   gap: 10px;
   background: #020617;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: 4px;
   border: 1px solid #1f2937;
   width: 100%;
   max-width: 420px;
   transition: all 0.16s ease-out;
 }
-
 .st-meal-row img {
   width: 36px;
   height: 36px;
@@ -324,11 +321,9 @@
   object-fit: cover;
   background: #000;
 }
-
 .st-meal-info {
   overflow: hidden;
 }
-
 .st-meal-info div {
   font-size: 13px;
   font-weight: 500;
@@ -337,19 +332,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .st-meal-info span {
   font-size: 11px;
   color: #9ca3af;
   display: block;
 }
-
 .st-meal-row:hover {
   border-color: #ef4444;
   background: #111827;
   transform: translateY(-1px);
 }
-
 .st-empty {
   font-size: 13px;
   color: #6b7280;
@@ -376,7 +368,6 @@
   justify-content: center;
   transition: all 0.18s ease-out;
 }
-
 .st-btn-add-corner:hover {
   background: #ef4444;
   border-color: #ef4444;
@@ -384,14 +375,13 @@
   transform: translateY(-1px) scale(1.03);
 }
 
-/* === STATISTICS BODY === */
+/* === STAT BOXES === */
 .st-stat-body {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
-
 .st-workout-names {
   font-size: 12px;
   color: #9ca3af;
@@ -400,25 +390,24 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-
 .st-stat-big {
   font-size: 28px;
   font-weight: 800;
   color: #f9fafb;
 }
-
 .st-stat-big i {
   color: #f97316;
   margin-right: 8px;
 }
-
+.st-stat-big .water {
+  color: #38bdf8;
+  margin-right: 8px;
+}
 .st-stat-sub {
   font-size: 13px;
   color: #9ca3af;
   margin-bottom: 8px;
 }
-
 .st-prog-bar {
   height: 8px;
   background: #020617;
@@ -426,235 +415,223 @@
   overflow: hidden;
   border: 1px solid #1f2937;
 }
-
 .st-prog-bar div {
   height: 100%;
   background: linear-gradient(90deg, #22c55e, #a3e635);
   transition: width 0.25s ease-out;
 }
 
-/* === CALORIES & WATER === */
-.st-cal-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
+/* === CALORIES + MACROS === */
+.st-cal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
+  gap: 18px;
   flex: 1;
-  padding: 4px 0;
-  gap: 8px;
+  align-items: stretch;
 }
 
-.st-cal-ring-wrap {
-  width: 300px;
-  height: 180px;
-  position: relative;
-  align-items: center;
+/* Trái: vòng tròn calo */
+.st-cal-left {
   display: flex;
+  align-items: center;
   justify-content: center;
+  padding: 4px 0;
 }
 
-.st-cal-ring svg {
-  display: block;
+.st-cal-circle {
+  position: relative;
+  width: 280px;
+  height: 280px;
 }
-
-/* Ring dùng đỏ giống tone Connect */
-.ring-bg {
-  stroke: #111827;
-  stroke-width: 8;
-  fill: none;
+.st-cal-circle svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
 }
-
-.ring-fg {
-  stroke: #00BBFE;
-  stroke-width: 8;
-  fill: none;
-  stroke-linecap: square;
-  transition: stroke-dashoffset 0.45s ease-out;
-}
-
-.st-cal-center {
+.st-cal-circle-center {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 50px;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   pointer-events: none;
 }
 
+/* Circle ring */
+.ring-bg {
+  stroke: #111827;
+  stroke-width: 6;
+  fill: none;
+}
+.ring-fg {
+  stroke-width: 6;
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.45s ease-out;
+}
+.weightRing-bg{
+  stroke: #111827;
+  stroke-width: 12;
+  fill: none;
+}
+.weightRing-fg {
+  stroke-width: 12;
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.45s ease-out;
+}
+
+.ring-fg-cal {
+  stroke: #00BBFE;
+}
+
+/* Text bên trong vòng tròn calo */
 .cc-val {
   font-size: 22px;
   font-weight: 800;
   color: #fff;
   line-height: 1.1;
 }
-
 .cc-lbl {
-  font-size: 14px;
+  font-size: 13px;
   color: #9ca3af;
   margin-top: 2px;
+}
+
+/* Phải: 3 số + macros */
+.st-cal-right {
+  display: flex;
+  flex-direction: column;
 }
 
 .st-cal-meta {
   width: 100%;
-  border-top: 1px solid #334155;
-  padding-top: 8px;
+}
+
+/* Grid layout cho 3 ô */
+.st-cal-meta-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+/* Style cho từng ô dữ liệu (Card) */
+.st-cal-meta-row .c {
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #020617;
+  border: 1px solid #111827;
+  
   display: flex;
-  justify-content: space-around;
-  gap: 16px;
-}
-
-.st-cal-meta .c {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.st-cal-meta .c .v {
-  font-size: 16px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 2px;
-}
-
-.st-cal-meta .c .lb {
-  font-size: 11px;
-}
-
-/* WATER */
-.panel-stt-water {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 10px;
-}
-
-.wleft {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  min-width: 0;
-}
-
-.wleft i {
-  font-size: 30px;
-  color: #38bdf8;
-}
-
-.wlabel {
-  font-size: 20px;
-  font-weight: 600;
-  color: #e5e7eb;
-}
-
-.wval {
-  margin-top: 2px;
-  font-weight: 700;
-  font-size: 24px;
-  color: #ef4444;
-}
-
-.wctl {
-  display: flex;
+  flex-direction: row; 
   align-items: center;
   gap: 10px;
 }
 
-.wctl button {
-  width: 40px;
+/* Vùng chứa Icon (Hình tròn) */
+.st-cal-meta-row .st-cal-icon {
+  width: 36px;
   height: 36px;
-  border-radius: 8px;
-  border: 1px solid #ef4444;
-  background: #020617;
-  color: #f9fafb;
-  cursor: pointer;
-  font-size: 20px;
-  transition: all 0.16s ease-out;
-}
-
-.wctl button:hover {
-  background: #ef4444;
-  color: #f9fafb;
-}
-
-.wu-wrap {
+  min-width: 36px;
+  border-radius: 50%;
+  background: #ef4444; /* Màu nền tròn */
   display: flex;
   align-items: center;
-  background: #111827;
-  border-radius: 6px;
-  padding: 0 6px;
-  border: 1px solid #1f2937;
+  justify-content: center;
 }
 
-.wu-wrap input {
-  width: 120px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid #111827;
-  padding: 0 10px;
-  background: transparent;
+/* Style riêng cho FontAwesome Icon */
+.st-cal-meta-row .st-cal-icon i {
+  font-size: 14px; /* Kích thước icon */
+  color: #ffffff;  /* Màu icon (xám nhạt) */
+}
+
+/* Wrapper cho phần text bên phải */
+.st-cal-meta-row .st-cal-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Số liệu (Value) - Đưa lên trên */
+.st-cal-meta-row .v {
   font-size: 16px;
-  font-weight: 500;
-  text-align: center;
-  color: #f9fafb;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
 }
 
-.wu-wrap span {
+.st-cal-meta-row .v span {
   font-size: 11px;
+  font-weight: 400;
   color: #9ca3af;
   margin-left: 2px;
 }
 
-/* === MACROS (carousel 2 trang) === */
-.st-box-nutrition {
-  display: flex;
-  flex-direction: column;
+/* Tiêu đề (Label) - Đưa xuống dưới */
+.st-cal-meta-row .lb {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: capitalize;
+  margin-top: 2px;
+  font-weight: 500;
 }
 
+/* Header cho phần macros */
+.st-cal-macros-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.st-cal-macros-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #e5e7eb;
+}
+.st-cal-macros-sub {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* === MACROS (carousel 2 trang, mỗi trang 3 hàng) === */
 .st-macro-slider {
   flex: 1;
   overflow: hidden;
-  padding: 4px 2px 0;
+  padding: 4px 0 0;
   cursor: grab;
 }
-
 .st-macro-slider:active {
   cursor: grabbing;
 }
-
 .st-macro-inner {
   display: flex;
   transition: transform 0.25s ease-out;
 }
-
 .st-macro-page {
   min-width: 100%;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .st-macro-item {
   background: #020617;
-  border-radius: 14px;
+  border-radius: 4px;
   border: 1px solid #1f2937;
-  padding: 10px 12px 9px;
+  padding: 8px 10px 7px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
-
 .st-macro-top {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
 }
-
 .st-macro-icon {
   width: 20px;
   height: 20px;
@@ -664,7 +641,6 @@
   justify-content: center;
   font-size: 11px;
 }
-
 .st-macro-icon.red {
   background: #3b0b0b;
   color: #f97316;
@@ -689,70 +665,59 @@
   background: #022c22;
   color: #14b8a6;
 }
-
 .st-macro-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #f9fafb;
 }
 
+/* thanh bar nhỏ */
 .st-macro-bar {
-  height: 8px;
+  height: 6px;
   background: #111827;
   border-radius: 999px;
   overflow: hidden;
   border: 1px solid #111827;
 }
-
 .st-macro-bar span {
   display: block;
   height: 100%;
   transition: width 0.25s ease-out;
 }
-
-/* Màu macro theo tone Connect (đậm nhưng không neon) */
+/* màu bar */
 .bar.red span {
   background: linear-gradient(90deg, #ef4444, #f97316);
 }
-
 .bar.purple span {
   background: linear-gradient(90deg, #1460e4, #6366f1);
 }
-
 .bar.green span {
   background: linear-gradient(90deg, #c1f722, #a3e635);
 }
-
 .bar.gray span {
-  background:  #fff
+  background: #ffffff;
 }
-
 .bar.orange span {
-  background: #E0E5EA
+  background: #e0e5ea;
 }
-
 .bar.teal span {
-  background: linear-gradient(90deg, #4AAB49, #69bf67);
+  background: linear-gradient(90deg, #4aab49, #69bf67);
 }
-
 .st-macro-val {
-  font-size: 12px;
+  font-size: 11px;
   color: #f9fafb;
-  margin-top: 2px;
 }
-
 .st-macro-val span {
   color: #9ca3af;
 }
 
-/* Dots dưới cùng */
+/* Dots */
 .st-macro-dots {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
-
 .st-macro-dot {
   width: 8px;
   height: 8px;
@@ -762,109 +727,193 @@
   cursor: pointer;
   transition: all 0.16s ease-out;
 }
-
 .st-macro-dot.is-active {
   width: 18px;
   background: #ef4444;
 }
 
-/* Responsive: khi hẹp có thể cho 2 cột */
-@media (max-width: 900px) {
-  .st-macro-page {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* === WATER === */
+.panel-stt-water {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
 }
-@media (max-width: 640px) {
-  .st-macro-page {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.wleft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+.wleft i {
+  font-size: 30px;
+  color: #38bdf8;
+}
+.wlabel {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+.wval {
+  margin-top: 2px;
+  font-weight: 700;
+  font-size: 24px;
+  color: #ef4444;
+}
+.wctl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wctl button {
+  width: 40px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #ef4444;
+  background: #020617;
+  color: #f9fafb;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.16s ease-out;
+}
+.wctl button:hover {
+  background: #ef4444;
+  color: #f9fafb;
+}
+.wu-wrap {
+  display: flex;
+  align-items: center;
+  background: #111827;
+  border-radius: 6px;
+  padding: 0 6px;
+  border: 1px solid #1f2937;
+}
+.wu-wrap input {
+  width: 120px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #111827;
+  padding: 0 10px;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  color: #f9fafb;
+}
+.wu-wrap span {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-left: 2px;
+}
+/* Water modal layout */
+.st-water-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
+.st-water-current {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.st-water-current i {
+  font-size: 30px;
+  color: #38bdf8;
+}
+
+.st-water-label {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.st-water-val {
+  margin-top: 2px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.st-water-ctrl {
+  justify-content: flex-start;
+}
+
+.st-water-ctrl .wu-wrap input {
+  width: 100%;
+}
+
+/* === WEIGHT GAUGE === */
 .st-weight-body {
   display: flex;
   gap: 16px;
   height: 100%;
   align-items: center;
 }
-
-.st-w-left {
-  width: 100px;
+.st-weight-body.gauge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.st-w-curr {
-  font-size: 28px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.st-w-curr span {
-  font-size: 14px;
-  color: #9ca3af;
-  font-weight: 400;
-}
-
-.st-w-lbl {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.st-w-chart {
-  flex: 1;
-  height: 80px;
+.st-weight-ring {
   position: relative;
-}
-
-.st-chart-viz {
   width: 100%;
-  height: 100%;
-  position: relative;
+  max-width: 260px;
+  margin: 0 auto;
 }
 
-.st-chart-line {
+.st-weight-center {
   position: absolute;
-  top: 50%;
-  width: 100%;
-  height: 1px;
-  background: #334155;
-}
-
-.st-cp {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  left: 0;
+  right: 0;
+  top: 38px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  pointer-events: none;
 }
 
-.st-cdot {
-  width: 8px;
-  height: 8px;
-  background: #ef4444;
-  border: 2px solid #020617;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+.st-weight-center-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #f9fafb;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
 }
 
-.st-ctip {
-  position: absolute;
-  top: -20px;
-  font-size: 10px;
-  background: #020617;
-  padding: 1px 4px;
-  border-radius: 4px;
-  white-space: nowrap;
-  color: #e2e8f0;
-  border: 1px solid #1f2937;
+.st-weight-center-value span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #9ca3af;
 }
 
-.st-no-data {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+.st-weight-center-label {
   font-size: 12px;
-  color: #64748b;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.st-weight-center-left {
+  font-size: 12px;
+  color: #fbbf24;
+  margin-top: 4px;
+}
+
+.st-weight-range {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #9ca3af;
+  padding: 0 8px;
+}
+
+/* màu vòng cho cân nặng – cam giống hình */
+.ring-fg-weight {
+  stroke: #fb923c;
 }
 
 /* === MODAL === */
@@ -877,32 +926,27 @@
   justify-content: center;
   z-index: 999;
 }
-
 .st-modal-card {
   width: 450px;
   background: #020617;
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px solid #1f2937;
   padding: 16px;
   color: #fff;
   box-shadow: 0 22px 50px rgba(0, 0, 0, 0.9);
 }
-
 .st-modal-card.sm {
   width: 320px;
 }
-
 .st-modal-head {
   display: flex;
   justify-content: space-between;
   margin-bottom: 12px;
 }
-
 .st-modal-head h3 {
   margin: 0;
   font-size: 16px;
 }
-
 .st-close-btn {
   background: none;
   border: none;
@@ -913,64 +957,54 @@
   padding: 4px 6px;
   transition: background 0.16s ease-out, color 0.16s ease-out;
 }
-
 .st-close-btn:hover {
   background: #111827;
   color: #f1f5f9;
 }
-
 .st-modal-body {
   max-height: 400px;
   overflow-y: auto;
 }
-
 .st-worklist {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
 .st-workrow {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px;
   background: #020617;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   border: 1px solid #111827;
   transition: all 0.16s ease-out;
 }
-
 .st-workrow.is-selected {
   border-color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
 }
-
 .st-workrow:hover {
   border-color: #ef4444;
 }
-
 .st-workrow-title {
   font-size: 14px;
   font-weight: 600;
 }
-
 .st-workrow-sub {
   font-size: 12px;
   color: #94a3b8;
 }
-
 .st-input-group {
   display: flex;
   align-items: center;
   gap: 8px;
   background: #020617;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid #334155;
 }
-
 .st-input-group input {
   flex: 1;
   background: transparent;
@@ -979,12 +1013,71 @@
   font-size: 18px;
   outline: none;
 }
-
 .st-modal-foot {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 16px;
+}
+
+/* === Thực đơn gợi ý & danh sách bài tập (hàng 3) === */
+.st-suggest-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.st-suggest-desc {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0 0 10px;
+}
+.st-suggest-placeholder {
+  flex: 1;
+  border-radius: 4px;
+  border: 1px dashed #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #6b7280;
+  background: #020617;
+}
+
+.st-workout-list-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.st-workout-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.st-workout-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #020617;
+  border: 1px solid #1f2937;
+  font-size: 13px;
+}
+.st-wl-name {
+  font-weight: 500;
+  color: #e5e7eb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-wl-kcal {
+  font-weight: 600;
+  color: #f97316;
+  margin-left: 8px;
+  flex-shrink: 0;
 }
 
 /* RESPONSIVE */
@@ -995,38 +1088,24 @@
   }
 
   .st-col-overview {
-    grid-column: 1 / 2;
-    grid-row: 1 / 3;
-  }
-
-  .st-box-calories {
-    grid-column: 2 / 3;
+    grid-column: 1 / 3;
     grid-row: 1 / 2;
   }
-
-  .st-box-workout {
+  .st-box-weight {
     grid-column: 1 / 2;
-    grid-row: 3 / 4;
+    grid-row: 2 / 3;
   }
-
-  .st-box-steps {
-    grid-column: 2 / 3;
-    grid-row: 3 / 4;
-  }
-
-  .st-box-water {
+  .st-box-calories {
     grid-column: 2 / 3;
     grid-row: 2 / 3;
   }
-
-  .st-box-nutrition {
+  .st-row-middle {
+    grid-column: 1 / 3;
+    grid-row: 3 / 4;
+  }
+  .st-row-bottom {
     grid-column: 1 / 3;
     grid-row: 4 / 5;
-  }
-
-  .st-box-weight {
-    grid-column: 1 / 3;
-    grid-row: 5 / 6;
   }
 }
 
@@ -1035,9 +1114,25 @@
     display: flex;
     flex-direction: column;
   }
-
+  .st-row-middle,
+  .st-row-bottom {
+    display: flex;
+    flex-direction: column;
+  }
+  .st-row-middle-grid {
+    grid-template-columns: minmax(0, 1fr); 
+  }
   .st-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .st-cal-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .st-macro-page {
+    gap: 10px;
   }
 }

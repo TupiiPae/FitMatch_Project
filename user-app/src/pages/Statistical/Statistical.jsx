@@ -1,4 +1,3 @@
-// src/pages/Statistical/Statistical.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import "./Statistical.css";
@@ -9,35 +8,73 @@ import {
   setDailySteps,
   setDailyWeight,
   saveDailyWorkouts,
-  getWeightHistory as apiGetWeightHistory,
 } from "../../api/activity";
+import { getOnboardingData } from "../../api/onboarding";
 import api from "../../lib/api";
 import { toast } from "react-toastify";
-import { WorkoutModal, SimpleInputModal } from "./StatisticalModals";
+import { WorkoutModal, SimpleInputModal, WaterModal  } from "./StatisticalModals";
+import { getMe } from "../../api/account";
 
-const STEP_GOAL = 8000, PLACEHOLDER = "/images/food-placeholder.jpg";
+const STEP_GOAL = 8000,
+  PLACEHOLDER = "/images/food-placeholder.jpg";
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
-const toAbs = (u) => { if (!u) return u; try { return new URL(u, API_ORIGIN).toString(); } catch { return u; } };
-const toNum = (v, d = 0) => v == null || v === "" || isNaN(+v) ? d : +v;
+const toAbs = (u) => {
+  if (!u) return u;
+  try {
+    return new URL(u, API_ORIGIN).toString();
+  } catch {
+    return u;
+  }
+};
+const toNum = (v, d = 0) =>
+  v == null || v === "" || isNaN(+v) ? d : +v;
 
-function readStatFor(d){ try{const r=window.localStorage.getItem(LS_KEY);return (r?JSON.parse(r):{})[d]||{steps:0,weightKg:null,workouts:[]}}catch{return {steps:0,weightKg:null,workouts:[]}} }
-function writeAllStatLocal(d, val){ try{const r=JSON.parse(window.localStorage.getItem(LS_KEY)||'{}'); r[d]=val; window.localStorage.setItem(LS_KEY,JSON.stringify(r))}catch{} }
-function mapWorkoutToOption(p){ const t=p?.totals||{}; return {id:p._id, name:p.name||"(No name)", kcal:t.kcal??t.calories??p.totalKcal??0} }
+function mapWorkoutToOption(p) {
+  const t = p?.totals || {};
+  return {
+    id: p._id,
+    name: p.name || "(No name)",
+    kcal: t.kcal ?? t.calories ?? p.totalKcal ?? 0,
+  };
+}
 const pickWorkoutRes = (r) => r?.data?.data || r?.data || r || {};
 
 export default function Statistical() {
   const [date, setDate] = useState(() => dayjs().format("YYYY-MM-DD"));
   const [logs, setLogs] = useState([]);
-  const [totals, setTotals] = useState({ kcal: 0, proteinG: 0, carbG: 0, fatG: 0, sugarG: 0, saltG: 0, fiberG: 0 });
-  const [targets, setTargets] = useState({ kcal: 0, proteinG: 0, carbG: 0, fatG: 0, sugarG: 0, saltG: 0, fiberG: 0 });
-  const [waterMl, setWaterMl] = useState(0); const [stepMl, setStepMl] = useState(250);
-  const [streak, setStreak] = useState(0); const [hot, setHot] = useState(false);
-  const [activity, setActivity] = useState({ steps: 0, weightKg: null, workouts: [] });
-  const [weightHistory, setWeightHistory] = useState([]);
+  const [totals, setTotals] = useState({
+    kcal: 0,
+    proteinG: 0,
+    carbG: 0,
+    fatG: 0,
+    sugarG: 0,
+    saltG: 0,
+    fiberG: 0,
+  });
+  const [targets, setTargets] = useState({
+    kcal: 0,
+    proteinG: 0,
+    carbG: 0,
+    fatG: 0,
+    sugarG: 0,
+    saltG: 0,
+    fiberG: 0,
+  });
+  const [waterMl, setWaterMl] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [hot, setHot] = useState(false);
+  const [activity, setActivity] = useState({
+    steps: 0,
+    weightKg: null,
+    workouts: [],
+  });
   const [workOptions, setWorkOptions] = useState([]);
   const [modal, setModal] = useState(null);
+  const [weightBase, setWeightBase] = useState(null); // cân nặng gốc trong onboarding
+  const [weightGoal, setWeightGoal] = useState(null); // cân nặng mục tiêu trong onboarding
+  const [userWeight, setUserWeight] = useState(null); // cân nặng hiện tại trong user.profile
 
-    const [macroPage, setMacroPage] = useState(0); // 0: Đạm/Đường bột/Chất béo, 1: Muối/Đường/Chất xơ
+  const [macroPage, setMacroPage] = useState(0); // 0: Đạm/Đường bột/Chất béo, 1: Muối/Đường/Chất xơ
   const macroStartX = useRef(null);
 
   const handleMacroSlideStart = (e) => {
@@ -58,7 +95,6 @@ export default function Statistical() {
     }
     macroStartX.current = null;
   };
-  
 
   /* ====== Logic ====== */
   const selectedWorkoutIds = useMemo(
@@ -73,25 +109,92 @@ export default function Statistical() {
         .join(", "),
     [activity.workouts]
   );
+
   const totalBurnedKcal = useMemo(
     () => (activity.workouts || []).reduce((s, w) => s + (w.kcal || 0), 0),
     [activity.workouts]
   );
-  const kcalTarget=Math.round(targets.kcal||0), kcalAte=Math.round(totals.kcal||0), kcalBurned=Math.round(totalBurnedKcal||0);
-  const kcalBudget=Math.max(0,kcalTarget+kcalBurned), kcalRemaining=Math.max(0,kcalBudget-kcalAte), kcalUsedPct=kcalBudget?Math.min(1,kcalAte/kcalBudget):0;
+
+  const kcalTarget = Math.round(targets.kcal || 0),
+    kcalAte = Math.round(totals.kcal || 0),
+    kcalBurned = Math.round(totalBurnedKcal || 0);
+  const kcalBudget = Math.max(0, kcalTarget + kcalBurned);
+  const kcalRemaining = Math.max(0, kcalBudget - kcalAte);
+  const kcalUsedPct = kcalBudget ? Math.min(1, kcalAte / kcalBudget) : 0;
 
   const timeSlots = useMemo(() => {
-    const map={}; 
-    for(const it of logs){ const h=Number(it.hour); if(!map[h])map[h]=[]; map[h].push(it); }
-    return Object.entries(map).map(([h,arr])=>({ hour:Number(h), items:arr, totalKcal: arr.reduce((s,i)=>s+(i.food?.kcal||0)*toNum(i.quantity,1),0) })).sort((a,b)=>a.hour-b.hour);
+    const map = {};
+    for (const it of logs) {
+      const h = Number(it.hour);
+      if (!map[h]) map[h] = [];
+      map[h].push(it);
+    }
+    return Object.entries(map)
+      .map(([h, arr]) => ({
+        hour: Number(h),
+        items: arr,
+        totalKcal: arr.reduce(
+          (s, i) => s + (i.food?.kcal || 0) * toNum(i.quantity, 1),
+          0
+        ),
+      }))
+      .sort((a, b) => a.hour - b.hour);
   }, [logs]);
 
+  // Cân nặng hiện tại (ưu tiên: profile -> log activity -> onboarding base)
+  const weightCurrent = userWeight ?? activity.weightKg ?? weightBase;
+
+  const { weightProgress, kgLeft } = useMemo(() => {
+    if (
+      weightBase == null ||
+      weightGoal == null ||
+      weightCurrent == null ||
+      weightBase === weightGoal
+    ) {
+      return { weightProgress: 0, kgLeft: null };
+    }
+
+    let progress = 0;
+    let left = 0;
+
+    if (weightGoal < weightBase) {
+      const total = weightBase - weightGoal;
+      if (weightCurrent >= weightBase) {
+        progress = 0;
+        left = total;
+      } else if (weightCurrent <= weightGoal) {
+        progress = 1;
+        left = 0;
+      } else {
+        progress = (weightBase - weightCurrent) / total;
+        left = weightCurrent - weightGoal;
+      }
+    } else if (weightGoal > weightBase) {
+      const total = weightGoal - weightBase;
+      if (weightCurrent <= weightBase) {
+        progress = 0;
+        left = total;
+      } else if (weightCurrent >= weightGoal) {
+        progress = 1;
+        left = 0;
+      } else {
+        progress = (weightCurrent - weightBase) / total;
+        left = weightGoal - weightCurrent;
+      }
+    }
+
+    return {
+      weightProgress: Math.max(0, Math.min(1, progress)),
+      kgLeft: left,
+    };
+  }, [weightBase, weightGoal, weightCurrent]);
+
   const updateActivity = (patch) => {
-    setActivity(prev => ({ ...prev, ...patch }));
+    setActivity((prev) => ({ ...prev, ...patch }));
   };
 
   /* ====== API ====== */
-async function loadData() {
+  async function loadData() {
     const [l, w, s, actRes] = await Promise.all([
       getDayLogs(date),
       getWater(date),
@@ -99,21 +202,34 @@ async function loadData() {
       getDailyActivity(date),
     ]);
 
-    setLogs((l.data?.items || []).map(it => ({
-      ...it,
-      hour: Number(it.hour),
-      quantity: Number(it.quantity ?? 1),
-      foodAbs: it.food?.imageUrl ? toAbs(it.food.imageUrl) : PLACEHOLDER,
-    })));
+    setLogs(
+      (l.data?.items || []).map((it) => ({
+        ...it,
+        hour: Number(it.hour),
+        quantity: Number(it.quantity ?? 1),
+        foodAbs: it.food?.imageUrl ? toAbs(it.food.imageUrl) : PLACEHOLDER,
+      }))
+    );
 
-    const t = l.data?.totals || {}, g = l.data?.targets || {};
+    const t = l.data?.totals || {},
+      g = l.data?.targets || {};
     setTotals({
-      kcal: +t.kcal || 0, proteinG: +t.proteinG || 0, carbG: +t.carbG || 0,
-      fatG: +t.fatG || 0, sugarG: +t.sugarG || 0, saltG: +t.saltG || 0, fiberG: +t.fiberG || 0,
+      kcal: +t.kcal || 0,
+      proteinG: +t.proteinG || 0,
+      carbG: +t.carbG || 0,
+      fatG: +t.fatG || 0,
+      sugarG: +t.sugarG || 0,
+      saltG: +t.saltG || 0,
+      fiberG: +t.fiberG || 0,
     });
     setTargets({
-      kcal: +g.kcal || 0, proteinG: +g.proteinG || 0, carbG: +g.carbG || 0,
-      fatG: +g.fatG || 0, sugarG: +g.sugarG || 0, saltG: +g.saltG || 0, fiberG: +g.fiberG || 0,
+      kcal: +g.kcal || 0,
+      proteinG: +g.proteinG || 0,
+      carbG: +g.carbG || 0,
+      fatG: +g.fatG || 0,
+      sugarG: +g.sugarG || 0,
+      saltG: +g.saltG || 0,
+      fiberG: +g.fiberG || 0,
     });
 
     setWaterMl(Number(w.data?.amountMl || 0));
@@ -128,55 +244,96 @@ async function loadData() {
     });
   }
 
-  useEffect(() => { loadData(); }, [date]);
-  
-  useEffect(()=>{ loadData(); },[date]);
   useEffect(() => {
-      listMyWorkouts({ limit: 50 })
-        .then(res => {
-          const raw = (res?.data?.data || res?.data || {}).items || [];
-          setWorkOptions(raw.map(mapWorkoutToOption));
-        })
-        .catch(() => {});
-    }, []);
+    loadData();
+  }, [date]);
 
-    useEffect(() => {
-      apiGetWeightHistory(10)
-        .then(res => setWeightHistory(res.data?.history || []))
-        .catch(() => {});
-    }, []);
+  // Lấy goal / cân nặng gốc từ onboarding
+  useEffect(() => {
+    getOnboardingData()
+      .then((res) => {
+        const ob =
+          res?.onboarding ??
+          res?.data?.onboarding ??
+          res?.data ??
+          res;
 
-    useEffect(() => {
-  (async () => {
-    try {
-      const res = await listMyWorkouts({ q: "", limit: 50, skip: 0 });
-      const raw = pickWorkoutRes(res);
-      const items = (raw.items || []).map(mapWorkoutToOption);
-      setWorkOptions(items);
-    } catch (err) {
-      console.error("Đã có lỗi xảy ra:", err);
-    }
-  })();
-}, []);
+        if (!ob) return;
 
-  /* ====== Handlers ====== */
-  const waterDelta = async (d) => {
-    const want = Math.max(0, Math.min(10000, waterMl + d));
-    if (want !== waterMl) {
-      await incWater({ date, deltaMl: want - waterMl });
-      setWaterMl(want);
-    }
-  };
+        const baseBlock = ob.base || {};
+        const goals = Array.isArray(ob.goals) ? ob.goals : [];
+        const activeGoal = goals.find((g) => g.status === "active") || null;
+
+        const baseWeight =
+          (activeGoal && activeGoal.canNangHienTai) ??
+          baseBlock.canNangHienTai ??
+          null;
+
+        const goalWeight =
+          (activeGoal && activeGoal.canNangMongMuon) ??
+          baseBlock.canNangMongMuon ??
+          null;
+
+        setWeightBase(baseWeight != null ? Number(baseWeight) : null);
+        setWeightGoal(goalWeight != null ? Number(goalWeight) : null);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Lấy cân nặng hiện tại từ user.profile
+  useEffect(() => {
+    getMe()
+      .then((user) => {
+        setUserWeight(user?.profile?.weightKg ?? null);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Lấy danh sách workout (1 lần)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await listMyWorkouts({
+          q: "",
+          limit: 50,
+          skip: 0,
+        });
+        const raw = pickWorkoutRes(res);
+        const items = (raw.items || []).map(mapWorkoutToOption);
+        setWorkOptions(items);
+      } catch (err) {
+        console.error("Đã có lỗi xảy ra:", err);
+      }
+    })();
+  }, []);
 
   const handleSaveWorkouts = async (selected) => {
     try {
-      await saveDailyWorkouts({ date, workoutIds: selected.map(w => w.id) });
+      await saveDailyWorkouts({
+        date,
+        workoutIds: selected.map((w) => w.id),
+      });
       updateActivity({ workouts: selected });
       toast.success("Đã lưu lịch tập cho ngày này");
       setModal(null);
     } catch (e) {
       console.error(e);
       toast.error("Không lưu được lịch tập");
+    }
+  };
+
+    const handleSaveWater = async (val) => {
+    const want = Math.max(0, Math.min(10000, Number(val) || 0));
+    try {
+      if (want !== waterMl) {
+        await incWater({ date, deltaMl: want - waterMl });
+        setWaterMl(want);
+      }
+      toast.success("Đã cập nhật lượng nước");
+      setModal(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Không lưu được lượng nước");
     }
   };
 
@@ -196,10 +353,6 @@ async function loadData() {
     try {
       await setDailyWeight({ date, weightKg: val });
       updateActivity({ weightKg: val });
-      // reload history để chart cập nhật
-      apiGetWeightHistory(10)
-        .then(res => setWeightHistory(res.data?.history || []))
-        .catch(() => {});
       toast.success("Đã cập nhật cân nặng");
       setModal(null);
     } catch (e) {
@@ -207,36 +360,171 @@ async function loadData() {
       toast.error("Không lưu được cân nặng");
     }
   };
+
+  /* ====== RENDER HELPERS ====== */
+
+  // Vòng tròn Calo (full circle)
   const renderRing = () => {
-  const r = 60, C = Math.PI * r, off = C * (1 - kcalUsedPct);
-  return (
-    <div className="st-cal-ring">
-      <svg width="300" height="180" viewBox="0 0 200 130">
-        <path className="ring-bg" d="M20 90 A80 80 0 0 1 180 90" pathLength={Math.PI * 80} />
-        <path className="ring-fg" d="M20 90 A80 80 0 0 1 180 90" pathLength={Math.PI * 80}
-          strokeDasharray={Math.PI * 80}
-          strokeDashoffset={(Math.PI * 80) * (1 - kcalUsedPct)}
-        />
-      </svg>
-      <div className="st-cal-center">
-        <div className="cc-val">{kcalRemaining}</div>
-        <div className="cc-lbl">Calo còn lại</div>
+    const radius = 60;
+    const circumference = 2 * Math.PI * radius;
+    const pct = kcalUsedPct;
+    const offset = circumference * (1 - pct);
+
+    return (
+      <div className="st-cal-circle">
+        <svg viewBox="0 0 160 160">
+          <circle
+            className="ring-bg"
+            cx="80"
+            cy="80"
+            r={radius}
+            pathLength={circumference}
+          />
+          <circle
+            className="ring-fg ring-fg-cal"
+            cx="80"
+            cy="80"
+            r={radius}
+            pathLength={circumference}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+          />
+        </svg>
+        <div className="st-cal-circle-center">
+          <div className="cc-val">{kcalRemaining}</div>
+          <div className="cc-lbl">Calo còn lại</div>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
+
+  // Vòng cung cân nặng (nửa vòng)
+  const renderWeightRing = () => {
+    const length = Math.PI * 80;
+    const pct =
+      weightProgress != null ? Math.min(1, Math.max(0, weightProgress)) : 0;
+    const offset = length * (1 - pct);
+
+    return (
+      <div className="st-weight-ring">
+        <svg width="250" height="160" viewBox="0 0 200 140">
+          <path
+            className="ring-bg weightRing-bg"
+            d="M20 90 A80 80 0 0 1 180 90"
+            pathLength={length}
+          />
+          <path
+            className="ring-fg ring-fg-weight weightRing-fg"
+            d="M20 90 A80 80 0 0 1 180 90"
+            pathLength={length}
+            strokeDasharray={length}
+            strokeDashoffset={offset}
+          />
+        </svg>
+
+        <div className="st-weight-center">
+          <div className="st-weight-center-value">
+            {weightCurrent != null ? weightCurrent.toFixed(1) : "--"}
+            <span>kg</span>
+          </div>
+          <div className="st-weight-center-label">Cân nặng hiện tại</div>
+          {kgLeft != null && (
+            <div className="st-weight-center-left">
+              {kgLeft.toFixed(1)} kg còn lại
+            </div>
+          )}
+        </div>
+
+        <div className="st-weight-range">
+          <span>{weightBase != null ? weightBase.toFixed(1) : "--"}</span>
+          <span>{weightGoal != null ? weightGoal.toFixed(1) : "--"}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const MacroItem = ({ l, c, v, t, icon }) => {
+    const cur = Math.round(v || 0);
+    const target = t || 0;
+    const pct = target ? Math.min(100, (cur / target) * 100) : 0;
+    return (
+      <div className="st-macro-item">
+        <div className="st-macro-top">
+          {icon && (
+            <span className={"st-macro-icon " + c}>
+              <i className={icon} />
+            </span>
+          )}
+          <span className="st-macro-label">{l}</span>
+        </div>
+        <div className={"st-macro-bar bar " + c}>
+          <span style={{ width: `${pct}%` }} />
+        </div>
+        <div className="st-macro-val">
+          {cur}
+          <span>
+            {" "}
+            / {target}
+            {target ? "g" : ""}
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   const macroPages = useMemo(
     () => [
       [
-        { key: "protein", l: "Chất đạm", c: "red",   v: totals.proteinG, t: targets.proteinG, icon: "fa-solid fa-bolt" },
-        { key: "carb",    l: "Đường bột", c: "purple", v: totals.carbG,    t: targets.carbG,    icon: "fa-solid fa-wheat-awn" },
-        { key: "fat",     l: "Chất béo", c: "green", v: totals.fatG,     t: targets.fatG,     icon: "fa-solid fa-droplet" },
+        {
+          key: "protein",
+          l: "Chất đạm",
+          c: "red",
+          v: totals.proteinG,
+          t: targets.proteinG,
+          icon: "fa-solid fa-bolt",
+        },
+        {
+          key: "carb",
+          l: "Đường bột",
+          c: "purple",
+          v: totals.carbG,
+          t: targets.carbG,
+          icon: "fa-solid fa-wheat-awn",
+        },
+        {
+          key: "fat",
+          l: "Chất béo",
+          c: "green",
+          v: totals.fatG,
+          t: targets.fatG,
+          icon: "fa-solid fa-droplet",
+        },
       ],
       [
-        { key: "salt",  l: "Muối",  c: "gray",   v: totals.saltG,  t: targets.saltG,  icon: "fa-solid fa-jar" },
-        { key: "sugar", l: "Đường", c: "orange", v: totals.sugarG, t: targets.sugarG, icon: "fa-solid fa-cubes" },
-        { key: "fiber", l: "Chất xơ", c: "teal",   v: totals.fiberG, t: targets.fiberG, icon: "fa-solid fa-leaf" },
+        {
+          key: "salt",
+          l: "Muối",
+          c: "gray",
+          v: totals.saltG,
+          t: targets.saltG,
+          icon: "fa-solid fa-jar",
+        },
+        {
+          key: "sugar",
+          l: "Đường",
+          c: "orange",
+          v: totals.sugarG,
+          t: targets.sugarG,
+          icon: "fa-solid fa-cubes",
+        },
+        {
+          key: "fiber",
+          l: "Chất xơ",
+          c: "teal",
+          v: totals.fiberG,
+          t: targets.fiberG,
+          icon: "fa-solid fa-leaf",
+        },
       ],
     ],
     [totals, targets]
@@ -245,20 +533,29 @@ async function loadData() {
   /* ====== Components Helpers ====== */
   const DateStrip = () => {
     const dObj = dayjs(date);
-    const today = dayjs(); // Lấy ngày hiện tại
-    const days = [-3,-2,-1,0,1,2,3].map(i => dObj.add(i, 'day'));
-    
-    
+    const today = dayjs();
+    const days = [-2, -1, 0, 1, 2].map((i) => dObj.add(i, "day"));
+
     return (
       <div className="st-date-strip">
-        <button className="st-ds-nav" onClick={()=>setDate(dObj.add(-1,'day').format("YYYY-MM-DD"))}>&lt;</button>
-        {days.map(d => {
-          const isSel = d.isSame(dObj, 'day');
-          const isToday = d.isSame(today, 'day'); // Check hôm nay
+        <button
+          className="st-ds-nav"
+          onClick={() =>
+            setDate(dObj.add(-1, "day").format("YYYY-MM-DD"))
+          }
+        >
+          &lt;
+        </button>
+        {days.map((d) => {
+          const isSel = d.isSame(dObj, "day");
+          const isToday = d.isSame(today, "day");
           return (
-            <div key={d.toString()} className={"st-ds-item" + (isSel?" active":"")} onClick={()=>setDate(d.format("YYYY-MM-DD"))}>
+            <div
+              key={d.toString()}
+              className={"st-ds-item" + (isSel ? " active" : "")}
+              onClick={() => setDate(d.format("YYYY-MM-DD"))}
+            >
               {isToday ? (
-                /* Hiển thị Hôm nay nếu là ngày hiện tại */
                 <>
                   <span className="d-day">{d.date()}</span>
                   <span className="d-mo">Hôm nay</span>
@@ -266,21 +563,29 @@ async function loadData() {
               ) : (
                 <>
                   <span className="d-day">{d.date()}</span>
-                  <span className="d-mo">Thg {d.month()+1}</span>
+                  <span className="d-mo">Thg {d.month() + 1}</span>
                 </>
               )}
             </div>
-          )
+          );
         })}
-        <button className="st-ds-nav" onClick={()=>setDate(dObj.add(1,'day').format("YYYY-MM-DD"))}>&gt;</button>
+        <button
+          className="st-ds-nav"
+          onClick={() =>
+            setDate(dObj.add(1, "day").format("YYYY-MM-DD"))
+          }
+        >
+          &gt;
+        </button>
       </div>
-    )
+    );
   };
 
+  /* ====== RENDER PAGE ====== */
   return (
     <div className="st-page">
       <div className="st-wrap">
-        {/* HEADER TRANG THỐNG KÊ */}
+        {/* HEADER */}
         <div className="st-header">
           <div>
             <h1>Thống kê</h1>
@@ -295,12 +600,135 @@ async function loadData() {
         </div>
 
         <div className="st-grid-layout">
-          {/* 1. Tổng quan */}
+          {/* Hàng 1 – CÂN NẶNG + CALO */}
+          <div className="st-row-top">
+            {/* Cân nặng */}
+            <div className="st-card st-box-weight relative">
+              <div className="st-card-header">
+                <div className="st-card-title">Cân nặng</div>
+              </div>
+              <button
+                className="st-btn-add-corner"
+                onClick={() => setModal("WEIGHT")}
+                title="Cập nhật cân nặng"
+              >
+                +
+              </button>
+
+              <div className="st-weight-body gauge">{renderWeightRing()}</div>
+            </div>
+
+            {/* Lượng Calo tiêu thụ */}
+            <div className="st-card st-box-calories">
+              <div className="st-card-header">
+                <div className="st-card-title">Lượng Calo tiêu thụ</div>
+              </div>
+              <div className="st-cal-grid">
+                {/* Trái: vòng tròn calo */}
+                <div className="st-cal-left">{renderRing()}</div>
+
+                {/* Phải: 3 số (nằm ngang) + macros */}
+                <div className="st-cal-right">
+                  <div className="st-cal-meta st-cal-meta-row">
+                    
+                    {/* Item 1: Mục tiêu */}
+                    <div className="c">
+                      <div className="st-cal-icon">
+                        <i className="fa-solid fa-bullseye"></i>
+                      </div>
+                      <div className="st-cal-info">
+                        <div className="v">
+                          {kcalTarget}<span> cal</span>
+                        </div>
+                        <div className="lb">Mục tiêu</div>
+                      </div>
+                    </div>
+                    {/* Item 2: Đã nạp */}
+                    <div className="c">
+                      <div className="st-cal-icon">
+                        <i className="fa-solid fa-utensils"></i>
+                      </div>
+                      <div className="st-cal-info">
+                        <div className="v">
+                          {kcalAte}<span> cal</span>
+                        </div>
+                        <div className="lb">Đã nạp</div>
+                      </div>
+                    </div>
+                    {/* Item 3: Tập luyện */}
+                    <div className="c">
+                      <div className="st-cal-icon">
+                        <i className="fa-solid fa-fire"></i>
+                      </div>
+                      <div className="st-cal-info">
+                        <div className="v">
+                          {kcalBurned}<span> cal</span>
+                        </div>
+                        <div className="lb">Tập luyện</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="st-cal-macros-head">
+                    <span className="st-cal-macros-title">Dinh dưỡng</span>
+                    <span className="st-cal-macros-sub">
+                      Macros trong ngày
+                    </span>
+                  </div>
+
+                  <div
+                    className="st-macro-slider"
+                    onMouseDown={handleMacroSlideStart}
+                    onMouseUp={handleMacroSlideEnd}
+                    onTouchStart={handleMacroSlideStart}
+                    onTouchEnd={handleMacroSlideEnd}
+                  >
+                    <div
+                      className="st-macro-inner"
+                      style={{
+                        transform: `translateX(-${macroPage * 100}%)`,
+                      }}
+                    >
+                      {macroPages.map((page, idx) => (
+                        <div className="st-macro-page" key={idx}>
+                          {page.map((m) => {
+                            const { key, ...rest } = m; // tách riêng key
+                            return <MacroItem key={key} {...rest} />;
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="st-macro-dots">
+                    {macroPages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        className={
+                          "st-macro-dot" +
+                          (macroPage === idx ? " is-active" : "")
+                        }
+                        onClick={() => setMacroPage(idx)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cột 3 – TỔNG QUAN / NHẬT KÝ MÓN ĂN (chiếm hết cột 3) */}
           <div className="st-card st-col-overview">
             <div className="st-card-header space-between">
               <div className="st-card-title lg">Tổng quan</div>
               <div className="st-streak-badge">
-                <i className={"fa-solid fa-fire " + (hot ? "hot" : "cold")} /> {streak}
+                <i
+                  className={
+                    "fa-solid fa-fire " + (hot ? "hot" : "cold")
+                  }
+                />{" "}
+                {streak}
               </div>
             </div>
             <DateStrip />
@@ -320,7 +748,11 @@ async function loadData() {
                           <div className="st-meal-info">
                             <div>{it.food?.name}</div>
                             <span>
-                              {Math.round(it.food?.kcal * it.quantity)} cal · x{it.quantity}
+                              {Math.round(
+                                it.food?.kcal * it.quantity
+                              )}{" "}
+                              cal · x
+                              {it.quantity}
                             </span>
                           </div>
                         </div>
@@ -332,195 +764,146 @@ async function loadData() {
             )}
           </div>
 
-          {/* 2. Mục tiêu Calo */}
-          <div className="st-card st-box-calories">
-            <div className="st-card-header">
-              <div className="st-card-title">Mục tiêu Calo</div>
+          {/* HÀNG 2 – 3 box: NƯỚC / BƯỚC CHÂN / TẬP LUYỆN */}
+          <div className="st-row-middle">
+            {/* Title hàng 2 */}
+            <div className="st-section-head">
+              <div>
+                <div className="st-section-title">Hoạt động trong ngày</div>
+                <div className="st-section-sub">
+                  Theo dõi lượng nước, bước chân và tập luyện mỗi ngày
+                </div>
+              </div>
             </div>
-            <div className="st-cal-body">
-              <div className="st-cal-ring-wrap">{renderRing()}</div>
-              <div className="st-cal-meta">
-                <div className="c">
-                  <div className="v">{kcalTarget}</div>
-                  <div className="lb">Mục tiêu</div>
+
+            <div className="st-row-middle-grid">
+              {/* Nước */}
+              <div className="st-card st-box-water relative">
+                <div className="st-card-header">
+                  <div className="st-card-title">Lượng nước</div>
                 </div>
-                <div className="c">
-                  <div className="v">{kcalAte}</div>
-                  <div className="lb">Đã nạp</div>
+                <button
+                  className="st-btn-add-corner"
+                  onClick={() => setModal("WATER")}
+                  title="Cập nhật lượng nước"
+                >
+                  +
+                </button>
+                <div className="st-stat-body">
+                  <div className="st-stat-big">
+                    <i className="water fa-solid fa-glass-water-droplet"></i>
+                    {waterMl.toLocaleString()}
+                    <span style={{ fontSize: 14, marginLeft: 4 }}> ml</span>
+                  </div>
+                  <div className="st-stat-sub">Tổng nước đã uống hôm nay</div>
                 </div>
-                <div className="c">
-                  <div className="v">{kcalBurned}</div>
-                  <div className="lb">Tập luyện</div>
+              </div>
+
+              {/* Bước chân */}
+              <div className="st-card st-box-steps relative">
+                <div className="st-card-header">
+                  <div className="st-card-title">Bước chân</div>
+                </div>
+                <button
+                  className="st-btn-add-corner"
+                  onClick={() => setModal("STEPS")}
+                  title="Cập nhật số bước"
+                >
+                  +
+                </button>
+                <div className="st-stat-body">
+                  <div className="st-stat-big">
+                    {(activity.steps || 0).toLocaleString()}
+                  </div>
+                  <div className="st-stat-sub">
+                    / {STEP_GOAL.toLocaleString()} bước
+                  </div>
+                  <div className="st-prog-bar">
+                    <div
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          ((activity.steps || 0) / STEP_GOAL) * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tập luyện – tổng kcal */}
+              <div className="st-card st-box-workout relative">
+                <div className="st-card-header">
+                  <div className="st-card-title">Tập luyện</div>
+                </div>
+                <button
+                  className="st-btn-add-corner"
+                  onClick={() => setModal("WORKOUT")}
+                  title="Chọn lịch tập cho ngày này"
+                >
+                  +
+                </button>
+                <div className="st-stat-body">
+                  <div className="st-stat-big">
+                    <i className="fa-solid fa-fire-flame-curved" />{" "}
+                    {kcalBurned}
+                  </div>
+                  <div className="st-stat-sub">
+                    {activity.workouts?.length || 0} bài tập
+                  </div>
+                  {activity.workouts?.length > 0 && (
+                    <div
+                      className="st-workout-names"
+                      title={workoutNamesText}
+                    >
+                      {workoutNamesText}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-                  {/* 3. Tập luyện */}
-        <div className="st-card st-box-workout relative">
-          <div className="st-card-header">
-            <div className="st-card-title">Tập luyện</div>
-          </div>
-          <button
-            className="st-btn-add-corner"
-            onClick={() => setModal("WORKOUT")}
-            title="Chọn lịch tập cho ngày này"
-          >
-            +
-          </button>
-          <div className="st-stat-body">
-            <div className="st-stat-big">
-              <i className="fa-solid fa-fire-flame-curved" /> {kcalBurned}
-            </div>
-            <div className="st-stat-sub">
-              {activity.workouts?.length || 0} bài tập
-            </div>
-            {activity.workouts?.length > 0 && (
-              <div className="st-workout-names" title={workoutNamesText}>
-                {workoutNamesText}
+          {/* HÀNG 3 – THỰC ĐƠN GỢI Ý + BÀI TẬP CHI TIẾT */}
+          <div className="st-row-bottom">
+            {/* Thực đơn gợi ý – 2/3 chiều ngang */}
+            <div className="st-card st-box-suggest">
+              <div className="st-card-header">
+                <div className="st-card-title">Thực đơn gợi ý</div>
               </div>
-            )}
-          </div>
-        </div>
-
-          {/* 4. Bước chân */}
-          <div className="st-card st-box-steps relative">
-            <div className="st-card-header">
-              <div className="st-card-title">Bước chân</div>
-            </div>
-            <button
-              className="st-btn-add-corner"
-              onClick={() => setModal("STEPS")}
-              title="Cập nhật số bước"
-            >
-              +
-            </button>
-            <div className="st-stat-body">
-              <div className="st-stat-big">
-                {(activity.steps || 0).toLocaleString()}
-              </div>
-              <div className="st-stat-sub">/ {STEP_GOAL.toLocaleString()} bước</div>
-              <div className="st-prog-bar">
-                <div
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      ((activity.steps || 0) / STEP_GOAL) * 100
-                    )}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 5. Nước */}
-          <div className="st-card st-box-water">
-            <div className="panel-stt-water">
-              <div className="wleft">
-                <i className="fa-solid fa-glass-water" />
-                <div>
-                  <div className="wlabel">Uống nước</div>
-                  <div className="wval">{waterMl} ml</div>
+              <div className="st-suggest-body">
+                <p className="st-suggest-desc">
+                  Hệ thống sẽ gợi ý thực đơn phù hợp với mục tiêu{" "}
+                  <strong>{kcalTarget || 0} kcal</strong> / ngày của bạn.
+                </p>
+                <div className="st-suggest-placeholder">
+                  <span>👩‍🍳 Tính năng gợi ý thực đơn sẽ xuất hiện tại đây.</span>
                 </div>
               </div>
-              <div className="wctl">
-                <button onClick={() => waterDelta(-stepMl)}>-</button>
-                <div className="wu-wrap">
-                  <input
-                    type="number"
-                    value={stepMl}
-                    onChange={(e) => setStepMl(+e.target.value || 0)}
-                  />
-                  <span>ml</span>
-                </div>
-                <button onClick={() => waterDelta(+stepMl)}>+</button>
+            </div>
+
+            {/* Bài tập chi tiết – 1/3 chiều ngang */}
+            <div className="st-card st-box-workout-detail">
+              <div className="st-card-header">
+                <div className="st-card-title">Bài tập trong ngày</div>
               </div>
-            </div>
-          </div>
-
-        {/* 6. Dinh dưỡng */}
-        <div className="st-card st-box-nutrition">
-          <div className="st-card-header">
-            <div className="st-card-title">Dinh dưỡng</div>
-          </div>
-
-          <div
-            className="st-macro-slider"
-            onMouseDown={handleMacroSlideStart}
-            onMouseUp={handleMacroSlideEnd}
-            onTouchStart={handleMacroSlideStart}
-            onTouchEnd={handleMacroSlideEnd}
-          >
-            <div
-              className="st-macro-inner"
-              style={{ transform: `translateX(-${macroPage * 100}%)` }}
-            >
-              {macroPages.map((page, idx) => (
-                <div className="st-macro-page" key={idx}>
-                  {page.map((m) => (
-                    <MacroItem key={m.key} {...m} />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="st-macro-dots">
-            {macroPages.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                className={
-                  "st-macro-dot" + (macroPage === idx ? " is-active" : "")
-                }
-                onClick={() => setMacroPage(idx)}
-              />
-            ))}
-          </div>
-        </div>
-
-
-          {/* 7. Cân nặng */}
-          <div className="st-card st-box-weight relative">
-            <div className="st-card-header">
-              <div className="st-card-title">Cân nặng (kg)</div>
-            </div>
-            <button
-              className="st-btn-add-corner"
-              onClick={() => setModal("WEIGHT")}
-              title="Cập nhật cân nặng"
-            >
-              +
-            </button>
-            <div className="st-weight-body">
-              <div className="st-w-left">
-                <div className="st-w-curr">
-                  {activity.weightKg || "--"} <span>kg</span>
-                </div>
-                <div className="st-w-lbl">Gần nhất</div>
-              </div>
-              <div className="st-w-chart">
-                {!weightHistory.length ? (
-                  <span className="st-no-data">Chưa có dữ liệu</span>
-                ) : (
-                  <div className="st-chart-viz">
-                    <div className="st-chart-line" />
-                    {weightHistory.map((p, i) => (
-                      <div
-                        key={p.date}
-                        className="st-cp"
-                        style={{
-                          left: `${
-                            (i / Math.max(1, weightHistory.length - 1)) * 100
-                          }%`,
-                        }}
-                      >
-                        <div className="st-cdot" />
-                        <span className="st-ctip">
-                          {dayjs(p.date).format("DD")}·{p.weight}
-                        </span>
-                      </div>
+              <div className="st-workout-list-body">
+                {activity.workouts?.length ? (
+                  <ul className="st-workout-list">
+                    {activity.workouts.map((w) => (
+                      <li key={w.id} className="st-workout-list-item">
+                        <div className="st-wl-name">
+                          {w.name || "(Không tên)"}
+                        </div>
+                        <div className="st-wl-kcal">
+                          {Math.round(w.kcal || 0)} kcal
+                        </div>
+                      </li>
                     ))}
+                  </ul>
+                ) : (
+                  <div className="st-empty">
+                    Chưa chọn lịch tập cho ngày này.
                   </div>
                 )}
               </div>
@@ -557,32 +940,14 @@ async function loadData() {
             onSave={handleSaveWeight}
           />
         )}
+        {modal === "WATER" && (
+          <WaterModal
+            currentVal={waterMl}
+            onClose={() => setModal(null)}
+            onSave={handleSaveWater}
+          />
+        )}
       </div>
     </div>
   );
 }
-
-const MacroItem = ({ l, c, v, t, icon }) => {
-  const cur = Math.round(v || 0);
-  const target = t || 0;
-  const pct = target ? Math.min(100, (cur / target) * 100) : 0;
-  return (
-    <div className="st-macro-item">
-      <div className="st-macro-top">
-        {icon && (
-          <span className={"st-macro-icon " + c}>
-            <i className={icon} />
-          </span>
-        )}
-        <span className="st-macro-label">{l}</span>
-      </div>
-      <div className={"st-macro-bar bar " + c}>
-        <span style={{ width: `${pct}%` }} />
-      </div>
-      <div className="st-macro-val">
-        {cur}
-        <span> / {target}{target ? "g" : ""}</span>
-      </div>
-    </div>
-  );
-};
