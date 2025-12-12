@@ -39,6 +39,24 @@ function mapWorkoutToOption(p) {
 }
 const pickWorkoutRes = (r) => r?.data?.data || r?.data || r || {};
 
+// Chuẩn hoá dữ liệu workout lấy từ API /activity
+function normalizeActivityWorkout(w) {
+  if (!w) return null;
+  const src = w.workout || w.plan || w;
+  const id = w.id || w.workoutId || src?._id || src?.id;
+  const name = src?.name || w.name || "(No name)";
+  const kcal =
+    w.kcal ??
+    w.totalKcal ??
+    src?.totals?.kcal ??
+    src?.totals?.calories ??
+    src?.totalKcal ??
+    src?.kcal ??
+    0;
+  if (!id) return null;
+  return { id, name, kcal };
+}
+
 export default function Statistical() {
   const [date, setDate] = useState(() => dayjs().format("YYYY-MM-DD"));
   const [logs, setLogs] = useState([]);
@@ -142,7 +160,8 @@ export default function Statistical() {
   }, [logs]);
 
   // Cân nặng hiện tại (ưu tiên: profile -> log activity -> onboarding base)
-  const weightCurrent = userWeight ?? activity.weightKg ?? weightBase;
+  const weightCurrent =
+  activity.weightKg ?? userWeight ?? weightBase;
 
   const { weightProgress, kgLeft } = useMemo(() => {
     if (
@@ -237,10 +256,15 @@ export default function Statistical() {
     setHot(Number(s.data?.streak || 0) >= 2);
 
     const a = actRes.data || {};
+    const dayWorkoutsRaw = Array.isArray(a.workouts) ? a.workouts : [];
+    const dayWorkouts = dayWorkoutsRaw
+      .map(normalizeActivityWorkout)
+      .filter(Boolean);
+
     updateActivity({
       steps: a.steps || 0,
       weightKg: a.weightKg ?? null,
-      workouts: a.workouts || [],
+      workouts: dayWorkouts,
     });
   }
 
@@ -248,64 +272,126 @@ export default function Statistical() {
     loadData();
   }, [date]);
 
+    // Lấy danh sách lịch tập của tôi để dùng cho modal "Tập luyện"
+  useEffect(() => {
+    let cancelled = false;
+
+    listMyWorkouts()
+      .then((res) => {
+        const payload = pickWorkoutRes(res);
+        const rawList = Array.isArray(payload?.items)
+          ? payload.items
+          : Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.list)
+          ? payload.list
+          : [];
+
+        const mapped = rawList.map(mapWorkoutToOption);
+        if (!cancelled) setWorkOptions(mapped);
+      })
+      .catch((err) => {
+        console.error("Không tải được danh sách lịch tập:", err);
+        if (!cancelled) setWorkOptions([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Lấy goal / cân nặng gốc từ onboarding
   useEffect(() => {
-    getOnboardingData()
-      .then((res) => {
-        const ob =
-          res?.onboarding ??
-          res?.data?.onboarding ??
-          res?.data ??
-          res;
+  getOnboardingData()
+    .then((res) => {
+      const ob =
+        res?.onboarding ??
+        res?.data?.onboarding ??
+        res?.data ??
+        res;
 
-        if (!ob) return;
+      if (!ob) return;
 
-        const baseBlock = ob.base || {};
-        const goals = Array.isArray(ob.goals) ? ob.goals : [];
-        const activeGoal = goals.find((g) => g.status === "active") || null;
+      const baseBlock = ob.base || {};
+      const goals = Array.isArray(ob.goals) ? ob.goals : [];
 
-        const baseWeight =
-          (activeGoal && activeGoal.canNangHienTai) ??
-          baseBlock.canNangHienTai ??
-          null;
+      // Ưu tiên goal đang active, sau đó in_progress, rồi goal đầu tiên
+      const activeGoal =
+        goals.find((g) => g.status === "active") ||
+        goals.find((g) => g.status === "in_progress") ||
+        goals[0] ||
+        null;
 
-        const goalWeight =
-          (activeGoal && activeGoal.canNangMongMuon) ??
-          baseBlock.canNangMongMuon ??
-          null;
+      // helper nhỏ để lấy số đầu tiên hợp lệ
+      const pickNumber = (...vals) => {
+        for (const v of vals) {
+          if (v == null) continue;
+          const n = Number(v);
+          if (!Number.isNaN(n)) return n;
+        }
+        return null;
+      };
 
-        setWeightBase(baseWeight != null ? Number(baseWeight) : null);
-        setWeightGoal(goalWeight != null ? Number(goalWeight) : null);
-      })
-      .catch(() => {});
-  }, []);
+      const baseWeightRaw = pickNumber(
+        activeGoal?.canNangLucBatDau,
+        activeGoal?.canNangHienTai,
+        baseBlock.canNangLucBatDau,
+        baseBlock.canNangHienTai
+      );
+
+      const goalWeightRaw = pickNumber(
+        activeGoal?.canNangMongMuon,
+        activeGoal?.canNangMucTieu,
+        baseBlock.canNangMongMuon,
+        baseBlock.canNangMucTieu
+      );
+
+      if (baseWeightRaw != null) setWeightBase(baseWeightRaw);
+      if (goalWeightRaw != null) setWeightGoal(goalWeightRaw);
+    })
+    .catch(() => {});
+}, []);
 
   // Lấy cân nặng hiện tại từ user.profile
   useEffect(() => {
-    getMe()
-      .then((user) => {
-        setUserWeight(user?.profile?.weightKg ?? null);
-      })
-      .catch(() => {});
-  }, []);
+  getMe()
+    .then((user) => {
+      const profile = user?.profile || {};
 
-  // Lấy danh sách workout (1 lần)
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await listMyWorkouts({
-          q: "",
-          limit: 50,
-          skip: 0,
-        });
-        const raw = pickWorkoutRes(res);
-        const items = (raw.items || []).map(mapWorkoutToOption);
-        setWorkOptions(items);
-      } catch (err) {
-        console.error("Đã có lỗi xảy ra:", err);
+      // Cân nặng hiện tại (dùng cho weightCurrent)
+      const current = profile.weightKg ?? profile.canNangHienTai ?? null;
+      if (current != null && !Number.isNaN(+current)) {
+        setUserWeight(Number(current));
       }
-    })();
-  }, []);
+
+      // Nếu onboarding chưa set được base/goal thì dùng profile làm fallback
+      setWeightBase((prev) => {
+        if (prev != null && !Number.isNaN(prev)) return prev;
+        const baseCandidate =
+          profile.weightStartKg ??
+          profile.canNangLucBatDau ??
+          profile.canNangBanDau ??
+          current;
+        return baseCandidate != null && !Number.isNaN(+baseCandidate)
+          ? Number(baseCandidate)
+          : prev;
+      });
+
+      setWeightGoal((prev) => {
+        if (prev != null && !Number.isNaN(prev)) return prev;
+        const goalCandidate =
+          profile.weightGoalKg ??
+          profile.targetWeightKg ??
+          profile.canNangMongMuon ??
+          profile.canNangMucTieu ??
+          null;
+        return goalCandidate != null && !Number.isNaN(+goalCandidate)
+          ? Number(goalCandidate)
+          : prev;
+      });
+    })
+    .catch(() => {});
+}, []);
 
   const handleSaveWorkouts = async (selected) => {
     try {
@@ -401,43 +487,106 @@ export default function Statistical() {
   // Vòng cung cân nặng (nửa vòng)
   const renderWeightRing = () => {
     const length = Math.PI * 80;
-    const pct =
+
+    // pct gốc từ logic
+    const basePct =
       weightProgress != null ? Math.min(1, Math.max(0, weightProgress)) : 0;
-    const offset = length * (1 - pct);
+
+    // Để dễ nhìn thì nếu >0 thì cho tối thiểu 6% chiều dài
+    const pct = basePct > 0 ? Math.max(0.06, basePct) : 0;
+
+    // Mô tả bên dưới line
+    let desc =
+      "Tiến độ luôn đáng giá, dù nhanh hay chậm. Hãy tiếp tục duy trì mỗi ngày.";
+    if (kgLeft != null && kgLeft > 0.05) {
+      const leftText =
+        Math.abs(kgLeft - Math.round(kgLeft)) < 0.05
+          ? Math.round(kgLeft).toString()
+          : kgLeft.toFixed(1);
+      desc = `Bạn còn khoảng ${leftText} kg để chạm mục tiêu. Cứ tiếp tục, bạn đang tiến gần hơn mỗi ngày.`;
+    } else if (kgLeft != null) {
+      desc = "Bạn đã chạm tới mục tiêu cân nặng. Hãy cố gắng duy trì nhé!";
+    }
 
     return (
-      <div className="st-weight-ring">
-        <svg width="250" height="160" viewBox="0 0 200 140">
-          <path
-            className="ring-bg weightRing-bg"
-            d="M20 90 A80 80 0 0 1 180 90"
-            pathLength={length}
-          />
-          <path
-            className="ring-fg ring-fg-weight weightRing-fg"
-            d="M20 90 A80 80 0 0 1 180 90"
-            pathLength={length}
-            strokeDasharray={length}
-            strokeDashoffset={offset}
-          />
-        </svg>
+      <div className="st-weight-layout">
+        <div className="st-weight-ring">
+          <svg width="260" height="160" viewBox="0 0 200 140">
+            <defs>
+              <linearGradient
+                id="weightGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#f97316" />
+                <stop offset="100%" stopColor="#fb923c" />
+              </linearGradient>
 
-        <div className="st-weight-center">
-          <div className="st-weight-center-value">
-            {weightCurrent != null ? weightCurrent.toFixed(1) : "--"}
-            <span>kg</span>
-          </div>
-          <div className="st-weight-center-label">Cân nặng hiện tại</div>
-          {kgLeft != null && (
-            <div className="st-weight-center-left">
-              {kgLeft.toFixed(1)} kg còn lại
+              <pattern
+                id="weightStripes"
+                patternUnits="userSpaceOnUse"
+                width="8"
+                height="8"
+                patternTransform="rotate(45)"
+              >
+                <rect width="8" height="8" fill="url(#weightGradient)" />
+                <line
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="8"
+                  stroke="#020617"
+                  strokeWidth="2"
+                  opacity="0.25"
+                />
+              </pattern>
+            </defs>
+
+            {/* Track nền xám */}
+            <path
+              className="ring-bg weightRing-bg"
+              d="M20 90 A80 80 0 0 1 180 90"
+              pathLength={length}
+            />
+
+            {/* Phần progress – dùng strokeDasharray theo % */}
+            <path
+              className="ring-fg ring-fg-weight weightRing-fg"
+              d="M20 90 A80 80 0 0 1 180 90"
+              pathLength={length}
+              strokeDasharray={`${length * pct} ${length}`}
+              strokeDashoffset="0"
+              stroke="url(#weightStripes)"
+            />
+          </svg>
+
+          {/* Trọng tâm bên trong vòng cung */}
+          <div className="st-weight-center">
+            <div className="st-weight-center-value">
+              {weightCurrent != null ? weightCurrent.toFixed(1) : "--"}
+              <span>kg</span>
             </div>
-          )}
+            <div className="st-weight-center-label">Cân nặng hiện tại</div>
+            {kgLeft != null && (
+              <div className="st-weight-center-left">
+                {kgLeft.toFixed(1)} kg còn lại
+              </div>
+            )}
+          </div>
+
+          {/* Hai số gốc / đích ngay chân vòng */}
+          <div className="st-weight-range">
+            <span>{weightBase != null ? weightBase.toFixed(1) : "--"}</span>
+            <span>{weightGoal != null ? weightGoal.toFixed(1) : "--"}</span>
+          </div>
         </div>
 
-        <div className="st-weight-range">
-          <span>{weightBase != null ? weightBase.toFixed(1) : "--"}</span>
-          <span>{weightGoal != null ? weightGoal.toFixed(1) : "--"}</span>
+        {/* Line + mô tả */}
+        <div className="st-weight-footer">
+          <div className="st-weight-divider" />
+          <p className="st-weight-desc">{desc}</p>
         </div>
       </div>
     );

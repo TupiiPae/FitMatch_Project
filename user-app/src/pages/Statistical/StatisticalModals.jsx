@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
 import "./Statistical.css"; // Dùng chung CSS cho đồng bộ
 
-export function WorkoutModal({ options, initialSelectedIds, onClose, onSave }) {
-  const [ids, setIds] = useState(initialSelectedIds || []);
+export function WorkoutModal({
+  options = [],
+  initialSelectedIds = [],
+  onClose,
+  onSave,
+}) {
+  const [ids, setIds] = useState(initialSelectedIds);
+
   useEffect(() => {
-    setIds(initialSelectedIds || []);
+    setIds(initialSelectedIds);
   }, [initialSelectedIds]);
 
   const toggle = (id) =>
