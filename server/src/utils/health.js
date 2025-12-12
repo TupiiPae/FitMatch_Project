@@ -239,3 +239,18 @@ export function calcPlanKcalByMET(items = [], weightKg = 70) {
   }
   return Math.round(total);
 }
+
+export function tinhKcalTuBuocChan({
+  steps = 0,
+  weightKg,
+  metWalk = 3.0,
+  stepsPerMin = 100,
+} = {}) {
+  const s = Math.max(0, Number(steps || 0));
+  const w = Number(weightKg || 0);
+  if (!w || !s) return 0;
+
+  const minutes = s / stepsPerMin;
+  const raw = kcalByMETMinutes(metWalk, w, minutes);
+  return Math.round(raw);
+}

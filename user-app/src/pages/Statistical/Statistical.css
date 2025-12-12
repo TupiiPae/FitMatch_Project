@@ -48,15 +48,15 @@
   gap: 12px;
 }
 .st-header h1 {
-  font-size: 26px;
+  color: #d30016;
+  font-size: 30px;
   font-weight: 700;
-  color: #f9fafb;
-  margin: 0 0 4px;
 }
 .st-header p {
-  font-size: 13px;
-  color: #9ca3af;
-  margin: 0;
+  margin-top: 4px;
+  color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 400;
 }
 .st-header-right {
   display: flex;
@@ -82,7 +82,8 @@
 .st-grid-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.05fr) minmax(0, 0.65fr);
-  grid-template-rows: auto auto 260px; /* hàng 1 auto để không tràn */
+  /* UPDATED: cho hàng 3 min 260px nhưng có thể cao hơn nếu nội dung nhiều */
+  grid-template-rows: auto auto minmax(260px, auto);
   gap: 30px;
 }
 
@@ -92,7 +93,6 @@
   border-radius: 8px;
   border: 1px solid var(--border);
   padding: 16px;
-  box-shadow: 0 14px 45px rgba(0, 0, 0, 0.45);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -100,11 +100,7 @@
   transition: border-color 0.18s ease-out, transform 0.18s ease-out,
     box-shadow 0.18s ease-out, background-color 0.18s ease-out;
 }
-.st-card:hover {
-  border-color: #4b5563;
-  transform: translateY(-2px);
-  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.7);
-}
+
 
 .st-card-header {
   display: flex;
@@ -128,6 +124,12 @@
   font-size: 22px;
   color: #f9fafb;
   text-transform: none;
+}
+
+.st-box-workout-detail {
+  background: #121212;
+  border: none;
+  box-shadow: none;
 }
 
 /* Badge streak */
@@ -354,13 +356,13 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   background: #ef4444;
   border: 1px solid #4b5563;
   color: #f9fafb;
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -478,7 +480,7 @@
 .weightRing-fg {
   stroke-width: 12;
   fill: none;
-  stroke-linecap: round;
+  stroke-linecap: square;
   transition: stroke-dashoffset 0.45s ease-out;
 }
 
@@ -523,9 +525,8 @@
   border-radius: 4px;
   background: #020617;
   border: 1px solid #111827;
-  
   display: flex;
-  flex-direction: row; 
+  flex-direction: row;
   align-items: center;
   gap: 10px;
 }
@@ -536,7 +537,7 @@
   height: 36px;
   min-width: 36px;
   border-radius: 50%;
-  background: #ef4444; /* Màu nền tròn */
+  background: #ef4444;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -544,8 +545,8 @@
 
 /* Style riêng cho FontAwesome Icon */
 .st-cal-meta-row .st-cal-icon i {
-  font-size: 14px; /* Kích thước icon */
-  color: #ffffff;  /* Màu icon (xám nhạt) */
+  font-size: 14px;
+  color: #ffffff;
 }
 
 /* Wrapper cho phần text bên phải */
@@ -914,12 +915,12 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 24px;            /* gần chân vòng cung */
+  bottom: 24px;
   display: flex;
   justify-content: space-between;
   font-size: 11px;
   color: #9ca3af;
-  padding: 0 22px;         /* tương đương x ≈ 20 / 180 của path */
+  padding: 0 22px;
 }
 
 /* màu vòng cho cân nặng – cam giống hình */
@@ -1109,6 +1110,114 @@
   flex-shrink: 0;
 }
 
+/* === Box Bài tập trong ngày – hiển thị danh sách bài tập trong các lịch === */
+/* UPDATED: thân box có scroll, không kéo vỡ layout */
+.stt-workouts-body {
+  padding: 8px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+.stt-workouts-body::-webkit-scrollbar {
+  width: 6px;
+}
+.stt-workouts-body::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 999px;
+}
+
+/* 1 cụm lịch tập (nếu chọn nhiều lịch) */
+.stt-workout-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* dòng title lịch + kcal */
+.stt-workout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stt-workout-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #f9fafb;
+}
+
+.stt-workout-kcal {
+  font-size: 14px;
+  color: #f97373;
+  white-space: nowrap;
+}
+.stt-workout-kcal i {
+  margin-right: 4px;
+}
+
+/* Divider giữa các lịch khi chọn nhiều */
+.stt-workout-divider {
+  border: 0;
+  border-top: 1px dashed #4b5563;
+  margin: 12px 0 0;
+}
+
+/* danh sách bài tập trong 1 lịch – giống wp-exlist */
+.stt-workout-exlist {
+  border: 1px dashed #4b5563;
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+/* 1 dòng bài tập – giống wp-exrow */
+.stt-exrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+
+.stt-eximg {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #1f2937;
+  background: #000;
+  flex: 0 0 64px;
+}
+
+.stt-exmeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stt-exname {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.stt-exsub {
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+.stt-empty.small {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
 /* RESPONSIVE */
 @media (max-width: 1200px) {
   .st-grid-layout {
@@ -1149,7 +1258,7 @@
     flex-direction: column;
   }
   .st-row-middle-grid {
-    grid-template-columns: minmax(0, 1fr); 
+    grid-template-columns: minmax(0, 1fr);
   }
   .st-header {
     flex-direction: column;

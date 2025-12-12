@@ -15,6 +15,26 @@ import { toast } from "react-toastify";
 import { WorkoutModal, SimpleInputModal, WaterModal  } from "./StatisticalModals";
 import { getMe } from "../../api/account";
 
+// helper tính trung bình hiệp / reps / rest cho 1 bài tập
+const calcSetStats = (sets = []) => {
+  const hiệp = Array.isArray(sets) ? sets.length : 0;
+  const repsArr = (Array.isArray(sets) ? sets : [])
+    .map((s) => Number(s?.reps || 0))
+    .filter((x) => x > 0);
+  const restArr = (Array.isArray(sets) ? sets : [])
+    .map((s) => Number(s?.restSec || 0))
+    .filter((x) => x > 0);
+  const avg = (arr) =>
+    arr.length
+      ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
+      : null;
+  return {
+    hiep: hiệp,
+    reps: avg(repsArr),
+    rest: avg(restArr),
+  };
+};
+
 const STEP_GOAL = 8000,
   PLACEHOLDER = "/images/food-placeholder.jpg";
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
@@ -37,6 +57,18 @@ function mapWorkoutToOption(p) {
     kcal: t.kcal ?? t.calories ?? p.totalKcal ?? 0,
   };
 }
+const calcStepsKcal = (steps, weightKg) => {
+  const s = Math.max(0, Number(steps || 0));
+  const w = Number(weightKg || 0);
+  if (!w || !s) return 0;
+
+  const MET_WALK = 3.0;      // đi bộ mức trung bình
+  const STEPS_PER_MIN = 100; // ~100 bước/phút
+  const minutes = s / STEPS_PER_MIN;
+
+  const kcal = (MET_WALK * 3.5 * w * minutes) / 200;
+  return Math.round(kcal);
+};
 const pickWorkoutRes = (r) => r?.data?.data || r?.data || r || {};
 
 // Chuẩn hoá dữ liệu workout lấy từ API /activity
@@ -53,8 +85,16 @@ function normalizeActivityWorkout(w) {
     src?.totalKcal ??
     src?.kcal ??
     0;
+  const plan =
+    w.plan && typeof w.plan === "object"
+      ? w.plan
+      : src && src.items && src.totals
+      ? src       
+      : null;
+
   if (!id) return null;
-  return { id, name, kcal };
+
+  return plan ? { id, name, kcal, plan } : { id, name, kcal };
 }
 
 export default function Statistical() {
@@ -115,7 +155,7 @@ export default function Statistical() {
   };
 
   /* ====== Logic ====== */
-  const selectedWorkoutIds = useMemo(
+    const selectedWorkoutIds = useMemo(
     () => new Set((activity.workouts || []).map((w) => w.id)),
     [activity.workouts]
   );
@@ -128,10 +168,23 @@ export default function Statistical() {
     [activity.workouts]
   );
 
-  const totalBurnedKcal = useMemo(
+  // Cân nặng hiện tại (ưu tiên: log activity -> user.profile -> onboarding base)
+  const weightCurrent = activity.weightKg ?? userWeight ?? weightBase;
+
+  // Calo từ các lịch tập (KHÔNG tính bước chân)
+  const totalWorkoutKcal = useMemo(
     () => (activity.workouts || []).reduce((s, w) => s + (w.kcal || 0), 0),
     [activity.workouts]
   );
+
+  // Calo ước tính từ bước chân
+  const stepsKcal = useMemo(
+    () => calcStepsKcal(activity.steps || 0, weightCurrent),
+    [activity.steps, weightCurrent]
+  );
+
+  // Tổng calo "Tập luyện" dùng cho box Lượng Calo tiêu thụ
+  const totalBurnedKcal = totalWorkoutKcal + stepsKcal;
 
   const kcalTarget = Math.round(targets.kcal || 0),
     kcalAte = Math.round(totals.kcal || 0),
@@ -158,10 +211,6 @@ export default function Statistical() {
       }))
       .sort((a, b) => a.hour - b.hour);
   }, [logs]);
-
-  // Cân nặng hiện tại (ưu tiên: profile -> log activity -> onboarding base)
-  const weightCurrent =
-  activity.weightKg ?? userWeight ?? weightBase;
 
   const { weightProgress, kgLeft } = useMemo(() => {
     if (
@@ -301,53 +350,45 @@ export default function Statistical() {
   }, []);
 
   // Lấy goal / cân nặng gốc từ onboarding
-  useEffect(() => {
+// Lấy cân nặng gốc / mục tiêu từ Onboarding (base + goal snapshot)
+useEffect(() => {
   getOnboardingData()
     .then((res) => {
+      // getOnboardingData() trả object JSON luôn, thường là { success, data }
       const ob =
-        res?.onboarding ??
+        res?.onboarding ?? // phòng trường hợp BE trả { onboarding: {...} }
         res?.data?.onboarding ??
         res?.data ??
         res;
 
       if (!ob) return;
 
-      const baseBlock = ob.base || {};
+      const base = ob.base || {};
       const goals = Array.isArray(ob.goals) ? ob.goals : [];
 
-      // Ưu tiên goal đang active, sau đó in_progress, rồi goal đầu tiên
-      const activeGoal =
-        goals.find((g) => g.status === "active") ||
-        goals.find((g) => g.status === "in_progress") ||
-        goals[0] ||
-        null;
+      let active = goals.find((g) => g.status === "active") || null;
+      if (!active && goals.length) active = goals[goals.length - 1];
 
-      // helper nhỏ để lấy số đầu tiên hợp lệ
-      const pickNumber = (...vals) => {
-        for (const v of vals) {
-          if (v == null) continue;
-          const n = Number(v);
-          if (!Number.isNaN(n)) return n;
-        }
-        return null;
+      const src = active || base || {};
+
+      const toNumOrNull = (v) => {
+        if (v == null) return null;
+        const n = Number(v);
+        return Number.isNaN(n) ? null : n;
       };
 
-      const baseWeightRaw = pickNumber(
-        activeGoal?.canNangLucBatDau,
-        activeGoal?.canNangHienTai,
-        baseBlock.canNangLucBatDau,
-        baseBlock.canNangHienTai
-      );
+      // Cân nặng gốc của goal: canNangHienTai tại thời điểm tạo goal
+      const baseW =
+        toNumOrNull(src.canNangHienTai) ??
+        toNumOrNull(base.canNangHienTai);
 
-      const goalWeightRaw = pickNumber(
-        activeGoal?.canNangMongMuon,
-        activeGoal?.canNangMucTieu,
-        baseBlock.canNangMongMuon,
-        baseBlock.canNangMucTieu
-      );
+      // Cân nặng mục tiêu của goal: canNangMongMuon
+      const goalW =
+        toNumOrNull(src.canNangMongMuon) ??
+        toNumOrNull(base.canNangMongMuon);
 
-      if (baseWeightRaw != null) setWeightBase(baseWeightRaw);
-      if (goalWeightRaw != null) setWeightGoal(goalWeightRaw);
+      if (baseW != null) setWeightBase(baseW);
+      if (goalW != null) setWeightGoal(goalW);
     })
     .catch(() => {});
 }, []);
@@ -395,11 +436,16 @@ export default function Statistical() {
 
   const handleSaveWorkouts = async (selected) => {
     try {
-      await saveDailyWorkouts({
+      const res = await saveDailyWorkouts({
         date,
         workoutIds: selected.map((w) => w.id),
       });
-      updateActivity({ workouts: selected });
+
+      const payload = res?.data || {};
+      const raw = Array.isArray(payload.workouts) ? payload.workouts : [];
+      const normalized = raw.map(normalizeActivityWorkout).filter(Boolean);
+
+      updateActivity({ workouts: normalized });
       toast.success("Đã lưu lịch tập cho ngày này");
       setModal(null);
     } catch (e) {
@@ -408,7 +454,7 @@ export default function Statistical() {
     }
   };
 
-    const handleSaveWater = async (val) => {
+  const handleSaveWater = async (val) => {
     const want = Math.max(0, Math.min(10000, Number(val) || 0));
     try {
       if (want !== waterMl) {
@@ -977,6 +1023,11 @@ export default function Statistical() {
                       }}
                     />
                   </div>
+                  {stepsKcal > 0 && (
+                    <div className="st-stat-sub" style={{ marginTop: 6 }}>
+                      ≈ {stepsKcal.toLocaleString()} cal đốt từ bước chân
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -995,10 +1046,10 @@ export default function Statistical() {
                 <div className="st-stat-body">
                   <div className="st-stat-big">
                     <i className="fa-solid fa-fire-flame-curved" />{" "}
-                    {kcalBurned}
+                    {Math.round(totalWorkoutKcal)}
                   </div>
                   <div className="st-stat-sub">
-                    {activity.workouts?.length || 0} bài tập
+                    {activity.workouts?.length || 0} lịch tập
                   </div>
                   {activity.workouts?.length > 0 && (
                     <div
@@ -1036,24 +1087,62 @@ export default function Statistical() {
               <div className="st-card-header">
                 <div className="st-card-title">Bài tập trong ngày</div>
               </div>
-              <div className="st-workout-list-body">
-                {activity.workouts?.length ? (
-                  <ul className="st-workout-list">
-                    {activity.workouts.map((w) => (
-                      <li key={w.id} className="st-workout-list-item">
-                        <div className="st-wl-name">
-                          {w.name || "(Không tên)"}
-                        </div>
-                        <div className="st-wl-kcal">
-                          {Math.round(w.kcal || 0)} kcal
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="st-empty">
-                    Chưa chọn lịch tập cho ngày này.
+              <div className="stt-workouts-body">
+                {(!activity.workouts || !activity.workouts.length) ? (
+                  <div className="stt-empty">
+                    Bạn chưa chọn lịch tập nào cho ngày này.
                   </div>
+                ) : (
+                  activity.workouts.map((w, idx) => (
+                    <div className="stt-workout-plan" key={w.id || idx}>
+                      {/* --- Title kế bên tổng kcal --- */}
+                      <div className="stt-workout-header">
+                        <div className="stt-workout-name">
+                          {w.name || "Lịch tập"}
+                        </div>
+                        {typeof w.kcal === "number" && w.kcal > 0 && (
+                          <div className="stt-workout-kcal">
+                            <i className="fa-solid fa-fire-flame-curved" />{" "}
+                            {new Intl.NumberFormat("vi-VN").format(w.kcal || 0)} kcal
+                          </div>
+                        )}
+                      </div>
+
+                      {/* --- Danh sách bài tập trong lịch --- */}
+                      {w.plan && Array.isArray(w.plan.items) && w.plan.items.length > 0 ? (
+                        <div className="stt-workout-exlist">
+                          {w.plan.items.map((ex, i) => {
+                            const s = calcSetStats(ex.sets);
+                            const repsText = s.reps != null ? `${s.reps} reps` : "- reps";
+                            const restText = s.rest != null ? `${s.rest}s nghỉ` : "0s nghỉ";
+                            const exSrcRaw = (ex.exercise && (ex.exercise.imageUrl || ex.exercise.thumbUrl)) || ex.imageUrl || ex.thumbUrl || "";
+                            const exImg = exSrcRaw ? toAbs(exSrcRaw) : PLACEHOLDER;
+                            const exName = ex.exerciseName || ex.name || "Bài tập";
+
+                            return (
+                              <div className="stt-exrow" key={i}>
+                                <img className="stt-eximg" src={exImg} alt={exName} />
+                                <div className="stt-exmeta">
+                                  <div className="stt-exname">{exName}</div>
+                                  <div className="stt-exsub">
+                                    {s.hiep} hiệp ~ {repsText} ~ {restText}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="stt-empty small">
+                          Không có dữ liệu chi tiết bài tập cho lịch này.
+                        </div>
+                      )}
+                      {/* Divider giữa các lịch nếu chọn nhiều */}
+                      {idx < activity.workouts.length - 1 && (
+                        <hr className="stt-workout-divider" />
+                      )}
+                    </div>
+                  ))
                 )}
               </div>
             </div>

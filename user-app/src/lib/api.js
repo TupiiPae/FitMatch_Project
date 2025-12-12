@@ -13,7 +13,7 @@ export const ENDPOINTS = {
   USER: {
     ME: `${API_BASE}/user/me`,
     ONBOARDING: {
-      GET: `${API_BASE}/user/me`,
+      GET: `${API_BASE}/user/onboarding/me`,
       UPSERT: `${API_BASE}/user/onboarding`,
       FINALIZE: `${API_BASE}/user/onboarding/finalize`,
     },
