@@ -14,6 +14,8 @@ import api from "../../lib/api";
 import { toast } from "react-toastify";
 import { WorkoutModal, SimpleInputModal, WaterModal  } from "./StatisticalModals";
 import { getMe } from "../../api/account";
+import { useNavigate } from "react-router-dom";
+import { listSuggestMenus, toggleSaveSuggestMenu } from "../../api/suggestMenus";
 
 // helper tính trung bình hiệp / reps / rest cho 1 bài tập
 const calcSetStats = (sets = []) => {
@@ -97,7 +99,49 @@ function normalizeActivityWorkout(w) {
   return plan ? { id, name, kcal, plan } : { id, name, kcal };
 }
 
+// ---- Helper cho box Thực đơn gợi ý ----
+const SUGGEST_CAL_FILTERS = [
+  { id: "2000-2200", from: 2000, to: 2200 },
+  { id: "2200-2400", from: 2200, to: 2400 },
+  { id: "2400-2600", from: 2400, to: 2600 },
+  { id: "2600-2800", from: 2600, to: 2800 },
+];
+
+// Số ngày của 1 thực đơn (ít nhất 1)
+function getSuggestNumDays(menu) {
+  if (!menu) return 1;
+  const fromField =
+    typeof menu.numDays === "number" && menu.numDays > 0
+      ? menu.numDays
+      : null;
+  const fromArray =
+    Array.isArray(menu.days) && menu.days.length > 0
+      ? menu.days.length
+      : null;
+  const num = fromField ?? fromArray ?? 1;
+  return num > 0 ? num : 1;
+}
+
+// Tổng Calo / macros TRUNG BÌNH / NGÀY (giống getTotals ở SuggestMenuList)
+function getSuggestTotals(menu) {
+  const totalKcalRaw =
+    menu.totalKcal ?? menu.totalCalories ?? menu.kcal ?? 0;
+  const proteinRaw = menu.totalProteinG ?? menu.proteinG ?? 0;
+  const carbRaw = menu.totalCarbG ?? menu.carbG ?? 0;
+  const fatRaw = menu.totalFatG ?? menu.fatG ?? 0;
+
+  const days = getSuggestNumDays(menu);
+
+  return {
+    totalKcal: Math.round((Number(totalKcalRaw) || 0) / days),
+    proteinG: Math.round((Number(proteinRaw) || 0) / days),
+    carbG: Math.round((Number(carbRaw) || 0) / days),
+    fatG: Math.round((Number(fatRaw) || 0) / days),
+  };
+}
+
 export default function Statistical() {
+  const nav = useNavigate();
   const [date, setDate] = useState(() => dayjs().format("YYYY-MM-DD"));
   const [logs, setLogs] = useState([]);
   const [totals, setTotals] = useState({
@@ -128,12 +172,65 @@ export default function Statistical() {
   });
   const [workOptions, setWorkOptions] = useState([]);
   const [modal, setModal] = useState(null);
-  const [weightBase, setWeightBase] = useState(null); // cân nặng gốc trong onboarding
-  const [weightGoal, setWeightGoal] = useState(null); // cân nặng mục tiêu trong onboarding
-  const [userWeight, setUserWeight] = useState(null); // cân nặng hiện tại trong user.profile
+  const [weightBase, setWeightBase] = useState(null); 
+  const [weightGoal, setWeightGoal] = useState(null);
+  const [userWeight, setUserWeight] = useState(null); 
 
-  const [macroPage, setMacroPage] = useState(0); // 0: Đạm/Đường bột/Chất béo, 1: Muối/Đường/Chất xơ
+  const [suggestItems, setSuggestItems] = useState([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+
+  const [macroPage, setMacroPage] = useState(0); 
   const macroStartX = useRef(null);
+
+    // ====== SCROLL ACTIVE SECTIONS ======
+  const rowTopRef     = useRef(null);   
+  const overviewRef   = useRef(null);   
+  const rowMiddleRef  = useRef(null);  
+  const rowBottomRef  = useRef(null);   
+
+    const [visibleSection, setVisibleSection] = useState({
+    rowTop: false,
+    overview: false,
+    rowMiddle: false,
+    rowBottom: false,
+  });
+
+  useEffect(() => {
+    const entries = [
+      { key: "rowTop", ref: rowTopRef },
+      { key: "overview", ref: overviewRef },
+      { key: "rowMiddle", ref: rowMiddleRef },
+      { key: "rowBottom", ref: rowBottomRef },
+    ];
+
+    const observer = new IntersectionObserver(
+      (ioEntries) => {
+        ioEntries.forEach((entry) => {
+          const found = entries.find((e) => e.ref.current === entry.target);
+          if (!found) return;
+
+          if (entry.isIntersecting) {
+            setVisibleSection((prev) =>
+              prev[found.key]
+                ? prev
+                : { ...prev, [found.key]: true }
+            );
+            // Chỉ animate 1 lần, không cần theo dõi nữa
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.2, // khoảng 20% section vào viewport thì active
+      }
+    );
+
+    entries.forEach((e) => {
+      if (e.ref.current) observer.observe(e.ref.current);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const handleMacroSlideStart = (e) => {
     const x = e.touches ? e.touches[0].clientX : e.clientX;
@@ -192,6 +289,60 @@ export default function Statistical() {
   const kcalBudget = Math.max(0, kcalTarget + kcalBurned);
   const kcalRemaining = Math.max(0, kcalBudget - kcalAte);
   const kcalUsedPct = kcalBudget ? Math.min(1, kcalAte / kcalBudget) : 0;
+
+    // Chọn khoảng Calo phù hợp (2000-2200, 2200-2400, ...)
+  const targetCalRange = useMemo(() => {
+    if (!kcalTarget) return null;
+
+    let range =
+      SUGGEST_CAL_FILTERS.find(
+        (r) =>
+          (typeof r.from === "number" ? kcalTarget >= r.from : true) &&
+          (typeof r.to === "number" ? kcalTarget <= r.to : true)
+      ) || null;
+
+    // Nếu không trúng khoảng nào, chọn khoảng có tâm gần nhất với kcalTarget
+    if (!range) {
+      let best = null;
+      let bestDist = Infinity;
+      SUGGEST_CAL_FILTERS.forEach((r) => {
+        const center = (r.from + r.to) / 2;
+        const d = Math.abs(kcalTarget - center);
+        if (d < bestDist) {
+          bestDist = d;
+          best = r;
+        }
+      });
+      range = best;
+    }
+    return range;
+  }, [kcalTarget]);
+
+  // Danh sách thực đơn gợi ý khớp khoảng Calo mục tiêu (tối đa 2 menu)
+  const suggestMenusForTarget = useMemo(() => {
+    if (!targetCalRange || !kcalTarget || !suggestItems?.length) return [];
+    const { from, to } = targetCalRange;
+
+    return (suggestItems || [])
+      .map((m) => {
+        const totals = getSuggestTotals(m);
+        return { m, totals };
+      })
+      .filter(({ totals }) => {
+        const k = totals.totalKcal;
+        if (!k) return false;
+        if (typeof from === "number" && k < from) return false;
+        if (typeof to === "number" && k > to) return false;
+        return true;
+      })
+      // Ưu tiên menu có Calo/ngày gần với mục tiêu nhất
+      .sort(
+        (a, b) =>
+          Math.abs(a.totals.totalKcal - kcalTarget) -
+          Math.abs(b.totals.totalKcal - kcalTarget)
+      )
+      .slice(0, 2); 
+  }, [suggestItems, targetCalRange, kcalTarget]);
 
   const timeSlots = useMemo(() => {
     const map = {};
@@ -261,6 +412,28 @@ export default function Statistical() {
     setActivity((prev) => ({ ...prev, ...patch }));
   };
 
+    // --- Helpers cho box Thực đơn gợi ý ---
+  const openSuggestDetail = (id) => {
+    if (!id) return;
+    nav(`/dinh-duong/thuc-don-goi-y/chi-tiet/${id}`);
+  };
+
+  const handleToggleSaveSuggest = async (id) => {
+    try {
+      const res = await toggleSaveSuggestMenu(id);
+      const saved = !!res.saved;
+
+      setSuggestItems((prev) =>
+        (prev || []).map((m) => (m._id === id ? { ...m, saved } : m))
+      );
+
+      toast.success(saved ? "Đã lưu thực đơn" : "Đã bỏ lưu thực đơn");
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể lưu/bỏ lưu thực đơn");
+    }
+  };
+
   /* ====== API ====== */
   async function loadData() {
     const [l, w, s, actRes] = await Promise.all([
@@ -320,6 +493,30 @@ export default function Statistical() {
   useEffect(() => {
     loadData();
   }, [date]);
+
+    // Lấy danh sách Thực đơn gợi ý (dùng cho box "Thực đơn gợi ý" ở Thống kê)
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSuggestMenusBox() {
+      setSuggestLoading(true);
+      try {
+        const res = await listSuggestMenus({ limit: 100, skip: 0 });
+        const arr = res.items || res || [];
+        if (!cancelled) setSuggestItems(arr);
+      } catch (e) {
+        console.error("Không tải được Thực đơn gợi ý:", e);
+        if (!cancelled) setSuggestItems([]);
+      } finally {
+        if (!cancelled) setSuggestLoading(false);
+      }
+    }
+
+    loadSuggestMenusBox();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
     // Lấy danh sách lịch tập của tôi để dùng cho modal "Tập luyện"
   useEffect(() => {
@@ -796,7 +993,13 @@ useEffect(() => {
 
         <div className="st-grid-layout">
           {/* Hàng 1 – CÂN NẶNG + CALO */}
-          <div className="st-row-top">
+                    <div
+            ref={rowTopRef}
+            className={
+              "st-row-top st-animate-section" +
+              (visibleSection.rowTop ? " is-visible" : "")
+            }
+          >
             {/* Cân nặng */}
             <div className="st-card st-box-weight relative">
               <div className="st-card-header">
@@ -853,7 +1056,7 @@ useEffect(() => {
                     {/* Item 3: Tập luyện */}
                     <div className="c">
                       <div className="st-cal-icon">
-                        <i className="fa-solid fa-fire"></i>
+                        <i className="fa-solid fa-fire-flame-curved"></i>
                       </div>
                       <div className="st-cal-info">
                         <div className="v">
@@ -960,7 +1163,14 @@ useEffect(() => {
           </div>
 
           {/* HÀNG 2 – 3 box: NƯỚC / BƯỚC CHÂN / TẬP LUYỆN */}
-          <div className="st-row-middle">
+          <div
+            ref={rowMiddleRef}
+            className={
+              "st-row-middle st-animate-section" +
+              (visibleSection.rowMiddle ? " is-visible" : "")
+            }
+          >
+
             {/* Title hàng 2 */}
             <div className="st-section-head">
               <div>
@@ -988,7 +1198,7 @@ useEffect(() => {
                   <div className="st-stat-big">
                     <i className="water fa-solid fa-glass-water-droplet"></i>
                     {waterMl.toLocaleString()}
-                    <span style={{ fontSize: 14, marginLeft: 4 }}> ml</span>
+                    <span style={{ fontSize: 20, marginLeft: 4 }}> ml</span>
                   </div>
                   <div className="st-stat-sub">Tổng nước đã uống hôm nay</div>
                 </div>
@@ -1047,6 +1257,7 @@ useEffect(() => {
                   <div className="st-stat-big">
                     <i className="fa-solid fa-fire-flame-curved" />{" "}
                     {Math.round(totalWorkoutKcal)}
+                    <span style={{ fontSize: 20, marginLeft: 4 }}> cal</span>
                   </div>
                   <div className="st-stat-sub">
                     {activity.workouts?.length || 0} lịch tập
@@ -1065,7 +1276,13 @@ useEffect(() => {
           </div>
 
           {/* HÀNG 3 – THỰC ĐƠN GỢI Ý + BÀI TẬP CHI TIẾT */}
-          <div className="st-row-bottom">
+                    <div
+            ref={rowBottomRef}
+            className={
+              "st-row-bottom st-animate-section" +
+              (visibleSection.rowBottom ? " is-visible" : "")
+            }
+          >
             {/* Thực đơn gợi ý – 2/3 chiều ngang */}
             <div className="st-card st-box-suggest">
               <div className="st-card-header">
@@ -1076,9 +1293,111 @@ useEffect(() => {
                   Hệ thống sẽ gợi ý thực đơn phù hợp với mục tiêu{" "}
                   <strong>{kcalTarget || 0} kcal</strong> / ngày của bạn.
                 </p>
-                <div className="st-suggest-placeholder">
-                  <span>👩‍🍳 Tính năng gợi ý thực đơn sẽ xuất hiện tại đây.</span>
-                </div>
+
+                {/* Đang load */}
+                {suggestLoading && (
+                  <div className="st-suggest-placeholder">
+                    <span>Đang tải Thực đơn gợi ý...</span>
+                  </div>
+                )}
+
+                {/* Có mục tiêu nhưng chưa tìm được thực đơn phù hợp */}
+                {!suggestLoading &&
+                  kcalTarget > 0 &&
+                  (!targetCalRange || suggestMenusForTarget.length === 0) && (
+                    <div className="st-suggest-placeholder">
+                      <span>
+                        Hiện chưa có Thực đơn gợi ý phù hợp khoảng Calo của bạn.{" "}
+                      </span>
+                    </div>
+                  )}
+
+                {/* Có mục tiêu & có thực đơn phù hợp */}
+                {!suggestLoading &&
+                  kcalTarget > 0 &&
+                  targetCalRange &&
+                  suggestMenusForTarget.length > 0 && (
+                    <>
+                      <div className="st-suggest-list">
+                        {suggestMenusForTarget.map(({ m, totals }) => (
+                          <div
+                            key={m._id}
+                            className="st-suggest-card"
+                            onClick={() => openSuggestDetail(m._id)}
+                          >
+                            <div className="st-suggest-thumb">
+                              {m.imageUrl ? (
+                                <img src={toAbs(m.imageUrl)} alt={m.name} />
+                              ) : (
+                                <div className="st-suggest-thumb-fallback">
+                                  <i className="fa-regular fa-image" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="st-suggest-main">
+                              <div className="st-suggest-title">
+                                {m.name || "Thực đơn gợi ý"}
+                              </div>
+                              <div className="st-suggest-tags">
+                                <span className="st-suggest-chip">
+                                  {m.category || "Chưa phân loại"}
+                                </span>
+                                <span className="st-suggest-chip">
+                                  {getSuggestNumDays(m)} ngày
+                                </span>
+                              </div>
+
+                              <div className="st-suggest-kcal">
+                                {totals.totalKcal.toLocaleString()} Cal/ngày
+                              </div>
+                              <div className="st-suggest-macros">
+                                <span>Đạm: {totals.proteinG}g</span>
+                                <span>Carb: {totals.carbG}g</span>
+                                <span>Fat: {totals.fatG}g</span>
+                              </div>
+                            </div>
+
+                            <div
+                              className="st-suggest-foot"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                className="st-suggest-btn"
+                                onClick={() => openSuggestDetail(m._id)}
+                              >
+                                Xem chi tiết
+                              </button>
+                              <button
+                                type="button"
+                                className={
+                                  "st-suggest-save" +
+                                  (m.saved ? " saved" : "")
+                                }
+                                title={
+                                  m.saved
+                                    ? "Bỏ lưu thực đơn"
+                                    : "Lưu thực đơn"
+                                }
+                                onClick={() =>
+                                  handleToggleSaveSuggest(m._id)
+                                }
+                              >
+                                <i
+                                  className={
+                                    m.saved
+                                      ? "fa-solid fa-bookmark"
+                                      : "fa-regular fa-bookmark"
+                                  }
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
               </div>
             </div>
 
