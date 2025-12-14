@@ -1119,7 +1119,7 @@ useEffect(() => {
           {/* Cột 3 – TỔNG QUAN / NHẬT KÝ MÓN ĂN (chiếm hết cột 3) */}
           <div className="st-card st-col-overview">
             <div className="st-card-header space-between">
-              <div className="st-card-title lg">Tổng quan</div>
+              <div className="st-card-title lg">Nhật ký dinh dưỡng</div>
               <div className="st-streak-badge">
                 <i
                   className={

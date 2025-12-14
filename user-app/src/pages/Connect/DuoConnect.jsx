@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./DuoConnect.css";
@@ -90,15 +91,17 @@ export default function DuoConnect({ onLeftRoom }) {
   const { slotMe, slotPartner } = useMemo(() => {
     const members = Array.isArray(room?.members) ? room.members : [];
 
+    const calcAge = (dob) => { if(!dob) return null; const d=dayjs(dob); if(!d.isValid()) return null; const a=dayjs().diff(d,"year"); return a>=0&&a<=120?a:null; };
+    const fmtGender = (g) => { const v=String(g||"").trim().toLowerCase(); if(!v) return null; if(["male","nam","m","men","man"].includes(v)) return "Nam"; if(["female","nu","nữ","f","women","woman"].includes(v)) return "Nữ"; if(["other","khac","khác"].includes(v)) return "Khác"; return String(g); };
+
     const normMember = (m) => {
       if (!m) return null;
       const u = m.user || {};
       const profile = u.profile || {};
-      const name =
-        profile.nickname ||
-        u.username ||
-        u.email ||
-        "Người dùng FitMatch";
+      const name = profile.nickname || u.username || u.email || "Người dùng FitMatch";
+
+      const genderRaw = profile.gender ?? profile.gioiTinh ?? profile.sex ?? null;
+      const dobRaw = profile.birthDate ?? profile.dob ?? profile.ngaySinh ?? profile.birthday ?? null;
 
       return {
         id: String(u._id || u.id || ""),
@@ -106,6 +109,8 @@ export default function DuoConnect({ onLeftRoom }) {
         avatarUrl: profile.avatarUrl || null,
         role: m.role || "member",
         joinedAt: m.joinedAt || null,
+        gender: fmtGender(genderRaw),
+        age: calcAge(dobRaw),
       };
     };
 
@@ -252,10 +257,11 @@ export default function DuoConnect({ onLeftRoom }) {
               {/* 2 user – căn giữa và chia đều */}
               <div className="cn-duo-members-strip">
                 <DuoMemberSpot member={slotMe} label="Bạn" isMe />
-                <DuoMemberSpot
-                  member={slotPartner}
-                  label="Bạn ghép đôi"
-                />
+                <div className="cn-duo-vs">
+                  <div className="cn-duo-vs-icon"><i className="fa-solid fa-bolt" /></div>
+                  <div className="cn-duo-vs-text">VS</div>
+                </div>
+                <DuoMemberSpot member={slotPartner} label="Bạn ghép đôi" />
               </div>
 
               {/* 2 SLIDER – avatar nằm trên DAY 1 */}
@@ -314,43 +320,39 @@ export default function DuoConnect({ onLeftRoom }) {
 /* ===== MEMBER SPOT (hàng trên) ===== */
 
 function DuoMemberSpot({ member, label, isMe = false }) {
+  const roleCls = isMe ? " is-me" : " is-partner";
+
   if (!member) {
     return (
-      <div className="cn-duo-member-spot is-empty">
-        <div className="cn-duo-member-avatar cn-duo-member-avatar-empty">
-          <i className="fa-regular fa-circle-user" />
-        </div>
-        <div className="cn-duo-member-text">
-          <div className="cn-duo-member-label-row">
-            <span className="cn-duo-member-label">{label}</span>
+      <div className={"cn-duo-member-spot is-empty" + roleCls}>
+        <div className="cn-duo-member-avatar-wrap">
+          <div className="cn-duo-member-avatar cn-duo-member-avatar-empty">
+            <i className="fa-regular fa-circle-user" />
           </div>
-          <div className="cn-duo-member-name">Chỗ trống</div>
+          <span className={"cn-duo-member-chip" + (isMe ? " is-me" : " is-partner")}>{label}</span>
         </div>
+        <div className="cn-duo-member-name">Chỗ trống</div>
+        <div className="cn-duo-member-meta">--</div>
       </div>
     );
   }
 
   const initials = getInitials(member.name);
+  const gender = member.gender || "--";
+  const ageText = member.age != null ? `${member.age} tuổi` : "--";
+  const meta = member.gender && member.age != null ? `${gender} ~ ${ageText}` : `${gender}${member.age != null ? ` ~ ${ageText}` : ""}`.trim() || "--";
 
   return (
-    <div
-      className={
-        "cn-duo-member-spot" + (isMe ? " is-me" : "")
-      }
-    >
-      <div className="cn-duo-member-avatar">
-        {member.avatarUrl ? (
-          <img src={member.avatarUrl} alt={member.name} />
-        ) : (
-          <span>{initials}</span>
-        )}
-      </div>
-      <div className="cn-duo-member-text">
-        <div className="cn-duo-member-label-row">
-          <span className="cn-duo-member-label">{label}</span>
+    <div className={"cn-duo-member-spot" + roleCls}>
+      <div className="cn-duo-member-avatar-wrap">
+        <div className={"cn-duo-member-avatar" + roleCls}>
+          {member.avatarUrl ? <img src={member.avatarUrl} alt={member.name} /> : <span>{initials}</span>}
         </div>
-        <div className="cn-duo-member-name">{member.name}</div>
+        <span className={"cn-duo-member-chip" + (isMe ? " is-me" : " is-partner")}>{label}</span>
       </div>
+
+      <div className="cn-duo-member-name">{member.name}</div>
+      <div className="cn-duo-member-meta">{meta}</div>
     </div>
   );
 }

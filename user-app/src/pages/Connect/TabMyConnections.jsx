@@ -265,10 +265,6 @@ export default function TabMyConnections({
                         <strong>{nickname}</strong> muốn kết nối 1:1
                         với bạn
                       </h4>
-                      <p className="cn-request-main">{note}</p>
-                      <p className="cn-request-meta">
-                        Mục tiêu tập luyện: {goalLabel}
-                      </p>
 
                       <div className="cn-request-footer">
                         <span className="cn-request-meta">
@@ -360,12 +356,6 @@ export default function TabMyConnections({
                           Gửi lời mời kết nối với người dùng{" "}
                           <strong>{nickname}</strong>
                         </h4>
-                        <p className="cn-request-main">{note}</p>
-                        {goalLabel && (
-                          <p className="cn-request-meta">
-                            Mục tiêu của bạn tập: {goalLabel}
-                          </p>
-                        )}
 
                         <div className="cn-request-footer">
                           <span className="cn-request-meta">

@@ -155,83 +155,145 @@
 
 /* ===== HÀNG USER (2 box) ===== */
 
+/* ===== HÀNG USER (banner giống hình) ===== */
 .cn-duo-members-strip{
-  display: flex;
-  align-items: center;
-  justify-content: center;   /* căn giữa cả dãy */
-  gap: 120px;
-  flex-wrap: wrap;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #1f2937;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  gap:54px;
+  flex-wrap:wrap;
+  padding: 22px 18px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(239,68,68,.22);
+  margin-bottom: 14px;
 }
 
+/* VS giữa 2 người */
+.cn-duo-vs{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-width:72px;
+  margin-top: 20px;
+}
+.cn-duo-vs-icon{
+  width:44px; height:44px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(148,163,184,.22);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+}
+.cn-duo-vs-icon i{ color: rgba(239,68,68,.95); font-size: 16px; }
+.cn-duo-vs-text{
+  font-weight:800;
+  letter-spacing:.12em;
+  font-size:12px;
+  color: rgba(226,232,240,.85);
+  opacity:.9;
+}
+
+/* ===== Member card (avatar lớn, tên dưới) ===== */
 .cn-duo-member-spot{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  flex: 0 1 260px;           /* chia đều độ rộng */
+  width: 260px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  gap:10px;
+  min-width:0;
 }
+.cn-duo-member-spot.is-empty{ opacity:.72; }
 
-.cn-duo-member-spot.is-empty{
-  opacity: 0.6;
-}
-
-.cn-duo-member-spot.is-me .cn-duo-member-name{
-  color: #f97316;
+.cn-duo-member-avatar-wrap{
+  position:relative;
+  width: 118px;
+  height: 118px;
+  display:grid;
+  place-items:center;
 }
 
 .cn-duo-member-avatar{
-  width: 60px;
-  height: 60px;
+  width: 112px;
+  height: 112px;
   border-radius: 999px;
-  background: #111827;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  color: #f97316;
-  overflow: hidden;
-  flex-shrink: 0;
+  overflow:hidden;
+  background: rgba(2,6,23,.55);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:18px;
+  color: #fff;
+  box-shadow: 0 18px 45px rgba(0,0,0,.55);
 }
-.cn-duo-member-avatar img{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.cn-duo-member-avatar img{ width:100%; height:100%; object-fit:cover; }
+
+/* Border theo vai trò */
+.cn-duo-member-avatar.is-me{
+  border: 3px solid rgba(239,68,68,.95);
+  box-shadow: 0 0 0 6px rgba(239,68,68,.10), 0 18px 45px rgba(0,0,0,.55);
+}
+.cn-duo-member-avatar.is-partner{
+  border: 3px solid rgba(148,163,184,.35);
+  box-shadow: 0 0 0 6px rgba(148,163,184,.08), 0 18px 45px rgba(0,0,0,.55);
 }
 
 .cn-duo-member-avatar-empty{
-  background: #020617;
-  border: 1px dashed #4b5563;
-  color: #4b5563;
+  background: rgba(2,6,23,.35);
+  border: 2px dashed rgba(148,163,184,.35);
+  color: rgba(148,163,184,.55);
 }
 
-.cn-duo-member-text{
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+/* Chip góc dưới avatar */
+.cn-duo-member-chip{
+  position:absolute;
+  left: 80%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
 }
-
-.cn-duo-member-label-row{
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.cn-duo-member-chip.is-me{
+  background: linear-gradient(180deg, rgba(255,58,85,.95), rgba(239,68,68,.95));
+  color:#fff;
+  box-shadow: 0 12px 24px rgba(239,68,68,.22);
 }
-
-.cn-duo-member-label{
-  font-size: 11px;
-  color: #9ca3af;
+.cn-duo-member-chip.is-partner{
+  background: rgba(2,6,23,.68);
+  color: rgba(226,232,240,.85);
+  border-color: rgba(148,163,184,.28);
 }
 
 .cn-duo-member-name{
-  font-size: 14px;
-  font-weight: 600;
-  color: #f9fafb;
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: 900;
+  color: #f8fafc;
+  max-width: 240px;
   white-space: nowrap;
-  text-overflow: ellipsis;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cn-duo-member-meta{
+  font-size: 12px;
+  color: rgba(226,232,240,.72);
+}
+
+/* responsive */
+@media (max-width: 640px){
+  .cn-duo-members-strip{ gap: 18px; padding: 16px 12px; }
+  .cn-duo-vs{ order: 3; width: 100%; margin-top: 0; flex-direction: row; gap: 10px; }
 }
 
 /* ===== 2 HÀNG SLIDER ===== */

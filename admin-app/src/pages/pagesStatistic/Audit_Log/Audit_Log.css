@@ -314,11 +314,11 @@
   grid-template-columns:
     40px  /* checkbox */
     60px  /* stt */
-    220px /* admin */
+    120px /* admin */
     120px /* role */
-    140px /* action */
+    110px /* action */
     160px /* resource type */
-    260px /* resource name */
+    300px /* resource name */
     220px /* resource id */
     170px /* time */
     80px; /* op */
@@ -383,7 +383,6 @@
 .al-res-name {
   font-weight: 500;
   color: #111827;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }

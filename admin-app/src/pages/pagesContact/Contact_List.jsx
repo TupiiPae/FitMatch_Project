@@ -277,15 +277,15 @@ export default function Contact_List() {
         <span className="sep">/</span>
         <span className="grp">
           <i className="fa-regular fa-envelope" />{" "}
-          <span>Liên hệ</span>
+          <span>Hỗ trợ</span>
         </span>
         <span className="sep">/</span>
-        <span className="cur">Danh sách liên hệ</span>
+        <span className="cur">Danh sách hỗ trợ</span>
       </nav>
 
       <div className="ct-card">
         <div className="ct-head">
-          <h2>Danh sách liên hệ ({total})</h2>
+          <h2>Danh sách hỗ trợ ({total})</h2>
           <div className="ct-actions">
             <button
               className="btn ghost"

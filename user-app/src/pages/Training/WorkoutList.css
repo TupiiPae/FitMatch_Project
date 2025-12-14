@@ -209,7 +209,6 @@
   padding-left: 20px;
 }
 
-/* Actions (menu 3 chấm) – scope theo wl để không ảnh hưởng trang khác */
 .wl-acts {
   display: flex;
   align-items: center;
@@ -239,7 +238,7 @@
   right: 0;
   top: 40px;
   min-width: 200px;
-  background: #ffffff;
+  background: #020617;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
   padding: 6px;
   z-index: 10;
@@ -248,21 +247,18 @@
   display: block;
   width: 100%;
   text-align: left;
-  background: #ffffff;
+  background: #020617;
   border: none;
   padding: 8px 10px;
   border-radius: 4px;
   cursor: pointer;
-  color: #111827;
+  color: #e5e7eb;
 }
-.wl-item .menu-item:hover {
-  background: #f3f4f6;
-}
+
 .wl-item .menu-item.danger {
   color: #dc2626;
 }
 
-/* BOTTOM ROW: metrics 4 cột + vạch dọc – chuyển sang tông tối */
 .wl-metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
