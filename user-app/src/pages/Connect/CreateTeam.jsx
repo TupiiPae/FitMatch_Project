@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./ConnectCreateTeam.css";
+import "./CreateTeam.css";
 
 export default function CreateTeam() {
   const nav = useNavigate();

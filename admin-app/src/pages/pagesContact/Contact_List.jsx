@@ -269,7 +269,6 @@ export default function Contact_List() {
 
   return (
     <div className="ct-page-admin">
-      {/* breadcrumb */}
       <nav className="ct-breadcrumb" aria-label="breadcrumb">
         <Link to="/">
           <i className="fa-solid fa-house" /> <span>Trang chủ</span>
