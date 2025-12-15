@@ -47,6 +47,16 @@ export const uploadFoodSingle = multer({
   },
 }).single("image");
 
+/* ---------- Team/Connect cover (<=5MB) ---------- */
+export const uploadTeamCoverSingle = multer({
+  storage: memory,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    if ((file.mimetype || "").startsWith("image/")) return cb(null, true);
+    cb(new Error("Chỉ chấp nhận file ảnh (jpg/png/webp/...)"));
+  },
+}).single("cover");
+
 /* ---------- Import (CSV/XLSX + ZIP) (<=25MB) ---------- */
 export const uploadImportAny = multer({
   storage: memory,

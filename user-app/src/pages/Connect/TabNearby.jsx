@@ -20,10 +20,11 @@ export default function TabNearby({
   discoverable,
   goalFilter,
   onCreatedRequest,
-  onEnteredRoom, // 👈 thêm
+  onEnteredRoom,
+  onOpenCreateTeam, // ✅ thêm prop
 }) {
   const nav = useNavigate();
-  const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
+  const [viewMode, setViewMode] = useState("grid");
   const [search, setSearch] = useState("");
 
   const [selfCard, setSelfCard] = useState(null);
@@ -46,24 +47,12 @@ export default function TabNearby({
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   const openConfirm = (mode, target, requestId) => {
-    setConfirmState({
-      open: true,
-      mode,
-      target,
-      requestId: requestId || null,
-    });
+    setConfirmState({ open: true, mode, target, requestId: requestId || null });
   };
-
   const closeConfirm = () => {
-    setConfirmState({
-      open: false,
-      mode: null,
-      target: null,
-      requestId: null,
-    });
+    setConfirmState({ open: false, mode: null, target: null, requestId: null });
   };
 
-  // ===== Load từ API /match/nearby + /match/requests =====
   useEffect(() => {
     let cancelled = false;
 
@@ -86,41 +75,24 @@ export default function TabNearby({
         setItems(Array.isArray(nearby?.items) ? nearby.items : []);
 
         if (reqs) {
-          const incoming = Array.isArray(reqs.incoming)
-            ? reqs.incoming
-            : [];
-          const outgoing = Array.isArray(reqs.outgoing)
-            ? reqs.outgoing
-            : [];
+          const incoming = Array.isArray(reqs.incoming) ? reqs.incoming : [];
+          const outgoing = Array.isArray(reqs.outgoing) ? reqs.outgoing : [];
 
           const incomingFromUser = {};
           incoming.forEach((r) => {
-            if (r.type === "duo" && r.fromUser?._id) {
-              incomingFromUser[r.fromUser._id] = r._id;
-            }
+            if (r.type === "duo" && r.fromUser?._id) incomingFromUser[r.fromUser._id] = r._id;
           });
 
           const outgoingToUser = {};
           const outgoingToRoom = {};
           outgoing.forEach((r) => {
-            if (r.type === "duo" && r.toUser?._id) {
-              outgoingToUser[r.toUser._id] = r._id;
-            } else if (r.type === "group" && r.toRoom?._id) {
-              outgoingToRoom[r.toRoom._id] = r._id;
-            }
+            if (r.type === "duo" && r.toUser?._id) outgoingToUser[r.toUser._id] = r._id;
+            else if (r.type === "group" && r.toRoom?._id) outgoingToRoom[r.toRoom._id] = r._id;
           });
 
-          setRequestMaps({
-            incomingFromUser,
-            outgoingToUser,
-            outgoingToRoom,
-          });
+          setRequestMaps({ incomingFromUser, outgoingToUser, outgoingToRoom });
         } else {
-          setRequestMaps({
-            incomingFromUser: {},
-            outgoingToUser: {},
-            outgoingToRoom: {},
-          });
+          setRequestMaps({ incomingFromUser: {}, outgoingToUser: {}, outgoingToRoom: {} });
         }
       } catch (e) {
         if (cancelled) return;
@@ -138,15 +110,11 @@ export default function TabNearby({
     }
 
     load();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [connectionMode, discoverable]);
 
-  // ===== Filter =====
   const filteredList = useMemo(() => {
     let base = items || [];
-
     return base.filter((u) => {
       if (connectionMode === "one_to_one" && u.isGroup) return false;
       if (connectionMode === "group" && !u.isGroup) return false;
@@ -160,15 +128,10 @@ export default function TabNearby({
       if (!u.isGroup && locationRange !== "any") {
         const key = u.areaKey;
         if (!key) return false;
-
         if (locationRange === "same_city") {
-          if (!["same_city", "same_district", "same_ward"].includes(key)) {
-            return false;
-          }
+          if (!["same_city", "same_district", "same_ward"].includes(key)) return false;
         } else if (locationRange === "same_district") {
-          if (!["same_district", "same_ward"].includes(key)) {
-            return false;
-          }
+          if (!["same_district", "same_ward"].includes(key)) return false;
         } else if (locationRange === "same_ward") {
           if (key !== "same_ward") return false;
         }
@@ -183,14 +146,7 @@ export default function TabNearby({
         if (ageRange === "45+" && age < 45) return false;
       }
 
-      if (
-        genderFilter !== "all" &&
-        !u.isGroup &&
-        u.gender &&
-        u.gender !== genderFilter
-      ) {
-        return false;
-      }
+      if (genderFilter !== "all" && !u.isGroup && u.gender && u.gender !== genderFilter) return false;
 
       if (search.trim()) {
         const txt = search.toLowerCase();
@@ -200,142 +156,74 @@ export default function TabNearby({
           (u.trainingTypes || []).join(" "),
           u.locationLabel || "",
           u.bio || "",
-        ]
-          .join(" ")
-          .toLowerCase();
+        ].join(" ").toLowerCase();
         if (!haystack.includes(txt)) return false;
       }
 
       return true;
     });
-  }, [
-    items,
-    connectionMode,
-    locationRange,
-    ageRange,
-    genderFilter,
-    search,
-    goalFilter,
-  ]);
+  }, [items, connectionMode, locationRange, ageRange, genderFilter, search, goalFilter]);
 
   const resultCount = filteredList.length;
 
   const getInviteStateFor = (u) => {
     if (u.isGroup) {
       const reqId = requestMaps.outgoingToRoom[u.id];
-      if (reqId) {
-        return { type: "cancel_group", requestId: reqId };
-      }
-      return { type: "send_group" };
+      return reqId ? { type: "cancel_group", requestId: reqId } : { type: "send_group" };
     } else {
       const incomingId = requestMaps.incomingFromUser[u.id];
-      if (incomingId) {
-        return { type: "accept_duo", requestId: incomingId };
-      }
+      if (incomingId) return { type: "accept_duo", requestId: incomingId };
       const outgoingId = requestMaps.outgoingToUser[u.id];
-      if (outgoingId) {
-        return { type: "cancel_duo", requestId: outgoingId };
-      }
+      if (outgoingId) return { type: "cancel_duo", requestId: outgoingId };
       return { type: "send_duo" };
     }
   };
 
-  // ===== Xử lý modal confirm =====
   async function handleConfirm() {
-    if (!confirmState.open || !confirmState.mode || !confirmState.target) {
-      return;
-    }
-
+    if (!confirmState.open || !confirmState.mode || !confirmState.target) return;
     const { mode, target, requestId } = confirmState;
 
     try {
       setConfirmLoading(true);
 
       if (mode === "send_duo") {
-        if (!discoverable) {
-          toast.info(
-            "Hãy bật 'Cho phép mọi người tìm kiếm bạn' để kết nối dễ dàng hơn."
-          );
-        }
-
-        const res = await createMatchRequest({
-          type: "duo",
-          targetUserId: target.id,
-        });
-
+        if (!discoverable) toast.info("Hãy bật 'Cho phép mọi người tìm kiếm bạn' để kết nối dễ dàng hơn.");
+        const res = await createMatchRequest({ type: "duo", targetUserId: target.id });
         const reqDoc = res?.request || res?.data?.request || null;
         const newId = reqDoc?._id || reqDoc?.id;
-
-        if (newId) {
-          setRequestMaps((prev) => ({
-            ...prev,
-            outgoingToUser: {
-              ...prev.outgoingToUser,
-              [target.id]: newId,
-            },
-          }));
-        }
-
+        if (newId) setRequestMaps((prev) => ({ ...prev, outgoingToUser: { ...prev.outgoingToUser, [target.id]: newId } }));
         toast.success("Đã gửi lời mời kết nối.");
       } else if (mode === "send_group") {
-        if (!discoverable) {
-          toast.info(
-            "Hãy bật 'Cho phép mọi người tìm kiếm bạn' để kết nối dễ dàng hơn."
-          );
-        }
-
-        const res = await createMatchRequest({
-          type: "group",
-          targetRoomId: target.id,
-        });
-
+        if (!discoverable) toast.info("Hãy bật 'Cho phép mọi người tìm kiếm bạn' để kết nối dễ dàng hơn.");
+        const res = await createMatchRequest({ type: "group", targetRoomId: target.id });
         const reqDoc = res?.request || res?.data?.request || null;
         const newId = reqDoc?._id || reqDoc?.id;
-
-        if (newId) {
-          setRequestMaps((prev) => ({
-            ...prev,
-            outgoingToRoom: {
-              ...prev.outgoingToRoom,
-              [target.id]: newId,
-            },
-          }));
-        }
-
+        if (newId) setRequestMaps((prev) => ({ ...prev, outgoingToRoom: { ...prev.outgoingToRoom, [target.id]: newId } }));
         toast.success("Đã gửi yêu cầu xin tham gia nhóm.");
       } else if (mode === "cancel_duo") {
         if (!requestId) return;
-
         await cancelMatchRequest(requestId);
-
         setRequestMaps((prev) => {
           const outgoingToUser = { ...prev.outgoingToUser };
           delete outgoingToUser[target.id];
           return { ...prev, outgoingToUser };
         });
-
         toast.success("Đã hủy lời mời kết nối.");
       } else if (mode === "cancel_group") {
         if (!requestId) return;
-
         await cancelMatchRequest(requestId);
-
         setRequestMaps((prev) => {
           const outgoingToRoom = { ...prev.outgoingToRoom };
           delete outgoingToRoom[target.id];
           return { ...prev, outgoingToRoom };
         });
-
         toast.success("Đã hủy yêu cầu tham gia nhóm.");
       } else if (mode === "accept_duo") {
         if (!requestId) return;
-
         const res = await acceptMatchRequest(requestId);
         const payload = res?.data ?? res;
-        const roomId =
-          payload?.roomId || payload?.data?.roomId || null;
-        const roomType =
-          payload?.roomType || payload?.data?.roomType || "duo";
+        const roomId = payload?.roomId || payload?.data?.roomId || null;
+        const roomType = payload?.roomType || payload?.data?.roomType || "duo";
 
         setRequestMaps((prev) => {
           const incomingFromUser = { ...prev.incomingFromUser };
@@ -344,21 +232,14 @@ export default function TabNearby({
         });
 
         toast.success("Đã xác nhận lời mời kết nối.");
-
-        // 👉 báo cho ConnectSidebar biết để chuyển sang tab "Kết nối của tôi" + DuoConnect
-        if (onEnteredRoom && roomId) {
-          onEnteredRoom(roomId, roomType);
-        }
+        if (onEnteredRoom && roomId) onEnteredRoom(roomId, roomType);
       }
 
       onCreatedRequest && onCreatedRequest();
       closeConfirm();
     } catch (e) {
       console.error("Confirm connect action error:", e);
-      const msg =
-        e?.response?.data?.message ||
-        e?.response?.data?.error ||
-        "Không thể thực hiện thao tác. Vui lòng thử lại.";
+      const msg = e?.response?.data?.message || e?.response?.data?.error || "Không thể thực hiện thao tác. Vui lòng thử lại.";
       toast.error(msg);
     } finally {
       setConfirmLoading(false);
@@ -369,56 +250,34 @@ export default function TabNearby({
     <>
       <header className="cn-main-header">
         <h1>Kết nối bạn tập</h1>
-          <p>
-            Tìm kiếm những người có cùng mục tiêu và lịch tập, tạo
-            nhóm tối đa 5 người để cùng nhau hoàn thành mục tiêu.
-          </p>
+        <p>Tìm kiếm những người có cùng mục tiêu và lịch tập, tạo nhóm tối đa 5 người để cùng nhau hoàn thành mục tiêu.</p>
       </header>
+
       <section className="cn-tab-nearby">
-        {/* Toolbar: kết quả + tạo nhóm + toggle view */}
         <div className="cn-main-toolbar">
           <div className="cn-main-toolbar-left">
             <span className="cn-result-text">
-              {loading
-                ? "Đang tìm gợi ý quanh bạn..."
-                : `${resultCount} kết quả phù hợp quanh bạn`}
+              {loading ? "Đang tìm gợi ý quanh bạn..." : `${resultCount} kết quả phù hợp quanh bạn`}
             </span>
           </div>
+
           <div className="cn-main-toolbar-right">
-            <button
-              className="cn-create-group-btn"
-              type="button"
-              onClick={() => nav("/ket-noi/tao-nhom")}
-            >
+            <button className="cn-create-group-btn" type="button" onClick={() => onOpenCreateTeam?.()}>
               <span className="cn-create-group-icon">＋</span>
               <span>Tạo nhóm mới (tối đa 5 người)</span>
             </button>
+
             <div className="cn-view-toggle">
-              <button
-                type="button"
-                className={
-                  "cn-view-toggle-btn" +
-                  (viewMode === "grid" ? " is-active" : "")
-                }
-                onClick={() => setViewMode("grid")}
-              >
+              <button type="button" className={"cn-view-toggle-btn" + (viewMode === "grid" ? " is-active" : "")} onClick={() => setViewMode("grid")}>
                 <i className="fa-solid fa-table-cells-large" />
               </button>
-              <button
-                type="button"
-                className={
-                  "cn-view-toggle-btn" +
-                  (viewMode === "list" ? " is-active" : "")
-                }
-                onClick={() => setViewMode("list")}
-              >
+              <button type="button" className={"cn-view-toggle-btn" + (viewMode === "list" ? " is-active" : "")} onClick={() => setViewMode("list")}>
                 <i className="fa-solid fa-list" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Thanh search */}
         <div className="cn-main-search">
           <div className="cn-search-input">
             <i className="fa-solid fa-magnifying-glass" />
@@ -431,31 +290,15 @@ export default function TabNearby({
           </div>
         </div>
 
-        {/* Thông báo lỗi nếu có */}
         {errorMsg && (
           <div className="cn-error">
             <p>{errorMsg}</p>
           </div>
         )}
 
-        {/* Danh sách card (self-card GHIM + các user khác) */}
-        <div
-          className={
-            "cn-card-list " +
-            (viewMode === "grid"
-              ? "cn-card-list--grid"
-              : "cn-card-list--list")
-          }
-        >
+        <div className={"cn-card-list " + (viewMode === "grid" ? "cn-card-list--grid" : "cn-card-list--list")}>
           {selfCard && (
-            <ConnectCard
-              key="self"
-              user={selfCard}
-              viewMode={viewMode}
-              inviteState={null} // không có nút
-              onOpenConfirm={null}
-              isSelf={true} // icon ghim & không navigate
-            />
+            <ConnectCard key="self" user={selfCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} isSelf={true} />
           )}
 
           {filteredList.map((u) => (
@@ -472,15 +315,11 @@ export default function TabNearby({
 
         {!loading && filteredList.length === 0 && (
           <div className="cn-empty" style={{ marginTop: 8 }}>
-            <p>
-              Chưa tìm thấy bạn tập phù hợp với bộ lọc hiện tại. Thử nới rộng
-              phạm vi hoặc thay đổi chế độ kết nối nhé.
-            </p>
+            <p>Chưa tìm thấy bạn tập phù hợp với bộ lọc hiện tại. Thử nới rộng phạm vi hoặc thay đổi chế độ kết nối nhé.</p>
           </div>
         )}
       </section>
 
-      {/* Modal xác nhận gửi/hủy/xác nhận lời mời */}
       <ConnectRequestConfirmModal
         open={confirmState.open}
         mode={confirmState.mode}
@@ -494,48 +333,23 @@ export default function TabNearby({
 }
 
 /* ===== Card: Grid & List ===== */
-
-function ConnectCard({
-  user,
-  viewMode,
-  inviteState,
-  onOpenConfirm,
-  isSelf = false,
-}) {
+function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf = false }) {
   const nav = useNavigate();
 
   const {
-    id,
-    nickname,
-    age,
-    gender,
-    // distanceKm,        // không dùng nữa, có thể xoá luôn nếu muốn
-    goal,
-    trainingTypes = [],
-    frequency,
-    intensityLabel,
-    locationLabel,
-    bio,
-    isGroup,
-    membersCount,
-    imageUrl,
-    areaKey,
-    areaLabel,
+    id, nickname, age, gender,
+    goal, trainingTypes = [], intensityLabel, locationLabel,
+    bio, isGroup, membersCount, imageUrl, areaLabel
   } = user;
 
   const isPreview = isSelf || !onOpenConfirm;
 
   const genderLabel =
-    !isGroup && gender === "male"
-      ? "Nam"
-      : !isGroup && gender === "female"
-      ? "Nữ"
-      : !isGroup && gender
-      ? "Khác"
-      : "";
+    !isGroup && gender === "male" ? "Nam" :
+    !isGroup && gender === "female" ? "Nữ" :
+    !isGroup && gender ? "Khác" : "";
 
-  // Text khu vực: "Nhà" cho self-card, còn lại lấy từ areaLabel
-  const areaText = isSelf ? "Nhà" : areaLabel || "";
+  const areaText = isSelf ? "Nhà" : (areaLabel || "");
 
   const metaLineParts = [];
   if (!isGroup && age) metaLineParts.push(`${age} tuổi`);
@@ -543,44 +357,19 @@ function ConnectCard({
   if (locationLabel) metaLineParts.push(`📍 ${locationLabel}`);
   const metaLine = metaLineParts.join(" · ");
 
-  const goalLabel = goal || "";
-  const levelLabel = intensityLabel || "";
-
-  // trạng thái nút
   const inviteType = inviteState?.type || null;
   const inviteReqId = inviteState?.requestId || null;
 
-  let primaryLabel = "";
-  let primaryClass = "cn-btn-primary";
+  let primaryLabel = "", primaryClass = "cn-btn-primary";
+  if (inviteType === "accept_duo") { primaryLabel = "Xác nhận lời mời kết nối"; primaryClass = "cn-btn-success"; }
+  else if (inviteType === "cancel_duo") { primaryLabel = "Hủy lời mời kết nối"; primaryClass = "cn-btn-cancel"; }
+  else if (inviteType === "cancel_group") { primaryLabel = "Hủy yêu cầu tham gia nhóm"; primaryClass = "cn-btn-cancel"; }
+  else if (inviteType === "send_group") { primaryLabel = "Xin tham gia nhóm"; primaryClass = "cn-btn-primary"; }
+  else if (inviteType === "send_duo") { primaryLabel = "Gửi lời mời kết nối"; primaryClass = "cn-btn-primary"; }
 
-  if (inviteType === "accept_duo") {
-    primaryLabel = "Xác nhận lời mời kết nối";
-    primaryClass = "cn-btn-success"; // xanh
-  } else if (inviteType === "cancel_duo") {
-    primaryLabel = "Hủy lời mời kết nối";
-    primaryClass = "cn-btn-cancel"; // xám (class bạn đã style)
-  } else if (inviteType === "cancel_group") {
-    primaryLabel = "Hủy yêu cầu tham gia nhóm";
-    primaryClass = "cn-btn-cancel";
-  } else if (inviteType === "send_group") {
-    primaryLabel = "Xin tham gia nhóm";
-    primaryClass = "cn-btn-primary";
-  } else if (inviteType === "send_duo") {
-    primaryLabel = "Gửi lời mời kết nối";
-    primaryClass = "cn-btn-primary";
-  }
+  const goProfile = () => { if (isSelf) return; nav(`/ket-noi/ho-so/${id}`); };
+  const handlePrimaryClick = () => { if (!inviteType || !onOpenConfirm) return; onOpenConfirm(inviteType, user, inviteReqId); };
 
-  const goProfile = () => {
-    if (isSelf) return;
-    nav(`/ket-noi/ho-so/${id}`);
-  };
-
-  const handlePrimaryClick = () => {
-    if (!inviteType || !onOpenConfirm) return;
-    onOpenConfirm(inviteType, user, inviteReqId);
-  };
-
-  // ===== GRID STYLE (card có ảnh lớn) =====
   if (viewMode === "grid") {
     return (
       <article className="cn-card cn-card--grid">
@@ -594,29 +383,13 @@ function ConnectCard({
           <img src={imageUrl} alt={nickname} className="cn-card-img" />
           <div className="cn-card-img-overlay">
             {isPreview ? (
-              <div className="cn-card-img-name-btn cn-card-img-name-static">
-                {nickname}
-              </div>
+              <div className="cn-card-img-name-btn cn-card-img-name-static">{nickname}</div>
             ) : (
-              <button
-                type="button"
-                className="cn-card-img-name-btn"
-                onClick={goProfile}
-              >
-                {nickname}
-              </button>
+              <button type="button" className="cn-card-img-name-btn" onClick={goProfile}>{nickname}</button>
             )}
 
-            {/* 🔹 Text khu vực trên overlay */}
-            {areaText && (
-              <div className="cn-card-img-distance">{areaText}</div>
-            )}
-
-            {isGroup && (
-              <div className="cn-card-img-badge">
-                Nhóm · {membersCount || 1} / 5
-              </div>
-            )}
+            {areaText && <div className="cn-card-img-distance">{areaText}</div>}
+            {isGroup && <div className="cn-card-img-badge">Nhóm · {membersCount || 1} / 5</div>}
           </div>
         </div>
 
@@ -624,28 +397,16 @@ function ConnectCard({
           {metaLine && <div className="cn-card-meta-line">{metaLine}</div>}
 
           <div className="cn-card-chip-row">
-            {goalLabel && (
-              <span className="cn-chip cn-chip-goal">{goalLabel}</span>
-            )}
-            {levelLabel && (
-              <span className="cn-chip cn-chip-level">{levelLabel}</span>
-            )}
+            {goal && <span className="cn-chip cn-chip-goal">{goal}</span>}
+            {intensityLabel && <span className="cn-chip cn-chip-level">{intensityLabel}</span>}
           </div>
 
           {bio && <p className="cn-card-bio-text">{bio}</p>}
 
           {!isSelf && inviteType && (
             <div className="cn-card-actions">
-              <button
-                type="button"
-                className={primaryClass}
-                onClick={handlePrimaryClick}
-              >
-                {primaryLabel}
-              </button>
-              <button type="button" className="cn-btn-ghost">
-                <i className="fa-solid fa-flag"></i>
-              </button>
+              <button type="button" className={primaryClass} onClick={handlePrimaryClick}>{primaryLabel}</button>
+              <button type="button" className="cn-btn-ghost"><i className="fa-solid fa-flag"></i></button>
             </div>
           )}
         </div>
@@ -653,7 +414,6 @@ function ConnectCard({
     );
   }
 
-  // ===== LIST STYLE =====
   return (
     <article className="cn-card cn-card--list">
       {isSelf && (
@@ -673,69 +433,31 @@ function ConnectCard({
               {isPreview ? (
                 <span className="cn-name-static">{nickname}</span>
               ) : (
-                <button
-                  type="button"
-                  className="cn-name-link"
-                  onClick={goProfile}
-                >
-                  {nickname}
-                </button>
+                <button type="button" className="cn-name-link" onClick={goProfile}>{nickname}</button>
               )}
-              {isGroup && (
-                <span className="cn-badge cn-badge-group">
-                  Nhóm · {membersCount} / 5
-                </span>
-              )}
+              {isGroup && <span className="cn-badge cn-badge-group">Nhóm · {membersCount} / 5</span>}
             </div>
 
             <div className="cn-meta-row">
-              {!isGroup && age && (
-                <span className="cn-meta">
-                  {age} tuổi · {genderLabel || "—"}
-                </span>
-              )}
-
-              {/* 🔹 Dòng khu vực */}
+              {!isGroup && age && <span className="cn-meta">{age} tuổi · {genderLabel || "—"}</span>}
               {areaText && <span className="cn-meta">{areaText}</span>}
-
-              {locationLabel && (
-                <span className="cn-meta">📍 {locationLabel}</span>
-              )}
+              {locationLabel && <span className="cn-meta">📍 {locationLabel}</span>}
             </div>
           </div>
         </div>
 
-        {/* Chip Mục tiêu + Cường độ vận động */}
         <div className="cn-goal-row">
-          {goalLabel && (
-            <span className="cn-badge cn-badge-goal">{goalLabel}</span>
-          )}
-          {levelLabel && (
-            <span className="cn-badge cn-badge-level">{levelLabel}</span>
-          )}
+          {goal && <span className="cn-badge cn-badge-goal">{goal}</span>}
+          {intensityLabel && <span className="cn-badge cn-badge-level">{intensityLabel}</span>}
         </div>
 
-        {/* Ưu tiên môn tập */}
-        {trainingTypes.length > 0 && (
-          <p className="cn-frequency">
-            Ưu tiên: {trainingTypes.join(" · ")}
-          </p>
-        )}
-
+        {trainingTypes.length > 0 && <p className="cn-frequency">Ưu tiên: {trainingTypes.join(" · ")}</p>}
         {bio && <p className="cn-bio">{bio}</p>}
 
         {!isSelf && inviteType && (
           <div className="cn-card-actions">
-            <button
-              type="button"
-              className={primaryClass}
-              onClick={handlePrimaryClick}
-            >
-              {primaryLabel}
-            </button>
-            <button type="button" className="cn-btn-ghost">
-              Báo cáo
-            </button>
+            <button type="button" className={primaryClass} onClick={handlePrimaryClick}>{primaryLabel}</button>
+            <button type="button" className="cn-btn-ghost">Báo cáo</button>
           </div>
         )}
       </div>
