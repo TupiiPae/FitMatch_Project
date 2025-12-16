@@ -8,6 +8,11 @@ import { getMatchStatus } from "../../api/match";
 import { getMe } from "../../api/account";
 import { toast } from "react-toastify";
 
+const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
+const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
+const AGE_LABELS={all:"Tất cả","18-21":"18-21","22-27":"22-27","28-35":"28-35","36-45":"36-45","45+":"Trên 45"};
+const FREQ_LABELS={"1-2":"1-2 buổi/tuần","2-3":"2-3 buổi/tuần","3-5":"3-5 buổi/tuần","5+":"Trên 5 buổi/tuần"};
+
 function getInitials(name){ if(!name) return "FM"; return name.split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase(); }
 
 export default function TeamConnect({ onLeftRoom }){
@@ -28,7 +33,8 @@ export default function TeamConnect({ onLeftRoom }){
         const activeRoomId=statusData?.activeRoomId;
         const activeRoomType=statusData?.activeRoomType;
 
-        if(!activeRoomId || activeRoomType!=="team"){
+        // ✅ BE dùng "group", không phải "team"
+        if(!activeRoomId || activeRoomType!=="group"){
           toast.info("Hiện bạn chưa tham gia phòng kết nối nhóm nào.");
           if(typeof onLeftRoom==="function") onLeftRoom(); else nav("/ket-noi");
           return;
@@ -58,11 +64,25 @@ export default function TeamConnect({ onLeftRoom }){
       const u=m.user||{};
       const p=u.profile||{};
       const name=p.nickname||u.username||u.email||"Người dùng FitMatch";
-      return { id:String(u._id||u.id||""), name, avatarUrl:p.avatarUrl||null, role:m.role||"member" };
+      return { id:String(u._id||u.id||""), name, avatarUrl:toAbs(p.avatarUrl)||null, role:m.role||"member" };
     });
   },[room]);
 
-  const team=room?.team || null;
+  const team=useMemo(()=>{
+    if(!room) return null;
+    return {
+      name: room.name||"Nhóm tập luyện",
+      imageUrl: toAbs(room.coverImageUrl)||null,
+      locationText: room.locationLabel||"Chưa có địa chỉ",
+      maxMembers: room.maxMembers||5,
+      joinPolicy: room.joinPolicy||"request",
+      ageRangeLabel: AGE_LABELS[room.ageRange]||room.ageRange||"--",
+      genderLabel: room.gender==="male"?"Nam":room.gender==="female"?"Nữ":"Tất cả",
+      trainingLabel: FREQ_LABELS[room.trainingFrequency]||room.trainingFrequency||"--",
+      goalLabel: room.goalLabel||"Chưa thiết lập",
+      description: room.description||"--",
+    };
+  },[room]);
 
   const handleLeave=async()=>{
     if(!room?._id) return;
@@ -78,13 +98,12 @@ export default function TeamConnect({ onLeftRoom }){
   };
 
   if(loading && !room) return <div className="tc-wrap"><p className="tc-loading">Đang tải phòng nhóm...</p></div>;
-  if(!room) return null;
+  if(!room || !team) return null;
 
   return (
     <div className="tc-wrap">
       <header className="tc-header">
         <div className="tc-badge">Phòng kết nối nhóm</div>
-
         <div className="tc-header-right">
           <button type="button" className="tc-more" onClick={()=>setMenuOpen(v=>!v)}><i className="fa-solid fa-ellipsis-vertical"/></button>
           {menuOpen && (
@@ -98,31 +117,31 @@ export default function TeamConnect({ onLeftRoom }){
       <section className="tc-card">
         <div className="tc-banner">
           <div className="tc-teamimg">
-            {team?.imageUrl ? <img src={team.imageUrl} alt={team.name}/> : <div className="tc-teamimg-fallback">{getInitials(team?.name)}</div>}
+            {team.imageUrl ? <img src={team.imageUrl} alt={team.name}/> : <div className="tc-teamimg-fallback">{getInitials(team.name)}</div>}
           </div>
           <div className="tc-banner-main">
-            <div className="tc-teamname">{team?.name || "Nhóm tập luyện"}</div>
+            <div className="tc-teamname">{team.name}</div>
             <div className="tc-teamsub">
-              <span><i className="fa-solid fa-location-dot"/> {team?.locationText || "Chưa có địa chỉ"}</span>
+              <span><i className="fa-solid fa-location-dot"/> {team.locationText}</span>
               <span className="tc-dot">•</span>
-              <span><i className="fa-solid fa-users"/> {members.length}/{team?.maxMembers || "--"} thành viên</span>
+              <span><i className="fa-solid fa-users"/> {members.length}/{team.maxMembers} thành viên</span>
               <span className="tc-dot">•</span>
-              <span className="tc-pill">{team?.joinPolicy==="request"?"Yêu cầu duyệt":"Vào trực tiếp"}</span>
+              <span className="tc-pill">{team.joinPolicy==="request"?"Yêu cầu duyệt":"Vào trực tiếp"}</span>
             </div>
           </div>
         </div>
 
         <div className="tc-info">
           <div className="tc-info-grid">
-            <div className="tc-info-item"><div className="tc-info-k">Độ tuổi</div><div className="tc-info-v">{team?.ageRange || "--"}</div></div>
-            <div className="tc-info-item"><div className="tc-info-k">Giới tính</div><div className="tc-info-v">{team?.gender==="male"?"Nam":team?.gender==="female"?"Nữ":"Tất cả"}</div></div>
-            <div className="tc-info-item"><div className="tc-info-k">Mức độ</div><div className="tc-info-v">{team?.trainingLevel || "--"}</div></div>
-            <div className="tc-info-item"><div className="tc-info-k">Mục tiêu</div><div className="tc-info-v">{team?.goalLabel || "Chưa thiết lập"}</div></div>
+            <div className="tc-info-item"><div className="tc-info-k">Độ tuổi</div><div className="tc-info-v">{team.ageRangeLabel}</div></div>
+            <div className="tc-info-item"><div className="tc-info-k">Giới tính</div><div className="tc-info-v">{team.genderLabel}</div></div>
+            <div className="tc-info-item"><div className="tc-info-k">Mức độ</div><div className="tc-info-v">{team.trainingLabel}</div></div>
+            <div className="tc-info-item"><div className="tc-info-k">Mục tiêu</div><div className="tc-info-v">{team.goalLabel}</div></div>
           </div>
 
           <div className="tc-desc">
             <div className="tc-desc-k">Mô tả nhóm</div>
-            <div className="tc-desc-v">{team?.description || "--"}</div>
+            <div className="tc-desc-v">{team.description}</div>
           </div>
 
           <div className="tc-members">
@@ -130,7 +149,7 @@ export default function TeamConnect({ onLeftRoom }){
             <div className="tc-members-grid">
               {members.map(m=>{
                 const isMe=myId && String(myId)===m.id;
-                const isOwner=m.role==="owner" || m.role==="admin";
+                const isOwner=m.role==="owner";
                 return (
                   <div key={m.id} className={"tc-member"+(isMe?" is-me":"")}>
                     <div className={"tc-ava"+(isOwner?" is-owner":"")}>

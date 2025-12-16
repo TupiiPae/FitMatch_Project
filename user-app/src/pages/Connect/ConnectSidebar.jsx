@@ -1,6 +1,6 @@
 // user-app/src/pages/Connect/ConnectSidebar.jsx
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // ✅ thêm useLocation
 import "./Connect.css";
 import TabNearby from "./TabNearby";
 import TabMyConnections from "./TabMyConnections";
@@ -21,6 +21,8 @@ function getGenderLabel(g){if(g==="male")return"Nam";if(g==="female")return"Nữ
 
 export default function ConnectSidebar(){
   const nav=useNavigate();
+  const loc=useLocation();
+
   const [user,setUser]=useState(null);
   const [discoverable,setDiscoverable]=useState(false);
   const [hasAddressForConnect,setHasAddressForConnect]=useState(false);
@@ -42,11 +44,17 @@ export default function ConnectSidebar(){
   const [showCreateTeam,setShowCreateTeam]=useState(false);
   const [nearbyReloadKey,setNearbyReloadKey]=useState(0);
 
+  // ✅ nếu user vào /ket-noi/duo hoặc /ket-noi/nhom -> mặc định mở tab "Kết nối của tôi"
+  useEffect(()=>{
+    const p=loc?.pathname||"";
+    if(p.includes("/ket-noi/duo")||p.includes("/ket-noi/nhom")) setActiveTab("my-connections");
+  },[loc?.pathname]);
+
   useEffect(()=>{let cancelled=false;(async()=>{
     try{
       setLoading(true);
       const [me,statusPayload]=await Promise.all([
-        getMe(),
+        getMe().catch(()=>null),
         getMatchStatus().catch((e)=>{console.error("getMatchStatus error:",e);return null;}),
       ]);
       if(cancelled) return;
@@ -54,8 +62,7 @@ export default function ConnectSidebar(){
       if(me&&typeof me==="object"){
         setUser(me);
         const p=me.profile||{};
-        if(p.sex==="male"||p.sex==="female") setGenderFilter(p.sex);
-        else setGenderFilter("all");
+        if(p.sex==="male"||p.sex==="female") setGenderFilter(p.sex); else setGenderFilter("all");
       }
 
       if(statusPayload){
@@ -69,13 +76,22 @@ export default function ConnectSidebar(){
         setActiveRoomType(roomType);
 
         if((data.pendingRequestsCount&&data.pendingRequestsCount>0)||roomId) setHasRequestsTabEnabled(true);
-        if(roomId&&roomType==="duo"){setActiveTab("my-connections");setShowCreateTeam(false);}
+
+        // ✅ duo/group đều mở TabMyConnections (giữ sidebar)
+        if(roomId && (roomType==="duo"||roomType==="group")){
+          setActiveTab("my-connections");
+          setShowCreateTeam(false);
+          // (tuỳ chọn) sync URL cho đẹp: duo -> /ket-noi/duo, group -> /ket-noi/nhom
+          const path=loc?.pathname||"";
+          if(roomType==="duo" && !path.includes("/ket-noi/duo")) nav("/ket-noi/duo",{replace:true});
+          if(roomType==="group" && !path.includes("/ket-noi/nhom")) nav("/ket-noi/nhom",{replace:true});
+        }
       }
     }catch(e){
       console.error("ConnectSidebar init error:",e);
       toast.error("Không thể tải dữ liệu kết nối.");
     }finally{if(!cancelled) setLoading(false);}
-  })();return()=>{cancelled=true;};},[nav]);
+  })();return()=>{cancelled=true;};},[nav,loc?.pathname]);
 
   const p=user?.profile||{};
   const avatarUrl=p.avatarUrl?toAbs(p.avatarUrl):null;
@@ -110,17 +126,43 @@ export default function ConnectSidebar(){
   const handleConfirmEnable=()=>{setShowConfirmModal(false);applyDiscoverable(true);};
   const handleCancelEnable=()=>setShowConfirmModal(false);
 
+  // ✅ vào phòng: duo/group đều chuyển sang tab my-connections, và sync URL tương ứng
   const handleEnteredRoom=(roomId,roomType="duo")=>{
     if(!roomId) return;
     setActiveRoomId(roomId);setActiveRoomType(roomType);
     setHasRequestsTabEnabled(true);
-    setActiveTab("my-connections");
     setShowCreateTeam(false);
+    setActiveTab("my-connections");
+    if(roomType==="duo") nav("/ket-noi/duo");
+    if(roomType==="group") nav("/ket-noi/nhom");
   };
+
   const handleLeftRoom=()=>{setActiveRoomId(null);setActiveRoomType(null);};
 
-  const openCreateTeam=()=>{setActiveTab("nearby");setShowCreateTeam(true);}; // ✅ giữ sidebar ở “Tìm kiếm xung quanh”
+  const openCreateTeam=()=>{
+    if(activeRoomId && activeRoomType==="duo"){toast.info("Bạn đang ở phòng 1:1. Hãy rời phòng trước khi tạo/tham gia nhóm.");setActiveTab("my-connections");nav("/ket-noi/duo");return;}
+    if(activeRoomId && activeRoomType==="group"){toast.info("Bạn đang ở phòng nhóm. Hãy rời nhóm trước khi tạo nhóm mới.");setActiveTab("my-connections");nav("/ket-noi/nhom");return;}
+    setActiveTab("nearby");setShowCreateTeam(true);
+  };
   const closeCreateTeam=()=>setShowCreateTeam(false);
+
+  const handleCreatedTeam=async(createdPayload)=>{
+    setShowCreateTeam(false);
+    setConnectionMode("group");
+    setNearbyReloadKey((k)=>k+1);
+    try{
+      const p=createdPayload?.data??createdPayload;
+      const rid=p?.roomId||p?.data?.roomId||p?.room?._id||p?.room?.id||null;
+      const rtype=p?.roomType||p?.data?.roomType||"group";
+      if(rid){handleEnteredRoom(rid,rtype);return;}
+      const st=await getMatchStatus();
+      const data=st?.data??st;
+      const roomId=data?.activeRoomId||null;
+      const roomType=data?.activeRoomType||null;
+      setActiveRoomId(roomId);setActiveRoomType(roomType);
+      if(roomId && (roomType==="group"||roomType==="duo")){setHasRequestsTabEnabled(true);setActiveTab("my-connections");nav(roomType==="group"?"/ket-noi/nhom":"/ket-noi/duo");}
+    }catch(e){console.error("handleCreatedTeam getMatchStatus error:",e);}
+  };
 
   return (
     <div className="cn-page">
@@ -206,16 +248,7 @@ export default function ConnectSidebar(){
         <main className="cn-main">
           {activeTab==="nearby" ? (
             showCreateTeam ? (
-              <CreateTeam
-                currentUser={user}
-                hasAddressForConnect={hasAddressForConnect}
-                onClose={closeCreateTeam}
-                onCreated={()=>{
-                  setShowCreateTeam(false);
-                  setConnectionMode("group");
-                  setNearbyReloadKey((k)=>k+1);
-                }}
-              />
+              <CreateTeam currentUser={user} hasAddressForConnect={hasAddressForConnect} onClose={closeCreateTeam} onCreated={handleCreatedTeam} />
             ) : (
               <TabNearby
                 key={nearbyReloadKey}
@@ -228,17 +261,11 @@ export default function ConnectSidebar(){
                 goalFilter={displayUser.goalLabel||""}
                 onCreatedRequest={()=>setHasRequestsTabEnabled(true)}
                 onEnteredRoom={handleEnteredRoom}
-                onOpenCreateTeam={openCreateTeam} // ✅ click -> đổi view sang CreateTeam
+                onOpenCreateTeam={openCreateTeam}
               />
             )
           ) : (
-            <TabMyConnections
-              currentUser={user}
-              activeRoomId={activeRoomId}
-              activeRoomType={activeRoomType}
-              onEnteredRoom={handleEnteredRoom}
-              onLeftRoom={handleLeftRoom}
-            />
+            <TabMyConnections currentUser={user} activeRoomId={activeRoomId} activeRoomType={activeRoomType} onEnteredRoom={handleEnteredRoom} onLeftRoom={handleLeftRoom} />
           )}
         </main>
       </div>
@@ -247,12 +274,8 @@ export default function ConnectSidebar(){
         <div className="cn-modal-backdrop" onClick={handleCancelEnable}>
           <div className="cn-modal" onClick={(e)=>e.stopPropagation()}>
             <h3 className="cn-modal-title">Cho phép mọi người tìm kiếm bạn?</h3>
-            <p className="cn-modal-text">
-              Khi bật tính năng này, hồ sơ của bạn sẽ xuất hiện trong mục <strong>"Tìm kiếm xung quanh"</strong> để mọi người có thể gửi lời mời kết nối hoặc mời bạn tham gia nhóm tập luyện.
-            </p>
-            <p className="cn-modal-text cn-modal-text-small">
-              Bạn có thể tắt bất cứ lúc nào. Thông tin liên hệ nhạy cảm (email, mật khẩu, ...) sẽ không bị hiển thị công khai.
-            </p>
+            <p className="cn-modal-text">Khi bật tính năng này, hồ sơ của bạn sẽ xuất hiện trong mục <strong>"Tìm kiếm xung quanh"</strong> để mọi người có thể gửi lời mời kết nối hoặc mời bạn tham gia nhóm tập luyện.</p>
+            <p className="cn-modal-text cn-modal-text-small">Bạn có thể tắt bất cứ lúc nào. Thông tin liên hệ nhạy cảm (email, mật khẩu, ...) sẽ không bị hiển thị công khai.</p>
             <div className="cn-modal-actions">
               <button type="button" className="cn-btn-ghost" onClick={handleCancelEnable} disabled={updatingDiscoverable}>Để sau</button>
               <button type="button" className="cn-btn-primary" onClick={handleConfirmEnable} disabled={updatingDiscoverable}>Bật hiển thị</button>

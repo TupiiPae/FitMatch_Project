@@ -112,8 +112,8 @@ export default function App() {
           {/* Kết nối */}
           <Route path="/ket-noi" element={<ConnectSidebar  />} />
           <Route path="/ket-noi/tao-nhom" element={<CreateTeam />} />
-          <Route path="/ket-noi/duo" element={<DuoConnect />} />
-          <Route path="/ket-noi/nhom" element={<TeamConnect />} />
+          <Route path="/ket-noi/duo" element={<ConnectSidebar />} />
+          <Route path="/ket-noi/nhom" element={<ConnectSidebar />} />
 
           {/* === DINH DƯỠNG (Đã cập nhật) === */}
           <Route path="/dinh-duong" element={<Navigate to="/dinh-duong/nhat-ky" replace />} />

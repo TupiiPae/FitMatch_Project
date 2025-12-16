@@ -29,11 +29,8 @@ export default function DuoConnect({ onLeftRoom }) {
       try {
         setLoading(true);
 
-        const [statusData, meRaw] = await Promise.all([
-          getMatchStatus(),
-          getMe().catch(() => null),
-        ]);
-
+        const [stRaw, meRaw] = await Promise.all([getMatchStatus(), getMe().catch(()=>null)]);
+        const statusData = stRaw?.data ?? stRaw;
         const activeRoomId = statusData?.activeRoomId;
         const activeRoomType = statusData?.activeRoomType;
 
