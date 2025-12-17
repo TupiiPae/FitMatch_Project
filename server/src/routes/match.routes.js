@@ -14,6 +14,8 @@ import {
   getRoomDetail,
   leaveMatchRoom,
   createGroupRoom, 
+  listRoomRequests,
+  updateGroupRoom,
 } from "../controllers/match.controller.js";
 
 const router = Router();
@@ -34,5 +36,11 @@ router.post("/match/rooms/:id/leave", leaveMatchRoom);
 
 // Create team (multipart/form-data)
 router.post("/match/groups", uploadTeamCoverSingle, createGroupRoom);
+
+router.get("/match/rooms/:id/requests", listRoomRequests);
+
+// edit group info (JSON hoặc multipart có file)
+router.patch("/match/rooms/:id", uploadTeamCoverSingle, updateGroupRoom);
+
 
 export default router;

@@ -571,3 +571,151 @@ export async function leaveMatchRoom(req, res, next){
     return responseOk(res, { roomId: room._id, status: room.status, remainingMembers: room.members.length });
   }catch(err){ next(err); }
 }
+
+// GET /api/match/rooms/:id/requests
+export async function listRoomRequests(req,res,next){
+  try{
+    const userId=getUserIdFromReq(req);
+    if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+
+    const { id: roomId } = req.params;
+    const room = await MatchRoom.findById(roomId).select("_id type").lean();
+    if(!room || room.type!=="group") return res.status(404).json({ success:false, message:"Không tìm thấy nhóm" });
+
+    const okOwner = await isOwnerOfRoom(userId, roomId);
+    if(!okOwner) return res.status(403).json({ success:false, message:"Chỉ chủ phòng mới xem được danh sách yêu cầu." });
+
+    const qStatus = (req.query?.status||"").toString().trim().toLowerCase();
+    const allowed = ["pending","accepted","rejected","cancelled"];
+    let statuses = [];
+    if(!qStatus || qStatus==="all") statuses = ["pending","accepted","rejected"];
+    else statuses = qStatus.split(",").map(s=>s.trim()).filter(s=>allowed.includes(s));
+
+    const filter = { type:"group", toRoom: roomId };
+    if(statuses.length) filter.status = { $in: statuses };
+
+    const docs = await MatchRequest.find(filter)
+      .populate({ path:"fromUser", select:"username email profile.nickname profile.avatarUrl profile.sex profile.dob profile.trainingIntensity profile.address connectGoalKey connectGoalLabel connectBio connectLocationLabel" })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const items = docs.map(d=>({
+      _id:d._id,status:d.status,message:d.message||"",createdAt:d.createdAt,resolvedAt:d.resolvedAt||null,
+      meta:d.meta||null,
+      fromUser:d.fromUser||null,
+    }));
+
+    // nếu gọi ?status=pending thì trả list items luôn
+    if(qStatus && qStatus!=="all"){
+      return responseOk(res, { items });
+    }
+
+    const pending = items.filter(x=>x.status==="pending");
+    const accepted = items.filter(x=>x.status==="accepted");
+    const rejected = items.filter(x=>x.status==="rejected");
+
+    return responseOk(res, {
+      pending,
+      accepted,
+      rejected,
+      counts: { pending: pending.length, accepted: accepted.length, rejected: rejected.length },
+    });
+  }catch(err){ next(err); }
+}
+
+// PATCH /api/match/rooms/:id  (owner edit group)
+export async function updateGroupRoom(req,res,next){
+  try{
+    const userId=getUserIdFromReq(req);
+    if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+
+    const { id: roomId } = req.params;
+    const room = await MatchRoom.findById(roomId);
+    if(!room) return res.status(404).json({ success:false, message:"Không tìm thấy phòng" });
+    if(room.type!=="group") return res.status(400).json({ success:false, message:"Chỉ nhóm mới chỉnh sửa được" });
+
+    const okOwner = await isOwnerOfRoom(userId, roomId);
+    if(!okOwner) return res.status(403).json({ success:false, message:"Chỉ chủ phòng mới có thể chỉnh sửa nhóm." });
+
+    const body=req.body||{};
+    const patch={};
+
+    const name = body.name!=null ? String(body.name).trim() : null;
+    const description = body.description!=null ? String(body.description).trim() : null;
+    const coverImageUrlBody = body.coverImageUrl!=null ? String(body.coverImageUrl).trim() : null;
+
+    const ageRange = body.ageRange!=null ? String(body.ageRange).trim() : null;
+    const gender = body.gender!=null ? String(body.gender).trim() : null;
+    const trainingFrequency = body.trainingFrequency!=null ? String(body.trainingFrequency).trim() : null;
+    const joinPolicy = body.joinPolicy!=null ? String(body.joinPolicy).trim() : null;
+
+    const maxMembersRaw = body.maxMembers!=null ? body.maxMembers : null;
+    const maxMembers = maxMembersRaw!=null ? parseIntSafe(maxMembersRaw) : null;
+
+    const locationLabel = body.locationLabel!=null ? String(body.locationLabel).trim() : null;
+
+    if(name!==null){
+      if(!name || name.length>50) return res.status(400).json({ success:false, message:"Tên nhóm tối đa 50 ký tự." });
+      patch.name=name;
+    }
+    if(description!==null){
+      if(!description || description.length>300) return res.status(400).json({ success:false, message:"Mô tả tối đa 300 ký tự." });
+      patch.description=description;
+    }
+
+    // upload file nếu có
+    if(req.file){
+      const url = await uploadImageWithResize(
+        req.file.buffer,
+        "asset/folder/connect-teams",
+        { width: 1200, height: 1200, fit: "cover" },
+        { quality: 85 }
+      );
+      patch.coverImageUrl = url;
+    }else if(coverImageUrlBody!==null){
+      if(!coverImageUrlBody) return res.status(400).json({ success:false, message:"Ảnh nhóm không được để trống." });
+      patch.coverImageUrl = coverImageUrlBody;
+    }
+
+    if(ageRange!==null){
+      if(!["all","18-21","22-27","28-35","36-45","45+"].includes(ageRange)) return res.status(400).json({ success:false, message:"Độ tuổi không hợp lệ." });
+      patch.ageRange=ageRange;
+    }
+    if(gender!==null){
+      if(!["all","male","female"].includes(gender)) return res.status(400).json({ success:false, message:"Giới tính không hợp lệ." });
+      patch.gender=gender;
+    }
+    if(trainingFrequency!==null){
+      if(!["1-2","2-3","3-5","5+"].includes(trainingFrequency)) return res.status(400).json({ success:false, message:"Mức độ tập luyện không hợp lệ." });
+      patch.trainingFrequency=trainingFrequency;
+    }
+    if(joinPolicy!==null){
+      if(!["request","open"].includes(joinPolicy)) return res.status(400).json({ success:false, message:"JoinPolicy không hợp lệ." });
+      patch.joinPolicy=joinPolicy;
+    }
+    if(maxMembers!==null){
+      if(![2,3,4,5].includes(maxMembers)) return res.status(400).json({ success:false, message:"Số thành viên tối đa không hợp lệ (2-5)." });
+      patch.maxMembers=maxMembers;
+    }
+    if(locationLabel!==null){
+      patch.locationLabel=locationLabel;
+    }
+
+    Object.assign(room, patch);
+
+    // sync status theo maxMembers
+    if(patch.maxMembers!=null){
+      const cnt = room.members?.length || 0;
+      if(cnt >= room.maxMembers){ room.status="full"; room.closedAt = room.closedAt || new Date(); }
+      else { room.status="active"; room.closedAt=null; }
+    }
+
+    await room.save();
+
+    const populated = await MatchRoom.findById(roomId)
+      .populate({ path:"members.user", select:"username email profile.nickname profile.avatarUrl profile.sex profile.dob connectGoalKey connectGoalLabel profile.goal profile.trainingIntensity" })
+      .lean();
+
+    return responseOk(res, populated);
+  }catch(err){ next(err); }
+}
