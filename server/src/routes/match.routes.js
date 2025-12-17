@@ -16,6 +16,7 @@ import {
   createGroupRoom, 
   listRoomRequests,
   updateGroupRoom,
+  manageGroupMembers,
 } from "../controllers/match.controller.js";
 
 const router = Router();
@@ -41,6 +42,7 @@ router.get("/match/rooms/:id/requests", listRoomRequests);
 
 // edit group info (JSON hoặc multipart có file)
 router.patch("/match/rooms/:id", uploadTeamCoverSingle, updateGroupRoom);
+router.patch("/match/rooms/:id/members/manage", manageGroupMembers);
 
 
 export default router;

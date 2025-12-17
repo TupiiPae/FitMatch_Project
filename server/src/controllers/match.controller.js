@@ -551,13 +551,13 @@ export async function leaveMatchRoom(req, res, next){
     if(idx===-1) return res.status(403).json({ success:false, message:"Bạn không thuộc phòng kết nối này." });
 
     const leavingWasOwner = room.members[idx]?.role === "owner";
-    room.members.splice(idx,1);
 
-    // nếu group mà owner rời -> chuyển quyền
-    if(room.type==="group" && leavingWasOwner && room.members.length>0){
-      room.members[0].role="owner";
-      room.createdBy = room.members[0].user;
+    // ✅ chặn owner rời nếu còn thành viên khác
+    if(room.type==="group" && leavingWasOwner && room.members.length>1){
+      return res.status(400).json({ ok:false, error:"owner_cannot_leave", message:"Bạn không thể rời khỏi nhóm này trừ khi bạn chỉ định vai trò chủ phòng cho thành viên khác." });
     }
+
+    room.members.splice(idx,1);
 
     if(room.members.length===0){
       room.status="closed"; room.closedAt=new Date();
@@ -567,7 +567,6 @@ export async function leaveMatchRoom(req, res, next){
     }
 
     await room.save();
-
     return responseOk(res, { roomId: room._id, status: room.status, remainingMembers: room.members.length });
   }catch(err){ next(err); }
 }
@@ -695,6 +694,8 @@ export async function updateGroupRoom(req,res,next){
     }
     if(maxMembers!==null){
       if(![2,3,4,5].includes(maxMembers)) return res.status(400).json({ success:false, message:"Số thành viên tối đa không hợp lệ (2-5)." });
+      const cnt=room.members?.length||0;
+      if(maxMembers<cnt) return res.status(400).json({ success:false, message:`Số thành viên tối đa không thể nhỏ hơn số thành viên hiện tại (${cnt}).` });
       patch.maxMembers=maxMembers;
     }
     if(locationLabel!==null){
@@ -707,6 +708,76 @@ export async function updateGroupRoom(req,res,next){
     if(patch.maxMembers!=null){
       const cnt = room.members?.length || 0;
       if(cnt >= room.maxMembers){ room.status="full"; room.closedAt = room.closedAt || new Date(); }
+      else { room.status="active"; room.closedAt=null; }
+    }
+
+    await room.save();
+
+    const populated = await MatchRoom.findById(roomId)
+      .populate({ path:"members.user", select:"username email profile.nickname profile.avatarUrl profile.sex profile.dob connectGoalKey connectGoalLabel profile.goal profile.trainingIntensity" })
+      .lean();
+
+    return responseOk(res, populated);
+  }catch(err){ next(err); }
+}
+
+// PATCH /api/match/rooms/:id/members/manage
+export async function manageGroupMembers(req,res,next){
+  try{
+    const userId=getUserIdFromReq(req);
+    if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+
+    const { id: roomId } = req.params;
+    const { makeOwnerId, removeIds } = req.body || {};
+
+    const room = await MatchRoom.findById(roomId);
+    if(!room) return res.status(404).json({ success:false, message:"Không tìm thấy nhóm" });
+    if(room.type!=="group") return res.status(400).json({ success:false, message:"Chỉ nhóm mới có thể quản lý thành viên" });
+
+    const okOwner = await isOwnerOfRoom(userId, roomId);
+    if(!okOwner) return res.status(403).json({ success:false, message:"Chỉ chủ nhóm mới có thể quản lý thành viên." });
+
+    const rm = Array.isArray(removeIds) ? removeIds.map(x=>String(x||"")).filter(Boolean) : [];
+    const newOwner = makeOwnerId ? String(makeOwnerId) : null;
+    if(!newOwner && !rm.length) return res.status(400).json({ success:false, message:"Không có thay đổi để áp dụng." });
+
+    const members=room.members||[];
+    const hasMember=(uid)=>members.some(m=>String(m.user)===String(uid));
+    const currentOwnerMember=members.find(m=>m.role==="owner")||null;
+    const currentOwnerId=currentOwnerMember?String(currentOwnerMember.user):null;
+
+    // nếu remove chính mình khi vẫn là owner -> bắt buộc phải transfer trước
+    if(rm.includes(String(userId)) && (!newOwner || newOwner===String(userId))){
+      return res.status(400).json({ ok:false, error:"owner_cannot_leave", message:"Bạn không thể rời nhóm khi vẫn là chủ nhóm. Hãy chỉ định chủ nhóm mới trước." });
+    }
+
+    // 1) transfer owner
+    if(newOwner){
+      if(!hasMember(newOwner)) return res.status(400).json({ success:false, message:"Người được chỉ định không thuộc nhóm." });
+      if(currentOwnerId && newOwner!==currentOwnerId){
+        for(const m of members){
+          if(String(m.user)===currentOwnerId) m.role="member";
+          if(String(m.user)===newOwner) m.role="owner";
+        }
+        room.createdBy = newOwner;
+      }
+    }
+
+    // owner sau khi transfer
+    const ownerAfter=(room.members||[]).find(m=>m.role==="owner");
+    const ownerAfterId=ownerAfter?String(ownerAfter.user):currentOwnerId;
+
+    // 2) remove members (không cho remove owner hiện tại)
+    const removeSet=new Set(rm.map(String));
+    if(ownerAfterId) removeSet.delete(ownerAfterId);
+
+    // chỉ remove người thực sự thuộc nhóm
+    room.members = (room.members||[]).filter(m=>!removeSet.has(String(m.user)));
+
+    if((room.members||[]).length===0){
+      room.status="closed"; room.closedAt=new Date();
+    }else{
+      if(room.members.length >= room.maxMembers){ room.status="full"; room.closedAt = room.closedAt || new Date(); }
       else { room.status="active"; room.closedAt=null; }
     }
 

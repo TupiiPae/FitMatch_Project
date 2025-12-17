@@ -1,0 +1,35 @@
+.tc-mm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:2200;padding:18px;}
+.tc-mm-modal{width:min(640px,calc(100% - 24px));background:#020617;border:1px solid #1f2937;border-radius:8px;box-shadow:0 24px 80px rgba(0,0,0,.75);overflow:hidden;}
+.tc-mm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid #1f2937;}
+.tc-mm-title{font-size:15px;font-weight:700;color:#f9fafb;}
+.tc-mm-x{width:34px;height:34px;border-radius:999px;border:1px solid rgba(148,163,184,.22);background:rgba(2,6,23,.55);color:#f9fafb;cursor:pointer;font-size:18px;line-height:1;}
+.tc-mm-x:hover{border-color:rgba(239,68,68,.55);}
+
+.tc-mm-body{padding:10px 12px;display:flex;flex-direction:column;gap:10px;max-height:min(62vh,520px);overflow:auto;}
+.tc-mm-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #1f2937;background:rgba(2,6,23,.55);border-radius:4px;}
+.tc-mm-row.is-owner{background:rgba(15,23,42,.45);}
+.tc-mm-row.is-pending{border-color:rgba(239,68,68,.35);box-shadow:0 0 0 3px rgba(239,68,68,.08) inset;}
+
+.tc-mm-ava{width:44px;height:44px;border-radius:999px;overflow:hidden;flex-shrink:0;background:#111827;border:2px solid rgba(148,163,184,.25);}
+.tc-mm-ava img{width:100%;height:100%;object-fit:cover;display:block;}
+.tc-mm-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px;}
+.tc-mm-name{font-size:13px;font-weight:600;color:#e5e7eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tc-mm-badge{font-size:11px;font-weight:500;letter-spacing:.08em;color:#fecaca;;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);padding:2px 8px;border-radius:999px;width:max-content;}
+.tc-mm-note{font-size:11px;font-weight:500;letter-spacing:.08em;width:max-content;padding:2px 8px;border-radius:999px;}
+.tc-mm-note.is-owner{color:#fecaca;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.35);}
+.tc-mm-note.is-remove{color:#bbf7d0;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);}
+
+.tc-mm-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.tc-mm-link{border:none;background:transparent;color:#e5e7eb;font-weight:500;font-size:12px;cursor:pointer;padding:6px 6px;border-radius:8px;}
+.tc-mm-danger{color:#fca5a5;}
+.tc-mm-sep{color:#475569;font-size:12px;}
+.tc-mm-link.is-disabled{opacity:.45;cursor:not-allowed;}
+.tc-mm-link.is-disabled:hover{background:transparent;}
+
+.tc-mm-foot{display:flex;justify-content:flex-end;gap:10px;padding:12px 16px;border-top:1px solid #1f2937;background:rgba(2,6,23,.35);}
+.tc-mm-btn{min-width:110px;height:38px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid transparent;}
+.tc-mm-ghost{background:transparent;border-color:#1f2937;color:#e5e7eb;}
+.tc-mm-ghost:hover{border-color:#4b5563;}
+.tc-mm-apply{background:#f00519;color:#fff;}
+.tc-mm-apply:hover{background:#ef4444;}
+.tc-mm-btn:disabled{opacity:.6;cursor:not-allowed;}

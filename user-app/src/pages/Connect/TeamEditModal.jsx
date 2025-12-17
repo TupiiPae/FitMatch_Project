@@ -13,7 +13,7 @@ function calcAge(dob){
   return a;
 }
 
-export default function TeamEditModal({ open, onClose, saving, form, setForm, onSave, AGE_LABELS, GENDER_LABELS, FREQ_LABELS, ownerUser, goalLabel, baseLocationLabel }){
+export default function TeamEditModal({ open, onClose, saving, form, setForm, onSave, AGE_LABELS, GENDER_LABELS, FREQ_LABELS, ownerUser, goalLabel, baseLocationLabel, currentMembersCount=0 }){
   const fileRef=useRef(null);
   const [preview,setPreview]=useState("");
   const set=(k,v)=>setForm(s=>({...s,[k]:v}));
@@ -25,6 +25,11 @@ export default function TeamEditModal({ open, onClose, saving, form, setForm, on
   const genderKey=form?.gender||"all";
   const freqKey=form?.trainingFrequency||"1-2";
   const maxMembers=Number(form?.maxMembers||5);
+
+  const curCnt=Math.max(0,Number(currentMembersCount)||0);
+  const minMax=Math.max(2,Math.min(5,curCnt||0));
+  useEffect(()=>{ if(!open) return; if(Number(form?.maxMembers||0)<minMax) set("maxMembers",minMax); },[open,minMax]); 
+
 
   const ageLabel=(AGE_LABELS?.[ageKey]??ageKey??"Tất cả");
   const genderLabel=(GENDER_LABELS?.[genderKey]??(genderKey==="male"?"Nam":genderKey==="female"?"Nữ":"Tất cả"));
@@ -105,8 +110,6 @@ export default function TeamEditModal({ open, onClose, saving, form, setForm, on
                     </div>
                   </div>
 
-                  {/* ✅ BỎ CHỈNH SỬA VỊ TRÍ (giữ nguyên gốc khi tạo nhóm) */}
-
                   <div className="ct-row-2">
                     <div className="ct-field">
                       <label>Độ tuổi *</label>
@@ -132,8 +135,11 @@ export default function TeamEditModal({ open, onClose, saving, form, setForm, on
                     <div className="ct-field">
                       <label>Số thành viên tối đa *</label>
                       <select value={maxMembers} onChange={(e)=>set("maxMembers",Number(e.target.value))} required disabled={saving}>
-                        {[2,3,4,5].map(n=><option key={n} value={n}>{n} người</option>)}
+                        {[2,3,4,5].filter(n=>n>=minMax).map(n=><option key={n} value={n}>{n} người</option>)}
                       </select>
+                      <div className="ct-hint" style={{marginTop:6,fontSize:12,opacity:.75}}>
+                        Không thể thấp hơn số thành viên hiện tại ({curCnt}).
+                      </div>
                     </div>
                   </div>
 

@@ -8,6 +8,7 @@ import { getMatchStatus } from "../../api/match";
 import { getMe } from "../../api/account";
 import { toast } from "react-toastify";
 import TeamEditModal from "./TeamEditModal";
+import TeamManageMembersModal from "./TeamManageMembersModal";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -96,6 +97,9 @@ export default function TeamConnect({ onLeftRoom }){
 
   const [confirm,setConfirm]=useState({open:false,mode:null,req:null}); // mode: accept|reject
   const [confirming,setConfirming]=useState(false);
+
+  const [manageOpen,setManageOpen]=useState(false);
+  const [manageSaving,setManageSaving]=useState(false);
 
   const myId=me?._id||me?.id||null;
 
@@ -261,7 +265,6 @@ export default function TeamConnect({ onLeftRoom }){
   };
   const closeEdit=()=>{ if(!savingEdit) setEditOpen(false); };
 
-  // ✅ SỬA QUAN TRỌNG: gửi multipart nếu có coverFile
   const saveEdit=async()=>{
     if(!roomId) return;
     const n=String(editForm.name||"").trim();
@@ -273,6 +276,10 @@ export default function TeamConnect({ onLeftRoom }){
     if(!d) return toast.error("Mô tả nhóm không được để trống.");
     if(!l) return toast.error("Vị trí hiển thị không được để trống.");
     if(!hasFile && !hasUrl) return toast.error("Ảnh nhóm không được để trống.");
+    const curCnt=members.length;
+    const nextMax=Number(editForm.maxMembers)||5;
+    if(nextMax<curCnt) return toast.error(`Số thành viên tối đa không thể nhỏ hơn ${curCnt} (số thành viên hiện tại).`);
+
 
     try{
       setSavingEdit(true);
@@ -302,6 +309,8 @@ export default function TeamConnect({ onLeftRoom }){
     }
   };
 
+
+
   const shareLink=async(e)=>{
     e?.stopPropagation?.();
     const link=`${window.location.origin}/ket-noi?room=${roomId}`;
@@ -321,7 +330,28 @@ export default function TeamConnect({ onLeftRoom }){
     finally{ setLeaving(false); }
   };
 
-  // ✅ cache-bust nhẹ để tránh trình duyệt giữ ảnh cũ
+  const leaveDisabled=isOwner && members.length>1;
+  const leaveTip="Bạn không thể rời khỏi nhóm này trừ khi bạn chỉ định vai trò chủ phòng cho thành viên khác.";
+
+  const applyManageMembers=async({ makeOwnerId, removeIds })=>{
+    if(!roomId) return;
+    if(!isOwner) return toast.info("Chỉ chủ nhóm mới được quản lý thành viên.");
+    const rIds=Array.isArray(removeIds)?removeIds:[];
+    if(!makeOwnerId && !rIds.length) return;
+
+    try{
+      setManageSaving(true);
+      await api.patch(`/match/rooms/${roomId}/members/manage`, { makeOwnerId: makeOwnerId||null, removeIds: rIds });
+      toast.success("Đã cập nhật thành viên nhóm.");
+      setManageOpen(false);
+      await Promise.all([loadRoom(), loadRequests(roomId).catch(()=>null)]);
+    }catch(e){
+      toast.error(e?.response?.data?.message||e?.response?.data?.error||"Không thể cập nhật thành viên.");
+    }finally{
+      setManageSaving(false);
+    }
+  };
+
   const vKey=team?.updatedAt?new Date(team.updatedAt).getTime():Date.now();
   const coverSrc=team?.imageUrl?`${team.imageUrl}${team.imageUrl.includes("?")?"&":"?"}v=${vKey}`:"/images/avatar.png";
 
@@ -338,6 +368,7 @@ export default function TeamConnect({ onLeftRoom }){
   const pendingCount=(reqCounts?.pending ?? pendingReqs.length);
   const acceptedCount=(reqCounts?.accepted ?? acceptedReqs.length);
   const rejectedCount=(reqCounts?.rejected ?? rejectedReqs.length);
+  const totalReqCount=(Number(pendingCount)||0)+(Number(acceptedCount)||0)+(Number(rejectedCount)||0);
 
   return (
     <div className="tc-page">
@@ -345,11 +376,27 @@ export default function TeamConnect({ onLeftRoom }){
         <div className="tc-header-left"><div className="tc-badge">Phòng kết nối nhóm</div></div>
         <div className="tc-header-right">
           <button type="button" className="tc-more-btn" onClick={()=>setMenuOpen(v=>!v)}><i className="fa-solid fa-ellipsis-vertical"/></button>
-          {menuOpen && (
-            <div className="tc-menu" onMouseLeave={()=>setMenuOpen(false)}>
-              <button type="button" className="tc-menu-item tc-menu-danger" onClick={()=>{setLeaveModalOpen(true);setMenuOpen(false);}}>Rời khỏi nhóm</button>
-            </div>
-          )}
+            {menuOpen && (
+              <div className="tc-menu" onMouseLeave={()=>setMenuOpen(false)}>
+                <button
+                  type="button"
+                  className={"tc-menu-item"+(!isOwner?" is-disabled":"")}
+                  title={!isOwner?"Chỉ chủ nhóm mới được quản lý thành viên.":""}
+                  onClick={()=>{ if(!isOwner) return; setManageOpen(true); setMenuOpen(false); }}
+                >
+                  Quản lý
+                </button>
+
+                <button
+                  type="button"
+                  className={"tc-menu-item tc-menu-danger"+(leaveDisabled?" is-disabled":"")}
+                  title={leaveDisabled?leaveTip:""}
+                  onClick={()=>{ if(leaveDisabled) return; setLeaveModalOpen(true); setMenuOpen(false); }}
+                >
+                  Rời nhóm
+                </button>
+              </div>
+            )}
         </div>
       </header>
 
@@ -371,7 +418,7 @@ export default function TeamConnect({ onLeftRoom }){
                   const isOwnerSlot=idx===0;
                   const filled=!!m;
                   const title=filled?m.name:"Chưa tham gia";
-                  const roleText=isOwnerSlot?"Chủ phòng":(filled?"Thành viên":"Chưa tham gia");
+                  const roleText=isOwnerSlot?"Chủ nhóm":(filled?"Thành viên":"Chưa tham gia");
                   const roleCls=isOwnerSlot?" is-owner":(filled?" is-member":" is-vacant");
                   const avaSrc=filled?(m.avatarUrl||"/images/avatar.png"):"/images/avatar.png";
                   return (
@@ -428,7 +475,7 @@ export default function TeamConnect({ onLeftRoom }){
 
               <div className="tc-head-right">
                 <div className="tc-stat"><div className="tc-stat-k">Lượt xem</div><div className="tc-stat-v">{viewCount}</div></div>
-                <div className="tc-stat"><div className="tc-stat-k">Yêu cầu</div><div className="tc-stat-v">{pendingCount}</div></div>
+                <div className="tc-stat"><div className="tc-stat-k">Yêu cầu</div><div className="tc-stat-v">{totalReqCount}</div></div>
               </div>
             </div>
 
@@ -596,6 +643,16 @@ export default function TeamConnect({ onLeftRoom }){
         ownerUser={ownerUser}
         goalLabel={team?.goalLabel}
         baseLocationLabel={team?.locationText}
+        currentMembersCount={members.length}
+      />
+
+      <TeamManageMembersModal
+        open={manageOpen}
+        saving={manageSaving}
+        members={members}
+        myId={myId}
+        onClose={()=>{ if(!manageSaving) setManageOpen(false); }}
+        onApply={applyManageMembers}
       />
     </div>
   );
