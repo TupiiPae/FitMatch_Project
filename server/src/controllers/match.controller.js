@@ -431,7 +431,7 @@ export async function acceptRequest(req, res, next){
     const roomOfFrom = await findActiveRoomOfUser(reqDoc.fromUser._id);
     if(roomOfFrom){
       reqDoc.status="rejected"; reqDoc.resolvedAt=new Date(); await reqDoc.save();
-      return res.status(409).json({ ok:false, error:"user_already_in_room", message:"Người gửi đã tham gia phòng kết nối khác. Lời mời này đã hết hiệu lực." });
+      return res.status(409).json({ ok:false, error:"user_already_in_room", message:"Người gửi đã tham gia kết nối khác. Lời mời hết hiệu lực." });
     }
 
     let room;
@@ -441,7 +441,7 @@ export async function acceptRequest(req, res, next){
       const roomOfTo = await findActiveRoomOfUser(reqDoc.toUser._id);
       if(roomOfTo){
         reqDoc.status="rejected"; reqDoc.resolvedAt=new Date(); await reqDoc.save();
-        return res.status(409).json({ ok:false, error:"user_already_in_room", message:"Một trong hai người đã tham gia phòng kết nối khác. Lời mời này đã hết hiệu lực." });
+        return res.status(409).json({ ok:false, error:"user_already_in_room", message:"Một trong hai người đã tham gia kết nối. Lời mời hết hiệu lực." });
       }
 
       room = await MatchRoom.create({

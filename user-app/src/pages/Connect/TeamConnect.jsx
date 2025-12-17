@@ -366,20 +366,19 @@ export default function TeamConnect({ onLeftRoom }){
           ) : (
             <div className="tc-box-body">
               <div className="tc-slots">
-                {slots.map((m,idx)=>{
+               {slots.map((m,idx)=>{
                   const isMe=!!(m && myId && String(myId)===String(m.id));
-                  const isOwnerSlot=!!(m && m.role==="owner");
-                  const title=m ? m.name : "Chưa có thành viên";
-                  const roleText=isOwnerSlot ? "Chủ phòng" : "Thành viên";
-                  const roleCls=isOwnerSlot ? " is-owner" : " is-member";
+                  const isOwnerSlot=idx===0;
+                  const filled=!!m;
+                  const title=filled?m.name:"Chưa tham gia";
+                  const roleText=isOwnerSlot?"Chủ phòng":(filled?"Thành viên":"Chưa tham gia");
+                  const roleCls=isOwnerSlot?" is-owner":(filled?" is-member":" is-vacant");
+                  const avaSrc=filled?(m.avatarUrl||"/images/avatar.png"):"/images/avatar.png";
                   return (
-                    <div key={m?.id||`empty-${idx}`} className={"tc-slot"+(!m?" is-empty":"")+(isMe?" is-me":"")}>
+                    <div key={m?.id||`empty-${idx}`} className={"tc-slot"+(!filled?" is-empty":"")+(isMe?" is-me":"")}>
                       <div className="tc-slot-row">
                         <div className={"tc-slot-ava"+(isOwnerSlot?" is-owner":"")}>
-                          {m?.avatarUrl
-                            ? <img src={m.avatarUrl} alt={title}/>
-                            : (!m ? <img src="/images/avatar.png" alt="empty"/> : <span>{getInitials(title)}</span>)
-                          }
+                          <img src={avaSrc} alt={title} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} />
                         </div>
                         <div className="tc-slot-meta">
                           <div className="tc-slot-topline">
@@ -508,13 +507,7 @@ export default function TeamConnect({ onLeftRoom }){
                 acceptedReqs.length ? (
                   <div className="tc-req-list">
                     {acceptedReqs.map(r=>(
-                      <div key={r.id} className="tc-req-card">
-                        <div className="tc-req-ava">{r.user.avatarUrl?<img src={r.user.avatarUrl} alt={r.user.name}/>:<span>{getInitials(r.user.name)}</span>}</div>
-                        <div className="tc-req-main">
-                          <div className="tc-req-name">{r.user.name}</div>
-                          <div className="tc-req-note tc-req-note-muted">Đã duyệt</div>
-                        </div>
-                      </div>
+                      <ResolvedTeamReqCard key={r.id} r={r} variant="accepted" />
                     ))}
                   </div>
                 ) : (
@@ -530,13 +523,7 @@ export default function TeamConnect({ onLeftRoom }){
                 rejectedReqs.length ? (
                   <div className="tc-req-list">
                     {rejectedReqs.map(r=>(
-                      <div key={r.id} className="tc-req-card">
-                        <div className="tc-req-ava">{r.user.avatarUrl?<img src={r.user.avatarUrl} alt={r.user.name}/>:<span>{getInitials(r.user.name)}</span>}</div>
-                        <div className="tc-req-main">
-                          <div className="tc-req-name">{r.user.name}</div>
-                          <div className="tc-req-note tc-req-note-muted">Đã từ chối</div>
-                        </div>
-                      </div>
+                      <ResolvedTeamReqCard key={r.id} r={r} variant="rejected" />
                     ))}
                   </div>
                 ) : (
@@ -685,6 +672,80 @@ function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject }){
           <button type="button" className="tc-rq-btn tc-pr-reject" onClick={onOpenReject} disabled={!isOwner}>Từ chối</button>
           <button type="button" className="tc-rq-btn tc-pr-accept" onClick={onOpenAccept} disabled={!isOwner}>Duyệt vào nhóm</button>
         </div>
+      </div>
+    </article>
+  );
+}
+
+function ResolvedTeamReqCard({ r, variant="accepted" }){
+  const nav=useNavigate();
+  const u=r?.user||{};
+  const name=u.name||"Người dùng FitMatch";
+  const avatar=u.avatarUrl||"/images/avatar.png";
+  const goal=u.goalLabel||"—";
+  const location=u.locationLabel||"—";
+  const ageTxt=typeof u.age==="number"?`${u.age} tuổi`:"—";
+  const genderTxt=(u.gender && (GENDER_LABELS[u.gender]||""))||"—";
+  const intensity=u.intensityLabel||"—";
+  const bio=u.bio||"";
+  const when=r?.resolvedAt||r?.createdAt||null;
+  const verb=variant==="accepted"?"đã được duyệt vào nhóm":"đã bị từ chối";
+  const pill=variant==="accepted"?"Đã duyệt":"Từ chối";
+
+  return (
+    <article className="tc-pr-card">
+      <div className="tc-pr-head">
+        <div className="tc-pr-title"><span className="tc-pr-name">{name}</span> {verb}</div>
+        <div className="tc-pr-time">{when?`${pill} ${timeAgo(when)}`:""}</div>
+      </div>
+      <div className="tc-pr-divider" />
+
+      <div className="tc-pr-body">
+        <div className="tc-pr-left">
+          <div className="tc-pr-userrow">
+            <div className="tc-pr-ava">
+              <img src={avatar} alt={name} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} />
+            </div>
+            <div className="tc-pr-usertext">
+              <div className="tc-pr-left-name" title={name}>{name}</div>
+              <div className="tc-pr-left-chips">
+                <span className="tc-chip tc-chip-goal">{goal}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="tc-pr-right">
+          <div className="tc-pr-facts">
+            <div className="tc-pr-fact">
+              <div className="tc-pr-k">Vị trí</div>
+              <div className="tc-pr-v tc-chip tc-chip-loc" title={location}>{location}</div>
+            </div>
+            <div className="tc-pr-fact">
+              <div className="tc-pr-k">Tuổi</div>
+              <div className="tc-pr-v tc-chip tc-chip-age">{ageTxt}</div>
+            </div>
+            <div className="tc-pr-fact">
+              <div className="tc-pr-k">Giới tính</div>
+              <div className="tc-pr-v tc-chip tc-chip-gender">{genderTxt}</div>
+            </div>
+            <div className="tc-pr-fact">
+              <div className="tc-pr-k">Mức độ tập luyện</div>
+              <div className="tc-pr-v tc-chip tc-chip-level">{intensity}</div>
+            </div>
+          </div>
+
+          {!!bio && <div className="tc-pr-bio">{bio}</div>}
+        </div>
+      </div>
+
+      <div className="tc-pr-foot">
+        <button type="button" className="tc-pr-msg" onClick={()=>nav(`/ket-noi/ho-so/${u.id}`)}>
+          <i className="fa-regular fa-paper-plane" />
+          <span>Gửi tin nhắn cho <b className="tc-pr-msg-name">{name}</b></span>
+        </button>
+
+        <span className={"tc-pr-status "+(variant==="accepted"?"is-accepted":"is-rejected")}>{pill}</span>
       </div>
     </article>
   );
