@@ -51,7 +51,7 @@ export default function CreateTeam({ currentUser, hasAddressForConnect, onClose,
   const displayName=p.nickname||p.fullName||currentUser?.username||currentUser?.email||"Người dùng FitMatch";
 
   const addr=p.address||{};
-  const addressText=useMemo(()=>[addr.country,addr.city,addr.district].filter(Boolean).join(" - "),[addr.country,addr.city,addr.district]);
+  const addressText=useMemo(()=>[addr.city,addr.district,addr.ward].filter(Boolean).join(" - "),[addr.city,addr.district,addr.ward]);
 
   const goalKey=currentUser?.connectGoalKey||p.goal||null;
   const goalLabel=currentUser?.connectGoalLabel||(goalKey&&GOAL_LABELS[goalKey])||"";
@@ -187,7 +187,7 @@ const submit=async(e)=>{
             <aside className="ct-right">
               <div className="ct-rightbox">
                 <div className="ct-sidecard ct-usercard">
-                  <div className="ct-sidehead">
+                  <div className="c">
                     <div className="ct-sideava">{avatarUrl?<img src={avatarUrl} alt={displayName}/>:<span>{getInitials(displayName)}</span>}</div>
                     <div className="ct-sidename">
                       <div className="ct-sidenick">{displayName}</div>

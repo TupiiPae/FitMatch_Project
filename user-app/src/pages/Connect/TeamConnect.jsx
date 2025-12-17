@@ -18,10 +18,8 @@ const INTENSITY_LABELS={level_1:"Không tập luyện, ít vận động",level_
 
 function getInitials(name){if(!name)return"FM";return String(name).trim().split(/\s+/).map(p=>p?.[0]).join("").slice(0,2).toUpperCase();}
 const safeArr=(v)=>Array.isArray(v)?v:[];
-
 function pickRoomData(res){const payload=res?.data ?? res; return payload?.data ?? payload ?? null;}
 function pickOkData(res){const payload=res?.data ?? res; return payload?.data ?? payload ?? null;}
-
 function calcAge(dob){if(!dob)return null;const d=new Date(dob);if(Number.isNaN(d.getTime()))return null;const now=new Date();let age=now.getFullYear()-d.getFullYear();const m=now.getMonth()-d.getMonth();if(m<0||(m===0&&now.getDate()<d.getDate()))age--;return age;}
 function timeAgo(iso){const t=iso?new Date(iso).getTime():0;if(!t)return"";let s=Math.floor((Date.now()-t)/1000);if(s<0)s=0;if(s<15)return"Vừa xong";if(s<60)return`${s}s trước`;const m=Math.floor(s/60);if(m<60)return`${m} phút trước`;const h=Math.floor(m/60);if(h<24)return`${h} giờ trước`;const d=Math.floor(h/24);return`${d} ngày trước`;}
 function buildFullLocationFromProfile(p){const a=p?.address||{};return [a.country,a.city,a.district,a.ward].filter(Boolean).join(" - ");}
@@ -89,7 +87,7 @@ export default function TeamConnect({ onLeftRoom }){
 
   const [editOpen,setEditOpen]=useState(false);
   const [savingEdit,setSavingEdit]=useState(false);
-  const [editForm,setEditForm]=useState({name:"",description:"",coverImageUrl:"",ageRange:"all",gender:"all",trainingFrequency:"1-2",maxMembers:5,locationLabel:""});
+  const [editForm,setEditForm]=useState({name:"",description:"",coverImageUrl:"",coverFile:null,ageRange:"all",gender:"all",trainingFrequency:"1-2",maxMembers:5,locationLabel:""});
 
   const [viewCount,setViewCount]=useState(0);
   const viewedOnceRef=useRef(false);
@@ -139,6 +137,12 @@ export default function TeamConnect({ onLeftRoom }){
     });
   },[room]);
 
+  const ownerUser=useMemo(()=>{
+  const m=safeArr(room?.members).find(x=>x?.role==="owner")||safeArr(room?.members)[0]||null;
+  const u=m?.user||{}; const p=u?.profile||{};
+  return { id:String(u._id||u.id||""), name:p.nickname||u.username||u.email||"Chủ nhóm", avatarUrl:toAbs(p.avatarUrl)||null, sex:p.sex||null, dob:p.dob||null };
+  },[room]);
+
   const isOwner=useMemo(()=>{
     if(!myId) return false;
     return members.some(m=>String(m.id)===String(myId) && m.role==="owner");
@@ -160,6 +164,8 @@ export default function TeamConnect({ onLeftRoom }){
       genderLabel: room.gender==="male"?"Nam":room.gender==="female"?"Nữ":"Tất cả",
       trainingLabel: FREQ_LABELS[room.trainingFrequency]||room.trainingFrequency||"--",
       description: room.description||"",
+      updatedAt: room.updatedAt || room.createdAt || null,
+      goalLabel: room.goalLabel || "",
     };
   },[room]);
 
@@ -244,6 +250,7 @@ export default function TeamConnect({ onLeftRoom }){
       name: team?.name||"",
       description: team?.description||"",
       coverImageUrl: team?.imageUrl||"",
+      coverFile: null,
       ageRange: team?.ageRange||"all",
       gender: team?.gender||"all",
       trainingFrequency: team?.trainingFrequency||"1-2",
@@ -254,28 +261,45 @@ export default function TeamConnect({ onLeftRoom }){
   };
   const closeEdit=()=>{ if(!savingEdit) setEditOpen(false); };
 
+  // ✅ SỬA QUAN TRỌNG: gửi multipart nếu có coverFile
   const saveEdit=async()=>{
     if(!roomId) return;
-    if(!String(editForm.name||"").trim()) return toast.error("Tên nhóm không được để trống.");
-    if(!String(editForm.description||"").trim()) return toast.error("Mô tả nhóm không được để trống.");
-    if(!String(editForm.coverImageUrl||"").trim()) return toast.error("Ảnh nhóm (URL) không được để trống.");
+    const n=String(editForm.name||"").trim();
+    const d=String(editForm.description||"").trim();
+    const l=String(editForm.locationLabel||"").trim();
+    const hasFile=!!editForm.coverFile;
+    const hasUrl=!!String(editForm.coverImageUrl||"").trim();
+    if(!n) return toast.error("Tên nhóm không được để trống.");
+    if(!d) return toast.error("Mô tả nhóm không được để trống.");
+    if(!l) return toast.error("Vị trí hiển thị không được để trống.");
+    if(!hasFile && !hasUrl) return toast.error("Ảnh nhóm không được để trống.");
+
     try{
       setSavingEdit(true);
-      await api.patch(`/match/rooms/${roomId}`, {
-        name:String(editForm.name||"").trim(),
-        description:String(editForm.description||"").trim(),
-        coverImageUrl:String(editForm.coverImageUrl||"").trim(),
-        ageRange:editForm.ageRange,
-        gender:editForm.gender,
-        trainingFrequency:editForm.trainingFrequency,
-        maxMembers:Number(editForm.maxMembers)||5,
-        locationLabel:String(editForm.locationLabel||"").trim(),
-      });
+
+      const fd=new FormData();
+      fd.append("name",n);
+      fd.append("description",d);
+      fd.append("ageRange",editForm.ageRange||"all");
+      fd.append("gender",editForm.gender||"all");
+      fd.append("trainingFrequency",editForm.trainingFrequency||"1-2");
+      fd.append("maxMembers",String(Number(editForm.maxMembers)||5));
+      fd.append("locationLabel",l);
+
+      if(hasFile) fd.append("cover",editForm.coverFile); // 👈 field name phải khớp uploadTeamCoverSingle
+      else fd.append("coverImageUrl",String(editForm.coverImageUrl||"").trim());
+
+      await api.patch(`/match/rooms/${roomId}`,fd,{headers:{ "Content-Type":"multipart/form-data" }});
+
       toast.success("Đã cập nhật thông tin nhóm.");
       setEditOpen(false);
+      setEditForm(s=>({...s,coverFile:null})); // dọn file
       await loadRoom();
-    }catch(e){ toast.error(e?.response?.data?.message||"Không thể cập nhật nhóm."); }
-    finally{ setSavingEdit(false); }
+    }catch(e){
+      toast.error(e?.response?.data?.message||"Không thể cập nhật nhóm.");
+    }finally{
+      setSavingEdit(false);
+    }
   };
 
   const shareLink=async(e)=>{
@@ -297,7 +321,10 @@ export default function TeamConnect({ onLeftRoom }){
     finally{ setLeaving(false); }
   };
 
-  const coverSrc=team?.imageUrl||"/images/avatar.png";
+  // ✅ cache-bust nhẹ để tránh trình duyệt giữ ảnh cũ
+  const vKey=team?.updatedAt?new Date(team.updatedAt).getTime():Date.now();
+  const coverSrc=team?.imageUrl?`${team.imageUrl}${team.imageUrl.includes("?")?"&":"?"}v=${vKey}`:"/images/avatar.png";
+
   useEffect(()=>{
     if(!imgOpen) return;
     const onKey=(e)=>{ if(e.key==="Escape") setImgOpen(false); };
@@ -554,8 +581,8 @@ export default function TeamConnect({ onLeftRoom }){
             <h3 className="tc-modal-title">{confirm.mode==="accept"?"Duyệt vào nhóm?":"Từ chối yêu cầu?"}</h3>
             <p className="tc-modal-text">
               {confirm.mode==="accept"
-                ? <>Bạn muốn duyệt <b>{confirm.req?.user?.name||"người dùng"}</b> vào nhóm này?</>
-                : <>Bạn muốn từ chối yêu cầu của <b>{confirm.req?.user?.name||"người dùng"}</b>?</>
+                ? <>Bạn muốn duyệt kết nối cho <b>{confirm.req?.user?.name||"người dùng"}</b> vào nhóm này?</>
+                : <>Bạn muốn từ chối yêu cầu kêt nối của <b>{confirm.req?.user?.name||"người dùng"}</b>?</>
               }
             </p>
             <div className="tc-modal-actions">
@@ -569,7 +596,20 @@ export default function TeamConnect({ onLeftRoom }){
         </div>
       )}
 
-      <TeamEditModal open={editOpen} onClose={closeEdit} saving={savingEdit} form={editForm} setForm={setEditForm} onSave={saveEdit} AGE_LABELS={AGE_LABELS} GENDER_LABELS={GENDER_LABELS} FREQ_LABELS={FREQ_LABELS}/>
+      <TeamEditModal
+        open={editOpen}
+        onClose={closeEdit}
+        saving={savingEdit}
+        form={editForm}
+        setForm={setEditForm}
+        onSave={saveEdit}
+        AGE_LABELS={AGE_LABELS}
+        GENDER_LABELS={GENDER_LABELS}
+        FREQ_LABELS={FREQ_LABELS}
+        ownerUser={ownerUser}
+        goalLabel={team?.goalLabel}
+        baseLocationLabel={team?.locationText}
+      />
     </div>
   );
 }
@@ -642,8 +682,8 @@ function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject }){
         </button>
 
         <div className="tc-pr-actions">
-          <button type="button" className="tc-pr-reject" onClick={onOpenReject} disabled={!isOwner}>Từ chối</button>
-          <button type="button" className="tc-pr-accept" onClick={onOpenAccept} disabled={!isOwner}>Duyệt vào nhóm</button>
+          <button type="button" className="tc-rq-btn tc-pr-reject" onClick={onOpenReject} disabled={!isOwner}>Từ chối</button>
+          <button type="button" className="tc-rq-btn tc-pr-accept" onClick={onOpenAccept} disabled={!isOwner}>Duyệt vào nhóm</button>
         </div>
       </div>
     </article>
