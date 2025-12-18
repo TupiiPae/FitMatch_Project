@@ -63,3 +63,8 @@ export async function leaveMatchRoom(id){
   const res = await api.post(`/match/rooms/${id}/leave`);
   return unwrap(res);
 }
+
+export async function createConnectReport(payload){
+  const res = await api.post("/match/reports", payload);
+  return unwrap(res);
+}

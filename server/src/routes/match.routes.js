@@ -20,6 +20,7 @@ import {
   getRoomStreaks,
 } from "../controllers/match.controller.js";
 import { getMyRoomView,bumpMyRoomView,syncMyRoomView } from "../controllers/match.room.views.controller.js";
+import { createConnectReport, listConnectReportsAdmin, updateConnectReportAdmin } from "../controllers/match.controller.js";
 
 const router = Router();
 router.use(auth);
@@ -51,5 +52,9 @@ router.get("/match/rooms/:id/streaks", getRoomStreaks);
 router.get("/match/rooms/:id/views/me", getMyRoomView);
 router.post("/match/rooms/:id/views/bump", bumpMyRoomView);
 router.post("/match/rooms/:id/views/sync", syncMyRoomView);
+
+router.post("/match/reports", createConnectReport);
+router.get("/match/reports/admin", listConnectReportsAdmin);
+router.patch("/match/reports/:id/admin", updateConnectReportAdmin);
 
 export default router;

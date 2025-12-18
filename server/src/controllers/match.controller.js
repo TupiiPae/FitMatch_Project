@@ -6,6 +6,7 @@ import { responseOk } from "../utils/response.js";
 import { uploadImageWithResize } from "../utils/cloudinary.js";
 import NutritionLog from "../models/NutritionLog.js";
 import dayjs from "dayjs";
+import ConnectReport from "../models/ConnectReport.js";
 
 
 // ===== Helpers =====
@@ -817,13 +818,8 @@ export async function getRoomStreaks(req,res,next){
     const room = await MatchRoom.findById(roomId)
       .populate({ path:"members.user", select:"username email profile.nickname profile.avatarUrl" })
       .lean();
-
-    if(!room) return res.status(404).json({ success:false, message:"Không tìm thấy phòng" });
-
-    // ✅ hỗ trợ cả duo + group (không còn trả "Chỉ nhóm mới có streak")
-    if(!["group","duo"].includes(room.type)){
-      return res.status(400).json({ success:false, message:"Phòng này không hỗ trợ streak" });
-    }
+    if(!room) return res.status(404).json({ success:false, message:"Không tìm thấy phòng kết nối" });
+    if(!["group","duo"].includes(room.type)) return res.status(400).json({ success:false, message:"Phòng này không hỗ trợ streak" });
 
     const isMember=(room.members||[]).some(m=>{
       const u=m.user||{}; const uid=u._id||u.id||u;
@@ -845,7 +841,6 @@ export async function getRoomStreaks(req,res,next){
       const dates = await NutritionLog.distinct("date",{ user: uid, date:{ $gte: joinISO } });
       const set = new Set((dates||[]).map(String));
 
-      // current streak từ hôm nay lùi về (nhưng không vượt trước ngày join)
       let current=0;
       for(let d=today; !d.isBefore(joinDay,"day"); d=d.subtract(1,"day")){
         const iso=d.format("YYYY-MM-DD");
@@ -853,7 +848,6 @@ export async function getRoomStreaks(req,res,next){
         else break;
       }
 
-      // best streak (max) kể từ ngày join tới hôm nay
       let best=0, run=0;
       for(let d=joinDay; !d.isAfter(today,"day"); d=d.add(1,"day")){
         const iso=d.format("YYYY-MM-DD");
@@ -861,28 +855,180 @@ export async function getRoomStreaks(req,res,next){
         else run=0;
       }
 
-      return {
-        id: String(uid),
-        name,
-        avatarUrl,
-        role: m?.role || "member",
-        joinedAt,
-        hasToday: set.has(today.format("YYYY-MM-DD")),
-        currentStreak: Number(current||0),
-        bestStreak: Number(best||0),
-      };
+      return { id:String(uid), name, avatarUrl, role:m?.role||"member", joinedAt, hasToday:set.has(today.format("YYYY-MM-DD")), currentStreak:Number(current||0), bestStreak:Number(best||0) };
     }));
 
     const maxBest = out.reduce((mx,x)=>Math.max(mx,Number(x?.bestStreak||0)),0);
-    const maxCurrent = out.reduce((mx,x)=>Math.max(mx,Number(x?.currentStreak||0)),0);
+    return responseOk(res,{ roomId:String(room._id), roomType:room.type, members: out, maxBest, today: today.format("YYYY-MM-DD") });
+  }catch(err){ next(err); }
+}
 
-    return responseOk(res,{
-      roomId: String(room._id),
-      roomType: room.type,
-      members: out,
-      maxBest,
-      maxCurrent,
-      today: today.format("YYYY-MM-DD"),
+
+const REPORT_REASONS = ["spam", "scam", "harassment", "inappropriate", "fake", "other"];
+
+const isAdminRole = (req) => String(req?.userRole || "").startsWith("admin") || String(req?.userRoleRaw || "") === "admin";
+
+function buildUserReportSnapshot(u){
+  const profile=u?.profile||{};
+  const goalKey=u?.connectGoalKey||profile?.goal||null;
+  const goalLabel=u?.connectGoalLabel||goalLabelFromKey(goalKey)||"";
+  const nickname=profile?.nickname||u?.username||u?.email||"Người dùng FitMatch";
+  const avatarUrl=profile?.avatarUrl||null;
+  const locationLabel=u?.connectLocationLabel||buildFullLocationLabel(profile)||"";
+  return { targetType:"user", id:String(u?._id||""), nickname, avatarUrl, goalKey, goalLabel, locationLabel };
+}
+
+function buildGroupReportSnapshot(r){
+  return {
+    targetType:"group",
+    id:String(r?._id||""),
+    name:r?.name||"Nhóm tập luyện",
+    coverImageUrl:r?.coverImageUrl||null,
+    locationLabel:r?.locationLabel||"",
+    goalKey:r?.goalKey||null,
+    goalLabel:r?.goalLabel||goalLabelFromKey(r?.goalKey)||"",
+    maxMembers:r?.maxMembers||5,
+    membersCount:(r?.members||[]).length||0,
+    joinPolicy:r?.joinPolicy||"request",
+    createdBy:r?.createdBy?String(r.createdBy):null,
+  };
+}
+
+// POST /api/match/reports
+export async function createConnectReport(req,res,next){
+  try{
+    const userId=getUserIdFromReq(req);
+    if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+
+    const body=req.body||{};
+    const targetType=String(body.targetType||"").trim();
+    const targetUserId=body.targetUserId?String(body.targetUserId).trim():null;
+    const targetRoomId=body.targetRoomId?String(body.targetRoomId).trim():null;
+
+    const reasonsRaw=Array.isArray(body.reasons)?body.reasons:[];
+    const reasons=[...new Set(reasonsRaw.map(x=>String(x||"").trim()).filter(Boolean))].filter(x=>REPORT_REASONS.includes(x));
+    const otherReason=String(body.otherReason||"").trim();
+    const note=String(body.note||"").trim();
+
+    if(!["user","group"].includes(targetType)) return res.status(400).json({ ok:false, error:"invalid_targetType", message:"TargetType không hợp lệ." });
+    if(targetType==="user" && !targetUserId) return res.status(400).json({ ok:false, error:"missing_targetUserId", message:"Thiếu targetUserId." });
+    if(targetType==="group" && !targetRoomId) return res.status(400).json({ ok:false, error:"missing_targetRoomId", message:"Thiếu targetRoomId." });
+
+    if(!reasons.length && !otherReason) return res.status(400).json({ ok:false, error:"missing_reasons", message:"Vui lòng chọn ít nhất 1 lý do hoặc nhập lý do khác." });
+    if(otherReason && otherReason.length>200) return res.status(400).json({ ok:false, error:"other_too_long", message:"Lý do khác tối đa 200 ký tự." });
+    if(note && note.length>500) return res.status(400).json({ ok:false, error:"note_too_long", message:"Ghi chú tối đa 500 ký tự." });
+
+    const now=new Date();
+    const since=new Date(now.getTime()-24*60*60*1000);
+
+    let targetUser=null, targetRoom=null, snapshot=null;
+
+    if(targetType==="user"){
+      if(String(targetUserId)===String(userId)) return res.status(400).json({ ok:false, error:"cannot_report_self", message:"Bạn không thể báo cáo chính mình." });
+      targetUser = await User.findById(targetUserId).select("username email role profile.nickname profile.avatarUrl profile.address profile.goal connectGoalKey connectGoalLabel connectLocationLabel").lean();
+      if(!targetUser) return res.status(404).json({ ok:false, error:"user_not_found", message:"Không tìm thấy người dùng bị báo cáo." });
+
+      const existed = await ConnectReport.findOne({ reporter:userId, targetType:"user", targetUser:targetUserId, createdAt:{ $gte: since } }).lean();
+      if(existed) return responseOk(res,{ report: existed, duplicated:true });
+
+      snapshot = buildUserReportSnapshot(targetUser);
+    }else{
+      targetRoom = await MatchRoom.findById(targetRoomId).select("type name coverImageUrl locationLabel goalKey goalLabel members maxMembers joinPolicy createdBy").lean();
+      if(!targetRoom || targetRoom.type!=="group") return res.status(404).json({ ok:false, error:"room_not_found", message:"Không tìm thấy nhóm bị báo cáo." });
+
+      const existed = await ConnectReport.findOne({ reporter:userId, targetType:"group", targetRoom:targetRoomId, createdAt:{ $gte: since } }).lean();
+      if(existed) return responseOk(res,{ report: existed, duplicated:true });
+
+      snapshot = buildGroupReportSnapshot(targetRoom);
+    }
+
+    const doc = await ConnectReport.create({
+      reporter:userId,
+      targetType,
+      targetUser: targetType==="user" ? targetUserId : null,
+      targetRoom: targetType==="group" ? targetRoomId : null,
+      reasons,
+      otherReason,
+      note,
+      snapshot,
+      status:"pending",
     });
+
+    return responseOk(res,{ report: doc });
+  }catch(err){ next(err); }
+}
+
+// GET /api/match/reports/admin
+export async function listConnectReportsAdmin(req,res,next){
+  try{
+    const userId=getUserIdFromReq(req);
+    if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+    if(!isAdminRole(req)) return res.status(403).json({ success:false, message:"Chỉ admin mới xem được báo cáo." });
+
+    const q=req.query||{};
+    const status=String(q.status||"").trim();
+    const type=String(q.type||"").trim();
+    const search=String(q.search||"").trim();
+
+    const page=Math.max(1, parseIntSafe(q.page)||1);
+    const limit=Math.min(50, Math.max(1, parseIntSafe(q.limit)||20));
+    const skip=(page-1)*limit;
+
+    const filter={};
+    if(["pending","reviewed","dismissed"].includes(status)) filter.status=status;
+    if(["user","group"].includes(type)) filter.targetType=type;
+
+    if(search){
+      const rx=new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i");
+      filter.$or=[
+        { otherReason: rx },
+        { note: rx },
+        { adminNote: rx },
+        { "snapshot.nickname": rx },
+        { "snapshot.name": rx },
+        { "snapshot.locationLabel": rx },
+      ];
+    }
+
+    const [total, items] = await Promise.all([
+      ConnectReport.countDocuments(filter),
+      ConnectReport.find(filter)
+        .sort({ createdAt:-1 })
+        .skip(skip)
+        .limit(limit)
+        .populate({ path:"reporter", select:"username email profile.nickname profile.avatarUrl role" })
+        .populate({ path:"targetUser", select:"username email profile.nickname profile.avatarUrl role" })
+        .populate({ path:"targetRoom", select:"name coverImageUrl locationLabel goalLabel goalKey members maxMembers joinPolicy status type" })
+        .lean()
+    ]);
+
+    return responseOk(res,{ items, page, limit, total, pages: Math.ceil(total/limit) });
+  }catch(err){ next(err); }
+}
+
+// PATCH /api/match/reports/:id/admin
+export async function updateConnectReportAdmin(req,res,next){
+  try{
+    const userId=getUserIdFromReq(req);
+    if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+    if(!isAdminRole(req)) return res.status(403).json({ success:false, message:"Chỉ admin mới cập nhật được báo cáo." });
+
+    const { id } = req.params;
+    const body=req.body||{};
+    const status=body.status!=null?String(body.status).trim():null;
+    const adminNote=body.adminNote!=null?String(body.adminNote).trim():"";
+
+    const doc = await ConnectReport.findById(id);
+    if(!doc) return res.status(404).json({ success:false, message:"Không tìm thấy báo cáo." });
+
+    if(status!=null){
+      if(!["pending","reviewed","dismissed"].includes(status)) return res.status(400).json({ success:false, message:"Status không hợp lệ." });
+      doc.status=status;
+      doc.resolvedAt = status==="pending" ? null : (doc.resolvedAt || new Date());
+    }
+    doc.adminNote = adminNote || doc.adminNote || "";
+    await doc.save();
+
+    return responseOk(res,{ report: doc });
   }catch(err){ next(err); }
 }

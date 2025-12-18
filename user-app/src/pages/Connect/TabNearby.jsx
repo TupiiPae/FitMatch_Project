@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { listNearby, createMatchRequest, getMyRequests, acceptMatchRequest, cancelMatchRequest, getMatchStatus, getRoomDetail } from "../../api/match";
+import { listNearby, createMatchRequest, getMyRequests, acceptMatchRequest, cancelMatchRequest, getMatchStatus, getRoomDetail, createConnectReport } from "../../api/match";
 import { toast } from "react-toastify";
 import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
+import ReportSideModal from "./ReportSideModal";
 
 const AGE_RANGE_LABELS={all:"Tất cả","18-21":"18-21","22-27":"22-27","28-35":"28-35","36-45":"36-45","45+":"Trên 45"};
 const GENDER_LABELS={all:"Tất cả",male:"Nam",female:"Nữ"};
@@ -103,9 +104,39 @@ export default function TabNearby({
 
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, target: null, requestId: null });
   const [confirmLoading, setConfirmLoading] = useState(false);
-
   const openConfirm=(mode,target,requestId)=>setConfirmState({ open:true, mode, target, requestId:requestId||null });
   const closeConfirm=()=>setConfirmState({ open:false, mode:null, target:null, requestId:null });
+
+  // ===== REPORT STATE (FIX reportState is not defined) =====
+  const [reportState,setReportState]=useState({ open:false, target:null });
+  const [reportLoading,setReportLoading]=useState(false);
+  const openReport=(target)=>setReportState({ open:true, target: target||null });
+  const closeReport=()=>setReportState({ open:false, target:null });
+
+  async function handleSubmitReport(payload){
+    const t=reportState.target;
+    if(!t) return;
+    const isGroup=!!t.isGroup;
+    const tid=String(t?.id||t?._id||"");
+    try{
+      setReportLoading(true);
+      const res=await createConnectReport({
+        targetType: isGroup ? "group" : "user",
+        targetUserId: isGroup ? undefined : tid,
+        targetRoomId: isGroup ? tid : undefined,
+        reasons: Array.isArray(payload?.reasons)?payload.reasons:[],
+        otherReason: (payload?.otherReason||"").toString(),
+        note: (payload?.note||"").toString(),
+      });
+      if(res?.duplicated) toast.info("Bạn đã báo cáo đối tượng này gần đây.");
+      else toast.success("Đã gửi báo cáo. Cảm ơn bạn!");
+      closeReport();
+    }catch(e){
+      console.error("createConnectReport error:",e);
+      const msg=e?.response?.data?.message||e?.response?.data?.error||"Không thể gửi báo cáo. Vui lòng thử lại.";
+      toast.error(msg);
+    }finally{ setReportLoading(false); }
+  }
 
   useEffect(() => {
     let cancelled=false;
@@ -375,11 +406,20 @@ export default function TabNearby({
         {errorMsg && <div className="cn-error"><p>{errorMsg}</p></div>}
 
         <div className={"cn-card-list " + (viewMode === "grid" ? "cn-card-list--grid" : "cn-card-list--list")}>
-          {connectionMode==="one_to_one" && selfCard && <ConnectCard key="self" user={selfCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} isSelf={true} isPinned={true} pinText="Hồ sơ của bạn" />}
-          {connectionMode==="group" && myGroupCard && <ConnectCard key="my-group" user={myGroupCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} isSelf={false} isPinned={true} pinText="Nhóm của bạn" />}
+          {connectionMode==="one_to_one" && selfCard && <ConnectCard key="self" user={selfCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} onOpenReport={null} isSelf={true} isPinned={true} pinText="Hồ sơ của bạn" />}
+          {connectionMode==="group" && myGroupCard && <ConnectCard key="my-group" user={myGroupCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} onOpenReport={null} isSelf={false} isPinned={true} pinText="Nhóm của bạn" />}
 
           {filteredList.map((u) => (
-            <ConnectCard key={String(u?.id || u?._id || Math.random())} user={u} viewMode={viewMode} inviteState={getInviteStateFor(u)} onOpenConfirm={openConfirm} isSelf={false} isPinned={false} />
+            <ConnectCard
+              key={String(u?.id || u?._id || Math.random())}
+              user={u}
+              viewMode={viewMode}
+              inviteState={getInviteStateFor(u)}
+              onOpenConfirm={openConfirm}
+              onOpenReport={openReport}
+              isSelf={false}
+              isPinned={false}
+            />
           ))}
         </div>
 
@@ -391,12 +431,14 @@ export default function TabNearby({
       </section>
 
       <ConnectRequestConfirmModal open={confirmState.open} mode={confirmState.mode} targetName={confirmState.target?.nickname || ""} onClose={closeConfirm} onConfirm={handleConfirm} loading={confirmLoading} />
+
+      <ReportSideModal open={reportState.open} target={reportState.target} loading={reportLoading} onClose={closeReport} onSubmit={handleSubmitReport} />
     </>
   );
 }
 
 /* ===== Card: Grid & List ===== */
-function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf=false, isPinned=false, pinText="" }) {
+function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport, isSelf=false, isPinned=false, pinText="" }) {
   const nav = useNavigate();
 
   const { id,_id,nickname,age,gender,goal,trainingTypes=[],intensityLabel,locationLabel,bio,isGroup,membersCount,imageUrl,areaLabel,ageRange,trainingFrequency } = user || {};
@@ -408,13 +450,11 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf=false,
   const groupAgeLabel=isGroup?(AGE_RANGE_LABELS[ageRange]||"Tất cả"):"";
   const groupFreqText=isGroup?(trainingFrequency?`${trainingFrequency} buổi/tuần`:""):"";
   const groupLocShort=isGroup?shortDistrictCity(locationLabel):(locationLabel||"");
-  const DEFAULT_AVATAR="images/avatar.png"; 
+  const DEFAULT_AVATAR="images/avatar.png";
   const thumbSrc=(()=>{const s=String(imageUrl||"").trim();return s?s:DEFAULT_AVATAR;})();
 
   const membersNum=(()=>{const n=Number(membersCount||0);return Number.isFinite(n)&&n>0?n:1;})();
-  const membersChip=isGroup?(
-    <span className="cn-card-img-members-chip"><i className="fa-solid fa-users" /> {membersNum} / 5</span>
-  ):null;
+  const membersChip=isGroup?(<span className="cn-card-img-members-chip"><i className="fa-solid fa-users" /> {membersNum} / 5</span>):null;
 
   const areaText=isSelf?"Nhà":(areaLabel||"");
 
@@ -440,6 +480,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf=false,
 
   const goProfile=()=>{if(isSelf||isGroup) return; nav(`/ket-noi/ho-so/${uid}`);};
   const handlePrimaryClick=()=>{if(!inviteType||!onOpenConfirm) return; onOpenConfirm(inviteType,user,inviteReqId);};
+  const handleReportClick=()=>{if(!onOpenReport) return; onOpenReport(user);};
 
   if(viewMode==="grid"){
     return (
@@ -482,7 +523,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf=false,
           {!isSelf && !isPinned && inviteType && (
             <div className="cn-card-actions">
               <button type="button" className={primaryClass} onClick={handlePrimaryClick}>{primaryLabel}</button>
-              <button type="button" className="cn-btn-ghost"><i className="fa-solid fa-flag"></i></button>
+              <button type="button" className="cn-btn-ghost" onClick={handleReportClick} title="Báo cáo"><i className="fa-solid fa-flag"></i></button>
             </div>
           )}
         </div>
@@ -494,7 +535,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf=false,
     <article className="cn-card cn-card--list">
       {isPinned && <div className="cn-card-pin" title={pinText||"Đã ghim"}><i className="fa-solid fa-thumbtack" /></div>}
 
-      <div className="cn-avatar"><img src={imageUrl} alt={nickname} className="cn-avatar-img" /></div>
+      <div className="cn-avatar"><img src={thumbSrc} alt={nickname} className="cn-avatar-img" /></div>
 
       <div className="cn-card-main">
         <div className="cn-card-header">
@@ -532,7 +573,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, isSelf=false,
         {!isSelf && !isPinned && inviteType && (
           <div className="cn-card-actions">
             <button type="button" className={primaryClass} onClick={handlePrimaryClick}>{primaryLabel}</button>
-            <button type="button" className="cn-btn-ghost">Báo cáo</button>
+            <button type="button" className="cn-btn-ghost" onClick={handleReportClick}>Báo cáo</button>
           </div>
         )}
       </div>
