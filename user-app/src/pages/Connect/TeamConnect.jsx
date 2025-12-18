@@ -69,6 +69,7 @@ export default function TeamConnect({ onLeftRoom }){
   const nav=useNavigate();
   const [loading,setLoading]=useState(true);
   const [room,setRoom]=useState(null);
+  const roomId=room?._id?String(room._id):null;
   const [me,setMe]=useState(null);
 
   const [menuOpen,setMenuOpen]=useState(false);
@@ -100,6 +101,24 @@ export default function TeamConnect({ onLeftRoom }){
 
   const [manageOpen,setManageOpen]=useState(false);
   const [manageSaving,setManageSaving]=useState(false);
+
+  const [streakLoading,setStreakLoading]=useState(false);
+  const [streakErr,setStreakErr]=useState("");
+  const [streakData,setStreakData]=useState(null);
+
+  const loadTeamStreaks=async(id)=>{
+    if(!id) return;
+    setStreakErr(""); setStreakLoading(true);
+    try{
+      const res=await api.get(`/match/rooms/${id}/streaks`);
+      const data=pickOkData(res)||{};
+      setStreakData(data);
+    }catch(e){
+      setStreakErr(e?.response?.data?.message||"Không thể tải streak của nhóm.");
+    }finally{ setStreakLoading(false); }
+  };
+
+  useEffect(()=>{ if(topTab==="setup" && roomId) loadTeamStreaks(roomId); },[topTab,roomId]);
 
   const myId=me?._id||me?.id||null;
 
@@ -141,6 +160,30 @@ export default function TeamConnect({ onLeftRoom }){
     });
   },[room]);
 
+  const streakMembers=useMemo(()=>{
+  const list=safeArr(streakData?.members);
+    if(list.length) return list.map(x=>({
+      id:String(x?.id||""),
+      name:x?.name||"Người dùng FitMatch",
+      avatarUrl:toAbs(x?.avatarUrl)||null,
+      role:x?.role||"member",
+      joinedAt:x?.joinedAt||null,
+      hasToday:!!x?.hasToday,
+      currentStreak:Number(x?.currentStreak||0),
+      bestStreak:Number(x?.bestStreak||0),
+    }));
+    return members.map(m=>({
+      id:String(m?.id||""),
+      name:m?.name||"Người dùng FitMatch",
+      avatarUrl:m?.avatarUrl||null,
+      role:m?.role||"member",
+      joinedAt:null,
+      hasToday:false,
+      currentStreak:0,
+      bestStreak:0,
+    }));
+  },[streakData,members]);
+
   const ownerUser=useMemo(()=>{
   const m=safeArr(room?.members).find(x=>x?.role==="owner")||safeArr(room?.members)[0]||null;
   const u=m?.user||{}; const p=u?.profile||{};
@@ -173,8 +216,6 @@ export default function TeamConnect({ onLeftRoom }){
     };
   },[room]);
 
-  const roomId=team?.id||null;
-
   const slots=useMemo(()=>{
     const max=Math.max(2,Math.min(10,Number(team?.maxMembers||5)));
     const owner=members.find(m=>m.role==="owner")||null;
@@ -183,17 +224,42 @@ export default function TeamConnect({ onLeftRoom }){
     return Array.from({length:max},(_,i)=>filled[i]||null);
   },[members,team]);
 
+  const loadMyViews=async(id)=>{
+    if(!id) return;
+    try{
+      const res=await api.get(`/match/rooms/${id}/views/me`);
+      const data=pickOkData(res)||{};
+      setViewCount(Number(data.count||0)||0);
+    }catch{}
+  };
+
+  useEffect(()=>{ if(roomId) loadMyViews(roomId); },[roomId]);
+
+  // migrate localStorage cũ -> DB (chạy 1 lần khi có roomId)
   useEffect(()=>{
     if(!roomId) return;
     const k=`fm_team_views_${roomId}`;
-    try{ setViewCount(Number(localStorage.getItem(k)||0)||0); }catch{}
+    let local=0;
+    try{ local=Number(localStorage.getItem(k)||0)||0; }catch{}
+    if(local<=0) return;
+    (async()=>{
+      try{
+        await api.post(`/match/rooms/${roomId}/views/sync`,{count:local});
+        try{ localStorage.removeItem(k); }catch{}
+        await loadMyViews(roomId);
+      }catch{}
+    })();
   },[roomId]);
 
-  const bumpView=()=>{
-    if(!roomId || viewedOnceRef.current) return;
+  const bumpView=async()=>{
+    if(!roomId||viewedOnceRef.current) return;
     viewedOnceRef.current=true;
-    const k=`fm_team_views_${roomId}`;
-    try{ const next=(Number(localStorage.getItem(k)||0)||0)+1; localStorage.setItem(k,String(next)); setViewCount(next); }catch{}
+    try{
+      const res=await api.post(`/match/rooms/${roomId}/views/bump`);
+      const data=pickOkData(res)||{};
+      if(data?.count!=null) setViewCount(Number(data.count||0)||0);
+      else await loadMyViews(roomId);
+    }catch{}
   };
 
   const loadRequests=async(id)=>{
@@ -445,15 +511,13 @@ export default function TeamConnect({ onLeftRoom }){
               </div>
 
               <div className="tc-timeline">
-                <div className="tc-timeline-bar" />
-                <div className="tc-timeline-days" style={{gridTemplateColumns:`repeat(${slots.length}, minmax(0,1fr))`}}>
-                  {slots.map((_,i)=>(
-                    <div key={i} className="tc-timeline-day">
-                      <span className="tc-timeline-tri" />
-                      <span className="tc-timeline-label">DAY {i+1}</span>
-                    </div>
-                  ))}
-                </div>
+                <TeamStreakTimeline
+                  loading={streakLoading}
+                  err={streakErr}
+                  members={streakMembers}
+                  myId={myId}
+                  onRefresh={()=>loadTeamStreaks(roomId)}
+                />
               </div>
             </div>
           )}
@@ -810,5 +874,171 @@ function ResolvedTeamReqCard({ r, variant="accepted" }){
         <span className={"tc-pr-status "+(variant==="accepted"?"is-accepted":"is-rejected")}>{pill}</span>
       </div>
     </article>
+  );
+}
+
+function TeamStreakTimeline({ members, myId, loading, err, onRefresh }){
+  const [helpOpen,setHelpOpen]=useState(false);
+  const list=Array.isArray(members)?members:[];
+  const maxBest=Math.max(0,...list.map(x=>Number(x?.bestStreak||0)));
+  const rangeMax=Math.max(10,Math.ceil((maxBest||10)/10)*10);
+
+  const lanes=Math.max(1,list.length);
+  const laneH=44;
+  const barTop=lanes*laneH+18;
+  const height=barTop+54;
+
+  const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+  const pos=(v)=>rangeMax?clamp(Number(v||0),0,rangeMax)/rangeMax:0;
+
+  const roundNice=(v)=>{if(rangeMax<=20)return Math.round(v/5)*5;return Math.round(v/10)*10;};
+  const buildMajors=()=>{
+    const raw=[1,rangeMax*0.25,rangeMax*0.5,rangeMax*0.75,rangeMax].map(v=>clamp(roundNice(v),1,rangeMax));
+    const seen=new Set();const arr=[];
+    for(const v of raw){if(!seen.has(v)){seen.add(v);arr.push(v);}}
+    arr.sort((a,b)=>a-b);
+    if(arr[0]!==1)arr.unshift(1);
+    if(arr[arr.length-1]!==rangeMax)arr.push(rangeMax);
+    return arr;
+  };
+
+  const minorTicks=rangeMax<=10?Array.from({length:10},(_,i)=>({value:i+1,label:String(i+1),major:true})):Array.from({length:10},(_,i)=>({value:Math.round((i+1)*rangeMax/10),label:"",major:false}));
+  const majorTicks=rangeMax<=10?[]:buildMajors().map(v=>({value:v,label:String(v),major:true}));
+
+  const ticks=[...minorTicks,...majorTicks].reduce((acc,t)=>{
+    const k=String(t.value);
+    if(!acc._seen.has(k)){acc._seen.add(k);acc.items.push(t);}
+    else if(t.major){const idx=acc.items.findIndex(x=>String(x.value)===k);if(idx>-1)acc.items[idx]=t;}
+    return acc;
+  },{items:[],_seen:new Set()}).items.sort((a,b)=>a.value-b.value);
+
+  const me=list.find(x=>myId&&String(x?.id)===String(myId))||null;
+  const myBest=Number(me?.bestStreak||0);
+  const myBestPos=pos(myBest);
+  const hueFromId=(id)=>{const s=String(id||"");let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h;};
+  const myColor=me?.role==="owner"?"rgba(239,68,68,.95)":`hsl(${hueFromId(myId)} 85% 60%)`;
+
+  const HelpBox=() => (
+    <div className="tc-streak-help">
+      <div className="tc-streak-help-top">
+        <div className="tc-streak-help-title"><i className="fa-solid fa-circle-exclamation" /> Hướng dẫn đua streak</div>
+        <button type="button" className="tc-streak-help-close" onClick={()=>setHelpOpen(false)} aria-label="Đóng"><i className="fa-solid fa-xmark" /></button>
+      </div>
+      <ul className="tc-streak-help-list">
+        <li><b>Streak</b> tính từ ngày bạn tham gia nhóm và có log hoạt động trong ngày.</li>
+        <li>Avatar đứng ở vị trí <b>kỷ lục cao nhất (Cao nhất)</b> nên sẽ “không bị rớt”.</li>
+        <li>Muốn chạy tiếp, bạn cần <b>vượt kỷ lục cũ</b> để kỷ lục tăng lên.</li>
+        <li>Chấm “ghost” (nếu có) là <b>streak hiện tại</b> đang chạy để đuổi kỷ lục.</li>
+        <li>Trong danh sách bên dưới: <b>Đã log hôm nay</b> / <b>Chưa log hôm nay</b> để biết ai đã hoạt động.</li>
+      </ul>
+    </div>
+  );
+
+  if(err) return (
+    <>
+      <div className="tc-streak-wrap">
+        <div className="tc-streak-head">
+          <div>
+            <div className="tc-streak-title"><i className="fa-solid fa-fire" /> Đua Streak</div>
+            <div className="tc-streak-sub">{err}</div>
+          </div>
+          <div className="tc-streak-right">
+            <button type="button" className="tc-streak-refresh" onClick={onRefresh}><i className="fa-solid fa-rotate" /> Thử lại</button>
+            <button type="button" className={"tc-streak-helpbtn"+(helpOpen?" is-on":"")} onClick={()=>setHelpOpen(v=>!v)} aria-label="Hướng dẫn">
+              <span className="tc-streak-help-ripple" aria-hidden="true" />
+              <i className="fa-solid fa-circle-exclamation" />
+            </button>
+          </div>
+        </div>
+      </div>
+      {helpOpen && <HelpBox/>}
+    </>
+  );
+
+  return (
+    <>
+      <div className="tc-streak-wrap">
+        <div className="tc-streak-head">
+          <div>
+            <div className="tc-streak-title"><i className="fa-solid fa-fire" /> Đua Streak</div>
+            <div className="tc-streak-sub">Streak tính từ lúc tham gia nhóm. Avatar đứng ở <b>Streak cao nhất</b> (không bị rớt), muốn chạy tiếp phải vượt kỷ lục cũ.</div>
+          </div>
+          <div className="tc-streak-right">
+            <div className="tc-streak-range">Mốc: 1 → {rangeMax}</div>
+            <button type="button" className="tc-streak-refresh" onClick={onRefresh} disabled={loading}>
+              <i className={"fa-solid fa-rotate"+(loading?" fa-spin":"")} /> {loading?"Đang tải":"Làm mới"}
+            </button>
+            <button type="button" className={"tc-streak-helpbtn"+(helpOpen?" is-on":"")} onClick={()=>setHelpOpen(v=>!v)} aria-label="Hướng dẫn">
+              <span className="tc-streak-help-ripple" aria-hidden="true" />
+              <i className="fa-solid fa-circle-exclamation" />
+            </button>
+          </div>
+        </div>
+
+        <div className="tc-streak-canvas">
+          <div className="tc-streak-inner" style={{height,["--barTop"]:`${barTop}px`}}>
+            <div className="tc-streak-bar">
+              {!!me && myBestPos>0 && (
+                <div className="tc-streak-bar-fill" style={{width:`${myBestPos*100}%`,background:myColor}} />
+              )}
+            </div>
+
+            {ticks.map(t=>{
+              const left=`calc(var(--pad) + (100% - (var(--pad) * 2)) * ${pos(t.value)})`;
+              return (
+                <div key={`${t.value}-${t.major?"M":"m"}`} className={"tc-streak-tick"+(t.major?" is-major":"")} style={{left}}>
+                  <span className="tri" />
+                  {!!t.label && <span className="lbl">{t.label}</span>}
+                </div>
+              );
+            })}
+
+            {list.map((m,i)=>{
+              const isMe=!!(myId&&String(myId)===String(m.id));
+              const bestLeft=`calc(var(--pad) + (100% - (var(--pad) * 2)) * ${pos(m.bestStreak)})`;
+              const curLeft=`calc(var(--pad) + (100% - (var(--pad) * 2)) * ${pos(m.currentStreak)})`;
+              const top=i*laneH;
+              const connTop=top+34;
+              const connH=Math.max(0,barTop-connTop);
+              const ava=m.avatarUrl||"/images/avatar.png";
+
+              return (
+                <div key={m.id||i}>
+                  <div className="tc-streak-conn" style={{left:bestLeft,top:connTop,height:connH}} />
+                  {Number(m.currentStreak||0)>0 && Number(m.currentStreak||0)<Number(m.bestStreak||0) && (
+                    <div className="tc-streak-ghost" style={{left:curLeft,top:top+12}} title={`${m.name} • Streak hiện tại: ${m.currentStreak} • Kỷ lục: ${m.bestStreak}`} />
+                  )}
+                  <div className={"tc-streak-runner"+(m.role==="owner"?" is-owner":"")+(isMe?" is-me":"")} style={{left:bestLeft,top}} title={`${m.name}${m.role==="owner"?" • Chủ nhóm":""} • Hiện tại: ${m.currentStreak} • Cao nhất: ${m.bestStreak}${m.hasToday?" • Đã log hôm nay":" • Chưa log hôm nay"}`}>
+                    <img src={ava} alt={m.name} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="tc-streak-legend">
+            {list.map(m=>{
+              const isMe=!!(myId&&String(myId)===String(m.id));
+              const hot=Number(m.currentStreak||0)>=2;
+              return (
+                <div key={m.id} className={"tc-streak-item"+(isMe?" is-me":"")}>
+                  <img src={m.avatarUrl||"/images/avatar.png"} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} alt={m.name}/>
+                  <div className="tc-streak-item-main">
+                    <div className="tc-streak-item-name">{m.name}{m.role==="owner"?" (Chủ nhóm)":""}</div>
+                    <div className="tc-streak-item-meta">
+                      <span className={"pill"+(hot?" hot":"")}>Hiện tại: {m.currentStreak||0}</span>
+                      <span className="pill">Cao nhất: {m.bestStreak||0}</span>
+                      <span className={"pill"+(m.hasToday?" ok":"")}>{m.hasToday?"Đã log hôm nay":"Chưa log hôm nay"}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {helpOpen && <HelpBox/>}
+    </>
   );
 }

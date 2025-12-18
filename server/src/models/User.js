@@ -202,6 +202,9 @@ const userSchema = new mongoose.Schema(
     // Mô tả ngắn khi hiển thị trong Connect
     connectBio: { type: String, trim: true, maxlength: 300, default: "" },
 
+    connectMeta:{
+      teamViews:{ type: Map, of: Number, default: () => ({}) }, // key = roomId, value = viewCount
+    },
     /* ========= PROFILE ========= */
 
     profile: profileSchema,

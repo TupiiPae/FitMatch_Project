@@ -4,6 +4,9 @@ import MatchRequest from "../models/MatchRequest.js";
 import { User } from "../models/User.js";
 import { responseOk } from "../utils/response.js";
 import { uploadImageWithResize } from "../utils/cloudinary.js";
+import NutritionLog from "../models/NutritionLog.js";
+import dayjs from "dayjs";
+
 
 // ===== Helpers =====
 async function findActiveRoomOfUser(userId){
@@ -788,5 +791,71 @@ export async function manageGroupMembers(req,res,next){
       .lean();
 
     return responseOk(res, populated);
+  }catch(err){ next(err); }
+}
+
+// GET /api/match/rooms/:id/streaks
+export async function getRoomStreaks(req,res,next){
+  try{
+    const userId=getUserIdFromReq(req);
+    if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+    const { id: roomId } = req.params;
+
+    const room = await MatchRoom.findById(roomId)
+      .populate({ path:"members.user", select:"username email profile.nickname profile.avatarUrl" })
+      .lean();
+    if(!room) return res.status(404).json({ success:false, message:"Không tìm thấy nhóm" });
+    if(room.type!=="group") return res.status(400).json({ success:false, message:"Chỉ nhóm mới có streak" });
+
+    const isMember=(room.members||[]).some(m=>{
+      const u=m.user||{}; const uid=u._id||u.id||u;
+      return String(uid)===String(userId);
+    });
+    if(!isMember) return res.status(403).json({ success:false, message:"Bạn không thuộc nhóm này." });
+
+    const today = dayjs().startOf("day");
+    const out = await Promise.all((room.members||[]).map(async (m)=>{
+      const u=m.user||{};
+      const uid = u._id||u.id||u;
+      const name = u?.profile?.nickname || u?.username || u?.email || "Người dùng FitMatch";
+      const avatarUrl = u?.profile?.avatarUrl || null;
+
+      const joinedAt = m?.joinedAt || room.createdAt || new Date();
+      const joinDay = dayjs(joinedAt).startOf("day");
+      const joinISO = joinDay.format("YYYY-MM-DD");
+
+      const dates = await NutritionLog.distinct("date",{ user: uid, date:{ $gte: joinISO } });
+      const set = new Set((dates||[]).map(String));
+
+      // current streak từ hôm nay lùi về (nhưng không vượt trước ngày join)
+      let current=0;
+      for(let d=today; !d.isBefore(joinDay,"day"); d=d.subtract(1,"day")){
+        const iso=d.format("YYYY-MM-DD");
+        if(set.has(iso)) current++;
+        else break;
+      }
+
+      // best streak (max) kể từ ngày join tới hôm nay
+      let best=0, run=0;
+      for(let d=joinDay; !d.isAfter(today,"day"); d=d.add(1,"day")){
+        const iso=d.format("YYYY-MM-DD");
+        if(set.has(iso)){ run++; if(run>best) best=run; }
+        else run=0;
+      }
+
+      return {
+        id: String(uid),
+        name,
+        avatarUrl,
+        role: m?.role || "member",
+        joinedAt,
+        hasToday: set.has(today.format("YYYY-MM-DD")),
+        currentStreak: Number(current||0),
+        bestStreak: Number(best||0),
+      };
+    }));
+
+    const maxBest = out.reduce((mx,x)=>Math.max(mx,Number(x?.bestStreak||0)),0);
+    return responseOk(res,{ members: out, maxBest, today: today.format("YYYY-MM-DD") });
   }catch(err){ next(err); }
 }

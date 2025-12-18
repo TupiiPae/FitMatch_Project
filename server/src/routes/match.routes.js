@@ -17,7 +17,9 @@ import {
   listRoomRequests,
   updateGroupRoom,
   manageGroupMembers,
+  getRoomStreaks,
 } from "../controllers/match.controller.js";
+import { getMyRoomView,bumpMyRoomView,syncMyRoomView } from "../controllers/match.room.views.controller.js";
 
 const router = Router();
 router.use(auth);
@@ -44,5 +46,10 @@ router.get("/match/rooms/:id/requests", listRoomRequests);
 router.patch("/match/rooms/:id", uploadTeamCoverSingle, updateGroupRoom);
 router.patch("/match/rooms/:id/members/manage", manageGroupMembers);
 
+router.get("/match/rooms/:id/streaks", getRoomStreaks);
+
+router.get("/match/rooms/:id/views/me", getMyRoomView);
+router.post("/match/rooms/:id/views/bump", bumpMyRoomView);
+router.post("/match/rooms/:id/views/sync", syncMyRoomView);
 
 export default router;
