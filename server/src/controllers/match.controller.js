@@ -270,6 +270,7 @@ export async function createGroupRoom(req, res, next){
       { quality: 85 }
     );
 
+    const now=new Date();
     const room = await MatchRoom.create({
       type:"group",
       name,
@@ -284,7 +285,7 @@ export async function createGroupRoom(req, res, next){
       goalKey,
       goalLabel,
       createdBy:userId,
-      members:[{ user:userId, role:"owner" }],
+      members:[{ user:userId, role:"owner", joinedAt: now }], // ✅ add joinedAt
       status: maxMembers<=1 ? "full" : "active",
     });
 
@@ -349,8 +350,12 @@ export async function createMatchRequest(req, res, next){
 
     // nếu room open -> join thẳng, không tạo request
     if((room.joinPolicy||"request")==="open"){
-      const isMember = (room.members||[]).some(m=>String(m.user)===String(fromUserId));
-      if(!isMember) room.members.push({ user: fromUserId, role:"member" });
+      const now=new Date();
+      const members=room.members||[];
+      const existed = members.find(m=>String(m.user)===String(fromUserId));
+      if(!existed) members.push({ user: fromUserId, role:"member", joinedAt: now }); // ✅ add joinedAt
+      else if(!existed.joinedAt) existed.joinedAt = now;
+      room.members = members;
 
       if(room.members.length >= (room.maxMembers||5)){
         room.status="full"; room.closedAt=new Date();
@@ -447,10 +452,14 @@ export async function acceptRequest(req, res, next){
         return res.status(409).json({ ok:false, error:"user_already_in_room", message:"Một trong hai người đã tham gia kết nối. Lời mời hết hiệu lực." });
       }
 
+      const now=new Date();
       room = await MatchRoom.create({
         type:"duo",
         createdBy:reqDoc.fromUser._id,
-        members:[ { user:reqDoc.fromUser._id, role:"owner" }, { user:reqDoc.toUser._id, role:"member" } ],
+        members:[
+          { user:reqDoc.fromUser._id, role:"owner", joinedAt: now },  // ✅ add joinedAt
+          { user:reqDoc.toUser._id, role:"member", joinedAt: now },   // ✅ add joinedAt
+        ],
         maxMembers:2,
       });
     }else{
@@ -463,8 +472,12 @@ export async function acceptRequest(req, res, next){
         return res.status(409).json({ ok:false, error:"group_full", message:"Nhóm đã đủ người." });
       }
 
-      const existedMember = (room.members||[]).some(m=>String(m.user)===String(reqDoc.fromUser._id));
-      if(!existedMember) room.members.push({ user:reqDoc.fromUser._id, role:"member" });
+      const now=new Date();
+      const members=room.members||[];
+      const existed = members.find(m=>String(m.user)===String(reqDoc.fromUser._id));
+      if(!existed) members.push({ user:reqDoc.fromUser._id, role:"member", joinedAt: now }); // ✅ add joinedAt
+      else if(!existed.joinedAt) existed.joinedAt = now;
+      room.members = members;
 
       if(room.members.length >= room.maxMembers){ room.status="full"; room.closedAt=new Date(); }
       else { room.status="active"; room.closedAt=null; }
@@ -804,14 +817,19 @@ export async function getRoomStreaks(req,res,next){
     const room = await MatchRoom.findById(roomId)
       .populate({ path:"members.user", select:"username email profile.nickname profile.avatarUrl" })
       .lean();
-    if(!room) return res.status(404).json({ success:false, message:"Không tìm thấy nhóm" });
-    if(room.type!=="group") return res.status(400).json({ success:false, message:"Chỉ nhóm mới có streak" });
+
+    if(!room) return res.status(404).json({ success:false, message:"Không tìm thấy phòng" });
+
+    // ✅ hỗ trợ cả duo + group (không còn trả "Chỉ nhóm mới có streak")
+    if(!["group","duo"].includes(room.type)){
+      return res.status(400).json({ success:false, message:"Phòng này không hỗ trợ streak" });
+    }
 
     const isMember=(room.members||[]).some(m=>{
       const u=m.user||{}; const uid=u._id||u.id||u;
       return String(uid)===String(userId);
     });
-    if(!isMember) return res.status(403).json({ success:false, message:"Bạn không thuộc nhóm này." });
+    if(!isMember) return res.status(403).json({ success:false, message:"Bạn không thuộc phòng này." });
 
     const today = dayjs().startOf("day");
     const out = await Promise.all((room.members||[]).map(async (m)=>{
@@ -856,6 +874,15 @@ export async function getRoomStreaks(req,res,next){
     }));
 
     const maxBest = out.reduce((mx,x)=>Math.max(mx,Number(x?.bestStreak||0)),0);
-    return responseOk(res,{ members: out, maxBest, today: today.format("YYYY-MM-DD") });
+    const maxCurrent = out.reduce((mx,x)=>Math.max(mx,Number(x?.currentStreak||0)),0);
+
+    return responseOk(res,{
+      roomId: String(room._id),
+      roomType: room.type,
+      members: out,
+      maxBest,
+      maxCurrent,
+      today: today.format("YYYY-MM-DD"),
+    });
   }catch(err){ next(err); }
 }
