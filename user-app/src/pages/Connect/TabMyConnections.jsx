@@ -5,7 +5,13 @@ import { getMyRequests, acceptMatchRequest, rejectMatchRequest, cancelMatchReque
 import { toast } from "react-toastify";
 import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
 import DuoConnect from "./DuoConnect";
-import TeamConnect from "./TeamConnect"; // ✅ thêm
+import TeamConnect from "./TeamConnect";
+import api from "../../lib/api";
+
+const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
+const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
+const normType=(t)=>{if(!t)return null;const s=String(t).toLowerCase();if(s==="duo"||s==="one_to_one"||s==="one-to-one"||s==="1:1")return"duo";if(s==="group"||s==="team")return"group";return s;};
+const DEFAULT_AVATAR="/images/avatar.png";
 
 export default function TabMyConnections({ currentUser, activeRoomId, activeRoomType, onEnteredRoom, onLeftRoom }) {
   const nav = useNavigate();
@@ -57,8 +63,8 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
       if (mode === "accept_duo") {
         const res = await acceptMatchRequest(requestId);
         const payload = res?.data ?? res;
-        const roomId = payload?.roomId || payload?.data?.roomId || null;
-        const roomType = payload?.roomType || payload?.data?.roomType || "duo";
+        const roomId = payload?.roomId || payload?.data?.roomId || payload?.room?._id || payload?.room?.id || null;
+        const roomType = normType(payload?.roomType || payload?.data?.roomType || payload?.type || "duo") || "duo";
         toast.success("Đã xác nhận lời mời kết nối.");
         if (onEnteredRoom && roomId) onEnteredRoom(roomId, roomType);
         closeConfirm();
@@ -85,24 +91,19 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
     }
   }
 
-  const incomingRequests = incoming.filter((r) => r.type === "duo");
-  const outgoingUserRequests = outgoing.filter((r) => r.type === "duo");
-  const outgoingGroupRequests = outgoing.filter((r) => r.type === "group");
+  const incomingRequests = incoming.filter((r) => normType(r.type) === "duo");
+  const outgoingUserRequests = outgoing.filter((r) => normType(r.type) === "duo");
+  const outgoingGroupRequests = outgoing.filter((r) => normType(r.type) === "group");
   const hasRequests = incomingRequests.length + outgoingUserRequests.length + outgoingGroupRequests.length > 0;
 
-  // ✅ nếu đang ở phòng duo -> nhúng DuoConnect
-  const isInDuoRoom = !!activeRoomId && activeRoomType === "duo";
-  if (isInDuoRoom) {
-    return <section className="cn-myconnections"><DuoConnect onLeftRoom={handleLeftRoomInternal} /></section>;
-  }
+  const roomTypeNorm = normType(activeRoomType);
+  const isInDuoRoom = !!activeRoomId && roomTypeNorm === "duo";
+  if (isInDuoRoom) return <section className="cn-myconnections"><DuoConnect onLeftRoom={handleLeftRoomInternal} /></section>;
 
-  // ✅ nếu đang ở phòng group -> nhúng TeamConnect (giữ sidebar)
-  const isInGroupRoom = !!activeRoomId && activeRoomType === "group";
-  if (isInGroupRoom) {
-    return <section className="cn-myconnections"><TeamConnect onLeftRoom={handleLeftRoomInternal} /></section>;
-  }
+  const isInGroupRoom = !!activeRoomId && roomTypeNorm === "group";
+  if (isInGroupRoom) return <section className="cn-myconnections"><TeamConnect onLeftRoom={handleLeftRoomInternal} /></section>;
 
-  const handleOpenTeamConnectDemo = () => nav("/ket-noi/nhom"); // giờ route này vẫn là ConnectSidebar
+  const handleOpenTeamConnectDemo = () => nav("/ket-noi/nhom");
   return (
     <section className="cn-myconnections">
       <header className="cn-main-header">
@@ -114,17 +115,11 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
       {errorMsg && !loading && <div className="cn-error" style={{ marginTop: 6 }}><p>{errorMsg}</p></div>}
 
       {!loading && !errorMsg && !hasRequests && (
-        <>
-          <p className="cn-myconnections-placeholder">
-            Hiện bạn chưa có bất kỳ lời mời kết nối nào. Hãy dùng tab <strong>Tìm kiếm xung quanh</strong> để gửi lời mời hoặc tham gia nhóm mới.
-          </p>
-          <button type="button" className="cn-btn-ghost" style={{ marginTop: 10 }} onClick={handleOpenTeamConnectDemo}>
-            Xem giao diện Kết nối nhóm (demo)
-          </button>
-        </>
+        <p className="cn-myconnections-placeholder">
+          Hiện bạn chưa có bất kỳ lời mời kết nối nào. Hãy dùng tab <strong>Tìm kiếm xung quanh</strong> để gửi lời mời hoặc tham gia nhóm mới.
+        </p>
       )}
 
-      {/* ===== Box 1: incoming duo ===== */}
       {!loading && !errorMsg && incomingRequests.length > 0 && (
         <div className="cn-myconnections-card">
           <div className="cn-requests-section">
@@ -136,12 +131,14 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const fromUser = req.fromUser || {};
                 const profile = fromUser.profile || {};
                 const nickname = profile.nickname || fromUser.username || "Người dùng FitMatch";
-                const avatarUrl = profile.avatarUrl || null;
+                const avatarAbs = profile.avatarUrl ? toAbs(profile.avatarUrl) : null;
+                const thumbSrc = (String(avatarAbs || "").trim() || DEFAULT_AVATAR);
                 const createdAtText = formatViDateTime(req.createdAt);
-                const note = req.message || "Người dùng này muốn kết nối 1:1 với bạn.";
                 return (
                   <article key={req._id} className="cn-request-row">
-                    {avatarUrl && <div className="cn-request-thumb"><img src={avatarUrl} alt={nickname} /></div>}
+                    <div className="cn-request-thumb">
+                      <img src={thumbSrc} alt={nickname} onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}} />
+                    </div>
                     <div className="cn-request-main-col">
                       <div className="cn-request-type">Lời mời đến</div>
                       <h4 className="cn-request-title"><strong>{nickname}</strong> muốn kết nối 1:1 với bạn</h4>
@@ -162,7 +159,6 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
         </div>
       )}
 
-      {/* ===== Box 2: outgoing duo ===== */}
       {!loading && !errorMsg && outgoingUserRequests.length > 0 && (
         <div className="cn-myconnections-card">
           <div className="cn-requests-section">
@@ -174,11 +170,14 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const toUser = req.toUser || {};
                 const profile = toUser.profile || {};
                 const nickname = profile.nickname || toUser.username || "Người dùng FitMatch";
-                const avatarUrl = profile.avatarUrl || null;
+                const avatarAbs = profile.avatarUrl ? toAbs(profile.avatarUrl) : null;
+                const thumbSrc = (String(avatarAbs || "").trim() || DEFAULT_AVATAR);
                 const createdAtText = formatViDateTime(req.createdAt);
                 return (
                   <article key={req._id} className="cn-request-row">
-                    {avatarUrl && <div className="cn-request-thumb"><img src={avatarUrl} alt={nickname} /></div>}
+                    <div className="cn-request-thumb">
+                      <img src={thumbSrc} alt={nickname} onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}} />
+                    </div>
                     <div className="cn-request-main-col">
                       <div className="cn-request-type">Lời mời bạn gửi đi</div>
                       <h4 className="cn-request-title">Gửi lời mời kết nối với người dùng <strong>{nickname}</strong></h4>
@@ -198,20 +197,16 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
         </div>
       )}
 
-      {/* ===== Box 3: outgoing group ===== */}
       {!loading && !errorMsg && outgoingGroupRequests.length > 0 && (
         <div className="cn-myconnections-card">
           <div className="cn-requests-section">
             <h3 className="cn-requests-title">Bạn đã gửi lời mời tham gia nhóm</h3>
-            <p className="cn-requests-desc">Đây là các lời mời tham gia phòng kết nối nhóm. Bạn chỉ có thể <strong>hủy lời mời</strong>. Khi quản lý nhóm duyệt, bạn sẽ được đưa vào phòng Kết nối nhóm.</p>
 
             <div className="cn-requests-list">
               {outgoingGroupRequests.map((req) => {
                 const room = req.toRoom || {};
                 const groupName = room.name || "Nhóm tập luyện";
-                const imageUrl = room.coverImageUrl || null;
-                const membersCount = room.members?.length || 0;
-                const schedule = room.scheduleText || "Lịch tập chưa cập nhật";
+                const imageUrl = toAbs(room.coverImageUrl || room.imageUrl || null);
                 const createdAtText = formatViDateTime(req.createdAt);
                 const note = req.message || "Bạn đã gửi lời mời tham gia nhóm, đang chờ quản lý nhóm duyệt.";
                 return (
@@ -221,14 +216,12 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                       <div className="cn-request-type">Lời mời bạn gửi đi</div>
                       <h4 className="cn-request-title">Gửi lời mời kết nối với Nhóm <strong>{groupName}</strong></h4>
                       <p className="cn-request-main">{note}</p>
-                      <p className="cn-request-meta">Thành viên hiện tại: {membersCount} · {schedule}</p>
                       <div className="cn-request-footer">
                         <span className="cn-request-meta">Gửi {createdAtText}</span>
-                        <span className="cn-request-status-pill cn-request-status-pending">Đang chờ quản lý nhóm</span>
+                        <span className="cn-request-status-pill cn-request-status-pending">Đang chờ chủ nhóm duyệt</span>
                       </div>
                       <div className="cn-request-actions">
                         <button type="button" className="cn-btn-cancel" onClick={() => openConfirm("cancel_group", req, groupName)}>Hủy lời mời tham gia nhóm</button>
-                        <button type="button" className="cn-btn-ghost" onClick={handleOpenTeamConnectDemo}>Xem giao diện Kết nối nhóm</button>
                       </div>
                     </div>
                   </article>

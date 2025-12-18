@@ -500,6 +500,16 @@
   overflow: hidden;
 }
 
+/* ===== Group: members chip nằm góc phải dưới ảnh + meta 1 dòng ===== */
+.cn-card-img-title-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.cn-card-img-title-left{min-width:0;flex:1}
+.cn-card-img-title-left .cn-card-img-name-btn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cn-card-img-members-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;background:rgba(15,23,42,.92);border:1px solid rgba(148,163,184,.35);font-size:11px;color:#f9fafb;white-space:nowrap}
+.cn-card-img-members-chip i{font-size:11px;opacity:.95}
+.cn-card-meta-line--one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cn-card-img-subrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}
+.cn-card-img-subrow .cn-card-img-distance{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 .cn-card-pin {
   position: absolute;
   top: 8px;

@@ -1,6 +1,5 @@
-// user-app/src/pages/Connect/ConnectSidebar.jsx
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // ✅ thêm useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import "./Connect.css";
 import TabNearby from "./TabNearby";
 import TabMyConnections from "./TabMyConnections";
@@ -29,7 +28,7 @@ export default function ConnectSidebar(){
   const [hasRequestsTabEnabled,setHasRequestsTabEnabled]=useState(false);
 
   const [activeTab,setActiveTab]=useState("nearby"); // nearby | my-connections
-  const [connectionMode,setConnectionMode]=useState("one_to_one");
+  const [connectionMode,setConnectionMode]=useState("one_to_one"); // one_to_one | group
   const [locationRange,setLocationRange]=useState("any");
   const [ageRange,setAgeRange]=useState("all");
   const [genderFilter,setGenderFilter]=useState("all");
@@ -44,10 +43,11 @@ export default function ConnectSidebar(){
   const [showCreateTeam,setShowCreateTeam]=useState(false);
   const [nearbyReloadKey,setNearbyReloadKey]=useState(0);
 
-  // ✅ nếu user vào /ket-noi/duo hoặc /ket-noi/nhom -> mặc định mở tab "Kết nối của tôi"
+  // ✅ route /ket-noi/duo | /ket-noi/nhom -> mở tab "Kết nối của tôi" + sync connectionMode
   useEffect(()=>{
     const p=loc?.pathname||"";
-    if(p.includes("/ket-noi/duo")||p.includes("/ket-noi/nhom")) setActiveTab("my-connections");
+    if(p.includes("/ket-noi/duo")){setActiveTab("my-connections");setConnectionMode("one_to_one");}
+    if(p.includes("/ket-noi/nhom")){setActiveTab("my-connections");setConnectionMode("group");}
   },[loc?.pathname]);
 
   useEffect(()=>{let cancelled=false;(async()=>{
@@ -77,11 +77,11 @@ export default function ConnectSidebar(){
 
         if((data.pendingRequestsCount&&data.pendingRequestsCount>0)||roomId) setHasRequestsTabEnabled(true);
 
-        // ✅ duo/group đều mở TabMyConnections (giữ sidebar)
+        // ✅ nếu đang ở phòng duo/group -> mở TabMyConnections + sync mode + sync url
         if(roomId && (roomType==="duo"||roomType==="group")){
           setActiveTab("my-connections");
           setShowCreateTeam(false);
-          // (tuỳ chọn) sync URL cho đẹp: duo -> /ket-noi/duo, group -> /ket-noi/nhom
+          setConnectionMode(roomType==="group"?"group":"one_to_one");
           const path=loc?.pathname||"";
           if(roomType==="duo" && !path.includes("/ket-noi/duo")) nav("/ket-noi/duo",{replace:true});
           if(roomType==="group" && !path.includes("/ket-noi/nhom")) nav("/ket-noi/nhom",{replace:true});
@@ -126,13 +126,14 @@ export default function ConnectSidebar(){
   const handleConfirmEnable=()=>{setShowConfirmModal(false);applyDiscoverable(true);};
   const handleCancelEnable=()=>setShowConfirmModal(false);
 
-  // ✅ vào phòng: duo/group đều chuyển sang tab my-connections, và sync URL tương ứng
+  // ✅ vào phòng: duo/group đều chuyển sang tab my-connections + sync mode + sync url
   const handleEnteredRoom=(roomId,roomType="duo")=>{
     if(!roomId) return;
     setActiveRoomId(roomId);setActiveRoomType(roomType);
     setHasRequestsTabEnabled(true);
     setShowCreateTeam(false);
     setActiveTab("my-connections");
+    setConnectionMode(roomType==="group"?"group":"one_to_one");
     if(roomType==="duo") nav("/ket-noi/duo");
     if(roomType==="group") nav("/ket-noi/nhom");
   };
@@ -142,7 +143,7 @@ export default function ConnectSidebar(){
   const openCreateTeam=()=>{
     if(activeRoomId && activeRoomType==="duo"){toast.info("Bạn đang ở phòng 1:1. Hãy rời phòng trước khi tạo/tham gia nhóm.");setActiveTab("my-connections");nav("/ket-noi/duo");return;}
     if(activeRoomId && activeRoomType==="group"){toast.info("Bạn đang ở phòng nhóm. Hãy rời nhóm trước khi tạo nhóm mới.");setActiveTab("my-connections");nav("/ket-noi/nhom");return;}
-    setActiveTab("nearby");setShowCreateTeam(true);
+    setActiveTab("nearby");setShowCreateTeam(true);setConnectionMode("group");
   };
   const closeCreateTeam=()=>setShowCreateTeam(false);
 
@@ -160,7 +161,7 @@ export default function ConnectSidebar(){
       const roomId=data?.activeRoomId||null;
       const roomType=data?.activeRoomType||null;
       setActiveRoomId(roomId);setActiveRoomType(roomType);
-      if(roomId && (roomType==="group"||roomType==="duo")){setHasRequestsTabEnabled(true);setActiveTab("my-connections");nav(roomType==="group"?"/ket-noi/nhom":"/ket-noi/duo");}
+      if(roomId && (roomType==="group"||roomType==="duo")){setHasRequestsTabEnabled(true);setActiveTab("my-connections");setConnectionMode(roomType==="group"?"group":"one_to_one");nav(roomType==="group"?"/ket-noi/nhom":"/ket-noi/duo");}
     }catch(e){console.error("handleCreatedTeam getMatchStatus error:",e);}
   };
 

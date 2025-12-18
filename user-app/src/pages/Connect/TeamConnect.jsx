@@ -331,7 +331,7 @@ export default function TeamConnect({ onLeftRoom }){
   };
 
   const leaveDisabled=isOwner && members.length>1;
-  const leaveTip="Bạn không thể rời khỏi nhóm này trừ khi bạn chỉ định vai trò chủ phòng cho thành viên khác.";
+  const leaveTip="Bạn không thể rời khỏi nhóm này trừ khi bạn \nchỉ định vai trò chủ phòng cho thành viên khác.";
 
   const applyManageMembers=async({ makeOwnerId, removeIds })=>{
     if(!roomId) return;
@@ -391,7 +391,12 @@ export default function TeamConnect({ onLeftRoom }){
                   type="button"
                   className={"tc-menu-item tc-menu-danger"+(leaveDisabled?" is-disabled":"")}
                   title={leaveDisabled?leaveTip:""}
-                  onClick={()=>{ if(leaveDisabled) return; setLeaveModalOpen(true); setMenuOpen(false); }}
+                  aria-disabled={leaveDisabled}
+                  onClick={()=>{
+                    if(leaveDisabled){ toast.info(leaveTip); return; }
+                    setLeaveModalOpen(true);
+                    setMenuOpen(false);
+                  }}
                 >
                   Rời nhóm
                 </button>
