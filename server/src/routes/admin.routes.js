@@ -93,7 +93,7 @@ router.get("/users", adminAuth, async (req, res) => {
       User.find(cond)
         .select(
           "_id username email phone blocked createdAt " +
-          "profile.nickname profile.sex " +
+          "profile.avatarUrl profile.nickname profile.sex " +
           "profile.address.country profile.address.city " +
           "profile.address.district profile.address.ward"
         )

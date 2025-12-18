@@ -38,6 +38,8 @@ import Contact from "./pages/pagesContact/Contact_List.jsx";
 // ===== FAQ
 import FAQ from "./pages/pagesFAQ/FAQ_List.jsx";
 
+import Report_List from "./pages/pagesReportUser/Report_List.jsx";
+
 // ===== Users
 import UsersList from "./pages/pagesUsers/User_List/User_List.jsx";
 
@@ -111,6 +113,8 @@ export default function App() {
 
           {/* FAQ */}
           <Route path="/faq" element={<FAQ />} />
+
+          <Route path="/reports" element={<Report_List />} />
         </Route>
 
         {/* Fallback */}

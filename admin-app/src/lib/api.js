@@ -730,3 +730,26 @@ export const deleteFaqQuestionAdmin = async (id) => {
   const r = await api.delete(`/api/admin/faq/questions/${id}`);
   return r.data?.data ?? r.data;
 };
+
+// =========================
+// REPORTS (ADMIN)
+// =========================
+export const listConnectReportsAdmin = async (params = {}) => {
+  const r = await api.get("/api/match/reports/admin", { params });
+  return r.data?.data ?? r.data;
+};
+
+export const updateConnectReportAdmin = async (id, body = {}) => {
+  const r = await api.patch(`/api/match/reports/${id}/admin`, body);
+  return r.data?.data ?? r.data;
+};
+
+export const deleteConnectReportAdmin = async (id) => {
+  const r = await api.delete(`/api/match/reports/${id}/admin`);
+  return r.data?.data ?? r.data;
+};
+
+export const deleteManyConnectReportsAdmin = async (ids = []) => {
+  const r = await api.delete("/api/match/reports/admin", { data: { ids } });
+  return r.data?.data ?? r.data;
+};

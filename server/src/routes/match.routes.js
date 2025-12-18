@@ -13,14 +13,19 @@ import {
   cancelRequest,
   getRoomDetail,
   leaveMatchRoom,
-  createGroupRoom, 
+  createGroupRoom,
   listRoomRequests,
   updateGroupRoom,
   manageGroupMembers,
   getRoomStreaks,
+
+  createConnectReport,
+  listConnectReportsAdmin,
+  updateConnectReportAdmin,
+  deleteConnectReportAdmin,
+  deleteManyConnectReportsAdmin,
 } from "../controllers/match.controller.js";
 import { getMyRoomView,bumpMyRoomView,syncMyRoomView } from "../controllers/match.room.views.controller.js";
-import { createConnectReport, listConnectReportsAdmin, updateConnectReportAdmin } from "../controllers/match.controller.js";
 
 const router = Router();
 router.use(auth);
@@ -56,5 +61,7 @@ router.post("/match/rooms/:id/views/sync", syncMyRoomView);
 router.post("/match/reports", createConnectReport);
 router.get("/match/reports/admin", listConnectReportsAdmin);
 router.patch("/match/reports/:id/admin", updateConnectReportAdmin);
+router.delete("/match/reports/:id/admin", deleteConnectReportAdmin);
+router.delete("/match/reports/admin", deleteManyConnectReportsAdmin);
 
 export default router;

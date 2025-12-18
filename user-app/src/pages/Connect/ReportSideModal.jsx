@@ -76,7 +76,7 @@ export default function ReportSideModal({ open, target, loading, onClose, onSubm
 
           <div className="rp-field">
             <div className="rp-label">Ghi chú (tuỳ chọn)</div>
-            <textarea className="rp-textarea" value={note} onChange={(e)=>setNote(e.target.value)} placeholder="Mô tả thêm để admin xử lý nhanh hơn..." maxLength={500} disabled={loading}/>
+            <textarea className="rp-textarea" value={note} onChange={(e)=>setNote(e.target.value)} placeholder="Mô tả thêm để quản trị viên xử lý nhanh hơn..." maxLength={500} disabled={loading}/>
           </div>
         </div>
 

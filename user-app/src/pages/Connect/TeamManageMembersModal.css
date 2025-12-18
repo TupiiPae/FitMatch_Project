@@ -6,7 +6,7 @@
 .tc-mm-x:hover{border-color:rgba(239,68,68,.55);}
 
 .tc-mm-body{padding:10px 12px;display:flex;flex-direction:column;gap:10px;max-height:min(62vh,520px);overflow:auto;}
-.tc-mm-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #1f2937;background:rgba(2,6,23,.55);border-radius:4px;}
+.tc-mm-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #F7F8F390;background:rgba(2,6,23,.55);border-radius:4px;}
 .tc-mm-row.is-owner{background:rgba(15,23,42,.45);}
 .tc-mm-row.is-pending{border-color:rgba(239,68,68,.35);box-shadow:0 0 0 3px rgba(239,68,68,.08) inset;}
 

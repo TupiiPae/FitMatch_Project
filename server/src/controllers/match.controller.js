@@ -1032,3 +1032,34 @@ export async function updateConnectReportAdmin(req,res,next){
     return responseOk(res,{ report: doc });
   }catch(err){ next(err); }
 }
+
+// DELETE /api/match/reports/:id/admin
+export async function deleteConnectReportAdmin(req,res,next){
+  try{
+    const userId=getUserIdFromReq(req);
+    if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+    if(!isAdminRole(req)) return res.status(403).json({ success:false, message:"Chỉ admin mới xóa được báo cáo." });
+
+    const { id } = req.params;
+    const doc = await ConnectReport.findById(id).select("_id").lean();
+    if(!doc) return res.status(404).json({ success:false, message:"Không tìm thấy báo cáo." });
+
+    await ConnectReport.deleteOne({ _id: id });
+    return responseOk(res,{ deletedId: String(id) });
+  }catch(err){ next(err); }
+}
+
+// DELETE /api/match/reports/admin  (body: { ids:[] })
+export async function deleteManyConnectReportsAdmin(req,res,next){
+  try{
+    const userId=getUserIdFromReq(req);
+    if(!userId) return res.status(401).json({ success:false, message:"Unauthorized" });
+    if(!isAdminRole(req)) return res.status(403).json({ success:false, message:"Chỉ admin mới xóa được báo cáo." });
+
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(x=>String(x||"")).filter(Boolean) : [];
+    if(!ids.length) return res.status(400).json({ success:false, message:"Thiếu danh sách ids." });
+
+    const rs = await ConnectReport.deleteMany({ _id: { $in: ids } });
+    return responseOk(res,{ deletedCount: Number(rs?.deletedCount||0), ids });
+  }catch(err){ next(err); }
+}

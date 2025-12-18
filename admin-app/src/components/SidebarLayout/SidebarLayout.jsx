@@ -27,6 +27,7 @@ import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
+import ReportGmailerrorredOutlinedIcon from "@mui/icons-material/ReportGmailerrorredOutlined";
 
 /* ----------------- Helpers chung ----------------- */
 
@@ -224,23 +225,8 @@ const buildManagementSections = (rawLevel) => {
 
 // Hỗ trợ: chỉ còn Liên hệ
 const SUPPORT_PAGES = [
-  {
-    key: "contact",
-    label: "Hỗ trợ",
-    to: "/contact",
-    icon: <MailOutlineOutlinedIcon fontSize="small" />,
-  },
-];
-
-// Cấu hình: FAQ
-// Path /config/faq cần khớp với Route hiển thị FAQ_List
-const CONFIG_PAGES = [
-  {
-    key: "faq",
-    label: "FAQ",
-    to: "/faq",
-    icon: <HelpOutlineOutlinedIcon fontSize="small" />,
-  },
+  { key:"contact", label:"Hỗ trợ", to:"/contact", icon:<MailOutlineOutlinedIcon fontSize="small" /> },
+  { key: "faq", label: "FAQ", to: "/faq", icon: <HelpOutlineOutlinedIcon fontSize="small" />, },
 ];
 
 /* ----------------- TopNav + Notifications ----------------- */
@@ -782,37 +768,6 @@ export default function SidebarLayout() {
             }
           >
             {SUPPORT_PAGES.map((p) => {
-              const active = isItemActive(p.to, true);
-              return (
-                <ListItemButton
-                  key={p.key}
-                  disableGutters
-                  className={
-                    "fm-navitem fm-navitem--simple" +
-                    (active ? " is-active" : "")
-                  }
-                  onClick={() => nav(p.to)}
-                >
-                  <ListItemIcon>{p.icon}</ListItemIcon>
-                  {!collapsed && <ListItemText primary={p.label} />}
-                </ListItemButton>
-              );
-            })}
-          </List>
-
-          {/* Cấu hình: FAQ */}
-          <List
-            component="nav"
-            aria-labelledby="fm-sidebar-config"
-            subheader={
-              !collapsed && (
-                <ListSubheader component="div" id="fm-sidebar-config">
-                  Cấu hình
-                </ListSubheader>
-              )
-            }
-          >
-            {CONFIG_PAGES.map((p) => {
               const active = isItemActive(p.to, true);
               return (
                 <ListItemButton
