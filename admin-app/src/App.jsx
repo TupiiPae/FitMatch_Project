@@ -28,6 +28,7 @@ import SportCreate from "./pages/pagesExercises/Sport_Create/Sport_Create.jsx";
 import ExercisesEdit from "./pages/pagesExercises/Exercises_Edit/Exercises_Edit.jsx";
 import SuggestPlanCreate from "./pages/pagesExercises/SuggestPlan_Create/SuggestPlan_Create.jsx";
 import SuggestPlanList from "./pages/pagesExercises/SuggestPlan_List/SuggestPlan_List.jsx";
+import ConnectRooms_List from "./pages/pagesConnect/ConnectRooms_List.jsx";
 
 // ===== Statistic / Audit Log
 import AuditLog from "./pages/pagesStatistic/Audit_Log/Audit_Log.jsx";
@@ -101,6 +102,9 @@ export default function App() {
           <Route path="/exercises/suggest-plan" element={<SuggestPlanList />} />
           <Route path="/exercises/suggest-plan/create" element={<SuggestPlanCreate />} />
           <Route path="/exercises/suggest-plan/:id/edit" element={<SuggestPlanCreate />} />
+
+          {/* Kết nối */}
+          <Route path="/connect/rooms" element={<ConnectRooms_List />} />
 
           {/* Thống kê - Audit Log */}
           <Route path="/statistics/audit-log" element={<AuditLog />} />

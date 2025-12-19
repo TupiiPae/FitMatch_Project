@@ -1,0 +1,109 @@
+/* admin-app/src/pages/pagesConnect/ConnectRooms_List.css */
+
+/* Tabs giống FAQ */
+.cr-tabs{display:flex;gap:16px;padding:4px 4px 8px;border-bottom:1px solid #e5e7eb;margin-top:4px;margin-bottom:6px}
+.cr-tab{position:relative;padding:6px 4px;font-size:14px;font-weight:600;color:#6b7280;background:transparent;border:none;cursor:pointer}
+.cr-tab::after{content:"";position:absolute;left:0;bottom:-4px;width:0;height:2px;border-radius:999px;background:#008080;transition:width .16s ease}
+.cr-tab.active{color:#111827}
+.cr-tab.active::after{width:100%}
+
+/* Filter pill */
+.cr-pill{border:1px solid #e5e7eb;background:#fff;border-radius:999px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;font-weight:600;color:#374151;cursor:pointer}
+.cr-pill.on{border-color:#0f766e;color:#0f766e;background:#f0fdfa}
+
+/* Table columns */
+.cr-duo-head,.cr-duo-row{grid-template-columns:48px 120px 1.6fr 220px 120px 190px 130px}
+.cr-group-head,.cr-group-row{grid-template-columns:48px 120px 1.6fr 260px 180px 120px 190px 130px}
+
+/* checkbox */
+.cell.sel{display:flex;align-items:center;justify-content:center}
+.cr-check{width:16px;height:16px;cursor:pointer}
+
+/* Code cell */
+.cr-code{font-weight:800;color:#111827}
+.cr-sub{font-size:12px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-tip{margin-left:6px;color:#9ca3af;cursor:help}
+
+/* Members */
+.cr-members{display:flex;gap:10px;flex-wrap:wrap}
+.cr-member{display:flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;background:#fff;min-width:260px}
+.cr-av{width:34px;height:34px;border-radius:999px;overflow:hidden;display:grid;place-items:center;background:#f3f4f6;color:#6b7280;flex:0 0 34px}
+.cr-av img{width:100%;height:100%;object-fit:cover}
+.cr-member-meta{min-width:0;flex:1}
+.cr-member-name{font-weight:800;color:#111827;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-member-sub{font-size:12px;color:#6b7280;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-role{font-size:11px;font-weight:800;border-radius:999px;padding:4px 8px}
+.cr-role.own{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.cr-role.mem{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+
+/* Badges */
+.cr-badge{font-size:11px;font-weight:900;border-radius:999px;padding:4px 8px;border:1px solid #e5e7eb;background:#fff;color:#374151;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px}
+.cr-badge.active{border-color:#bbf7d0;background:#f0fdf4;color:#166534}
+.cr-badge.full{border-color:#fde68a;background:#fffbeb;color:#92400e}
+.cr-badge.closed{border-color:#fecaca;background:#fef2f2;color:#991b1b}
+
+/* Reports */
+.cr-report{font-weight:900}
+.cr-report.hot{color:#b91c1c}
+
+/* Group row */
+.cr-grouprow{display:flex;align-items:center;gap:12px;min-width:0}
+.cr-groupname{font-weight:900;color:#111827}
+
+/* Group cover */
+.cr-cover{width:56px;height:56px;border-radius:14px;overflow:hidden;flex:0 0 56px;border:1px solid #e5e7eb;background:#f9fafb;display:grid;place-items:center}
+.cr-cover img{width:100%;height:100%;object-fit:cover}
+.cr-cover-ph{width:100%;height:100%;display:grid;place-items:center;color:#6b7280}
+
+/* icons */
+.iconbtn.danger2{border:1px solid #fecaca;color:#991b1b;background:#fff}
+.iconbtn.danger2:hover{background:#fef2f2}
+
+/* Detail modal */
+.cr-detail{width:100%;max-width:860px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;display:flex;flex-direction:column}
+.cr-detail-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e5e7eb}
+.cr-detail-title .t1{font-weight:900;color:#111827}
+.cr-detail-title .t2{font-size:12px;color:#9ca3af}
+.cr-detail-body{padding:16px;display:flex;flex-direction:column;gap:14px}
+.cr-kv{display:grid;grid-template-columns:140px 1fr;gap:8px 12px}
+.cr-kv .k{font-size:12px;color:#6b7280;font-weight:800;text-transform:uppercase}
+.cr-kv .v{font-weight:700;color:#111827;min-width:0}
+.cr-detail-actions{display:flex;gap:10px;flex-wrap:wrap}
+.cr-members-list{display:flex;flex-direction:column;gap:10px}
+.cr-section-title{font-weight:900;color:#111827}
+.cr-mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px}
+.cr-mact{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Cover trong modal chi tiết */
+.cr-detail-cover{display:flex;align-items:center;gap:12px;border:1px solid #e5e7eb;border-radius:14px;padding:10px 12px;background:#fff}
+.cr-detail-cover .cr-cover{width:78px;height:78px;flex:0 0 78px;border-radius:16px}
+.cr-detail-cover-name{font-weight:900;color:#111827;font-size:16px}
+.cr-detail-cover-meta{min-width:0}
+
+/* small buttons */
+.btn.sm{height:34px;padding:0 12px;border-radius:999px}
+.btn.sm.danger{border-color:#fecaca;color:#991b1b}
+
+/* textarea in confirm */
+.cr-form{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.cr-lb{font-size:12px;font-weight:800;color:#111827}
+.cr-ta{border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;min-height:84px;outline:none}
+.cr-ta:focus{border-color:#0f766e}
+
+/* đảm bảo confirm luôn nổi trên detail */
+.cm-backdrop.cr-z-mid{z-index:10000}
+.cm-backdrop.cr-z-top{z-index:11000}
+
+/* User reports modal */
+.cr-report-modal{width:100%;max-width:820px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;display:flex;flex-direction:column}
+.cr-report-list{display:flex;flex-direction:column;gap:10px}
+.cr-report-item{border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;background:#fff}
+.cr-report-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.cr-report-reason{color:#111827}
+.cr-pager{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+@media (max-width: 820px){
+  .cr-duo-head,.cr-duo-row{grid-template-columns:48px 110px 1.6fr 210px 110px 180px 120px}
+  .cr-group-head,.cr-group-row{grid-template-columns:48px 110px 1.6fr 240px 170px 110px 180px 120px}
+  .cr-member{min-width:220px}
+}

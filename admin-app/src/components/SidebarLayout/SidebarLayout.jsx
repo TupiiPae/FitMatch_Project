@@ -201,7 +201,7 @@ const buildManagementSections = (rawLevel) => {
     title: "Ghép cặp",
     icon: <PeopleAltOutlinedIcon fontSize="small" />,
     items: [
-      { to: "/matching", label: "Danh sách ghép cặp", exact: true },
+      { to: "/connect/rooms", label: "Danh sách ghép cặp", exact: true },
       { to: "/reports", label: "Báo cáo" },
     ],
   };

@@ -753,3 +753,42 @@ export const deleteManyConnectReportsAdmin = async (ids = []) => {
   const r = await api.delete("/api/match/reports/admin", { data: { ids } });
   return r.data?.data ?? r.data;
 };
+
+
+// =========================
+// MATCH ROOMS (ADMIN) - DUO / TEAM
+// =========================
+export const listMatchRoomsAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/match-rooms", { params });
+  return r.data?.data ?? r.data; // { items,total,limit,skip }
+};
+
+export const getMatchRoomAdmin = async (id) => {
+  const r = await api.get(`/api/admin/match-rooms/${id}`);
+  return r.data?.data ?? r.data;
+};
+
+export const closeMatchRoomAdmin = async (id, reason = "") => {
+  const r = await api.post(`/api/admin/match-rooms/${id}/close`, { reason });
+  return r.data?.data ?? r.data;
+};
+
+export const deleteMatchRoomAdmin = async (id) => {
+  const r = await api.delete(`/api/admin/match-rooms/${id}`);
+  return r.data?.data ?? r.data;
+};
+
+export const deleteManyMatchRoomsAdmin = async (ids = []) => {
+  const r = await api.delete(`/api/admin/match-rooms`, { data: { ids } });
+  return r.data?.data ?? r.data;
+};
+
+export const kickMatchRoomMemberAdmin = async (roomId, userId, reason = "") => {
+  const r = await api.post(`/api/admin/match-rooms/${roomId}/kick`, { userId, reason });
+  return r.data?.data ?? r.data;
+};
+
+export const transferMatchRoomOwnerAdmin = async (roomId, newOwnerId) => {
+  const r = await api.post(`/api/admin/match-rooms/${roomId}/transfer-owner`, { newOwnerId });
+  return r.data?.data ?? r.data;
+};

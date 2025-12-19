@@ -29,6 +29,7 @@ import adminFaqRoutes from "./routes/admin.faq.routes.js";
 import faqRoutes from "./routes/faq.routes.js";
 import activityRoutes from "./routes/activity.routes.js";
 import matchRoutes from "./routes/match.routes.js";
+import adminMatchRoomsRoutes from "./routes/admin.matchrooms.routes.js";
 
 import contactRoutes from "./routes/contact.routes.js";
 import adminContactRoutes from "./routes/admin.contact.routes.js";
@@ -130,6 +131,7 @@ app.use("/api/admin", adminSuggestMenuRoutes);
 app.use("/api/admin", adminAuditRoutes);
 app.use("/api/admin", adminContactRoutes);
 app.use("/api/admin", adminFaqRoutes);
+app.use("/api/admin/match-rooms", adminMatchRoomsRoutes);
 
 // ===== User routes =====
 app.use("/api/user/onboarding", onboardingRoutes);

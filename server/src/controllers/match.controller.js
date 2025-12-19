@@ -970,6 +970,10 @@ export async function listConnectReportsAdmin(req,res,next){
     const type=String(q.type||"").trim();
     const search=String(q.search||"").trim();
 
+    const targetUserId=String(q.targetUserId||"").trim();
+    const targetRoomId=String(q.targetRoomId||"").trim();
+    const isObjectIdLike=(s="")=>/^[0-9a-fA-F]{24}$/.test(String(s||"").trim());
+
     const page=Math.max(1, parseIntSafe(q.page)||1);
     const limit=Math.min(50, Math.max(1, parseIntSafe(q.limit)||20));
     const skip=(page-1)*limit;
@@ -977,6 +981,9 @@ export async function listConnectReportsAdmin(req,res,next){
     const filter={};
     if(["pending","reviewed","dismissed"].includes(status)) filter.status=status;
     if(["user","group"].includes(type)) filter.targetType=type;
+
+    if(targetUserId && isObjectIdLike(targetUserId)) filter.targetUser = targetUserId;
+    if(targetRoomId && isObjectIdLike(targetRoomId)) filter.targetRoom = targetRoomId;
 
     if(search){
       const rx=new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i");
@@ -1005,6 +1012,7 @@ export async function listConnectReportsAdmin(req,res,next){
     return responseOk(res,{ items, page, limit, total, pages: Math.ceil(total/limit) });
   }catch(err){ next(err); }
 }
+
 
 // PATCH /api/match/reports/:id/admin
 export async function updateConnectReportAdmin(req,res,next){
