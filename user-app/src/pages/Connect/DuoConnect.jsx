@@ -7,7 +7,6 @@ import api from "../../lib/api";
 import { getMatchStatus } from "../../api/match";
 import { getMe } from "../../api/account";
 import { toast } from "react-toastify";
-import UserSideModal from "../UserProfile/UserSideModal";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -26,17 +25,6 @@ export default function DuoConnect({ onLeftRoom }) {
   const [leaving, setLeaving] = useState(false);
 
   const [activeTab, setActiveTab] = useState("connect"); // 'connect' | 'chat'
-
-  // ===== USER SIDE MODAL (NEW) =====
-  const [userModal,setUserModal]=useState({ open:false, user:null });
-  const closeUserModal=()=>setUserModal({ open:false, user:null });
-  const openUserModal=(u)=>{
-    if(!u) return;
-    const tid=String(u?.id||u?._id||"");
-    const my=String(me?._id||me?.id||"");
-    if(tid && my && tid===my) return;
-    setUserModal({ open:true, user:u });
-  };
 
   // ===== STREAK (Duo) =====
   const [streakLoading,setStreakLoading]=useState(false);
@@ -108,6 +96,7 @@ export default function DuoConnect({ onLeftRoom }) {
   // Load streak khi vào tab connect và có roomId
   useEffect(()=>{ if(activeTab==="connect" && roomId) loadDuoStreaks(roomId); },[activeTab,roomId]);
 
+  // Refresh streak khi quay lại tab (optional)
   useEffect(()=>{
     if(!roomId) return;
     const onVis=()=>{ if(document.visibilityState==="visible" && activeTab==="connect") loadDuoStreaks(roomId); };
@@ -133,9 +122,7 @@ export default function DuoConnect({ onLeftRoom }) {
 
       return {
         id: String(u._id || u.id || ""),
-        _id: String(u._id || u.id || ""),
         name,
-        nickname: name,
         avatarUrl: toAbs(profile.avatarUrl) || toAbs(u.avatarUrl) || null,
         role: m.role || "member",
         joinedAt: m.joinedAt || null,
@@ -161,7 +148,7 @@ export default function DuoConnect({ onLeftRoom }) {
     return { slotMe: m1, slotPartner: m2 };
   }, [room, myId]);
 
-  // ===== Build streak members cho duo =====
+  // ===== Build streak members cho duo (merge slot info + streakData) =====
   const duoStreak = useMemo(()=>{
     const raw = safeArr(streakData?.members);
     const map = new Map(raw.map(x=>[String(x?.id||""),{
@@ -178,7 +165,15 @@ export default function DuoConnect({ onLeftRoom }) {
     const mkBase=(slot)=>slot?({id:String(slot.id||""),name:slot.name||"Người dùng FitMatch",avatarUrl:slot.avatarUrl||null,role:slot.role||"member"}):null;
     const merge=(base,st)=>{ if(!base && !st) return null;
       const id=String((base?.id||st?.id||"")||"");
-      return { id, name:(base?.name||st?.name||"Người dùng FitMatch"), avatarUrl:(base?.avatarUrl||st?.avatarUrl||null), role:(base?.role||st?.role||"member"), hasToday:!!(st?.hasToday), currentStreak:Number(st?.currentStreak||0), bestStreak:Number(st?.bestStreak||0) };
+      return {
+        id,
+        name: (base?.name||st?.name||"Người dùng FitMatch"),
+        avatarUrl: (base?.avatarUrl||st?.avatarUrl||null),
+        role: (base?.role||st?.role||"member"),
+        hasToday: !!(st?.hasToday),
+        currentStreak: Number(st?.currentStreak||0),
+        bestStreak: Number(st?.bestStreak||0),
+      };
     };
 
     const meBase = mkBase(slotMe);
@@ -194,6 +189,7 @@ export default function DuoConnect({ onLeftRoom }) {
     const m = merge(meBase, meSt);
     const p = merge(paBase, paSt);
 
+    // fallback nếu BE chưa trả members: dùng slot (0 streak)
     const fb=(base)=>base?({id:base.id,name:base.name,avatarUrl:base.avatarUrl,role:base.role,hasToday:false,currentStreak:0,bestStreak:0}):null;
     return { me: m||fb(meBase), partner: p||fb(paBase) };
   },[streakData,slotMe,slotPartner,myId]);
@@ -204,6 +200,7 @@ export default function DuoConnect({ onLeftRoom }) {
   const handleOpenLeaveModal = () => { setLeaveModalOpen(true); setMenuOpen(false); };
   const handleCloseLeaveModal = () => { if (leaving) return; setLeaveModalOpen(false); };
 
+  // ===== Rời khỏi phòng =====
   const handleConfirmLeave = async () => {
     if (!room?._id) return;
     try {
@@ -226,6 +223,7 @@ export default function DuoConnect({ onLeftRoom }) {
 
   return (
     <div className="cn-duo-page">
+      {/* ===== HEADER ===== */}
       <header className="cn-duo-header">
         <div className="cn-duo-header-left"><div className="cn-duo-badge">Phòng ghép đôi 1:1</div></div>
         <div className="cn-duo-header-right">
@@ -238,24 +236,29 @@ export default function DuoConnect({ onLeftRoom }) {
         </div>
       </header>
 
+      {/* ===== PANEL: tab + main trong 1 box ===== */}
       <div className="cn-duo-panel">
+        {/* ===== TAB BAR ===== */}
         <div className="cn-duo-tabs">
           <button type="button" className={"cn-duo-tab"+(activeTab==="connect"?" is-active":"")} onClick={()=>setActiveTab("connect")}>Kết nối</button>
           <button type="button" className="cn-duo-tab is-disabled" disabled>Trò chuyện<span className="cn-duo-tab-badge">Sắp ra mắt</span></button>
         </div>
 
+        {/* ===== MAIN (tab Kết nối) ===== */}
         {activeTab === "connect" && (
           <section className="cn-duo-main">
             <div className="cn-duo-room-card">
+              {/* 2 user – căn giữa và chia đều */}
               <div className="cn-duo-members-strip">
                 <DuoMemberSpot member={slotMe} label="Bạn" isMe />
                 <div className="cn-duo-vs">
                   <div className="cn-duo-vs-icon"><i className="fa-solid fa-bolt" /></div>
                   <div className="cn-duo-vs-text">VS</div>
                 </div>
-                <DuoMemberSpot member={slotPartner} label="Bạn ghép đôi" onOpen={()=>slotPartner && openUserModal(slotPartner)} />
+                <DuoMemberSpot member={slotPartner} label="Bạn ghép đôi" />
               </div>
 
+              {/* ===== STREAK (2 timeline riêng) ===== */}
               <div className="cn-duo-streak-rows">
                 <DuoStreakRace
                   loading={streakLoading}
@@ -271,6 +274,7 @@ export default function DuoConnect({ onLeftRoom }) {
         )}
       </div>
 
+      {/* ===== MODAL RỜI PHÒNG ===== */}
       {leaveModalOpen && (
         <div className="cn-modal-backdrop" onClick={handleCloseLeaveModal}>
           <div className="cn-modal" onClick={(e) => e.stopPropagation()}>
@@ -286,16 +290,14 @@ export default function DuoConnect({ onLeftRoom }) {
           </div>
         </div>
       )}
-
-      <UserSideModal open={userModal.open} user={userModal.user} meId={me?._id||me?.id} onClose={closeUserModal} onViewProfile={()=>toast.info("Trang xem hồ sơ đang phát triển (button placeholder).")} onStartChat={()=>toast.info("Chức năng nhắn tin đang phát triển (button placeholder).")} />
     </div>
   );
 }
 
-/* ===== MEMBER SPOT ===== */
-function DuoMemberSpot({ member, label, isMe = false, onOpen }) {
+/* ===== MEMBER SPOT (hàng trên) ===== */
+
+function DuoMemberSpot({ member, label, isMe = false }) {
   const roleCls = isMe ? " is-me" : " is-partner";
-  const clickable=!!onOpen && !isMe && !!member;
 
   if (!member) {
     return (
@@ -319,20 +321,21 @@ function DuoMemberSpot({ member, label, isMe = false, onOpen }) {
 
   return (
     <div className={"cn-duo-member-spot" + roleCls}>
-      <div className="cn-duo-member-avatar-wrap" onClick={()=>clickable&&onOpen()} style={{cursor:clickable?"pointer":"default"}}>
+      <div className="cn-duo-member-avatar-wrap">
         <div className={"cn-duo-member-avatar" + roleCls}>
           {member.avatarUrl ? <img src={member.avatarUrl} alt={member.name} /> : <span>{initials}</span>}
         </div>
         <span className={"cn-duo-member-chip" + (isMe ? " is-me" : " is-partner")}>{label}</span>
       </div>
 
-      <div className="cn-duo-member-name" onClick={()=>clickable&&onOpen()} style={{cursor:clickable?"pointer":"default"}}>{member.name}</div>
+      <div className="cn-duo-member-name">{member.name}</div>
       <div className="cn-duo-member-meta">{meta}</div>
     </div>
   );
 }
 
-/* ===== DUO STREAK RACE ===== */
+/* ===== DUO STREAK RACE (2 timeline riêng) ===== */
+
 function DuoStreakRace({ me, partner, myId, loading, err, onRefresh }){
   const [helpOpen,setHelpOpen]=useState(false);
   const list=[me,partner].filter(Boolean);
@@ -361,19 +364,21 @@ function DuoStreakRace({ me, partner, myId, loading, err, onRefresh }){
     return acc;
   },{items:[],_seen:new Set()}).items.sort((a,b)=>a.value-b.value);
 
-  const HelpBox=()=>(<div className="cn-duo-streak-help">
-    <div className="cn-duo-streak-help-top">
-      <div className="cn-duo-streak-help-title"><i className="fa-solid fa-circle-exclamation" /> Hướng dẫn đua streak (1:1)</div>
-      <button type="button" className="cn-duo-streak-help-close" onClick={()=>setHelpOpen(false)} aria-label="Đóng"><i className="fa-solid fa-xmark" /></button>
+  const HelpBox=()=>(
+    <div className="cn-duo-streak-help">
+      <div className="cn-duo-streak-help-top">
+        <div className="cn-duo-streak-help-title"><i className="fa-solid fa-circle-exclamation" /> Hướng dẫn đua streak (1:1)</div>
+        <button type="button" className="cn-duo-streak-help-close" onClick={()=>setHelpOpen(false)} aria-label="Đóng"><i className="fa-solid fa-xmark" /></button>
+      </div>
+      <ul className="cn-duo-streak-help-list">
+        <li>Mỗi người có <b>1 timeline riêng</b>, nhưng dùng chung thang mốc để so sánh.</li>
+        <li>Avatar đứng ở vị trí <b>Cao nhất</b> (kỷ lục) nên sẽ không “tụt lại”.</li>
+        <li>Muốn tăng kỷ lục, bạn cần <b>vượt kỷ lục cũ</b>.</li>
+        <li>Chấm “ghost” (nếu có) là <b>streak hiện tại</b> đang chạy để đuổi kỷ lục.</li>
+        <li>“Đã log hôm nay / Chưa log” giúp bạn biết ai đã hoạt động trong ngày.</li>
+      </ul>
     </div>
-    <ul className="cn-duo-streak-help-list">
-      <li>Mỗi người có <b>1 timeline riêng</b>, nhưng dùng chung thang mốc để so sánh.</li>
-      <li>Avatar đứng ở vị trí <b>Cao nhất</b> (kỷ lục) nên sẽ không “tụt lại”.</li>
-      <li>Muốn tăng kỷ lục, bạn cần <b>vượt kỷ lục cũ</b>.</li>
-      <li>Chấm “ghost” (nếu có) là <b>streak hiện tại</b> đang chạy để đuổi kỷ lục.</li>
-      <li>“Đã log hôm nay / Chưa log” giúp bạn biết ai đã hoạt động trong ngày.</li>
-    </ul>
-  </div>);
+  );
 
   return (
     <>
@@ -439,7 +444,9 @@ function DuoStreakLine({ label, member, isMe, myId, rangeMax, pos, ticks }){
             );
           })}
 
-          {!empty && cur>0 && cur<best && <div className="cn-duo-streak-ghost" style={{left:curLeft}} title={`${name} • Hiện tại: ${cur} • Cao nhất: ${best}`} />}
+          {!empty && cur>0 && cur<best && (
+            <div className="cn-duo-streak-ghost" style={{left:curLeft}} title={`${name} • Hiện tại: ${cur} • Cao nhất: ${best}`} />
+          )}
 
           {!empty && (
             <div className={"cn-duo-streak-runner"+(isMe||isMine?" is-me":"")+(hasToday?" is-ok":"")} style={{left:bestLeft}} title={`${name} • Hiện tại: ${cur} • Cao nhất: ${best}${hasToday?" • Đã log hôm nay":" • Chưa log hôm nay"}`}>

@@ -1,3 +1,4 @@
+// user-app/src/pages/Connect/TabMyConnections.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyRequests, acceptMatchRequest, rejectMatchRequest, cancelMatchRequest } from "../../api/match";
@@ -6,7 +7,6 @@ import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
 import DuoConnect from "./DuoConnect";
 import TeamConnect from "./TeamConnect";
 import api from "../../lib/api";
-import UserSideModal from "../UserProfile/UserSideModal";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -22,17 +22,6 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
 
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, requestId: null, targetName: "" });
   const [confirmLoading, setConfirmLoading] = useState(false);
-
-  // ===== USER SIDE MODAL (NEW) =====
-  const [userModal,setUserModal]=useState({ open:false, user:null });
-  const closeUserModal=()=>setUserModal({ open:false, user:null });
-  const openUserModal=(u)=>{
-    if(!u) return;
-    const tid=String(u?._id||u?.id||"");
-    const my=String(currentUser?._id||currentUser?.id||"");
-    if(tid && my && tid===my) return;
-    setUserModal({ open:true, user:u });
-  };
 
   const openConfirm = (mode, req, targetName) => {
     const id = req?._id || req?.id;
@@ -114,6 +103,7 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
   const isInGroupRoom = !!activeRoomId && roomTypeNorm === "group";
   if (isInGroupRoom) return <section className="cn-myconnections"><TeamConnect onLeftRoom={handleLeftRoomInternal} /></section>;
 
+  const handleOpenTeamConnectDemo = () => nav("/ket-noi/nhom");
   return (
     <section className="cn-myconnections">
       <header className="cn-main-header">
@@ -144,23 +134,14 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const avatarAbs = profile.avatarUrl ? toAbs(profile.avatarUrl) : null;
                 const thumbSrc = (String(avatarAbs || "").trim() || DEFAULT_AVATAR);
                 const createdAtText = formatViDateTime(req.createdAt);
-
                 return (
                   <article key={req._id} className="cn-request-row">
                     <div className="cn-request-thumb">
-                      <img
-                        src={thumbSrc}
-                        alt={nickname}
-                        onClick={()=>openUserModal(fromUser)}
-                        style={{cursor:"pointer"}}
-                        onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}}
-                      />
+                      <img src={thumbSrc} alt={nickname} onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}} />
                     </div>
                     <div className="cn-request-main-col">
                       <div className="cn-request-type">Lời mời đến</div>
-                      <h4 className="cn-request-title">
-                        <strong style={{cursor:"pointer"}} onClick={()=>openUserModal(fromUser)}>{nickname}</strong> muốn kết nối 1:1 với bạn
-                      </h4>
+                      <h4 className="cn-request-title"><strong>{nickname}</strong> muốn kết nối 1:1 với bạn</h4>
                       <div className="cn-request-footer">
                         <span className="cn-request-meta">Nhận {createdAtText}</span>
                         <span className="cn-request-status-pill cn-request-status-pending">Đang chờ bạn xác nhận</span>
@@ -192,23 +173,14 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const avatarAbs = profile.avatarUrl ? toAbs(profile.avatarUrl) : null;
                 const thumbSrc = (String(avatarAbs || "").trim() || DEFAULT_AVATAR);
                 const createdAtText = formatViDateTime(req.createdAt);
-
                 return (
                   <article key={req._id} className="cn-request-row">
                     <div className="cn-request-thumb">
-                      <img
-                        src={thumbSrc}
-                        alt={nickname}
-                        onClick={()=>openUserModal(toUser)}
-                        style={{cursor:"pointer"}}
-                        onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}}
-                      />
+                      <img src={thumbSrc} alt={nickname} onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}} />
                     </div>
                     <div className="cn-request-main-col">
                       <div className="cn-request-type">Lời mời bạn gửi đi</div>
-                      <h4 className="cn-request-title">
-                        Gửi lời mời kết nối với người dùng <strong style={{cursor:"pointer"}} onClick={()=>openUserModal(toUser)}>{nickname}</strong>
-                      </h4>
+                      <h4 className="cn-request-title">Gửi lời mời kết nối với người dùng <strong>{nickname}</strong></h4>
                       <div className="cn-request-footer">
                         <span className="cn-request-meta">Gửi {createdAtText}</span>
                         <span className="cn-request-status-pill cn-request-status-pending">Đang chờ người dùng đồng ý</span>
@@ -261,8 +233,6 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
       )}
 
       <ConnectRequestConfirmModal open={confirmState.open} mode={confirmState.mode} targetName={confirmState.targetName} onClose={closeConfirm} onConfirm={handleConfirm} loading={confirmLoading} />
-
-      <UserSideModal open={userModal.open} user={userModal.user} meId={currentUser?._id||currentUser?.id} onClose={closeUserModal} onViewProfile={()=>toast.info("Trang xem hồ sơ đang phát triển (button placeholder).")} onStartChat={()=>toast.info("Chức năng nhắn tin đang phát triển (button placeholder).")} />
     </section>
   );
 }
