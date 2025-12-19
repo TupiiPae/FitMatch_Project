@@ -9,6 +9,7 @@ import { getMe } from "../../api/account";
 import { toast } from "react-toastify";
 import TeamEditModal from "./TeamEditModal";
 import TeamManageMembersModal from "./TeamManageMembersModal";
+import UserSideModal from "../UserProfile/UserSideModal";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -78,6 +79,16 @@ export default function TeamConnect({ onLeftRoom }){
 
   const [topTab,setTopTab]=useState("setup"); // setup | guidelines | chat
   const [reqTab,setReqTab]=useState("pending"); // pending | accepted | rejected
+
+  const [userModal,setUserModal]=useState({open:false,user:null});
+  const closeUserModal=()=>setUserModal({open:false,user:null});
+  const openUserModal=(u)=>{
+    if(!u) return;
+    const tid=String(u?._id||u?.id||"");
+    const my=String(myId||"");
+    if(tid && my && tid===my) return;
+    setUserModal({open:true,user:u});
+  };
 
   const [reqLoading,setReqLoading]=useState(false);
   const [reqErr,setReqErr]=useState("");
@@ -150,16 +161,8 @@ export default function TeamConnect({ onLeftRoom }){
     return()=>{cancelled=true;};
   },[nav,onLeftRoom]);
 
-  const members=useMemo(()=>{
-    const arr=safeArr(room?.members);
-    return arr.map(m=>{
-      const u=m.user||{};
-      const p=u.profile||{};
-      const name=p.nickname||u.username||u.email||"Người dùng FitMatch";
-      return { id:String(u._id||u.id||""), name, avatarUrl:toAbs(p.avatarUrl)||null, role:m.role||"member" };
-    });
-  },[room]);
-
+  const members=useMemo(()=>{const arr=safeArr(room?.members);return arr.map(m=>{const u=m.user||{};const p=u.profile||{};const id=String(u._id||u.id||"");const name=p.nickname||u.username||u.email||"Người dùng FitMatch";const avatarUrl=toAbs(p.avatarUrl)||toAbs(u.avatarUrl)||null;const locationLabel=(u.connectLocationLabel||"").trim()||buildFullLocationFromProfile(p)||"";const bio=(u.connectBio||"").trim()||p.bio||u.bio||"";const goalLabel=(u.connectGoalLabel||"").trim()||p.goalLabel||"";const goalKey=u.connectGoalKey||p.goalKey||p.goal||null;return{_id:id,id,name,avatarUrl,role:m.role||"member",profile:{...p,nickname:name,avatarUrl,sex:p.sex||u.sex||null,dob:p.dob||u.dob||null,address:p.address||u.address||null,trainingIntensity:p.trainingIntensity||u.trainingIntensity||null,goal:p.goal||u.goal||null},connectGoalLabel:goalLabel,connectGoalKey:goalKey,connectLocationLabel:locationLabel,connectBio:bio};});},[room]);
+  
   const streakMembers=useMemo(()=>{
   const list=safeArr(streakData?.members);
     if(list.length) return list.map(x=>({
@@ -494,7 +497,7 @@ export default function TeamConnect({ onLeftRoom }){
                   const avaSrc=filled?(m.avatarUrl||"/images/avatar.png"):"/images/avatar.png";
                   return (
                     <div key={m?.id||`empty-${idx}`} className={"tc-slot"+(!filled?" is-empty":"")+(isMe?" is-me":"")}>
-                      <div className="tc-slot-row">
+                      <div className="tc-slot-row" onClick={()=>{ if(filled && !isMe) openUserModal(m); }}>
                         <div className={"tc-slot-ava"+(isOwnerSlot?" is-owner":"")}>
                           <img src={avaSrc} alt={title} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} />
                         </div>
@@ -601,13 +604,7 @@ export default function TeamConnect({ onLeftRoom }){
                 pendingReqs.length ? (
                   <div className="tc-req-list">
                     {pendingReqs.map(r=>(
-                      <PendingTeamReqCard
-                        key={r.id}
-                        r={r}
-                        isOwner={isOwner}
-                        onOpenAccept={()=>openConfirm("accept",r)}
-                        onOpenReject={()=>openConfirm("reject",r)}
-                      />
+                      <PendingTeamReqCard key={r.id} r={r} isOwner={isOwner} onOpenAccept={()=>openConfirm("accept",r)} onOpenReject={()=>openConfirm("reject",r)} onOpenUser={openUserModal}/> 
                     ))}
                   </div>
                 ) : (
@@ -623,7 +620,7 @@ export default function TeamConnect({ onLeftRoom }){
                 acceptedReqs.length ? (
                   <div className="tc-req-list">
                     {acceptedReqs.map(r=>(
-                      <ResolvedTeamReqCard key={r.id} r={r} variant="accepted" />
+                      <ResolvedTeamReqCard key={r.id} r={r} variant="accepted" onOpenUser={openUserModal} />
                     ))}
                   </div>
                 ) : (
@@ -639,7 +636,7 @@ export default function TeamConnect({ onLeftRoom }){
                 rejectedReqs.length ? (
                   <div className="tc-req-list">
                     {rejectedReqs.map(r=>(
-                      <ResolvedTeamReqCard key={r.id} r={r} variant="rejected" />
+                      <ResolvedTeamReqCard key={r.id} r={r} variant="rejected" onOpenUser={openUserModal} />
                     ))}
                   </div>
                 ) : (
@@ -723,11 +720,13 @@ export default function TeamConnect({ onLeftRoom }){
         onClose={()=>{ if(!manageSaving) setManageOpen(false); }}
         onApply={applyManageMembers}
       />
+
+      <UserSideModal open={userModal.open} user={userModal.user} meId={myId} onClose={closeUserModal} />
     </div>
   );
 }
 
-function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject }){
+function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject, onOpenUser }){
   const nav=useNavigate();
   const u=r?.user||{};
   const name=u.name||"Người dùng FitMatch";
@@ -739,6 +738,7 @@ function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject }){
   const genderTxt=(u.gender && (GENDER_LABELS[u.gender]||""))||"—";
   const intensity=u.intensityLabel||"—";
   const bio=u.bio||"";
+  const open=()=>onOpenUser?.({_id:u.id,id:u.id,profile:{nickname:name,avatarUrl:avatar,sex:u.gender||null},connectGoalLabel:goal,connectLocationLabel:location,connectBio:bio});
 
   return (
     <article className="tc-pr-card">
@@ -752,11 +752,11 @@ function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject }){
         <div className="tc-pr-left">
           <div className="tc-pr-userrow">
             <div className="tc-pr-ava">
-              <img src={avatar} alt={name} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} />
+              <img src={avatar} alt={name} onClick={(e)=>{e.stopPropagation();open();}} />
             </div>
 
             <div className="tc-pr-usertext">
-              <div className="tc-pr-left-name" title={name}>{name}</div>
+              <div className="tc-pr-left-name" onClick={(e)=>{e.stopPropagation();open();}}>{name}</div>
               <div className="tc-pr-left-chips">
                 <span className="tc-chip tc-chip-goal">{goal}</span>
               </div>
@@ -803,7 +803,7 @@ function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject }){
   );
 }
 
-function ResolvedTeamReqCard({ r, variant="accepted" }){
+function ResolvedTeamReqCard({ r, variant="accepted", onOpenUser }){
   const nav=useNavigate();
   const u=r?.user||{};
   const name=u.name||"Người dùng FitMatch";
@@ -817,6 +817,7 @@ function ResolvedTeamReqCard({ r, variant="accepted" }){
   const when=r?.resolvedAt||r?.createdAt||null;
   const verb=variant==="accepted"?"đã được duyệt vào nhóm":"đã bị từ chối";
   const pill=variant==="accepted"?"Đã duyệt":"Từ chối";
+  const open=()=>onOpenUser?.({_id:u.id,id:u.id,profile:{nickname:name,avatarUrl:avatar,sex:u.gender||null},connectGoalLabel:goal,connectLocationLabel:location,connectBio:bio});
 
   return (
     <article className="tc-pr-card">
@@ -830,10 +831,10 @@ function ResolvedTeamReqCard({ r, variant="accepted" }){
         <div className="tc-pr-left">
           <div className="tc-pr-userrow">
             <div className="tc-pr-ava">
-              <img src={avatar} alt={name} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} />
+              <img src={avatar} alt={name} onClick={(e)=>{e.stopPropagation();open();}} />
             </div>
             <div className="tc-pr-usertext">
-              <div className="tc-pr-left-name" title={name}>{name}</div>
+              <div className="tc-pr-left-name" onClick={(e)=>{e.stopPropagation();open();}}>{name}</div>
               <div className="tc-pr-left-chips">
                 <span className="tc-chip tc-chip-goal">{goal}</span>
               </div>
