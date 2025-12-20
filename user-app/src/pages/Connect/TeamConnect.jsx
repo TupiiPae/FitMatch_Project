@@ -562,7 +562,7 @@ export default function TeamConnect({ onLeftRoom }){
                   </div>
 
                   <div className="tc-group-actions" onClick={(e)=>e.stopPropagation()}>
-                    <button type="button" className="tc-act-btn" onClick={shareLink}><i className="fa-solid fa-share-nodes"/> Chia sẻ link</button>
+                    {/* <button type="button" className="tc-act-btn" onClick={shareLink}><i className="fa-solid fa-share-nodes"/> Chia sẻ link</button> */}
                     <button type="button" className="tc-act-btn tc-act-outline" onClick={openEdit} disabled={!isOwner}><i className="fa-solid fa-pen-to-square"/> Chỉnh sửa</button>
                   </div>
                 </div>
