@@ -37,10 +37,10 @@ export default function ConnectRoomDetailModal({
       <div className="cr-detail" onClick={(e)=>e.stopPropagation()}>
         <div className="cr-detail-head">
           <div className="cr-detail-title">
-            <div className="t1">Chi tiết phòng {fmtCode(detail.id)}</div>
-            <div className="t2">{detail.id}</div>
+            <div className="rp-title">Chi tiết phòng {fmtCode(detail.id)}</div>
+            <div className="rp-sub">ID phòng: {detail.id}</div>
           </div>
-          <button className="iconbtn" onClick={onClose} title="Đóng"><i className="fa-solid fa-xmark" /></button>
+          <button className="rp-x" onClick={onClose} title="Đóng"><i className="fa-solid fa-xmark" /></button>
         </div>
 
         {detail.loading && <div className="cr-detail-body">Đang tải...</div>}
@@ -76,16 +76,13 @@ export default function ConnectRoomDetailModal({
             </div>
 
             <div className="cr-detail-actions">
-              <button className="btn ghost" disabled={processingKey===detail.id} onClick={onReload}>
-                <i className="fa-solid fa-rotate" /> <span>Tải lại</span>
-              </button>
 
-              <button className="btn ghost" disabled={processingKey===detail.id} onClick={()=>onAskClose(detail.id)}>
-                <i className="fa-solid fa-circle-xmark" /> <span>Đóng phòng</span>
+              <button className="btn close" disabled={processingKey===detail.id} onClick={()=>onAskClose(detail.id)}>
+                <i className="fa-regular fa-circle-xmark" /> <span>Đóng phòng</span>
               </button>
 
               <button className="btn danger" disabled={processingKey===detail.id} onClick={()=>onAskDelete(detail.id)}>
-                <i className="fa-solid fa-trash" /> <span>Xóa kết nối</span>
+                <i className="fa-regular fa-trash-can" /> <span>Xóa kết nối</span>
               </button>
             </div>
 

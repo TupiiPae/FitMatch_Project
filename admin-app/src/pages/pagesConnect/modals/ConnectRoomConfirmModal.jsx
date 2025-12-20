@@ -32,7 +32,7 @@ export default function ConnectRoomConfirmModal({ open, confirm, processingKey, 
 
         <div className="cm-foot">
           <button className="btn ghost" onClick={onClose}>Đóng</button>
-          <button className="btn primary" disabled={busy} onClick={()=>onConfirm(confirm)}>Xác nhận</button>
+          <button className="btn danger" disabled={busy} onClick={()=>onConfirm(confirm)}>Xác nhận</button>
         </div>
       </div>
     </div>

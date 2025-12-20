@@ -145,7 +145,7 @@
 
 .cell.act { display: flex; gap: 6px; }
 .iconbtn {
-  width: 36px; height: 36px; border-radius: 10px; border: 1px solid #04AA6D;
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid #04AA6D80;
   background: #fff; display: grid; place-items: center; cursor: pointer; color: #04AA6D; font-size: 16px;
 }
 .iconbtn:hover { background: #F9FAFB; }

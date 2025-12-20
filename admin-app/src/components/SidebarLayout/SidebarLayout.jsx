@@ -21,6 +21,7 @@ import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettin
 import RestaurantOutlinedIcon from "@mui/icons-material/RestaurantOutlined";
 import FitnessCenterOutlinedIcon from "@mui/icons-material/FitnessCenterOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import LinearProgress from "@mui/material/LinearProgress";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import MailOutlineOutlinedIcon from "@mui/icons-material/MailOutlineOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
@@ -141,7 +142,7 @@ const buildManagementSections = (rawLevel) => {
     items: [
       { to: "/stats/users", label: "Người dùng" },
       { to: "/stats/journal", label: "Nhật ký" },
-      { to: "/stats/matching", label: "Ghép cặp" },
+      { to: "/stats/matching", label: "Kết nối" },
       { to: "/statistics/audit-log", label: "Nhật ký thao tác" },
     ],
   };
@@ -198,10 +199,10 @@ const buildManagementSections = (rawLevel) => {
 
   const matchingSection = {
     key: "matching",
-    title: "Ghép cặp",
-    icon: <PeopleAltOutlinedIcon fontSize="small" />,
+    title: "Kết nối",
+    icon: <i className="fa-solid fa-link" />,
     items: [
-      { to: "/connect/rooms", label: "Danh sách ghép cặp", exact: true },
+      { to: "/connect/rooms", label: "Danh sách kết nối", exact: true },
       { to: "/reports", label: "Báo cáo" },
     ],
   };
@@ -600,7 +601,7 @@ export default function SidebarLayout() {
     [level]
   );
 
-  // dropdown states sidebar (cho các list như Thống kê / Tài khoản quản trị / Thực phẩm / Bài tập / Ghép cặp)
+  // dropdown states sidebar (cho các list như Thống kê / Tài khoản quản trị / Thực phẩm / Bài tập / Kết nối)
   const [openKeys, setOpenKeys] = useState(() => new Set());
   const isOpen = (key) => openKeys.has(key);
   const toggleSection = (key) => {

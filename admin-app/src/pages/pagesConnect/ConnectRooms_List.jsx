@@ -91,7 +91,7 @@ export default function ConnectRooms_List(){
   const [selDuo,setSelDuo]=useState([]);
   const [selGroup,setSelGroup]=useState([]);
 
-  const headTitle=useMemo(()=>activeTab==="duo"?"Quản lý ghép cặp Cặp đôi":"Quản lý ghép cặp Nhóm",[activeTab]);
+  const headTitle=useMemo(()=>activeTab==="duo"?"Danh sách kết nối - Cặp đôi":"Danh sách kết nối - Nhóm",[activeTab]);
   const page=Math.floor(skip/limit);
   const pageCount=Math.max(1, Math.ceil((total||0)/limit));
 
@@ -153,7 +153,7 @@ export default function ConnectRooms_List(){
   const askClose=(it)=>setConfirm({ kind:"close", item:it, message:"Đóng phòng ghép cặp này? Phòng sẽ chuyển sang trạng thái ĐÃ ĐÓNG." });
   const askKick=(roomId,member)=>setConfirm({ kind:"kick", roomId, member, memberId:uidOf(member), message:`Loại "${member?.nickname||member?.email||"thành viên"}" khỏi phòng?`, reason:"" });
   const askTransfer=(roomId,member)=>setConfirm({ kind:"transfer", roomId, member, memberId:uidOf(member), message:`Chuyển vai trò CHỦ PHÒNG cho "${member?.nickname||member?.email||"thành viên"}"?` });
-  const askDeleteOne=(it)=>setConfirm({ kind:"deleteOne", item:it, message:"Xóa kết nối này? Dữ liệu sẽ bị xóa khỏi hệ thống (dùng để dọn dẹp dữ liệu)." });
+  const askDeleteOne=(it)=>setConfirm({ kind:"deleteOne", item:it, message:"Xóa kết nối này? Dữ liệu sẽ bị xóa khỏi hệ thống (phòng kết nối đang hoạt động cũng sẽ bị ảnh hưởng)." });
   const askDeleteMany=()=>selectedIds.length && setConfirm({ kind:"deleteMany", ids:selectedIds.slice(), message:`Xóa ${selectedIds.length} kết nối đã chọn? Dữ liệu sẽ bị xóa khỏi hệ thống.` });
 
   const doClose=async(id)=>{
@@ -208,7 +208,7 @@ export default function ConnectRooms_List(){
         <span className="sep">/</span>
         <span className="grp"><i className="fa-solid fa-link" /> <span>Kết nối</span></span>
         <span className="sep">/</span>
-        <span className="cur">Danh sách ghép cặp</span>
+        <span className="cur">Danh sách kết nối</span>
       </nav>
 
       <div className="ct-card">
@@ -227,7 +227,7 @@ export default function ConnectRooms_List(){
         <div className="ct-filters">
           <div className="ct-search">
             <i className="fa-solid fa-magnifying-glass" />
-            <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder={activeTab==="duo"?"Tìm theo người dùng / email / nickname / mã phòng...":"Tìm theo tên nhóm / vị trí / mục tiêu / thành viên / mã phòng..."} />
+            <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder={activeTab==="duo"?"Tìm theo tên người dùng / mã phòng...":"Tìm theo tên nhóm / vị trí / mục tiêu / thành viên / mã phòng..."} />
           </div>
           <div className="ct-filter-row">
             <select value={status} onChange={(e)=>setStatus(e.target.value)}>{STATUS_OPTS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>
@@ -321,8 +321,8 @@ export default function ConnectRooms_List(){
 
                 <div className="cell act" onClick={stopRowClick}>
                   <button className="iconbtn" title="Xem chi tiết" disabled={!rid} onClick={()=>rid && openDetail(rid)}><i className="fa-regular fa-eye" /></button>
-                  <button className="iconbtn danger" title="Đóng phòng" disabled={!rid||processingKey===rid} onClick={()=>rid && askClose({ ...it,_id:rid })}><i className="fa-solid fa-circle-xmark" /></button>
-                  <button className="iconbtn danger2" title="Xóa kết nối" disabled={!rid||processingKey===rid} onClick={()=>rid && askDeleteOne({ ...it,_id:rid })}><i className="fa-solid fa-trash" /></button>
+                  <button className="iconbtn close" title="Đóng phòng" disabled={!rid||processingKey===rid} onClick={()=>rid && askClose({ ...it,_id:rid })}><i className="fa-regular fa-circle-xmark"></i></button>
+                  <button className="iconbtn danger" title="Xóa dữ liệu" disabled={!rid||processingKey===rid} onClick={()=>rid && askDeleteOne({ ...it,_id:rid })}><i className="fa-regular fa-trash-can" /></button>
                 </div>
               </div>
             );

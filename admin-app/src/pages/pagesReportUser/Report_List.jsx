@@ -189,9 +189,9 @@ export default function Report_List(){
       <nav className="ct-breadcrumb" aria-label="breadcrumb">
         <Link to="/"><i className="fa-solid fa-house" /> <span>Trang chủ</span></Link>
         <span className="sep">/</span>
-        <span className="grp"><i className="fa-regular fa-flag" /> <span>Hỗ trợ</span></span>
+        <span className="grp"><i className="fa-solid fa-link" /> <span>Kết nối</span></span>
         <span className="sep">/</span>
-        <span className="cur">Báo cáo kết nối</span>
+        <span className="cur">Danh sách báo cáo</span>
       </nav>
 
       <div className="ct-card">

@@ -57,7 +57,7 @@ export default function ConnectRoomUserReportsModal({ open, user, onClose }){
         <div className="cr-detail-head">
           <div className="cr-detail-title">
             <div className="t1">Báo cáo của: {name} ({total})</div>
-            <div className="t2">{user?.email||""}</div>
+            <div className="t2">Email: {user?.email||""}</div>
           </div>
           <button className="iconbtn" onClick={onClose} title="Đóng"><i className="fa-solid fa-xmark" /></button>
         </div>
