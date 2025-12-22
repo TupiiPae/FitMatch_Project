@@ -25,7 +25,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={clientId}>
       <App />
-      <ToastContainer position="top-right" autoClose={2200} />
+      <ToastContainer position="bottom-center" hideProgressBar={true} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover autoClose={2200} />
     </GoogleOAuthProvider>
   </React.StrictMode>
 );

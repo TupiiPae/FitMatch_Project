@@ -195,6 +195,9 @@
   color: rgba(226,232,240,.85);
   opacity:.9;
 }
+.cn-duo-vs-since{text-align:center;line-height:1.1}
+.cn-duo-vs-days{font-weight:600;font-size:13px;opacity:.95;color: rgba(226,232,240,.85);}
+.cn-duo-vs-date{font-size:12px;opacity:.75;margin-top:6px}
 
 /* ===== Member card (avatar lớn, tên dưới) ===== */
 .cn-duo-member-spot{

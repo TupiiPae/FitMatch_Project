@@ -209,7 +209,7 @@ color: #F7F8F3
 /* ===== GROUP (layout như hình) ===== */
 .tc-group-row{padding:30px 100px 0;display:flex;gap:12px;align-items:flex-start;}
 .tc-cover-btn{
-  width:84px;height:84px;border-radius:999px;overflow:hidden;
+  width:108px;height:108px;border-radius:999px;overflow:hidden;
   border:1px solid #1f2937;background:#111827;cursor:pointer;flex-shrink:0;
   position:relative;transition:transform .15s ease,border-color .15s ease;
 }
@@ -223,6 +223,18 @@ color: #F7F8F3
 .tc-group-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
 .tc-group-titles{min-width:0;}
 .tc-group-name{font-size:18px;font-weight:700;color:#f9fafb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tc-group-meta{
+  margin-top:4px;
+  font-size:12px;
+  color:#9ca3af; /* xám nhẹ */
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  align-items:center;
+}
+.tc-group-created{
+  font-weight:600;
+}
 .tc-group-sub{margin-top:2px;font-size:12px;color:#9ca3af;font-weight:600;}
 
 .tc-group-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex-shrink:0;}

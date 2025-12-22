@@ -55,9 +55,10 @@ function shortDistrictCity(label){
 
 function roomToGroupCard(room){
   if(!room) return null;
+  const rawId=room._id || room.id || "";
   const membersCount=Array.isArray(room.members)?room.members.length:0;
   return {
-    id: room._id || room.id,
+    id: rawId,
     nickname: room.name || "Nhóm tập luyện",
     isGroup: true,
     membersCount,
@@ -71,10 +72,17 @@ function roomToGroupCard(room){
     trainingTypes: room.trainingTypes || [],
     locationLabel: room.locationLabel || "",
     bio: room.description || "",
-    imageUrl: room.coverImageUrl || room.coverImageUrl === "" ? room.coverImageUrl : room.coverImageUrl,
+    imageUrl: room.coverImageUrl || "",
     areaKey: null,
     areaLabel: "",
   };
+}
+
+// Helper lấy 6 ký tự cuối id để dùng làm mã nhóm
+function getShortRoomCode(id){
+  const raw=String(id||"").trim();
+  if(!raw) return "";
+  return raw.slice(-6);
 }
 
 export default function TabNearby({
@@ -107,7 +115,7 @@ export default function TabNearby({
   const openConfirm=(mode,target,requestId)=>setConfirmState({ open:true, mode, target, requestId:requestId||null });
   const closeConfirm=()=>setConfirmState({ open:false, mode:null, target:null, requestId:null });
 
-  // ===== REPORT STATE (FIX reportState is not defined) =====
+  // ===== REPORT STATE =====
   const [reportState,setReportState]=useState({ open:false, target:null });
   const [reportLoading,setReportLoading]=useState(false);
   const openReport=(target)=>setReportState({ open:true, target: target||null });
@@ -209,39 +217,52 @@ export default function TabNearby({
     const meAddr=getAddrParts(currentUser);
     let base = Array.isArray(items) ? items : [];
 
+    // Tính lại areaKey/areaLabel cho nhóm dựa trên địa chỉ của currentUser
     base = base.map((x)=>{
       if(!x?.isGroup) return x;
       const area=computeGroupArea(meAddr, x.locationLabel);
       return { ...x, ...area };
     });
 
+    // Loại nhóm mà user đang là thành viên (đã ghim riêng ở trên)
     const myId = myGroupCard?.id ? String(myGroupCard.id) : null;
     if(myId) base = base.filter((x)=>String(x?.id||x?._id||"")!==myId);
 
-    return base.filter((u) => {
-      if(connectionMode==="one_to_one" && u.isGroup) return false;
-      if(connectionMode==="group" && !u.isGroup) return false;
+    const rawSearch=(search||"").trim();
+    const searchText=rawSearch.toLowerCase();
+    const isGroupIdSearch=/^\d{6}$/.test(rawSearch); // nhập đúng 6 số => ưu tiên search mã nhóm
 
+    return base.filter((u) => {
+      const isGroup=!!u.isGroup;
+      const rawId=String(u.id || u._id || "");
+      const shortCode=getShortRoomCode(rawId);
+
+      // Lọc theo chế độ kết nối
+      if(connectionMode==="one_to_one" && isGroup) return false;
+      if(connectionMode==="group" && !isGroup) return false;
+
+      // Nếu đang search mã nhóm 6 số: chỉ giữ nhóm có shortCode trùng, bỏ qua các filter khác (goal, location,...)
+      if(isGroupIdSearch){
+        if(!isGroup) return false;
+        if(!shortCode || shortCode.toLowerCase()!==searchText) return false;
+        return true;
+      }
+
+      // Lọc theo mục tiêu
       if(goalFilter){
         const userGoal=(u.goal||"").trim().toLowerCase();
         const myGoal=goalFilter.trim().toLowerCase();
         if(!userGoal || userGoal!==myGoal) return false;
       }
 
+      // Lọc theo phạm vi vị trí (xài chung cho user & group)
       if(locationRange!=="any"){
-        if(u.isGroup){
-          if(!passLocationRangeByKey(locationRange, u.areaKey)) return false;
-        }else{
-          const key=u.areaKey;
-          if(!key) return false;
-          if(locationRange==="same_city"){ if(!["same_city","same_district","same_ward"].includes(key)) return false; }
-          else if(locationRange==="same_district"){ if(!["same_district","same_ward"].includes(key)) return false; }
-          else if(locationRange==="same_ward"){ if(key!=="same_ward") return false; }
-        }
+        if(!passLocationRangeByKey(locationRange, u.areaKey)) return false;
       }
 
+      // Lọc theo độ tuổi
       if(ageRange!=="all"){
-        if(u.isGroup){
+        if(isGroup){
           const gr = (u.ageRange||"all").toString();
           if(gr!=="all" && gr!==ageRange) return false;
         }else if(typeof u.age==="number"){
@@ -254,15 +275,16 @@ export default function TabNearby({
         }
       }
 
+      // Lọc theo giới tính
       if(genderFilter!=="all"){
-        if(u.isGroup){
+        if(isGroup){
           const gg=(u.gender||"all").toString();
           if(gg!=="all" && gg!==genderFilter) return false;
         }else if(u.gender && u.gender!==genderFilter) return false;
       }
 
-      if(search.trim()){
-        const txt=search.toLowerCase();
+      // Tìm kiếm text thông thường (tên, goal, location, tần suất, id,...)
+      if(searchText){
         const haystack=[
           u.nickname||"",
           u.goal||"",
@@ -273,8 +295,10 @@ export default function TabNearby({
           u.gender||"",
           u.trainingFrequency||"",
           u.frequency||"",
+          rawId,
+          shortCode,
         ].join(" ").toLowerCase();
-        if(!haystack.includes(txt)) return false;
+        if(!haystack.includes(searchText)) return false;
       }
 
       return true;
@@ -399,7 +423,12 @@ export default function TabNearby({
         <div className="cn-main-search">
           <div className="cn-search-input">
             <i className="fa-solid fa-magnifying-glass" />
-            <input type="text" placeholder="Tìm theo tên, môn tập, mục tiêu..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Tìm kiếm người dùng/nhóm theo tên, mã nhóm, mức độ tập luyện..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
 
@@ -407,7 +436,7 @@ export default function TabNearby({
 
         <div className={"cn-card-list " + (viewMode === "grid" ? "cn-card-list--grid" : "cn-card-list--list")}>
           {connectionMode==="one_to_one" && selfCard && <ConnectCard key="self" user={selfCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} onOpenReport={null} isSelf={true} isPinned={true} pinText="Hồ sơ của bạn" />}
-          {connectionMode==="group" && myGroupCard && <ConnectCard key="my-group" user={myGroupCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} onOpenReport={null} isSelf={false} isPinned={true} pinText="Nhóm của bạn" />}
+          {connectionMode==="group" && myGroupCard && <ConnectCard key="my-group" user={myGroupCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} onOpenReport={openReport} isSelf={false} isPinned={true} pinText="Nhóm của bạn" />}
 
           {filteredList.map((u) => (
             <ConnectCard
@@ -450,7 +479,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
   const groupAgeLabel=isGroup?(AGE_RANGE_LABELS[ageRange]||"Tất cả"):"";
   const groupFreqText=isGroup?(trainingFrequency?`${trainingFrequency} buổi/tuần`:""):"";
   const groupLocShort=isGroup?shortDistrictCity(locationLabel):(locationLabel||"");
-  const DEFAULT_AVATAR="images/avatar.png";
+  const DEFAULT_AVATAR="/images/avatar.png";
   const thumbSrc=(()=>{const s=String(imageUrl||"").trim();return s?s:DEFAULT_AVATAR;})();
 
   const membersNum=(()=>{const n=Number(membersCount||0);return Number.isFinite(n)&&n>0?n:1;})();
@@ -470,6 +499,8 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
 
   const inviteType=inviteState?.type||null;
   const inviteReqId=inviteState?.requestId||null;
+  const canInvite = !!inviteType && !!onOpenConfirm && (!isPinned || !isGroup);
+  const canReport = !!onOpenReport && !isSelf;
 
   let primaryLabel="", primaryClass="cn-btn-primary";
   if(inviteType==="accept_duo"){primaryLabel="Xác nhận lời mời kết nối";primaryClass="cn-btn-success";}
@@ -488,7 +519,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
         {isPinned && <div className="cn-card-pin" title={pinText||"Đã ghim"}><i className="fa-solid fa-thumbtack" /></div>}
 
         <div className="cn-card-img-wrap">
-          <img src={thumbSrc} alt={nickname} className="cn-card-img" />
+          <img src={thumbSrc} alt={nickname} className="cn-card-img" onError={(e)=>{e.currentTarget.src=DEFAULT_AVATAR;}} />
           <div className="cn-card-img-overlay">
             <div className="cn-card-img-title-row">
               <div className="cn-card-img-title-left">
@@ -509,7 +540,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
 
         <div className="cn-card-body">
           {!isGroup && metaLine && <div className="cn-card-meta-line">{metaLine}</div>}
-          {isGroup && groupMetaOneLine && <div className="cn-card-meta-line cn-card-meta-line--one">{groupMetaOneLine}</div>}
+          {isGroup && groupMetaOneLine && <div className="cn-card-meta-line cn-card-meta-line--one" title={groupMetaOneLine}>{groupMetaOneLine}</div>}
 
           <div className="cn-card-chip-row">
             {goal && <span className="cn-chip cn-chip-goal">{goal}</span>}
@@ -520,10 +551,28 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
           {!isGroup && trainingTypes.length>0 && <p className="cn-frequency">Ưu tiên: {trainingTypes.join(" · ")}</p>}
           {bio && <p className="cn-card-bio-text">{bio}</p>}
 
-          {!isSelf && !isPinned && inviteType && (
+          {(!isSelf && (canInvite || canReport)) && (
             <div className="cn-card-actions">
-              <button type="button" className={primaryClass} onClick={handlePrimaryClick}>{primaryLabel}</button>
-              <button type="button" className="cn-btn-ghost" onClick={handleReportClick} title="Báo cáo"><i className="fa-solid fa-flag"></i></button>
+              {canInvite && (
+                <button
+                  type="button"
+                  className={primaryClass}
+                  onClick={handlePrimaryClick}
+                >
+                  {primaryLabel}
+                </button>
+              )}
+
+              {canReport && (
+                <button
+                  type="button"
+                  className="cn-btn-ghost cn-btn-report"
+                  onClick={handleReportClick}
+                  title="Báo cáo"
+                >
+                  <i className="fa-solid fa-triangle-exclamation"></i>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -535,7 +584,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
     <article className="cn-card cn-card--list">
       {isPinned && <div className="cn-card-pin" title={pinText||"Đã ghim"}><i className="fa-solid fa-thumbtack" /></div>}
 
-      <div className="cn-avatar"><img src={thumbSrc} alt={nickname} className="cn-avatar-img" /></div>
+      <div className="cn-avatar"><img src={thumbSrc} alt={nickname} className="cn-avatar-img" onError={(e)=>{e.currentTarget.src=DEFAULT_AVATAR;}} /></div>
 
       <div className="cn-card-main">
         <div className="cn-card-header">
@@ -555,7 +604,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
               </div>
             ) : (
               <div className="cn-meta-row" style={{minWidth:0}}>
-                {groupMetaOneLine && <span className="cn-meta" style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{groupMetaOneLine}</span>}
+                {groupMetaOneLine && <span className="cn-meta" title={groupMetaOneLine} style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%", display: "block"}}>{groupMetaOneLine}</span>}
               </div>
             )}
           </div>
@@ -570,10 +619,27 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
         {!isGroup && trainingTypes.length>0 && <p className="cn-frequency">Ưu tiên: {trainingTypes.join(" · ")}</p>}
         {bio && <p className="cn-bio">{bio}</p>}
 
-        {!isSelf && !isPinned && inviteType && (
+        {(!isSelf && (canInvite || canReport)) && (
           <div className="cn-card-actions">
-            <button type="button" className={primaryClass} onClick={handlePrimaryClick}>{primaryLabel}</button>
-            <button type="button" className="cn-btn-ghost" onClick={handleReportClick}>Báo cáo</button>
+            {canInvite && (
+              <button
+                type="button"
+                className={primaryClass}
+                onClick={handlePrimaryClick}
+              >
+                {primaryLabel}
+              </button>
+            )}
+
+            {canReport && (
+              <button
+                type="button"
+                className="cn-btn-ghost cn-btn-report"
+                onClick={handleReportClick}
+              >
+                Báo cáo
+              </button>
+            )}
           </div>
         )}
       </div>

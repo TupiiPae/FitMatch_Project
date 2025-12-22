@@ -23,14 +23,19 @@ export default function TeamManageMembersModal({ open, saving=false, members=[],
 
   const toggleMakeOwner=(id)=>{
     id=String(id||""); if(!id) return;
-    if(makeOwnerId && makeOwnerId!==id) return; // khóa chỉ 1 người
-    setMakeOwnerId(prev=>prev===id?null:id);
-    setRemoveIds(prev=>prev.filter(x=>String(x)!==id)); // không cho vừa remove vừa owner
+    if(makeOwnerId && makeOwnerId!==id) return; 
+    setMakeOwnerId(prev=>{
+      const next = (prev===id ? null : id);
+      if(next){
+        setRemoveIds([]);
+      }
+      return next;
+    });
   };
 
   const toggleRemove=(id)=>{
     id=String(id||""); if(!id) return;
-    if(makeOwnerId===id) return; // không remove người đang được chọn làm chủ nhóm
+    if(makeOwnerId===id) return; 
     setRemoveIds(prev=>{
       const s=new Set(prev.map(x=>String(x)));
       if(s.has(id)) s.delete(id); else s.add(id);
@@ -69,12 +74,12 @@ export default function TeamManageMembersModal({ open, saving=false, members=[],
           )}
 
           {list.rest.map(u=>{
-            const isNewOwner=makeOwnerId===u.id;
-            const willRemove=removeSet.has(u.id);
-            const hasPending=isNewOwner||willRemove;
-            const lockMakeOwner=!!makeOwnerId && makeOwnerId!==u.id;
-            const disableMakeOwner=lockMakeOwner||willRemove;
-            const disableRemove=isNewOwner;
+            const isNewOwner = makeOwnerId===u.id;
+            const willRemove = removeSet.has(u.id);
+            const hasPending = isNewOwner || willRemove;
+            const lockOthers = !!makeOwnerId && !isNewOwner;
+            const disableMakeOwner = lockOthers || willRemove;
+            const disableRemove = lockOthers || isNewOwner;
 
             return (
               <div key={u.id} className={"tc-mm-row"+(hasPending?" is-pending":"")}>
@@ -95,8 +100,12 @@ export default function TeamManageMembersModal({ open, saving=false, members=[],
                         type="button"
                         className={"tc-mm-link"+(disableMakeOwner?" is-disabled":"")}
                         onClick={()=>{ if(!disableMakeOwner) toggleMakeOwner(u.id); }}
-                        title={lockMakeOwner?"Chỉ có thể chỉ định 1 chủ nhóm. Hoàn tác người đã chọn để chọn người khác.":(willRemove?"Đang chọn mời ra khỏi nhóm.":"")}
-                        disabled={saving}
+                        title={
+                          lockOthers
+                            ? "Đang chỉ định chủ nhóm. Hãy hoàn tất hoặc hoàn tác trước khi thao tác với thành viên khác."
+                            : (willRemove ? "Đang chọn mời ra khỏi nhóm." : "")
+                        }
+                        disabled={saving || disableMakeOwner}
                       >
                         Chỉ định chủ nhóm
                       </button>
@@ -105,8 +114,12 @@ export default function TeamManageMembersModal({ open, saving=false, members=[],
                         type="button"
                         className={"tc-mm-link tc-mm-danger"+(disableRemove?" is-disabled":"")}
                         onClick={()=>{ if(!disableRemove) toggleRemove(u.id); }}
-                        title={disableRemove?"Bạn đã chọn người này làm chủ nhóm.":""}
-                        disabled={saving}
+                        title={
+                          isNewOwner
+                            ? "Bạn đã chọn người này làm chủ nhóm."
+                            : (lockOthers ? "Đang chỉ định chủ nhóm. Hãy hoàn tất hoặc hoàn tác trước khi thao tác với thành viên khác." : "")
+                        }
+                        disabled={saving || disableRemove}
                       >
                         Mời ra khỏi nhóm
                       </button>

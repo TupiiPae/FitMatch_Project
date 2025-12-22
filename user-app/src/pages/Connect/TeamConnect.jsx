@@ -65,6 +65,13 @@ function normReqItem(x){
   };
 }
 
+// Helper tạo mã nhóm 6 ký tự cuối từ id
+function getShortRoomCode(id){
+  const raw=String(id||"").trim();
+  if(!raw) return "";
+  return raw.slice(-6);
+}
+
 export default function TeamConnect({ onLeftRoom }){
   const nav=useNavigate();
   const [loading,setLoading]=useState(true);
@@ -105,6 +112,9 @@ export default function TeamConnect({ onLeftRoom }){
   const [streakLoading,setStreakLoading]=useState(false);
   const [streakErr,setStreakErr]=useState("");
   const [streakData,setStreakData]=useState(null);
+
+  // state cho copy mã nhóm
+  const [copiedCode,setCopiedCode]=useState(false);
 
   const loadTeamStreaks=async(id)=>{
     if(!id) return;
@@ -161,7 +171,7 @@ export default function TeamConnect({ onLeftRoom }){
   },[room]);
 
   const streakMembers=useMemo(()=>{
-  const list=safeArr(streakData?.members);
+    const list=safeArr(streakData?.members);
     if(list.length) return list.map(x=>({
       id:String(x?.id||""),
       name:x?.name||"Người dùng FitMatch",
@@ -185,9 +195,9 @@ export default function TeamConnect({ onLeftRoom }){
   },[streakData,members]);
 
   const ownerUser=useMemo(()=>{
-  const m=safeArr(room?.members).find(x=>x?.role==="owner")||safeArr(room?.members)[0]||null;
-  const u=m?.user||{}; const p=u?.profile||{};
-  return { id:String(u._id||u.id||""), name:p.nickname||u.username||u.email||"Chủ nhóm", avatarUrl:toAbs(p.avatarUrl)||null, sex:p.sex||null, dob:p.dob||null };
+    const m=safeArr(room?.members).find(x=>x?.role==="owner")||safeArr(room?.members)[0]||null;
+    const u=m?.user||{}; const p=u?.profile||{};
+    return { id:String(u._id||u.id||""), name:p.nickname||u.username||u.email||"Chủ nhóm", avatarUrl:toAbs(p.avatarUrl)||null, sex:p.sex||null, dob:p.dob||null };
   },[room]);
 
   const isOwner=useMemo(()=>{
@@ -197,6 +207,29 @@ export default function TeamConnect({ onLeftRoom }){
 
   const team=useMemo(()=>{
     if(!room) return null;
+    const createdAtRaw = room.createdAt || null;
+    let createdAt = null;
+    let createdDays = 0;
+    let createdDateLabel = "";
+
+    if (createdAtRaw) {
+      const d = new Date(createdAtRaw);
+      if (!Number.isNaN(d.getTime())) {
+        createdAt = d;
+        const today = new Date();
+        const startCreated = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const diffMs = startToday.getTime() - startCreated.getTime();
+        const diffDays = Math.floor(diffMs / (1000*60*60*24)) + 1;
+        createdDays = diffDays > 0 ? diffDays : 1;
+
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const yyyy = d.getFullYear();
+        createdDateLabel = `${dd}/${mm}/${yyyy}`;
+      }
+    }
+
     return {
       id: room._id,
       name: room.name||"Nhóm tập luyện",
@@ -213,8 +246,13 @@ export default function TeamConnect({ onLeftRoom }){
       description: room.description||"",
       updatedAt: room.updatedAt || room.createdAt || null,
       goalLabel: room.goalLabel || "",
+      createdAt,
+      createdDays,
+      createdDateLabel,
     };
   },[room]);
+
+  const teamCode = useMemo(()=>getShortRoomCode(roomId),[roomId]);
 
   const slots=useMemo(()=>{
     const max=Math.max(2,Math.min(10,Number(team?.maxMembers||5)));
@@ -346,7 +384,6 @@ export default function TeamConnect({ onLeftRoom }){
     const nextMax=Number(editForm.maxMembers)||5;
     if(nextMax<curCnt) return toast.error(`Số thành viên tối đa không thể nhỏ hơn ${curCnt} (số thành viên hiện tại).`);
 
-
     try{
       setSavingEdit(true);
 
@@ -359,14 +396,14 @@ export default function TeamConnect({ onLeftRoom }){
       fd.append("maxMembers",String(Number(editForm.maxMembers)||5));
       fd.append("locationLabel",l);
 
-      if(hasFile) fd.append("cover",editForm.coverFile); // 👈 field name phải khớp uploadTeamCoverSingle
+      if(hasFile) fd.append("cover",editForm.coverFile);
       else fd.append("coverImageUrl",String(editForm.coverImageUrl||"").trim());
 
       await api.patch(`/match/rooms/${roomId}`,fd,{headers:{ "Content-Type":"multipart/form-data" }});
 
       toast.success("Đã cập nhật thông tin nhóm.");
       setEditOpen(false);
-      setEditForm(s=>({...s,coverFile:null})); // dọn file
+      setEditForm(s=>({...s,coverFile:null}));
       await loadRoom();
     }catch(e){
       toast.error(e?.response?.data?.message||"Không thể cập nhật nhóm.");
@@ -375,13 +412,18 @@ export default function TeamConnect({ onLeftRoom }){
     }
   };
 
-
-
-  const shareLink=async(e)=>{
+  // copy mã nhóm 6 số
+  const copyTeamCode=async(e)=>{
     e?.stopPropagation?.();
-    const link=`${window.location.origin}/ket-noi?room=${roomId}`;
-    try{ await navigator.clipboard.writeText(link); toast.success("Đã copy link nhóm."); }
-    catch{ toast.info(link); }
+    if(!teamCode) return;
+    try{
+      await navigator.clipboard.writeText(teamCode);
+      setCopiedCode(true);
+      toast.success("Đã copy mã nhóm.");
+      setTimeout(()=>setCopiedCode(false),3000);
+    }catch{
+      toast.info(`Mã nhóm: ${teamCode}`);
+    }
   };
 
   const handleConfirmLeave=async()=>{
@@ -558,11 +600,33 @@ export default function TeamConnect({ onLeftRoom }){
                 <div className="tc-group-top">
                   <div className="tc-group-titles">
                     <div className="tc-group-name">{team.name}</div>
+                    <div className="tc-group-meta">
+                      {team.createdDateLabel ? (
+                        <>
+                          <span className="tc-group-created">Tạo ngày {team.createdDateLabel}</span>
+                          {team.createdDays ? (
+                            <span className="tc-group-days"> · Đã hoạt động {team.createdDays} ngày</span>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="tc-group-created">Ngày tạo nhóm: đang cập nhật...</span>
+                      )}
+                    </div>
+
                     <div className="tc-group-sub">{members.length} thành viên đã tham gia</div>
                   </div>
 
                   <div className="tc-group-actions" onClick={(e)=>e.stopPropagation()}>
-                    {/* <button type="button" className="tc-act-btn" onClick={shareLink}><i className="fa-solid fa-share-nodes"/> Chia sẻ link</button> */}
+                    {teamCode && (
+                      <button
+                        type="button"
+                        className="tc-act-btn tc-act-code"
+                        onClick={copyTeamCode}
+                      >
+                        <span className="tc-act-code-text">Mã nhóm: {teamCode}</span>
+                        <i className={copiedCode ? "fa-solid fa-check" : "fa-regular fa-copy"} />
+                      </button>
+                    )}
                     <button type="button" className="tc-act-btn tc-act-outline" onClick={openEdit} disabled={!isOwner}><i className="fa-solid fa-pen-to-square"/> Chỉnh sửa</button>
                   </div>
                 </div>

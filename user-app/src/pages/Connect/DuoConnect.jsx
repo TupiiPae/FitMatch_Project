@@ -148,6 +148,16 @@ export default function DuoConnect({ onLeftRoom }) {
     return { slotMe: m1, slotPartner: m2 };
   }, [room, myId]);
 
+    // ===== THỜI GIAN KẾT NỐI (DUO) =====
+  const { duoSince, duoDays } = useMemo(() => {
+    const members = Array.isArray(room?.members) ? room.members : [];
+    const joined = members.map(m => m?.joinedAt).filter(Boolean).map(d => dayjs(d)).filter(d => d.isValid());
+    const fallback = dayjs(room?.createdAt || room?.created_at || room?.created || null);
+    const since = joined.length ? joined.sort((a,b)=>a.valueOf()-b.valueOf())[0] : (fallback.isValid() ? fallback : null); // lấy sớm nhất (ổn định)
+    const days = since ? Math.max(1, dayjs().startOf("day").diff(since.startOf("day"), "day") + 1) : 0; // tính inclusive (ít nhất 1 ngày)
+    return { duoSince: since, duoDays: days };
+  }, [room]);
+
   // ===== Build streak members cho duo (merge slot info + streakData) =====
   const duoStreak = useMemo(()=>{
     const raw = safeArr(streakData?.members);
@@ -252,8 +262,12 @@ export default function DuoConnect({ onLeftRoom }) {
               <div className="cn-duo-members-strip">
                 <DuoMemberSpot member={slotMe} label="Bạn" isMe />
                 <div className="cn-duo-vs">
-                  <div className="cn-duo-vs-icon"><i className="fa-solid fa-bolt" /></div>
                   <div className="cn-duo-vs-text">VS</div>
+                  <div className="cn-duo-vs-icon"><i className="fa-solid fa-bolt" /></div>
+                  <div className="cn-duo-vs-since">
+                    <div className="cn-duo-vs-days">{duoDays ? `${duoDays} ngày` : "-- ngày"}</div>
+                    <div className="cn-duo-vs-date">( Kể từ {duoSince ? duoSince.format("DD/MM") : "--/--"} )</div>
+                  </div>
                 </div>
                 <DuoMemberSpot member={slotPartner} label="Bạn ghép đôi" />
               </div>

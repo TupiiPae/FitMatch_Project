@@ -642,6 +642,7 @@
 .cn-card-bio-text {
   font-size: 13px;
   color: #e5e7eb;
+  overflow-wrap: break-word;
 }
 
 /* Actions – luôn ở đáy body */
@@ -860,7 +861,7 @@
   border-radius: 4px;
   border: 1px solid #4b5563;
   padding: 2px 16px;
-  font-size: 13px;
+  font-size: 16px;
   cursor: pointer;
   background: transparent;
   color: #e5e7eb;
@@ -871,6 +872,13 @@
   background: #111827;
   border-color: #ef4444;
 }
+
+.cn-card-actions .cn-btn-report{margin-left:auto;flex:0 0 auto;}
+/* nếu muốn nút chính luôn dài như thiết kế cũ */
+.cn-card-actions .cn-btn-primary,
+.cn-card-actions .cn-btn-success,
+.cn-card-actions .cn-btn-cancel{flex:1;}
+
 
 /* Empty state */
 .cn-empty {
