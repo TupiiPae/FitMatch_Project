@@ -4,6 +4,7 @@ import { listNearby, createMatchRequest, getMyRequests, acceptMatchRequest, canc
 import { toast } from "react-toastify";
 import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
 import ReportSideModal from "./ReportSideModal";
+import UserSideModal from "../UserProfile/UserSideModal";
 
 const AGE_RANGE_LABELS={all:"Tất cả","18-21":"18-21","22-27":"22-27","28-35":"28-35","36-45":"36-45","45+":"Trên 45"};
 const GENDER_LABELS={all:"Tất cả",male:"Nam",female:"Nữ"};
@@ -98,6 +99,9 @@ export default function TabNearby({
   onOpenCreateTeam,
 }) {
   const nav = useNavigate();
+
+  const meId=useMemo(()=>String(currentUser?._id||currentUser?.id||currentUser?.user?._id||currentUser?.user?.id||""),[currentUser]);
+
   const [viewMode, setViewMode] = useState("grid");
   const [search, setSearch] = useState("");
 
@@ -120,6 +124,28 @@ export default function TabNearby({
   const [reportLoading,setReportLoading]=useState(false);
   const openReport=(target)=>setReportState({ open:true, target: target||null });
   const closeReport=()=>setReportState({ open:false, target:null });
+
+  // ===== USER SIDE MODAL =====
+  const [userModalOpen,setUserModalOpen]=useState(false);
+  const [userModalTarget,setUserModalTarget]=useState(null);
+  const openUserModal=(u)=>{
+    if(!u || u.isGroup) return;
+    const id=String(u?.id||u?._id||u?.userId||u?.uid||"");
+    if(!id) return;
+    if(meId && id===String(meId)) return; // tự bấm bản thân -> không mở
+    setUserModalTarget(u);
+    setUserModalOpen(true);
+  };
+  const closeUserModal=()=>setUserModalOpen(false);
+
+  const handleViewPublicProfile=(uid)=>{
+    setUserModalOpen(false);
+    toast.info("Tính năng xem hồ sơ public của người dùng đang phát triển.");
+  };
+  const handleStartChat=(uid)=>{
+    setUserModalOpen(false);
+    toast.info("Chức năng nhắn tin riêng đang phát triển.");
+  };
 
   async function handleSubmitReport(payload){
     const t=reportState.target;
@@ -241,7 +267,7 @@ export default function TabNearby({
       if(connectionMode==="one_to_one" && isGroup) return false;
       if(connectionMode==="group" && !isGroup) return false;
 
-      // Nếu đang search mã nhóm 6 số: chỉ giữ nhóm có shortCode trùng, bỏ qua các filter khác (goal, location,...)
+      // Nếu đang search mã nhóm 6 số: chỉ giữ nhóm có shortCode trùng, bỏ qua các filter khác
       if(isGroupIdSearch){
         if(!isGroup) return false;
         if(!shortCode || shortCode.toLowerCase()!==searchText) return false;
@@ -255,7 +281,7 @@ export default function TabNearby({
         if(!userGoal || userGoal!==myGoal) return false;
       }
 
-      // Lọc theo phạm vi vị trí (xài chung cho user & group)
+      // Lọc theo phạm vi vị trí
       if(locationRange!=="any"){
         if(!passLocationRangeByKey(locationRange, u.areaKey)) return false;
       }
@@ -283,7 +309,7 @@ export default function TabNearby({
         }else if(u.gender && u.gender!==genderFilter) return false;
       }
 
-      // Tìm kiếm text thông thường (tên, goal, location, tần suất, id,...)
+      // Search text thường
       if(searchText){
         const haystack=[
           u.nickname||"",
@@ -435,8 +461,37 @@ export default function TabNearby({
         {errorMsg && <div className="cn-error"><p>{errorMsg}</p></div>}
 
         <div className={"cn-card-list " + (viewMode === "grid" ? "cn-card-list--grid" : "cn-card-list--list")}>
-          {connectionMode==="one_to_one" && selfCard && <ConnectCard key="self" user={selfCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} onOpenReport={null} isSelf={true} isPinned={true} pinText="Hồ sơ của bạn" />}
-          {connectionMode==="group" && myGroupCard && <ConnectCard key="my-group" user={myGroupCard} viewMode={viewMode} inviteState={null} onOpenConfirm={null} onOpenReport={openReport} isSelf={false} isPinned={true} pinText="Nhóm của bạn" />}
+          {connectionMode==="one_to_one" && selfCard && (
+            <ConnectCard
+              key="self"
+              user={selfCard}
+              viewMode={viewMode}
+              inviteState={null}
+              onOpenConfirm={null}
+              onOpenReport={null}
+              onOpenUser={null}
+              meId={meId}
+              isSelf={true}
+              isPinned={true}
+              pinText="Hồ sơ của bạn"
+            />
+          )}
+
+          {connectionMode==="group" && myGroupCard && (
+            <ConnectCard
+              key="my-group"
+              user={myGroupCard}
+              viewMode={viewMode}
+              inviteState={null}
+              onOpenConfirm={null}
+              onOpenReport={openReport}
+              onOpenUser={null}
+              meId={meId}
+              isSelf={false}
+              isPinned={true}
+              pinText="Nhóm của bạn"
+            />
+          )}
 
           {filteredList.map((u) => (
             <ConnectCard
@@ -446,6 +501,8 @@ export default function TabNearby({
               inviteState={getInviteStateFor(u)}
               onOpenConfirm={openConfirm}
               onOpenReport={openReport}
+              onOpenUser={openUserModal}
+              meId={meId}
               isSelf={false}
               isPinned={false}
             />
@@ -462,17 +519,23 @@ export default function TabNearby({
       <ConnectRequestConfirmModal open={confirmState.open} mode={confirmState.mode} targetName={confirmState.target?.nickname || ""} onClose={closeConfirm} onConfirm={handleConfirm} loading={confirmLoading} />
 
       <ReportSideModal open={reportState.open} target={reportState.target} loading={reportLoading} onClose={closeReport} onSubmit={handleSubmitReport} />
+
+      <UserSideModal
+        open={userModalOpen}
+        user={userModalTarget}
+        meId={meId}
+        onClose={closeUserModal}
+        onViewProfile={handleViewPublicProfile}
+        onStartChat={handleStartChat}
+      />
     </>
   );
 }
 
 /* ===== Card: Grid & List ===== */
-function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport, isSelf=false, isPinned=false, pinText="" }) {
-  const nav = useNavigate();
-
+function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport, onOpenUser, meId, isSelf=false, isPinned=false, pinText="" }) {
   const { id,_id,nickname,age,gender,goal,trainingTypes=[],intensityLabel,locationLabel,bio,isGroup,membersCount,imageUrl,areaLabel,ageRange,trainingFrequency } = user || {};
   const uid=id||_id;
-  const isPreview=isSelf||!onOpenConfirm;
 
   const userGenderLabel=!isGroup&&gender==="male"?"Nam":!isGroup&&gender==="female"?"Nữ":!isGroup&&gender?"Khác":"";
   const groupGenderLabel=isGroup?(GENDER_LABELS[gender]||"Tất cả"):"";
@@ -499,6 +562,8 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
 
   const inviteType=inviteState?.type||null;
   const inviteReqId=inviteState?.requestId||null;
+
+  // ⚠️ pinned group (myGroupCard) -> không có invite, nhưng vẫn có report
   const canInvite = !!inviteType && !!onOpenConfirm && (!isPinned || !isGroup);
   const canReport = !!onOpenReport && !isSelf;
 
@@ -509,9 +574,16 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
   else if(inviteType==="send_group"){primaryLabel="Xin tham gia nhóm";primaryClass="cn-btn-primary";}
   else if(inviteType==="send_duo"){primaryLabel="Gửi lời mời kết nối";primaryClass="cn-btn-primary";}
 
-  const goProfile=()=>{if(isSelf||isGroup) return; nav(`/ket-noi/ho-so/${uid}`);};
   const handlePrimaryClick=()=>{if(!inviteType||!onOpenConfirm) return; onOpenConfirm(inviteType,user,inviteReqId);};
   const handleReportClick=()=>{if(!onOpenReport) return; onOpenReport(user);};
+
+  const handleOpenUser=()=>{
+    if(!onOpenUser || isGroup || isSelf) return;
+    const idStr=String(uid||"");
+    if(!idStr) return;
+    if(meId && idStr===String(meId)) return;
+    onOpenUser(user);
+  };
 
   if(viewMode==="grid"){
     return (
@@ -519,13 +591,20 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
         {isPinned && <div className="cn-card-pin" title={pinText||"Đã ghim"}><i className="fa-solid fa-thumbtack" /></div>}
 
         <div className="cn-card-img-wrap">
-          <img src={thumbSrc} alt={nickname} className="cn-card-img" onError={(e)=>{e.currentTarget.src=DEFAULT_AVATAR;}} />
+          <img
+            src={thumbSrc}
+            alt={nickname}
+            className="cn-card-img"
+            onError={(e)=>{e.currentTarget.src=DEFAULT_AVATAR;}}
+            onClick={handleOpenUser}
+            style={!isGroup&&!isSelf?{cursor:"pointer"}:undefined}
+          />
           <div className="cn-card-img-overlay">
             <div className="cn-card-img-title-row">
               <div className="cn-card-img-title-left">
-                {isPreview
+                {isSelf||!onOpenUser||isGroup
                   ? <div className="cn-card-img-name-btn cn-card-img-name-static">{nickname}</div>
-                  : <button type="button" className="cn-card-img-name-btn" onClick={goProfile}>{nickname}</button>}
+                  : <button type="button" className="cn-card-img-name-btn" onClick={handleOpenUser}>{nickname}</button>}
               </div>
             </div>
 
@@ -554,11 +633,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
           {(!isSelf && (canInvite || canReport)) && (
             <div className="cn-card-actions">
               {canInvite && (
-                <button
-                  type="button"
-                  className={primaryClass}
-                  onClick={handlePrimaryClick}
-                >
+                <button type="button" className={primaryClass} onClick={handlePrimaryClick}>
                   {primaryLabel}
                 </button>
               )}
@@ -569,6 +644,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
                   className="cn-btn-ghost cn-btn-report"
                   onClick={handleReportClick}
                   title="Báo cáo"
+                  style={{ marginLeft: "auto" }}   
                 >
                   <i className="fa-solid fa-triangle-exclamation"></i>
                 </button>
@@ -584,14 +660,18 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
     <article className="cn-card cn-card--list">
       {isPinned && <div className="cn-card-pin" title={pinText||"Đã ghim"}><i className="fa-solid fa-thumbtack" /></div>}
 
-      <div className="cn-avatar"><img src={thumbSrc} alt={nickname} className="cn-avatar-img" onError={(e)=>{e.currentTarget.src=DEFAULT_AVATAR;}} /></div>
+      <div className="cn-avatar" onClick={handleOpenUser} style={!isGroup&&!isSelf?{cursor:"pointer"}:undefined}>
+        <img src={thumbSrc} alt={nickname} className="cn-avatar-img" onError={(e)=>{e.currentTarget.src=DEFAULT_AVATAR;}} />
+      </div>
 
       <div className="cn-card-main">
         <div className="cn-card-header">
           <div style={{minWidth:0,width:"100%"}}>
             <div className="cn-nickname-row" style={isGroup?{justifyContent:"space-between",gap:10}:{}}>
               <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
-                {isPreview ? <span className="cn-name-static">{nickname}</span> : <button type="button" className="cn-name-link" onClick={goProfile}>{nickname}</button>}
+                {isSelf||!onOpenUser||isGroup
+                  ? <span className="cn-name-static">{nickname}</span>
+                  : <button type="button" className="cn-name-link" onClick={handleOpenUser}>{nickname}</button>}
               </div>
               {isGroup && membersChip}
             </div>
@@ -622,11 +702,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
         {(!isSelf && (canInvite || canReport)) && (
           <div className="cn-card-actions">
             {canInvite && (
-              <button
-                type="button"
-                className={primaryClass}
-                onClick={handlePrimaryClick}
-              >
+              <button type="button" className={primaryClass} onClick={handlePrimaryClick}>
                 {primaryLabel}
               </button>
             )}
@@ -636,6 +712,7 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
                 type="button"
                 className="cn-btn-ghost cn-btn-report"
                 onClick={handleReportClick}
+                style={{ marginLeft: "auto" }} 
               >
                 Báo cáo
               </button>

@@ -9,6 +9,7 @@ import { getMe } from "../../api/account";
 import { toast } from "react-toastify";
 import TeamEditModal from "./TeamEditModal";
 import TeamManageMembersModal from "./TeamManageMembersModal";
+import UserSideModal from "../UserProfile/UserSideModal";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -16,6 +17,56 @@ const AGE_LABELS={all:"Tất cả","18-21":"18-21","22-27":"22-27","28-35":"28-3
 const GENDER_LABELS={all:"Tất cả",male:"Nam",female:"Nữ"};
 const FREQ_LABELS={"1-2":"1-2 buổi/tuần","2-3":"2-3 buổi/tuần","3-5":"3-5 buổi/tuần","5+":"Trên 5 buổi/tuần"};
 const INTENSITY_LABELS={level_1:"Không tập luyện, ít vận động",level_2:"Vận động nhẹ nhàng",level_3:"Chăm chỉ tập luyện",level_4:"Rất năng động"};
+const norm=(v)=>(v||"").toString().trim().toLowerCase();
+const genderKey=(g)=>{
+  const v=norm(g);
+  if(!v) return null;
+  if(["male","nam","m","man","men"].includes(v)) return "male";
+  if(["female","nu","nữ","f","woman","women"].includes(v)) return "female";
+  return "other";
+};
+
+// Map mọi kiểu object (raw user / member normalized / req.user) -> user card giống TabNearby
+function toUserSideCard(x){
+  if(!x) return null;
+
+  // Case: raw user doc (có profile)
+  if(x?.profile || x?.username || x?.email || x?._id){
+    const u=x||{};
+    const p=u.profile||{};
+    const id=String(u._id||u.id||"");
+    const nickname=p.nickname||u.username||u.email||"Người dùng FitMatch";
+    const imageUrl=toAbs(p.avatarUrl)||toAbs(u.avatarUrl)||"";
+    const bio=String(u.connectBio||p.bio||p.intro||p.about||u.bio||"").trim();
+
+    const age=calcAge(p.dob||p.birthDate||p.ngaySinh||u.dob||u.birthDate);
+    const gender=genderKey(p.sex||p.gender||p.gioiTinh||u.sex||u.gender);
+
+    const locationLabel=String(u.connectLocationLabel||p.locationLabel||buildFullLocationFromProfile(p)||u.locationLabel||"").trim();
+    const goal=String(u.connectGoalLabel||p.goalLabel||p.goal||u.goal||"").trim();
+
+    const trainingTypes=Array.isArray(p.trainingTypes)?p.trainingTypes:(Array.isArray(u.trainingTypes)?u.trainingTypes:[]);
+    const intensityKey=p.trainingIntensity||u.trainingIntensity||null;
+    const intensityLabel=(INTENSITY_LABELS[intensityKey]||String(intensityKey||"").trim()||"")||"";
+
+    return { id, nickname, imageUrl, bio, age, gender, locationLabel, goal, trainingTypes, intensityLabel, isGroup:false };
+  }
+
+  // Case: member normalized hoặc req.user
+  const id=String(x.id||x.userId||x._id||"");
+  const nickname=x.nickname||x.name||"Người dùng FitMatch";
+  const imageUrl=toAbs(x.avatarUrl||x.imageUrl||"")||"";
+  const bio=String(x.bio||"").trim();
+  const age=typeof x.age==="number"?x.age:null;
+  const gender=genderKey(x.gender||x.sex);
+  const locationLabel=String(x.locationLabel||"").trim();
+  const goal=String(x.goalLabel||x.goal||"").trim();
+  const trainingTypes=Array.isArray(x.trainingTypes)?x.trainingTypes:[];
+  const intensityLabel=String(x.intensityLabel||"").trim();
+
+  return { id, nickname, imageUrl, bio, age, gender, locationLabel, goal, trainingTypes, intensityLabel, isGroup:false };
+}
+
 
 function getInitials(name){if(!name)return"FM";return String(name).trim().split(/\s+/).map(p=>p?.[0]).join("").slice(0,2).toUpperCase();}
 const safeArr=(v)=>Array.isArray(v)?v:[];
@@ -31,7 +82,7 @@ function normReqItem(x){
   const name=p?.nickname||u?.username||u?.email||"Người dùng FitMatch";
   const avatarUrl=toAbs(p?.avatarUrl)||toAbs(u?.avatarUrl)||null;
 
-  const gender=p?.sex||u?.sex||null;
+  const gender=genderKey(p?.sex||p?.gender||u?.sex||u?.gender);
   const age=calcAge(p?.dob||u?.dob);
 
   const goalLabel=(u?.connectGoalLabel||x?.meta?.fromGoalLabel||"")?.trim()||"";
@@ -131,6 +182,21 @@ export default function TeamConnect({ onLeftRoom }){
   useEffect(()=>{ if(topTab==="setup" && roomId) loadTeamStreaks(roomId); },[topTab,roomId]);
 
   const myId=me?._id||me?.id||null;
+    // ===== USER SIDE MODAL =====
+  const [userModalOpen,setUserModalOpen]=useState(false);
+  const [userModalTarget,setUserModalTarget]=useState(null);
+
+  const openUserModal=(anyUser)=>{
+    const card=toUserSideCard(anyUser);
+    if(!card?.id) return;
+    if(myId && String(card.id)===String(myId)) return; // không mở hồ sơ của chính mình
+    setUserModalTarget(card);
+    setUserModalOpen(true);
+  };
+  const closeUserModal=()=>setUserModalOpen(false);
+
+  const handleViewPublicProfile=(uid)=>{ setUserModalOpen(false); toast.info("Tính năng xem hồ sơ public của người dùng đang phát triển."); };
+  const handleStartChat=(uid)=>{ setUserModalOpen(false); toast.info("Chức năng nhắn tin riêng đang phát triển."); };
 
   const loadRoom=async()=>{
     const [stRaw,meRaw]=await Promise.all([getMatchStatus(),getMe().catch(()=>null)]);
@@ -166,7 +232,38 @@ export default function TeamConnect({ onLeftRoom }){
       const u=m.user||{};
       const p=u.profile||{};
       const name=p.nickname||u.username||u.email||"Người dùng FitMatch";
-      return { id:String(u._id||u.id||""), name, avatarUrl:toAbs(p.avatarUrl)||null, role:m.role||"member" };
+
+      const avatarUrl=toAbs(p.avatarUrl)||toAbs(u.avatarUrl)||null;
+
+      const gender=genderKey(p.sex||p.gender||p.gioiTinh||u.sex||u.gender);
+      const age=calcAge(p.dob||p.birthDate||p.ngaySinh||u.dob||u.birthDate);
+
+      const goal=String(u.connectGoalLabel||p.goalLabel||p.goal||u.goal||"").trim();
+      const locationLabel=String(u.connectLocationLabel||p.locationLabel||buildFullLocationFromProfile(p)||u.locationLabel||"").trim();
+      const bio=String(u.connectBio||p.bio||p.intro||p.about||u.bio||"").trim();
+
+      const trainingTypes=Array.isArray(p.trainingTypes)?p.trainingTypes:(Array.isArray(u.trainingTypes)?u.trainingTypes:[]);
+      const intensityKey=p.trainingIntensity||u.trainingIntensity||null;
+      const intensityLabel=(INTENSITY_LABELS[intensityKey]||String(intensityKey||"").trim()||"")||"";
+
+      return {
+        id:String(u._id||u.id||""),
+        name,
+        nickname:name,
+        avatarUrl,
+        imageUrl:avatarUrl||"",
+        role:m.role||"member",
+
+        gender,
+        age,
+        goal,
+        locationLabel,
+        bio,
+        trainingTypes,
+        intensityLabel,
+
+        rawUser:u, // giữ lại nếu cần
+      };
     });
   },[room]);
 
@@ -534,8 +631,14 @@ export default function TeamConnect({ onLeftRoom }){
                   const roleText=isOwnerSlot?"Chủ nhóm":(filled?"Thành viên":"Chưa tham gia");
                   const roleCls=isOwnerSlot?" is-owner":(filled?" is-member":" is-vacant");
                   const avaSrc=filled?(m.avatarUrl||"/images/avatar.png"):"/images/avatar.png";
+                  const canOpen=filled && !(myId && String(myId)===String(m.id));
                   return (
-                    <div key={m?.id||`empty-${idx}`} className={"tc-slot"+(!filled?" is-empty":"")+(isMe?" is-me":"")}>
+                    <div
+                      key={m?.id||`empty-${idx}`}
+                      className={"tc-slot"+(!filled?" is-empty":"")+(isMe?" is-me":"")}
+                      onClick={()=>canOpen && openUserModal(m)}
+                      style={canOpen?{cursor:"pointer"}:undefined}
+                    >
                       <div className="tc-slot-row">
                         <div className={"tc-slot-ava"+(isOwnerSlot?" is-owner":"")}>
                           <img src={avaSrc} alt={title} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} />
@@ -671,6 +774,7 @@ export default function TeamConnect({ onLeftRoom }){
                         isOwner={isOwner}
                         onOpenAccept={()=>openConfirm("accept",r)}
                         onOpenReject={()=>openConfirm("reject",r)}
+                        onOpenUser={openUserModal} onStartChat={handleStartChat}
                       />
                     ))}
                   </div>
@@ -687,7 +791,7 @@ export default function TeamConnect({ onLeftRoom }){
                 acceptedReqs.length ? (
                   <div className="tc-req-list">
                     {acceptedReqs.map(r=>(
-                      <ResolvedTeamReqCard key={r.id} r={r} variant="accepted" />
+                      <ResolvedTeamReqCard key={r.id} r={r} variant="accepted" onOpenUser={openUserModal} onStartChat={handleStartChat}/>
                     ))}
                   </div>
                 ) : (
@@ -703,7 +807,7 @@ export default function TeamConnect({ onLeftRoom }){
                 rejectedReqs.length ? (
                   <div className="tc-req-list">
                     {rejectedReqs.map(r=>(
-                      <ResolvedTeamReqCard key={r.id} r={r} variant="rejected" />
+                      <ResolvedTeamReqCard key={r.id} r={r} variant="rejected" onOpenUser={openUserModal} onStartChat={handleStartChat}/>
                     ))}
                   </div>
                 ) : (
@@ -787,11 +891,20 @@ export default function TeamConnect({ onLeftRoom }){
         onClose={()=>{ if(!manageSaving) setManageOpen(false); }}
         onApply={applyManageMembers}
       />
+
+      <UserSideModal
+        open={userModalOpen}
+        user={userModalTarget}
+        meId={String(myId||"")}
+        onClose={closeUserModal}
+        onViewProfile={handleViewPublicProfile}
+        onStartChat={handleStartChat}
+      />
     </div>
   );
 }
 
-function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject }){
+function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject, onOpenUser, onStartChat }){
   const nav=useNavigate();
   const u=r?.user||{};
   const name=u.name||"Người dùng FitMatch";
@@ -815,12 +928,12 @@ function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject }){
       <div className="tc-pr-body">
         <div className="tc-pr-left">
           <div className="tc-pr-userrow">
-            <div className="tc-pr-ava">
+            <div className="tc-pr-ava" onClick={()=>canOpen && onOpenUser(u)} style={canOpen?{cursor:"pointer"}:undefined}>
               <img src={avatar} alt={name} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} />
             </div>
 
             <div className="tc-pr-usertext">
-              <div className="tc-pr-left-name" title={name}>{name}</div>
+              <div className="tc-pr-left-name" title={name} onClick={()=>canOpen && onOpenUser(u)} style={canOpen?{cursor:"pointer"}:undefined}>{name}</div>
               <div className="tc-pr-left-chips">
                 <span className="tc-chip tc-chip-goal">{goal}</span>
               </div>
@@ -867,9 +980,10 @@ function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject }){
   );
 }
 
-function ResolvedTeamReqCard({ r, variant="accepted" }){
+function ResolvedTeamReqCard({ r, variant="accepted",onOpenUser }){
   const nav=useNavigate();
   const u=r?.user||{};
+  const canOpen=!!onOpenUser && !!u?.id;
   const name=u.name||"Người dùng FitMatch";
   const avatar=u.avatarUrl||"/images/avatar.png";
   const goal=u.goalLabel||"—";
@@ -893,11 +1007,11 @@ function ResolvedTeamReqCard({ r, variant="accepted" }){
       <div className="tc-pr-body">
         <div className="tc-pr-left">
           <div className="tc-pr-userrow">
-            <div className="tc-pr-ava">
+            <div className="tc-pr-ava" onClick={()=>canOpen && onOpenUser(u)} style={canOpen?{cursor:"pointer"}:undefined}>
               <img src={avatar} alt={name} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}} />
             </div>
             <div className="tc-pr-usertext">
-              <div className="tc-pr-left-name" title={name}>{name}</div>
+              <div className="tc-pr-left-name" title={name} onClick={()=>canOpen && onOpenUser(u)} style={canOpen?{cursor:"pointer"}:undefined}>{name}</div>
               <div className="tc-pr-left-chips">
                 <span className="tc-chip tc-chip-goal">{goal}</span>
               </div>

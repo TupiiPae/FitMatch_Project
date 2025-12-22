@@ -15,6 +15,39 @@ import { uploadImageWithResize, deleteFile, extractPublicId } from "../utils/clo
 
 const tinhCalorieTarget = _tinhCalorieTarget;
 
+// GET /api/user/public/:id
+export const getUserPublic = async (req,res)=>{
+  try{
+    const { id } = req.params;
+    if(!id) return res.status(400).json({ message:"Thiếu id" });
+
+    const u = await User.findById(id)
+      .select("_id username role blocked profile.nickname profile.avatarUrl profile.sex profile.dob profile.trainingIntensity connectGoalKey connectGoalLabel connectTrainingTypes connectTrainingFrequencyLabel connectLocationLabel connectBio createdAt")
+      .lean();
+
+    if(!u || u.role!=="user" || u.blocked) return res.status(404).json({ message:"Không tìm thấy người dùng" });
+
+    const p=u.profile||{};
+    return res.json({
+      user:{
+        _id:u._id,
+        username:u.username,
+        profile:{ nickname:p.nickname, avatarUrl:p.avatarUrl, sex:p.sex, dob:p.dob, trainingIntensity:p.trainingIntensity },
+        connectGoalKey:u.connectGoalKey||null,
+        connectGoalLabel:u.connectGoalLabel||"",
+        connectTrainingTypes:Array.isArray(u.connectTrainingTypes)?u.connectTrainingTypes:[],
+        connectTrainingFrequencyLabel:u.connectTrainingFrequencyLabel||"",
+        connectLocationLabel:u.connectLocationLabel||"",
+        connectBio:u.connectBio||"",
+        createdAt:u.createdAt,
+      }
+    });
+  }catch(e){
+    console.error("getUserPublic error:", e?.message||e);
+    return res.status(500).json({ message:"Lỗi máy chủ" });
+  }
+};
+
 // ---- helper: gom lỗi validate thành map { path: message } ----
 function toValidationMap(err) {
   if (!err || err.name !== "ValidationError") return null;

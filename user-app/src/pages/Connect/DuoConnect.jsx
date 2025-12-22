@@ -7,11 +7,17 @@ import api from "../../lib/api";
 import { getMatchStatus } from "../../api/match";
 import { getMe } from "../../api/account";
 import { toast } from "react-toastify";
+import UserSideModal from "../UserProfile/UserSideModal";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
 const safeArr=(v)=>Array.isArray(v)?v:[];
 const pickOkData=(res)=>{const p=res?.data??res;return p?.data??p??null;};
+
+const norm=(v)=>(v||"").toString().trim().toLowerCase();
+const genderKey=(g)=>{const v=norm(g); if(!v) return null; if(["male","nam","m","man","men"].includes(v)) return "male"; if(["female","nu","nữ","f","woman","women"].includes(v)) return "female"; return "other";};
+const genderLabel=(k)=>k==="male"?"Nam":k==="female"?"Nữ":k==="other"?"Khác":"—";
+const addrLabel=(addr)=>{const a=addr||{}; const parts=[a.ward,a.district,a.city].map(s=>(s||"").toString().trim()).filter(Boolean); return parts.join(" - ");};
 
 export default function DuoConnect({ onLeftRoom }) {
   const nav = useNavigate();
@@ -25,6 +31,36 @@ export default function DuoConnect({ onLeftRoom }) {
   const [leaving, setLeaving] = useState(false);
 
   const [activeTab, setActiveTab] = useState("connect"); // 'connect' | 'chat'
+
+  // ===== USER SIDE MODAL =====
+  const [userModalOpen,setUserModalOpen]=useState(false);
+  const [userModalTarget,setUserModalTarget]=useState(null);
+  const closeUserModal=()=>setUserModalOpen(false);
+  const handleViewPublicProfile=(uid)=>{ setUserModalOpen(false); toast.info("Tính năng xem hồ sơ public của người dùng đang phát triển."); };
+  const handleStartChat=(uid)=>{ setUserModalOpen(false); toast.info("Chức năng nhắn tin riêng đang phát triển."); };
+
+  const openUserModalFromMember=(member)=>{
+    if(!member) return;
+    const uid=String(member?.id||"");
+    const myId=String(me?._id||me?.id||"");
+    if(!uid) return;
+    if(myId && uid===myId) return; // không mở “hồ sơ của tôi”
+    const card={
+      id: uid,
+      nickname: member.nickname||member.name||"Người dùng FitMatch",
+      imageUrl: member.avatarUrl||member.imageUrl||"",
+      bio: (member.bio||"").toString(),
+      age: member.age ?? null,
+      gender: member.gender ?? null, // male/female/other
+      locationLabel: (member.locationLabel||"").toString(),
+      goal: (member.goal||"").toString(),
+      trainingTypes: Array.isArray(member.trainingTypes)?member.trainingTypes:[],
+      intensityLabel: (member.intensityLabel||"").toString(),
+      isGroup:false,
+    };
+    setUserModalTarget(card);
+    setUserModalOpen(true);
+  };
 
   // ===== STREAK (Duo) =====
   const [streakLoading,setStreakLoading]=useState(false);
@@ -104,38 +140,53 @@ export default function DuoConnect({ onLeftRoom }) {
     return ()=>document.removeEventListener("visibilitychange",onVis);
   },[roomId,activeTab]);
 
-  // ===== Chuẩn hoá member & tạo 2 slot =====
+  // ===== Chuẩn hoá member & tạo 2 slot (BỔ SUNG: bio/location/goal...) =====
   const { slotMe, slotPartner } = useMemo(() => {
     const members = Array.isArray(room?.members) ? room.members : [];
 
-    const calcAge = (dob) => { if(!dob) return null; const d=dayjs(dob); if(!d.isValid()) return null; const a=dayjs().diff(d,"year"); return a>=0&&a<=120?a:null; };
-    const fmtGender = (g) => { const v=String(g||"").trim().toLowerCase(); if(!v) return null; if(["male","nam","m","men","man"].includes(v)) return "Nam"; if(["female","nu","nữ","f","women","woman"].includes(v)) return "Nữ"; if(["other","khac","khác"].includes(v)) return "Khác"; return String(g); };
+    const calcAgeLocal = (dob) => { if(!dob) return null; const d=dayjs(dob); if(!d.isValid()) return null; const a=dayjs().diff(d,"year"); return a>=0&&a<=120?a:null; };
 
     const normMember = (m) => {
       if (!m) return null;
       const u = m.user || {};
       const profile = u.profile || {};
-      const name = profile.nickname || u.username || u.email || "Người dùng FitMatch";
+      const id=String(u._id||u.id||"");
+      const nickname = profile.nickname || u.username || u.email || "Người dùng FitMatch";
 
-      const genderRaw = profile.gender ?? profile.gioiTinh ?? profile.sex ?? null;
+      const avatarUrl = toAbs(profile.avatarUrl) || toAbs(u.avatarUrl) || null;
+
+      const gKey = genderKey(profile.gender ?? profile.gioiTinh ?? profile.sex ?? u.gender);
       const dobRaw = profile.birthDate ?? profile.dob ?? profile.ngaySinh ?? profile.birthday ?? null;
 
+      const bio=(profile.bio||profile.intro||profile.about||u.bio||"").toString();
+      const locationLabel=(profile.locationLabel||u.locationLabel||addrLabel(profile.address)||"").toString();
+      const goal=(profile.goalLabel||profile.goal||u.goal||"").toString();
+      const trainingTypes=Array.isArray(profile.trainingTypes)?profile.trainingTypes:(Array.isArray(u.trainingTypes)?u.trainingTypes:[]);
+      const intensityLabel=(profile.intensityLabel||u.intensityLabel||"").toString();
+
       return {
-        id: String(u._id || u.id || ""),
-        name,
-        avatarUrl: toAbs(profile.avatarUrl) || toAbs(u.avatarUrl) || null,
+        id,
+        name: nickname,
+        nickname,
+        avatarUrl,
+        imageUrl: avatarUrl||"",
         role: m.role || "member",
         joinedAt: m.joinedAt || null,
-        gender: fmtGender(genderRaw),
-        age: calcAge(dobRaw),
+        gender: gKey,                 // male/female/other
+        genderText: genderLabel(gKey),
+        age: calcAgeLocal(dobRaw),
+        bio,
+        locationLabel,
+        goal,
+        trainingTypes,
+        intensityLabel,
       };
     };
 
     if (!members.length) return { slotMe: null, slotPartner: null };
-
     if (members.length === 1) {
       const only = normMember(members[0]);
-      if (myId && only.id === String(myId)) return { slotMe: only, slotPartner: null };
+      if (myId && only?.id === String(myId)) return { slotMe: only, slotPartner: null };
       return { slotMe: only, slotPartner: null };
     }
 
@@ -143,18 +194,18 @@ export default function DuoConnect({ onLeftRoom }) {
     const m2 = normMember(members[1]);
 
     if (!myId) return { slotMe: m1, slotPartner: m2 };
-    if (m1.id === String(myId)) return { slotMe: m1, slotPartner: m2 };
-    if (m2.id === String(myId)) return { slotMe: m2, slotPartner: m1 };
+    if (m1?.id === String(myId)) return { slotMe: m1, slotPartner: m2 };
+    if (m2?.id === String(myId)) return { slotMe: m2, slotPartner: m1 };
     return { slotMe: m1, slotPartner: m2 };
   }, [room, myId]);
 
-    // ===== THỜI GIAN KẾT NỐI (DUO) =====
+  // ===== THỜI GIAN KẾT NỐI (DUO) =====
   const { duoSince, duoDays } = useMemo(() => {
     const members = Array.isArray(room?.members) ? room.members : [];
     const joined = members.map(m => m?.joinedAt).filter(Boolean).map(d => dayjs(d)).filter(d => d.isValid());
     const fallback = dayjs(room?.createdAt || room?.created_at || room?.created || null);
-    const since = joined.length ? joined.sort((a,b)=>a.valueOf()-b.valueOf())[0] : (fallback.isValid() ? fallback : null); // lấy sớm nhất (ổn định)
-    const days = since ? Math.max(1, dayjs().startOf("day").diff(since.startOf("day"), "day") + 1) : 0; // tính inclusive (ít nhất 1 ngày)
+    const since = joined.length ? joined.sort((a,b)=>a.valueOf()-b.valueOf())[0] : (fallback.isValid() ? fallback : null);
+    const days = since ? Math.max(1, dayjs().startOf("day").diff(since.startOf("day"), "day") + 1) : 0;
     return { duoSince: since, duoDays: days };
   }, [room]);
 
@@ -199,7 +250,6 @@ export default function DuoConnect({ onLeftRoom }) {
     const m = merge(meBase, meSt);
     const p = merge(paBase, paSt);
 
-    // fallback nếu BE chưa trả members: dùng slot (0 streak)
     const fb=(base)=>base?({id:base.id,name:base.name,avatarUrl:base.avatarUrl,role:base.role,hasToday:false,currentStreak:0,bestStreak:0}):null;
     return { me: m||fb(meBase), partner: p||fb(paBase) };
   },[streakData,slotMe,slotPartner,myId]);
@@ -260,7 +310,7 @@ export default function DuoConnect({ onLeftRoom }) {
             <div className="cn-duo-room-card">
               {/* 2 user – căn giữa và chia đều */}
               <div className="cn-duo-members-strip">
-                <DuoMemberSpot member={slotMe} label="Bạn" isMe />
+                <DuoMemberSpot member={slotMe} label="Bạn" isMe onOpenUser={openUserModalFromMember} />
                 <div className="cn-duo-vs">
                   <div className="cn-duo-vs-text">VS</div>
                   <div className="cn-duo-vs-icon"><i className="fa-solid fa-bolt" /></div>
@@ -269,7 +319,7 @@ export default function DuoConnect({ onLeftRoom }) {
                     <div className="cn-duo-vs-date">( Kể từ {duoSince ? duoSince.format("DD/MM") : "--/--"} )</div>
                   </div>
                 </div>
-                <DuoMemberSpot member={slotPartner} label="Bạn ghép đôi" />
+                <DuoMemberSpot member={slotPartner} label="Bạn ghép đôi" onOpenUser={openUserModalFromMember} />
               </div>
 
               {/* ===== STREAK (2 timeline riêng) ===== */}
@@ -304,13 +354,22 @@ export default function DuoConnect({ onLeftRoom }) {
           </div>
         </div>
       )}
+
+      <UserSideModal
+        open={userModalOpen}
+        user={userModalTarget}
+        meId={String(myId||"")}
+        onClose={closeUserModal}
+        onViewProfile={handleViewPublicProfile}
+        onStartChat={handleStartChat}
+      />
     </div>
   );
 }
 
 /* ===== MEMBER SPOT (hàng trên) ===== */
 
-function DuoMemberSpot({ member, label, isMe = false }) {
+function DuoMemberSpot({ member, label, isMe = false, onOpenUser }) {
   const roleCls = isMe ? " is-me" : " is-partner";
 
   if (!member) {
@@ -329,20 +388,22 @@ function DuoMemberSpot({ member, label, isMe = false }) {
   }
 
   const initials = getInitials(member.name);
-  const gender = member.gender || "--";
+  const gText = member.genderText || genderLabel(member.gender);
   const ageText = member.age != null ? `${member.age} tuổi` : "--";
-  const meta = member.gender && member.age != null ? `${gender} ~ ${ageText}` : `${gender}${member.age != null ? ` ~ ${ageText}` : ""}`.trim() || "--";
+  const meta = (gText && member.age != null) ? `${gText} · ${ageText}` : `${gText}${member.age!=null?` · ${ageText}`:""}`.trim() || "--";
+
+  const canOpen = typeof onOpenUser==="function" && !isMe;
 
   return (
     <div className={"cn-duo-member-spot" + roleCls}>
-      <div className="cn-duo-member-avatar-wrap">
+      <div className="cn-duo-member-avatar-wrap" onClick={()=>canOpen && onOpenUser(member)} style={canOpen?{cursor:"pointer"}:undefined}>
         <div className={"cn-duo-member-avatar" + roleCls}>
           {member.avatarUrl ? <img src={member.avatarUrl} alt={member.name} /> : <span>{initials}</span>}
         </div>
         <span className={"cn-duo-member-chip" + (isMe ? " is-me" : " is-partner")}>{label}</span>
       </div>
 
-      <div className="cn-duo-member-name">{member.name}</div>
+      <div className="cn-duo-member-name" onClick={()=>canOpen && onOpenUser(member)} style={canOpen?{cursor:"pointer"}:undefined}>{member.name}</div>
       <div className="cn-duo-member-meta">{meta}</div>
     </div>
   );

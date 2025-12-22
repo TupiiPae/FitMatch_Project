@@ -12,6 +12,7 @@ import {
   uploadProgressPhoto,
   updateProgressPhoto,
   deleteProgressPhoto,
+  getUserPublic 
 } from "../controllers/user.controller.js";
 import { uploadAvatarSingle } from "../middleware/upload.js";
 
@@ -41,5 +42,7 @@ router.delete("/progress-photo/:photoId", auth, deleteProgressPhoto);
 // ===== Onboarding =====
 router.patch("/onboarding", auth, patchOnboarding);
 router.post("/onboarding/finalize", auth, finalizeOnboarding);
+
+router.get("/public/:id", auth, getUserPublic);
 
 export default router;

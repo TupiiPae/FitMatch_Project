@@ -1,5 +1,4 @@
-// user-app/src/pages/Connect/TabMyConnections.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyRequests, acceptMatchRequest, rejectMatchRequest, cancelMatchRequest } from "../../api/match";
 import { toast } from "react-toastify";
@@ -7,14 +6,83 @@ import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
 import DuoConnect from "./DuoConnect";
 import TeamConnect from "./TeamConnect";
 import api from "../../lib/api";
+import UserSideModal from "../UserProfile/UserSideModal";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
 const normType=(t)=>{if(!t)return null;const s=String(t).toLowerCase();if(s==="duo"||s==="one_to_one"||s==="one-to-one"||s==="1:1")return"duo";if(s==="group"||s==="team")return"group";return s;};
 const DEFAULT_AVATAR="/images/avatar.png";
 
+const norm=(v)=>(v||"").toString().trim().toLowerCase();
+const calcAge=(dob)=>{if(!dob) return null; const d=new Date(dob); if(Number.isNaN(d.getTime())) return null; const now=new Date(); let a=now.getFullYear()-d.getFullYear(); const m=now.getMonth()-d.getMonth(); if(m<0||(m===0&&now.getDate()<d.getDate())) a--; return a>=0&&a<=120?a:null;};
+const genderKey=(g)=>{const v=norm(g); if(!v) return null; if(["male","nam","m","man","men"].includes(v)) return "male"; if(["female","nu","nữ","f","woman","women"].includes(v)) return "female"; return "other";};
+const addrLabel=(addr)=>{const a=addr||{}; const parts=[a.ward,a.district,a.city].map(s=>(s||"").toString().trim()).filter(Boolean); return parts.join(" - ");};
+
+const userToCard=(u)=>{
+  const p=u?.profile||{};
+  const id=String(u?._id||u?.id||"");
+  const nickname=p.nickname||u?.username||u?.email||"Người dùng FitMatch";
+  const avatarAbs = p.avatarUrl ? toAbs(p.avatarUrl) : (u?.avatarUrl ? toAbs(u.avatarUrl) : null);
+
+  // ưu tiên connect fields (đúng logic Connect)
+  const bio=(u?.connectBio||p.bio||p.intro||p.about||u?.bio||"").toString().trim();
+
+  const dob=p.birthDate||p.dob||p.ngaySinh||p.birthday||u?.dob||u?.birthDate||null;
+  const age=calcAge(dob);
+
+  const gender=genderKey(p.gender??p.gioiTinh??p.sex??u?.gender??u?.sex);
+
+  const locationLabel=(u?.connectLocationLabel||p.locationLabel||u?.locationLabel||addrLabel(p.address||u?.address)||"").toString().trim();
+
+  const goal=(u?.connectGoalLabel||p.goalLabel||p.goal||u?.goal||"").toString().trim();
+
+  const trainingTypes=Array.isArray(p.trainingTypes)?p.trainingTypes:(Array.isArray(u?.trainingTypes)?u.trainingTypes:[]);
+  const intensityLabel=(u?.connectIntensityLabel||p.intensityLabel||u?.intensityLabel||"").toString().trim();
+
+  return { id, nickname, imageUrl: avatarAbs||"", bio, age, gender, locationLabel, goal, trainingTypes, intensityLabel, isGroup:false };
+};
+
+const pickUserPayload=(res)=>{
+  const payload=res?.data ?? res;
+  return payload?.user ?? payload?.data?.user ?? payload?.data ?? payload ?? null;
+};
+
+// nếu request có meta snapshot (giống TeamConnect bạn đã làm) thì tận dụng luôn
+const mergeReqMetaToCard=(card, meta, side /* "from" | "to" */)=>{
+  if(!card || !meta) return card;
+  const pre=side==="to"?"to":"from";
+  const g=(...keys)=>{for(const k of keys){const v=meta?.[k]; if(v!=null && String(v).trim()!=="") return v;} return null;};
+
+  const goalLabel=g(`${pre}GoalLabel`,`fromGoalLabel`,`toGoalLabel`,"goalLabel");
+  const locationLabel=g(`${pre}LocationLabel`,`fromLocationLabel`,`toLocationLabel`,"locationLabel");
+  const bio=g(`${pre}Bio`,`fromBio`,`toBio`,"bio");
+  const intensityLabel=g(`${pre}IntensityLabel`,`fromIntensityLabel`,`toIntensityLabel`,"intensityLabel");
+  const types=g(`${pre}TrainingTypes`,`fromTrainingTypes`,`toTrainingTypes`,"trainingTypes");
+
+  return {
+    ...card,
+    goal: (card.goal||goalLabel||"").toString().trim(),
+    locationLabel: (card.locationLabel||locationLabel||"").toString().trim(),
+    bio: (card.bio||bio||"").toString().trim(),
+    intensityLabel: (card.intensityLabel||intensityLabel||"").toString().trim(),
+    trainingTypes: Array.isArray(card.trainingTypes)&&card.trainingTypes.length
+      ? card.trainingTypes
+      : (Array.isArray(types)?types:card.trainingTypes||[]),
+  };
+};
+
+const cardLooksEmpty=(c)=>{
+  if(!c) return true;
+  const hasText = (s)=>!!String(s||"").trim();
+  return !hasText(c.bio) && !hasText(c.locationLabel) && !hasText(c.goal) && !hasText(c.intensityLabel) && !(Array.isArray(c.trainingTypes)&&c.trainingTypes.length) && !c.age && !c.gender;
+};
+
+
 export default function TabMyConnections({ currentUser, activeRoomId, activeRoomType, onEnteredRoom, onLeftRoom }) {
   const nav = useNavigate();
+
+  const meId=useMemo(()=>String(currentUser?._id||currentUser?.id||currentUser?.user?._id||currentUser?.user?.id||""),[currentUser]);
+
   const [incoming, setIncoming] = useState([]);
   const [outgoing, setOutgoing] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,6 +90,51 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
 
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, requestId: null, targetName: "" });
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // ===== USER SIDE MODAL =====
+  const [userModalOpen,setUserModalOpen]=useState(false);
+  const [userModalTarget,setUserModalTarget]=useState(null);
+  const [userFetching,setUserFetching]=useState(false);
+
+  const openUserModal=async(rawUser, req=null, side="from")=>{
+    const uid=String(rawUser?._id||rawUser?.id||"");
+    if(!uid) return;
+    if(meId && uid===String(meId)) return;
+
+    // 1) dựng card từ data đang có (thường chỉ nickname/avatar)
+    let card=userToCard(rawUser);
+    card=mergeReqMetaToCard(card, req?.meta, side);
+
+    setUserModalTarget(card);
+    setUserModalOpen(true);
+    if(!cardLooksEmpty(card)) return;
+    try{
+      setUserFetching(true);
+      let res=null;
+      try{ res=await api.get(`/user/${uid}`); }
+      catch{
+        try{ res=await api.get(`/users/${uid}`); }
+        catch{
+          res=await api.get(`/user/public/${uid}`); // nếu bạn có route public
+        }
+      }
+
+      const full=pickUserPayload(res);
+      if(!full) return;
+
+      let fullCard=userToCard(full);
+      fullCard=mergeReqMetaToCard(fullCard, req?.meta, side);
+
+      setUserModalTarget(fullCard);
+    }catch(e){
+      console.error("openUserModal fetch full user error:", e);
+    }finally{
+      setUserFetching(false);
+    }
+  };
+  const closeUserModal=()=>setUserModalOpen(false);
+  const handleViewPublicProfile=(uid)=>{ setUserModalOpen(false); toast.info("Tính năng xem hồ sơ public của người dùng đang phát triển."); };
+  const handleStartChat=(uid)=>{ setUserModalOpen(false); toast.info("Chức năng nhắn tin riêng đang phát triển."); };
 
   const openConfirm = (mode, req, targetName) => {
     const id = req?._id || req?.id;
@@ -103,7 +216,6 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
   const isInGroupRoom = !!activeRoomId && roomTypeNorm === "group";
   if (isInGroupRoom) return <section className="cn-myconnections"><TeamConnect onLeftRoom={handleLeftRoomInternal} /></section>;
 
-  const handleOpenTeamConnectDemo = () => nav("/ket-noi/nhom");
   return (
     <section className="cn-myconnections">
       <header className="cn-main-header">
@@ -134,18 +246,27 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const avatarAbs = profile.avatarUrl ? toAbs(profile.avatarUrl) : null;
                 const thumbSrc = (String(avatarAbs || "").trim() || DEFAULT_AVATAR);
                 const createdAtText = formatViDateTime(req.createdAt);
+
                 return (
                   <article key={req._id} className="cn-request-row">
-                    <div className="cn-request-thumb">
+                    <div className="cn-request-thumb" onClick={()=>openUserModal(fromUser, req, "from")} style={{cursor:"pointer"}}>
                       <img src={thumbSrc} alt={nickname} onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}} />
                     </div>
+
                     <div className="cn-request-main-col">
                       <div className="cn-request-type">Lời mời đến</div>
-                      <h4 className="cn-request-title"><strong>{nickname}</strong> muốn kết nối 1:1 với bạn</h4>
+                      <h4 className="cn-request-title">
+                        <button type="button" className="cn-name-link" onClick={()=>openUserModal(fromUser, req, "from")} style={{padding:0,background:"transparent",border:0,cursor:"pointer"}}>
+                          <strong>{nickname}</strong>
+                        </button>{" "}
+                        muốn kết nối 1:1 với bạn
+                      </h4>
+
                       <div className="cn-request-footer">
                         <span className="cn-request-meta">Nhận {createdAtText}</span>
                         <span className="cn-request-status-pill cn-request-status-pending">Đang chờ bạn xác nhận</span>
                       </div>
+
                       <div className="cn-request-actions">
                         <button type="button" className="cn-btn-success" onClick={() => openConfirm("accept_duo", req, nickname)}>Xác nhận lời mời kết nối</button>
                         <button type="button" className="cn-btn-cancel" onClick={() => openConfirm("reject_duo", req, nickname)}>Từ chối lời mời kết nối</button>
@@ -173,18 +294,27 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const avatarAbs = profile.avatarUrl ? toAbs(profile.avatarUrl) : null;
                 const thumbSrc = (String(avatarAbs || "").trim() || DEFAULT_AVATAR);
                 const createdAtText = formatViDateTime(req.createdAt);
+
                 return (
                   <article key={req._id} className="cn-request-row">
-                    <div className="cn-request-thumb">
+                    <div className="cn-request-thumb" onClick={()=>openUserModal(toUser, req, "to")} style={{cursor:"pointer"}}>
                       <img src={thumbSrc} alt={nickname} onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}} />
                     </div>
+
                     <div className="cn-request-main-col">
                       <div className="cn-request-type">Lời mời bạn gửi đi</div>
-                      <h4 className="cn-request-title">Gửi lời mời kết nối với người dùng <strong>{nickname}</strong></h4>
+                      <h4 className="cn-request-title">
+                        Gửi lời mời kết nối với người dùng{" "}
+                        <button type="button" className="cn-name-link" onClick={()=>openUserModal(toUser, req, "to")} style={{padding:0,background:"transparent",border:0,cursor:"pointer"}}>
+                          <strong>{nickname}</strong>
+                        </button>
+                      </h4>
+
                       <div className="cn-request-footer">
                         <span className="cn-request-meta">Gửi {createdAtText}</span>
                         <span className="cn-request-status-pill cn-request-status-pending">Đang chờ người dùng đồng ý</span>
                       </div>
+
                       <div className="cn-request-actions">
                         <button type="button" className="cn-btn-cancel" onClick={() => openConfirm("cancel_duo", req, nickname)}>Hủy lời mời kết nối</button>
                       </div>
@@ -209,6 +339,7 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const imageUrl = toAbs(room.coverImageUrl || room.imageUrl || null);
                 const createdAtText = formatViDateTime(req.createdAt);
                 const note = req.message || "Bạn đã gửi lời mời tham gia nhóm, đang chờ quản lý nhóm duyệt.";
+
                 return (
                   <article key={req._id} className="cn-request-row">
                     {imageUrl && <div className="cn-request-thumb"><img src={imageUrl} alt={groupName} /></div>}
@@ -216,10 +347,12 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                       <div className="cn-request-type">Lời mời bạn gửi đi</div>
                       <h4 className="cn-request-title">Gửi lời mời kết nối với Nhóm <strong>{groupName}</strong></h4>
                       <p className="cn-request-main">{note}</p>
+
                       <div className="cn-request-footer">
                         <span className="cn-request-meta">Gửi {createdAtText}</span>
                         <span className="cn-request-status-pill cn-request-status-pending">Đang chờ chủ nhóm duyệt</span>
                       </div>
+
                       <div className="cn-request-actions">
                         <button type="button" className="cn-btn-cancel" onClick={() => openConfirm("cancel_group", req, groupName)}>Hủy lời mời tham gia nhóm</button>
                       </div>
@@ -233,6 +366,15 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
       )}
 
       <ConnectRequestConfirmModal open={confirmState.open} mode={confirmState.mode} targetName={confirmState.targetName} onClose={closeConfirm} onConfirm={handleConfirm} loading={confirmLoading} />
+
+      <UserSideModal
+        open={userModalOpen}
+        user={userModalTarget}
+        meId={meId}
+        onClose={closeUserModal}
+        onViewProfile={handleViewPublicProfile}
+        onStartChat={handleStartChat}
+      />
     </section>
   );
 }
