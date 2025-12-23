@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import TeamEditModal from "./TeamEditModal";
 import TeamManageMembersModal from "./TeamManageMembersModal";
 import UserSideModal from "../UserProfile/UserSideModal";
+import ChatBox from "./ChatBox";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -618,12 +619,10 @@ export default function TeamConnect({ onLeftRoom }){
             <button type="button" className={"tc-top-tab"+(topTab==="chat"?" is-active":"")} onClick={()=>setTopTab("chat")}>Trò chuyện</button>
           </div>
 
-          {topTab!=="setup" ? (
-            <div className="tc-empty-tab">Nội dung tab này sẽ cập nhật sau.</div>
-          ) : (
+          {topTab==="setup" ? (
             <div className="tc-box-body">
               <div className="tc-slots">
-               {slots.map((m,idx)=>{
+                {slots.map((m,idx)=>{
                   const isMe=!!(m && myId && String(myId)===String(m.id));
                   const isOwnerSlot=idx===0;
                   const filled=!!m;
@@ -665,6 +664,18 @@ export default function TeamConnect({ onLeftRoom }){
                 />
               </div>
             </div>
+          ) : topTab==="chat" ? (
+            <div className="tc-box-body">
+              <ChatBox
+                conversationId={roomId}
+                meId={String(myId||"")}
+                members={members}
+                onOpenUser={openUserModal}
+                height={520}
+              />
+            </div>
+          ) : (
+            <div className="tc-empty-tab">Nội dung tab này sẽ cập nhật sau.</div>
           )}
         </section>
 
