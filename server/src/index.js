@@ -34,6 +34,9 @@ import adminMatchRoomsRoutes from "./routes/admin.matchrooms.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
 import adminContactRoutes from "./routes/admin.contact.routes.js";
 
+import chatRoutes from "./routes/chat.routes.js";
+import { initSocket } from "./realtime/socket.js";
+
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
 import { UPLOAD_ROOT } from "./middleware/upload.js";
@@ -141,6 +144,7 @@ app.use("/api/user", userRoutes);
 app.use("/api", foodRoutes);
 app.use("/api", nutritionRoutes);
 app.use("/api", exercisePublicRoutes);
+app.use("/api/chat", chatRoutes);
 
 // ===== IMPORTANT: Workout routes under /api/user (để FE gọi /user/workouts) =====
 app.use("/api/user", workoutRoutes);
@@ -197,13 +201,13 @@ app.use((err, _req, res, _next) => {
   }
 
   console.error("❌ Lỗi hệ thống:", err);
-  res
-    .status(500)
-    .json({ success: false, message: "Lỗi máy chủ, vui lòng thử lại sau." });
+  const status=err?.status||500;
+  res.status(status).json({ success:false, message: status===500 ? "Lỗi máy chủ, vui lòng thử lại sau." : (err?.message||"Lỗi") });
 });
 
 // ===== HTTP server (ready cho Socket.IO sau này) =====
 const server = http.createServer(app);
+initSocket(server,{corsOrigin:allowlist});
 
 // ===== Start =====
 connectDB(MONGO)
