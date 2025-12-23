@@ -1,13 +1,18 @@
 import mongoose from "mongoose";
+const { Schema } = mongoose;
 
-const SeenSchema=new mongoose.Schema({userId:{type:mongoose.Schema.Types.ObjectId,ref:"User",required:true},seenAt:{type:Date,default:Date.now}},{_id:false});
-const AttachmentSchema=new mongoose.Schema({type:{type:String,enum:["image","file"],default:"image"},url:String,name:String,size:Number},{_id:false});
+const SeenSchema=new Schema({userId:{type:Schema.Types.ObjectId,ref:"User",required:true},seenAt:{type:Date,default:Date.now}},{_id:false});
+const AttachmentSchema=new Schema({type:{type:String,enum:["image","file"],default:"image"},url:String,name:String,size:Number},{_id:false});
+const ReactionSchema=new Schema({emoji:{type:String,enum:["like","heart","laugh","sad","angry"],required:true},userId:{type:Schema.Types.ObjectId,ref:"User",required:true},reactedAt:{type:Date,default:Date.now}},{_id:false});
 
-const ChatMessageSchema=new mongoose.Schema({
-  conversationId:{type:mongoose.Schema.Types.ObjectId,required:true,index:true}, // v1: conversationId = MatchRoom._id (Duo/Team)
-  senderId:{type:mongoose.Schema.Types.ObjectId,ref:"User",required:true,index:true},
+const ChatMessageSchema=new Schema({
+  conversationId:{type:Schema.Types.ObjectId,required:true,index:true},
+  senderId:{type:Schema.Types.ObjectId,ref:"User",required:true,index:true},
   content:{type:String,default:""},
   attachments:{type:[AttachmentSchema],default:[]},
+  replyTo:{type:Schema.Types.ObjectId,ref:"ChatMessage",default:null,index:true},
+  reactions:{type:[ReactionSchema],default:[]},
+
   clientMsgId:{type:String,default:""},
   seenBy:{type:[SeenSchema],default:[]},
   editedAt:{type:Date,default:null},

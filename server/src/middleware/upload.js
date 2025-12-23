@@ -20,8 +20,10 @@ export const FOOD_DIR       = path.join(UPLOAD_ROOT, "foods");
 export const EXERCISE_IMG_DIR = path.join(UPLOAD_ROOT, "exercises");
 export const EXERCISE_VID_DIR = path.join(UPLOAD_ROOT, "exercises_videos");
 
+export const CHAT_DIR = path.join(UPLOAD_ROOT, "chat_images");
+
 // ensure dirs
-[UPLOAD_ROOT, AVATAR_DIR, FOOD_DIR, EXERCISE_IMG_DIR, EXERCISE_VID_DIR].forEach((d) => {
+[UPLOAD_ROOT, AVATAR_DIR, FOOD_DIR, EXERCISE_IMG_DIR, EXERCISE_VID_DIR, CHAT_DIR].forEach((d) => {
   try { fs.mkdirSync(d, { recursive: true }); } catch {}
 });
 
@@ -87,3 +89,12 @@ export const uploadExerciseVideoSingle = multer({
     cb(new Error("Chỉ chấp nhận file video cho bài tập"));
   },
 }).single("video");
+
+export const uploadChatImageSingle = multer({
+  storage: memory,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    if ((file.mimetype || "").startsWith("image/")) return cb(null, true);
+    cb(new Error("Chỉ chấp nhận file ảnh cho chat"));
+  },
+}).single("image");

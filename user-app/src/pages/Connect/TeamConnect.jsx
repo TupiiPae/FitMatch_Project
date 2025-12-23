@@ -665,7 +665,7 @@ export default function TeamConnect({ onLeftRoom }){
               </div>
             </div>
           ) : topTab==="chat" ? (
-            <div className="tc-box-body">
+            <div className="tc-box-body tc-chat-body">
               <ChatBox
                 conversationId={roomId}
                 meId={String(myId||"")}

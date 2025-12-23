@@ -1,6 +1,7 @@
 import ChatMessage from "../models/ChatMessage.js";
 import MatchRoom from "../models/MatchRoom.js";
 import { responseOk } from "../utils/response.js";
+import { uploadImageWithResize } from "../utils/cloudinary.js";
 
 const uidFromReq=(req)=>String(req?.userId||req?.user?._id||"");
 
@@ -22,10 +23,36 @@ export async function getMessages(req,res,next){
 
     await ensureMember(id,uid);
 
-    const q={conversationId:id,deletedAt:null};
+    const q={conversationId:id};
     if(before) q.createdAt={$lt:before};
 
     const msgs=await ChatMessage.find(q).sort({createdAt:-1}).limit(limit).lean();
     return responseOk(res,{items:msgs.reverse(),nextCursor:msgs.length?msgs[0].createdAt:null});
+  }catch(e){next(e)}
+}
+
+export async function uploadChatImage(req,res,next){
+  try{
+    const uid=uidFromReq(req);
+    const { id }=req.params;
+    await ensureMember(id,uid);
+
+    const file=req.file;
+    if(!file) return res.status(400).json({ message:"Không có ảnh" });
+
+    // Upload lên Cloudinary folder chat_images
+    const url = await uploadImageWithResize(
+      file.buffer,
+      "asset/folder/chat_images",
+      { width: 2048, height: 2048, fit: "inside" }, // không crop, chỉ giới hạn kích thước
+      { quality: 85 }
+    );
+
+    return responseOk(res,{
+      type:"image",
+      url,
+      name:file.originalname||"",
+      size:file.size||0,
+    });
   }catch(e){next(e)}
 }
