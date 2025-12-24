@@ -446,38 +446,41 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           const {top:reactTop,myEmoji,total}=summarizeReacts(m);
           const badgeEmoji=myEmoji || reactTop[0]?.emoji || "";
           const badgeCount=total||0;
-          const hasReactBadge=!isDeleted&&badgeCount>0&&badgeEmoji;
+          const hasReactBadge=!isDeleted && badgeCount>0 && badgeEmoji;
 
           const showSendMark=mine && row.end && !!sendMark?.state && String(sendMark?.msgId||"")===rid && !isDeleted;
           const dragOn=String(dragOverMid||"")===rid;
           const reactOpen=String(reactFor||"")===rid;
 
           const reactPopup = reactOpen && !isDeleted ? (
-            <div
-              ref={reactPopRef}
-              className="fm-chat-reactpop is-acts"
-              style={{
-                "--shift": `${reactShift}px`,
-                transform: `translateX(calc(-50% + ${reactShift}px))`,
-                zIndex: 2000
-              }}
-            >
+            <div ref={reactPopRef} className="fm-chat-reactpop is-acts" style={{"--shift":`${reactShift}px`,transform:`translateX(calc(-50% + ${reactShift}px))`,zIndex:2000}}>
               {EMOJIS.map(e=>{
                 const active=myEmoji===e.k;
                 return (
-                  <button
-                    key={e.k}
-                    type="button"
-                    className={"fm-chat-reactbtn"+(active?" is-active":"")}
-                    title={active?`${e.t} (đang chọn)` : e.t}
-                    onClick={()=>{ applyLocalReaction(rid,e.k); sendReaction(rid,e.k); setReactFor(null); }}
-                  >
+                  <button key={e.k} type="button" className={"fm-chat-reactbtn"+(active?" is-active":"")} title={active?`${e.t} (đang chọn)` : e.t} onClick={()=>{ applyLocalReaction(rid,e.k); sendReaction(rid,e.k); setReactFor(null); }}>
                     {e.c}
                   </button>
                 );
               })}
             </div>
           ) : null;
+
+          const imgs=safeArr(m?.attachments).filter(isImg);
+          const hasImgs=imgs.length>0;
+          const hasText=!!String(m?.content||"").trim();
+          const showTextBlock=!!replyId || hasText;
+          const cols=Math.min(3,Math.max(1,imgs.length));
+          const timeNode=row.end?<div className={"fm-chat-time"+(mine?" is-mine":"")}>{m?.createdAt?dayjs(m.createdAt).format("HH:mm"):""}</div>:null;
+
+          const reactBadgeNode=hasReactBadge ? (
+            <div className="fm-chat-reactbadge" title="Cảm xúc">
+              <span className="em">{emojiChar(badgeEmoji)}</span>
+              {badgeCount>1 ? <span className="ct">{badgeCount}</span> : null}
+            </div>
+          ) : null;
+
+          const canDrop=!isDeleted && !isTmp;
+          const bindDrop=canDrop ? {onDragOver:onMsgDragOver(rid),onDrop:onMsgDrop(rid),onDragLeave:onMsgDragLeave(rid)} : {};
 
           return (
             <div key={row.k} className={"fm-chat-row"+(mine?" is-mine":"")+(isTmp?" is-tmp":"")+(row.start?" is-start":"")+(row.end?" is-end":"")+(showSendMark?" has-sendmark":"")+(hasReactBadge?" has-reactbadge":"")}>
@@ -502,50 +505,56 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                 )}
 
                 <div className={"fm-chat-bubblewrap"+(mine?" is-mine":"")}>
-                  <div
-                    className={"fm-chat-bubble"+(mine?" is-mine":"")+(isDeleted?" is-deleted":"")+(row.start?" is-start":"")+(row.end?" is-end":"")+(dragOn?" is-dragover":"")}
-                    onDragOver={!isDeleted && !isTmp ? onMsgDragOver(rid) : undefined}
-                    onDrop={!isDeleted && !isTmp ? onMsgDrop(rid) : undefined}
-                    onDragLeave={!isDeleted && !isTmp ? onMsgDragLeave(rid) : undefined}
-                  >
-                    {!mine && row.start && !!name && !isDeleted && <div className="fm-chat-inname">{name}</div>}
-
-                    {!!replyId && (
-                      <div className="fm-chat-replyline">
-                        <div className="fm-chat-replybar" />
-                        <div className="fm-chat-replymeta">
-                          <div className="fm-chat-replyname">{replyName||"Tin nhắn"}</div>
-                          <div className="fm-chat-replytext">{replyMsg?replyText:"(Không thể tải tin nhắn gốc)"}</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {isDeleted ? (
+                  {isDeleted ? (
+                    <div className={"fm-chat-bubble is-deleted"+(mine?" is-mine":"")+(row.start?" is-start":"")+(row.end?" is-end":"")}>
+                      {!mine && row.start && !!name && <div className="fm-chat-inname">{name}</div>}
                       <div className="fm-chat-deleted"><i className="fa-solid fa-ban" /> Tin nhắn đã thu hồi</div>
-                    ) : (
-                      <>
-                        {!!m?.content && <div className="fm-chat-text">{m.content}</div>}
-                        {!!safeArr(m?.attachments).length && (
-                          <div className="fm-chat-atts">
-                            {safeArr(m.attachments).filter(isImg).map((a,idx)=>(
+                      {timeNode}
+                    </div>
+                  ) : (
+                    <>
+                      {showTextBlock && (
+                        <div className={"fm-chat-bubble"+(mine?" is-mine":"")+(row.start?" is-start":"")+(row.end && !hasImgs ? " is-end":"")+(dragOn?" is-dragover":"")} {...bindDrop}>
+                          {!mine && row.start && !!name && <div className="fm-chat-inname">{name}</div>}
+
+                          {!!replyId && (
+                            <div className="fm-chat-replyline">
+                              <div className="fm-chat-replybar" />
+                              <div className="fm-chat-replymeta">
+                                <div className="fm-chat-replyname">{replyName||"Tin nhắn"}</div>
+                                <div className="fm-chat-replytext">{replyMsg?replyText:"(Không thể tải tin nhắn gốc)"}</div>
+                              </div>
+                            </div>
+                          )}
+
+                          {hasText ? <div className="fm-chat-text">{m.content}</div> : null}
+                          {!hasImgs ? timeNode : null}
+                          {!hasImgs ? reactBadgeNode : null}
+                        </div>
+                      )}
+
+                      {hasImgs && (
+                        <div
+                          className={"fm-chat-bubble is-media"+(mine?" is-mine":"")+((!showTextBlock && row.start)?" is-start":"")+(row.end?" is-end":"")+(dragOn?" is-dragover":"")}
+                          {...bindDrop}
+                        >
+                          {/* Nếu chỉ có ảnh (không có bubble text) thì vẫn show name */}
+                          {!mine && !showTextBlock && row.start && !!name && <div className="fm-chat-inname">{name}</div>}
+
+                          <div className={"fm-chat-atts cols-"+cols}>
+                            {imgs.map((a,idx)=>(
                               <button key={`${a.url||idx}`} type="button" className="fm-chat-img" onClick={()=>setImgView({url:a.url,name:a.name||"Ảnh"})} title="Xem ảnh">
                                 <img src={a.url} alt={a.name||"image"} />
                               </button>
                             ))}
                           </div>
-                        )}
-                      </>
-                    )}
 
-                    {row.end && <div className={"fm-chat-time"+(mine?" is-mine":"")}>{m?.createdAt?dayjs(m.createdAt).format("HH:mm"):""}</div>}
-
-                    {!isDeleted && badgeCount>0 && badgeEmoji && (
-                      <div className="fm-chat-reactbadge" title="Cảm xúc">
-                        <span className="em">{emojiChar(badgeEmoji)}</span>
-                        {badgeCount>1 ? <span className="ct">{badgeCount}</span> : null}
-                      </div>
-                    )}
-                  </div>
+                          {timeNode}
+                          {reactBadgeNode}
+                        </div>
+                      )}
+                    </>
+                  )}
 
                   {showSendMark && (
                     <div className={"fm-chat-sendmark-float"+(mine?" is-mine":"")}>
@@ -590,7 +599,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
         <div className="fm-chat-inputrow">
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onPickFile} />
-
           <button type="button" className="fm-chat-attach" onClick={pickFiles} title="Chọn hình ảnh"><i className="fa-regular fa-images"></i></button>
 
           <div className="fm-chat-inputwrap">
@@ -631,14 +639,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
               {pickerOpen && (
                 <div className="fm-chat-emoji-pop is-input" onMouseDown={(e)=>e.stopPropagation()}>
-                  <Picker
-                    data={data}
-                    locale="vi"
-                    theme="dark"
-                    previewPosition="none"
-                    navPosition="bottom"
-                    onEmojiSelect={(emoji)=>{ insertEmojiToInput(emoji?.native || "") }}
-                  />
+                  <Picker data={data} locale="vi" theme="dark" previewPosition="none" navPosition="bottom" onEmojiSelect={(emoji)=>{ insertEmojiToInput(emoji?.native || "") }} />
                 </div>
               )}
             </div>
