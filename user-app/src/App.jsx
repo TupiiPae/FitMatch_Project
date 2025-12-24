@@ -72,7 +72,7 @@ const UngDung = () => <div>Ứng dụng di động</div>;
 
 /** Layout bảo vệ + bọc AppShell */
 function ProtectedLayout() {
-  const nickname = "Tupi"; // TODO: lấy từ store/context
+  const nickname = "Bạn"; 
   return (
     <HomeGuard>
       <AppShell nickname={nickname}>

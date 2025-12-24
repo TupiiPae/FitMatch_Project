@@ -671,7 +671,7 @@ export default function TeamConnect({ onLeftRoom }){
                 meId={String(myId||"")}
                 members={members}
                 onOpenUser={openUserModal}
-                height={520}
+                height={666}
               />
             </div>
           ) : (
