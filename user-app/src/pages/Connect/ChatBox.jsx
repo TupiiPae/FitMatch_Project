@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import { getChatMessages, uploadChatImage } from "../../api/chat";
 import { getSocket } from "../../lib/socket";
 import "./ChatBox.css";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
 
 const safeArr=v=>Array.isArray(v)?v:[];
 const uniq=(arr)=>{const m=new Map();for(const x of safeArr(arr)){const k=String(x?._id||x?.clientMsgId||"");if(k)m.set(k,x);}return Array.from(m.values()).sort((a,b)=>new Date(a?.createdAt||0)-new Date(b?.createdAt||0));};
@@ -32,8 +34,8 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
   const [sending,setSending]=useState(false);
 
   const [replyTo,setReplyTo]=useState(null);
-  const [pickerOpen,setPickerOpen]=useState(false);       // emoji input
-  const [reactFor,setReactFor]=useState(null);            // messageId mở popup react
+  const [pickerOpen,setPickerOpen]=useState(false);
+  const [reactFor,setReactFor]=useState(null);
   const [files,setFiles]=useState([]);
   const [uploading,setUploading]=useState(false);
 
@@ -42,8 +44,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
   const [dragOverMid,setDragOverMid]=useState(null);
 
-  // ✅ image viewer modal
-  const [imgView,setImgView]=useState(null); // {url,name}
+  const [imgView,setImgView]=useState(null);
   const closeImg=()=>setImgView(null);
 
   const listRef=useRef(null);
@@ -56,7 +57,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
   useEffect(()=>{sendMarkRef.current=sendMark},[sendMark]);
   useEffect(()=>{setSendMark(null)},[conversationId]);
 
-  // Esc close image viewer
   useEffect(()=>{
     if(!imgView) return;
     const onKey=(e)=>{ if(e.key==="Escape") closeImg(); };
@@ -64,7 +64,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     return ()=>window.removeEventListener("keydown",onKey);
   },[imgView]);
 
-  // === objectURL cache for previews (avoid memory leak)
   const fileUrlMapRef=useRef(new Map());
   const fileUrl=(f)=>{const m=fileUrlMapRef.current; if(!m.has(f)) m.set(f,URL.createObjectURL(f)); return m.get(f);};
   useEffect(()=>{
@@ -95,9 +94,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     });
   };
 
-  // =========================
-  // ✅ Clamp popup emoji trong biên chatbox
-  // =========================
   const reactPopRef=useRef(null);
   const [reactShift,setReactShift]=useState(0);
 
@@ -125,7 +121,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     };
   },[reactFor]);
 
-  // ✅ scrollbar: chỉ hiện khi scroll, 2s không scroll sẽ tự ẩn
   useEffect(()=>{
     const el=listRef.current;
     if(!el) return;
@@ -202,7 +197,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     };
   },[socket,conversationId,myId]);
 
-  // click outside close popups
   useEffect(()=>{
     const onDoc=(e)=>{
       const t=e.target;
@@ -413,7 +407,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
   return (
     <div className="fm-chat" style={{height}}>
-      {/* ✅ Full image viewer */}
       {imgView?.url && (
         <div className="fm-chat-imgview" onMouseDown={(e)=>{ if(e.target===e.currentTarget) closeImg(); }}>
           <button type="button" className="fm-chat-imgview-x" onClick={closeImg} aria-label="Đóng"><i className="fa-solid fa-xmark" /></button>
@@ -453,6 +446,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           const {top:reactTop,myEmoji,total}=summarizeReacts(m);
           const badgeEmoji=myEmoji || reactTop[0]?.emoji || "";
           const badgeCount=total||0;
+          const hasReactBadge=!isDeleted&&badgeCount>0&&badgeEmoji;
 
           const showSendMark=mine && row.end && !!sendMark?.state && String(sendMark?.msgId||"")===rid && !isDeleted;
           const dragOn=String(dragOverMid||"")===rid;
@@ -486,7 +480,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           ) : null;
 
           return (
-            <div key={row.k} className={"fm-chat-row"+(mine?" is-mine":"")+(isTmp?" is-tmp":"")+(row.start?" is-start":"")+(row.end?" is-end":"")}>
+            <div key={row.k} className={"fm-chat-row"+(mine?" is-mine":"")+(isTmp?" is-tmp":"")+(row.start?" is-start":"")+(row.end?" is-end":"")+(showSendMark?" has-sendmark":"")+(hasReactBadge?" has-reactbadge":"")}>
               {!mine && (row.start ? (
                 <button type="button" className="fm-chat-ava" onClick={()=>canOpen && onOpenUser(sender?.rawUser||sender)} title={name||"User"}>
                   <img src={ava} alt={name||"User"} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}}/>
@@ -494,12 +488,10 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
               ) : <div className="fm-chat-ava-spacer" />)}
 
               <div className={"fm-chat-main"+(mine?" is-mine":"")}>
-                {/* ✅ LEFT sideacts (mine): reply + retract + emoji (có popup) */}
                 {!isDeleted && mine && (
                   <div className={"fm-chat-sideacts is-left"+(reactOpen?" is-open":"")} style={reactOpen?{zIndex:1200}:undefined}>
                     <button type="button" className="fm-chat-act" onClick={()=>startReply(m)} title="Trả lời"><i className="fa-solid fa-reply" /></button>
                     <button type="button" className="fm-chat-act is-danger" onClick={()=>retract(m)} title="Thu hồi"><i className="fa-regular fa-trash-can" /></button>
-
                     <div className="fm-chat-reactwrap">
                       <button type="button" className={"fm-chat-act fm-chat-act-emoji"+(reactOpen?" is-on":"")} onClick={()=>toggleReactFor(rid)} title="Thả emoji">
                         <i className="fa-regular fa-face-smile" />
@@ -536,13 +528,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                         {!!safeArr(m?.attachments).length && (
                           <div className="fm-chat-atts">
                             {safeArr(m.attachments).filter(isImg).map((a,idx)=>(
-                              <button
-                                key={`${a.url||idx}`}
-                                type="button"
-                                className="fm-chat-img"
-                                onClick={()=>setImgView({url:a.url,name:a.name||"Ảnh"})}
-                                title="Xem ảnh"
-                              >
+                              <button key={`${a.url||idx}`} type="button" className="fm-chat-img" onClick={()=>setImgView({url:a.url,name:a.name||"Ảnh"})} title="Xem ảnh">
                                 <img src={a.url} alt={a.name||"image"} />
                               </button>
                             ))}
@@ -562,7 +548,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                   </div>
 
                   {showSendMark && (
-                    <div className="fm-chat-sendmark">
+                    <div className={"fm-chat-sendmark-float"+(mine?" is-mine":"")}>
                       {sendMark.state==="sending"
                         ? (<><i className="fa-solid fa-circle-notch fa-spin" /> Đang gửi</>)
                         : (<><i className="fa-solid fa-check" /> Đã gửi</>)
@@ -571,11 +557,9 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                   )}
                 </div>
 
-                {/* ✅ RIGHT sideacts (other): reply + emoji (có popup) */}
                 {!isDeleted && !mine && (
                   <div className={"fm-chat-sideacts is-right"+(reactOpen?" is-open":"")} style={reactOpen?{zIndex:1200}:undefined}>
                     <button type="button" className="fm-chat-act" onClick={()=>startReply(m)} title="Trả lời"><i className="fa-solid fa-reply" /></button>
-
                     <div className="fm-chat-reactwrap">
                       <button type="button" className={"fm-chat-act fm-chat-act-emoji"+(reactOpen?" is-on":"")} onClick={()=>toggleReactFor(rid)} title="Thả emoji">
                         <i className="fa-regular fa-face-smile" />
@@ -607,11 +591,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
         <div className="fm-chat-inputrow">
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onPickFile} />
 
-          <button type="button" className="fm-chat-attach" onClick={pickFiles} title="Gửi hình ảnh"><i className="fa-regular fa-image" /></button>
-
-          <button type="button" className={"fm-chat-input-emoji"+(pickerOpen?" is-on":"")} onClick={()=>setPickerOpen(v=>!v)} title="Emoji (chèn vào nội dung)">
-            <i className="fa-regular fa-face-smile" />
-          </button>
+          <button type="button" className="fm-chat-attach" onClick={pickFiles} title="Chọn hình ảnh"><i className="fa-regular fa-images"></i></button>
 
           <div className="fm-chat-inputwrap">
             {!!files.length && (
@@ -625,38 +605,46 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
               </div>
             )}
 
-            <input
-              ref={inputRef}
-              value={text}
-              onChange={e=>setText(e.target.value)}
-              onKeyDown={e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); e.stopPropagation(); send(); } }}
-              onDrop={onInputDrop}
-              onDragOver={(e)=>{ const dt=e.dataTransfer; const has=(dt?.getData?.("application/x-emoji-key")||emojiKeyFromChar(dt?.getData?.("text/plain")||"")||""); if(has|| (dt?.files&&dt.files.length)) e.preventDefault(); }}
-              placeholder={uploading?"Đang tải ảnh…":"Nhập tin nhắn…"}
-              className="fm-chat-input"
-              disabled={uploading}
-            />
+            <div className="fm-chat-inputbox">
+              <input
+                ref={inputRef}
+                value={text}
+                onChange={e=>setText(e.target.value)}
+                onKeyDown={e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); e.stopPropagation(); send(); } }}
+                onDrop={onInputDrop}
+                onDragOver={(e)=>{ const dt=e.dataTransfer; const has=(dt?.getData?.("application/x-emoji-key")||emojiKeyFromChar(dt?.getData?.("text/plain")||"")||""); if(has|| (dt?.files&&dt.files.length)) e.preventDefault(); }}
+                placeholder={uploading?"Đang tải ảnh…":"Nhập tin nhắn…"}
+                className="fm-chat-input"
+                disabled={uploading}
+              />
 
-            {pickerOpen && (
-              <div className="fm-chat-emoji-pop">
-                {EMOJIS.map(e=>(
-                  <button
-                    key={e.k}
-                    type="button"
-                    className="fm-chat-emoji-btn"
-                    title={e.t}
-                    draggable
-                    onDragStart={(ev)=>{ try{ev.dataTransfer.setData("application/x-emoji-key",e.k); ev.dataTransfer.setData("text/plain",e.c);}catch{} }}
-                    onClick={()=>insertEmojiToInput(e.c)}
-                  >
-                    {e.c}
-                  </button>
-                ))}
-              </div>
-            )}
+              <button
+                type="button"
+                className={"fm-chat-input-emoji in-input"+(pickerOpen?" is-on":"")}
+                onMouseDown={(e)=>{e.preventDefault();e.stopPropagation();setPickerOpen(v=>!v);}}
+                onClick={(e)=>e.preventDefault()}
+                title="Emoji (chèn vào nội dung)"
+                disabled={uploading}
+              >
+                <i className="fa-regular fa-face-smile" />
+              </button>
+
+              {pickerOpen && (
+                <div className="fm-chat-emoji-pop is-input" onMouseDown={(e)=>e.stopPropagation()}>
+                  <Picker
+                    data={data}
+                    locale="vi"
+                    theme="dark"
+                    previewPosition="none"
+                    navPosition="bottom"
+                    onEmojiSelect={(emoji)=>{ insertEmojiToInput(emoji?.native || "") }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
-          <button type="button" className="fm-chat-send" onClick={send} disabled={sending||uploading}><i className="fa-regular fa-paper-plane" /></button>
+          <button type="button" className="fm-chat-send" onClick={send} disabled={sending||uploading} title="Gửi"><i className="fa-regular fa-paper-plane" /></button>
         </div>
       </div>
     </div>
