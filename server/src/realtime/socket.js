@@ -209,7 +209,7 @@ export function initSocket(httpServer,{corsOrigin}={}){
     });
 
     // ===== REVOKE (thu hồi) =====
-    socket.on("chat:revoke",async({conversationId,messageId}={},ack)=>{
+    const handleRevoke = async ({conversationId,messageId}={},ack)=>{
       try{
         if(!conversationId||!messageId) throw new Error("Missing");
         if(!uidOid) throw new Error("UNAUTHORIZED");
@@ -229,14 +229,19 @@ export function initSocket(httpServer,{corsOrigin}={}){
         );
 
         const payload={conversationId,messageId:String(mid),deletedAt:now.toISOString(),by:uid};
-        io.to(`conv:${conversationId}`).emit("chat:revoke_update",payload);
-        io.to(`conv:${conversationId}`).emit("chat:message_update",{type:"revoke",...payload});
+
+        io.to(`conv:${conversationId}`).emit("chat:revoke_update",payload); 
+        io.to(`conv:${conversationId}`).emit("chat:deleted",payload);     
 
         await maybeUpdateLastOnRevoke(room,conversationId,{...existed,senderId:uidOid});
 
         ack?.({ok:true});
       }catch(e){ack?.({ok:false,message:e?.message||"revoke failed"})}
-    });
+    };
+
+    socket.on("chat:revoke", handleRevoke); 
+    socket.on("chat:delete", handleRevoke); 
+
 
     // ===== REACT (emoji) =====
     socket.on("chat:react",async({conversationId,messageId,emoji}={},ack)=>{
@@ -251,42 +256,43 @@ export function initSocket(httpServer,{corsOrigin}={}){
         const mid=asOid(messageId);
         if(!mid) throw new Error("Invalid messageId");
 
-        const msg=await ChatMessage.findOne({_id:mid,conversationId}).select("_id reactions deletedAt").lean();
+        const msg=await ChatMessage.findOne({_id:mid,conversationId}).select("_id deletedAt reactions").lean();
         if(!msg) throw new Error("Message not found");
         if(msg.deletedAt) throw new Error("Message revoked");
 
-        const reactions=msg.reactions||{};
-        const currentKey=REACTIONS.find(k=>safeArr(reactions?.[k]).some(x=>String(x)===String(uidOid)))||null;
+        const list=safeArr(msg.reactions);
+        const cur=list.find(r=>String(r?.userId||"")===String(uidOid))||null;
+        const willClear=cur?.emoji===key;
 
-        const $pull={};
-        for(const k of REACTIONS) $pull[`reactions.${k}`]=uidOid;
+        const now=new Date();
+        const uidVal=uidOid; // ObjectId
+        const addArr=willClear?[]:[{emoji:key,userId:uidVal,reactedAt:now}];
 
-        // nếu bấm đúng emoji đang có -> gỡ
-        const willClear = currentKey===key;
-        const update={
-          $pull,
-          ...(willClear?{}:{$addToSet:{[`reactions.${key}`]:uidOid}})
-        };
+        await ChatMessage.updateOne(
+          { _id: mid, conversationId },
+          [{
+            $set:{
+              reactions:{
+                $let:{
+                  vars:{ base:{ $ifNull:["$reactions",[]] } },
+                  in:{
+                    $concatArrays:[
+                      { $filter:{ input:"$$base", as:"r", cond:{ $ne:["$$r.userId", uidVal] } } },
+                      addArr
+                    ]
+                  }
+                }
+              }
+            }
+          }]
+        );
 
-        await ChatMessage.updateOne({_id:mid,conversationId},update);
+        const updated=await ChatMessage.findById(mid).lean();
 
-        const updated=await ChatMessage.findById(mid).select("_id reactions").lean();
-        const outReactions=updated?.reactions||{};
+        io.to(`conv:${conversationId}`).emit("chat:reaction_update",{conversationId,message:updated});
+        io.to(`conv:${conversationId}`).emit("chat:react_update",{conversationId,message:updated}); // compat
 
-        const payload={
-          conversationId,
-          messageId:String(mid),
-          userId:uid,
-          reaction:key,
-          label:REACTION_LABEL[key],
-          action:willClear?"clear":"set",
-          reactions:outReactions
-        };
-
-        io.to(`conv:${conversationId}`).emit("chat:react_update",payload);
-        io.to(`conv:${conversationId}`).emit("chat:message_update",{type:"react",...payload});
-
-        ack?.({ok:true,...payload});
+        ack?.({ok:true,message:updated,action:willClear?"clear":"set",reaction:key});
       }catch(e){ack?.({ok:false,message:e?.message||"react failed"})}
     });
   });

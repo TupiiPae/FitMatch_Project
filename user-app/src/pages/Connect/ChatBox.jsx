@@ -14,6 +14,16 @@ const EMOJIS=[{k:"like",c:"👍",t:"Thích"},{k:"heart",c:"❤️",t:"Tim"},{k:"
 const emojiChar=(key)=>EMOJIS.find(x=>x.k===key)?.c||"";
 const isImg=(a)=>String(a?.type||"image")==="image" && !!a?.url;
 
+const uidOf=(u)=>String(u?._id||u||"");
+const emojiKeyFromChar=(ch)=>{
+  const s=String(ch||"").trim();
+  if(!s) return null;
+  const map={"👍":"like","❤️":"heart","❤":"heart","😂":"laugh","😆":"laugh","😢":"sad","😭":"sad","😡":"angry","😠":"angry"};
+  if(map[s]) return map[s];
+  const found=EMOJIS.find(e=>e.c===s);
+  return found?.k||null;
+};
+
 export default function ChatBox({ conversationId, meId, members=[], height=520, onOpenUser }){
   const [items,setItems]=useState([]);
   const [loading,setLoading]=useState(true);
@@ -22,17 +32,21 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
   const [sending,setSending]=useState(false);
 
   const [replyTo,setReplyTo]=useState(null);
-  const [pickerOpen,setPickerOpen]=useState(false);
-  const [reactFor,setReactFor]=useState(null);
+  const [pickerOpen,setPickerOpen]=useState(false);       // emoji input
+  const [reactFor,setReactFor]=useState(null);            // messageId mở popup react
   const [files,setFiles]=useState([]);
   const [uploading,setUploading]=useState(false);
 
-  // ✅ trạng thái "Đang gửi/Đã gửi" dưới bubble cuối cùng của tôi
-  const [sendMark,setSendMark]=useState(null); // {state:"sending"|"sent", msgId, at}
+  const [sendMark,setSendMark]=useState(null);
   const sendMarkRef=useRef(null);
 
+  const [dragOverMid,setDragOverMid]=useState(null);
+
+  // ✅ image viewer modal
+  const [imgView,setImgView]=useState(null); // {url,name}
+  const closeImg=()=>setImgView(null);
+
   const listRef=useRef(null);
-  const bottomRef=useRef(null);
   const inputRef=useRef(null);
   const fileRef=useRef(null);
 
@@ -41,6 +55,24 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
   useEffect(()=>{sendMarkRef.current=sendMark},[sendMark]);
   useEffect(()=>{setSendMark(null)},[conversationId]);
+
+  // Esc close image viewer
+  useEffect(()=>{
+    if(!imgView) return;
+    const onKey=(e)=>{ if(e.key==="Escape") closeImg(); };
+    window.addEventListener("keydown",onKey);
+    return ()=>window.removeEventListener("keydown",onKey);
+  },[imgView]);
+
+  // === objectURL cache for previews (avoid memory leak)
+  const fileUrlMapRef=useRef(new Map());
+  const fileUrl=(f)=>{const m=fileUrlMapRef.current; if(!m.has(f)) m.set(f,URL.createObjectURL(f)); return m.get(f);};
+  useEffect(()=>{
+    const m=fileUrlMapRef.current;
+    const cur=new Set(files);
+    for(const [k,u] of m.entries()){ if(!cur.has(k)){ try{URL.revokeObjectURL(u)}catch{} m.delete(k);} }
+  },[files]);
+  useEffect(()=>()=>{const m=fileUrlMapRef.current; for(const u of m.values()) try{URL.revokeObjectURL(u)}catch{} m.clear();},[]);
 
   const memberMap=useMemo(()=>{
     const m=new Map();
@@ -62,6 +94,36 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
       else el.scrollTop=el.scrollHeight;
     });
   };
+
+  // =========================
+  // ✅ Clamp popup emoji trong biên chatbox
+  // =========================
+  const reactPopRef=useRef(null);
+  const [reactShift,setReactShift]=useState(0);
+
+  useEffect(()=>{
+    if(!reactFor){ setReactShift(0); return; }
+    const calc=()=>{
+      const pop=reactPopRef.current, list=listRef.current;
+      if(!pop||!list) return;
+      const pr=pop.getBoundingClientRect();
+      const lr=list.getBoundingClientRect();
+      const pad=10;
+      let dx=0;
+      if(pr.left<lr.left+pad) dx=(lr.left+pad)-pr.left;
+      if(pr.right>lr.right-pad) dx=(lr.right-pad)-pr.right;
+      setReactShift(dx);
+    };
+    const tick=()=>requestAnimationFrame(()=>requestAnimationFrame(calc));
+    tick();
+    window.addEventListener("resize",tick);
+    const list=listRef.current;
+    list?.addEventListener("scroll",tick,{passive:true});
+    return ()=>{
+      window.removeEventListener("resize",tick);
+      list?.removeEventListener("scroll",tick);
+    };
+  },[reactFor]);
 
   // ✅ scrollbar: chỉ hiện khi scroll, 2s không scroll sẽ tự ẩn
   useEffect(()=>{
@@ -102,7 +164,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
       setItems(prev=>uniq([...prev,msg]));
       scrollBottom(true);
 
-      // ✅ nếu đang "Đã gửi" và đối phương nhắn lại -> ẩn "Đã gửi"
       try{
         const sid=String(msg?.senderId?._id||msg?.senderId||"");
         const mine=sid===myId;
@@ -127,22 +188,27 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
     socket.on("chat:new",onNew);
     socket.on("chat:deleted",onDeleted);
+    socket.on("chat:revoke_update",onDeleted);
     socket.on("chat:reaction_update",onReact);
+    socket.on("chat:react_update",onReact);
 
     return ()=>{
       socket.off("chat:new",onNew);
       socket.off("chat:deleted",onDeleted);
+      socket.off("chat:revoke_update",onDeleted);
       socket.off("chat:reaction_update",onReact);
+      socket.off("chat:react_update",onReact);
       socket.emit("chat:leave",{conversationId});
     };
   },[socket,conversationId,myId]);
 
+  // click outside close popups
   useEffect(()=>{
     const onDoc=(e)=>{
       const t=e.target;
       if(!t) return;
       if(!t.closest?.(".fm-chat-input-emoji") && !t.closest?.(".fm-chat-emoji-pop")) setPickerOpen(false);
-      if(!t.closest?.(".fm-chat-reactpop") && !t.closest?.(".fm-chat-reactcorner")) setReactFor(null);
+      if(!t.closest?.(".fm-chat-reactpop") && !t.closest?.(".fm-chat-act-emoji")) setReactFor(null);
     };
     document.addEventListener("mousedown",onDoc);
     return ()=>document.removeEventListener("mousedown",onDoc);
@@ -157,42 +223,59 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
   const pickFiles=()=>fileRef.current?.click?.();
 
-  const onPickFile=(e)=>{
-    const list=[...safeArr(e.target.files)];
-    e.target.value="";
-    if(!list.length) return;
-
+  const pushFiles=(list)=>{
     const ok=[];
-    for(const f of list){
-      if(!String(f.type||"").startsWith("image/")){ toast.info("Chỉ hỗ trợ ảnh."); continue; }
+    for(const f of (list||[])){
+      if(!String(f?.type||"").startsWith("image/")){ toast.info("Chỉ hỗ trợ ảnh."); continue; }
       if(f.size>5*1024*1024){ toast.info("Ảnh phải nhỏ hơn 5MB."); continue; }
       ok.push(f);
     }
     if(!ok.length) return;
     setFiles(prev=>[...prev,...ok].slice(0,6));
   };
+
+  const onPickFile=(e)=>{
+    const list=Array.from(e.target.files||[]);
+    e.target.value="";
+    if(!list.length) return;
+    pushFiles(list);
+  };
+
   const removeFile=(idx)=>setFiles(prev=>prev.filter((_,i)=>i!==idx));
 
   const summarizeReacts=(m)=>{
     const list=safeArr(m?.reactions);
     const byEmoji=new Map();
-    let my=null;
+    let myKey="";
     for(const r of list){
       const k=String(r?.emoji||"");
-      if(!k) continue;
-      if(!byEmoji.has(k)) byEmoji.set(k,{emoji:k,count:0});
-      byEmoji.get(k).count++;
-      if(String(r?.userId||"")===myId) my=r;
+      const uid=uidOf(r?.userId);
+      if(!k||!uid) continue;
+      byEmoji.set(k,(byEmoji.get(k)||0)+1);
+      if(uid===myId) myKey=k;
     }
-    const top=Array.from(byEmoji.values()).sort((a,b)=>b.count-a.count);
-    return { top, myEmoji: my?.emoji||"" };
+    const top=[...byEmoji.entries()].map(([emoji,count])=>({emoji,count})).sort((a,b)=>b.count-a.count);
+    const total=list.length;
+    return { top, myEmoji: myKey, total };
+  };
+
+  const applyLocalReaction=(messageId,emojiKey)=>{
+    setItems(prev=>uniq(prev.map(m=>{
+      if(String(m?._id||"")!==String(messageId)) return m;
+      const list=safeArr(m?.reactions);
+      const cur=list.find(r=>uidOf(r?.userId)===myId)||null;
+      const kept=list.filter(r=>uidOf(r?.userId)!==myId);
+      if(cur?.emoji===emojiKey) return {...m,reactions:kept};
+      return {...m,reactions:[...kept,{emoji:emojiKey,userId:myId,reactedAt:new Date().toISOString()}]};
+    })));
   };
 
   const sendReaction=(messageId,emojiKey)=>{
     if(!conversationId || !messageId || !emojiKey) return;
     socket.emit("chat:react",{conversationId,messageId,emoji:emojiKey},(ack)=>{
-      if(!ack?.ok) toast.error(ack?.message||"Không thể thả cảm xúc");
-      else if(ack?.message) setItems(prev=>uniq(prev.map(m=>String(m?._id||"")===String(ack.message._id)?ack.message:m)));
+      if(!ack?.ok){ toast.error(ack?.message||"Không thể thả cảm xúc"); load(); return; }
+      const serverMsg=ack?.message || ack?.data?.message || null;
+      if(serverMsg?._id) setItems(prev=>uniq(prev.map(m=>String(m?._id||"")===String(serverMsg._id)?serverMsg:m)));
     });
   };
 
@@ -202,8 +285,55 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     const mine=sid===myId;
     if(!id || !mine || m?.deletedAt) return;
     setItems(prev=>uniq(prev.map(x=>String(x?._id||"")===id?{...x,deletedAt:new Date().toISOString(),content:"",attachments:[]}:x)));
-    socket.emit("chat:delete",{conversationId,messageId:id},(ack)=>{ if(!ack?.ok) toast.error(ack?.message||"Thu hồi thất bại"); });
+    socket.emit("chat:revoke",{conversationId,messageId:id},(ack)=>{ if(!ack?.ok) toast.error(ack?.message||"Thu hồi thất bại"); });
   };
+
+  const insertEmojiToInput=(char)=>{
+    if(!char) return;
+    const el=inputRef.current;
+    if(!el){ setText(t=>t+char); return; }
+    const start=el.selectionStart ?? text.length;
+    const end=el.selectionEnd ?? text.length;
+    const next=text.slice(0,start)+char+text.slice(end);
+    setText(next);
+    requestAnimationFrame(()=>{ el.focus(); const pos=start+char.length; el.setSelectionRange?.(pos,pos); });
+  };
+
+  const onInputDrop=(e)=>{
+    try{
+      const dt=e.dataTransfer;
+      const key=dt?.getData?.("application/x-emoji-key")||"";
+      const ch=dt?.getData?.("text/plain")||"";
+      const maybeKey=key || emojiKeyFromChar(ch);
+      const hasFiles=dt?.files && dt.files.length>0;
+      if(maybeKey){ e.preventDefault(); e.stopPropagation(); insertEmojiToInput(emojiChar(maybeKey)||ch); return; }
+      if(hasFiles){ e.preventDefault(); e.stopPropagation(); pushFiles([...dt.files]); }
+    }catch{}
+  };
+
+  const onMsgDrop=(mid)=>(e)=>{
+    try{
+      const dt=e.dataTransfer;
+      const key=dt?.getData?.("application/x-emoji-key")||"";
+      const ch=dt?.getData?.("text/plain")||"";
+      const emojiKey=key || emojiKeyFromChar(ch);
+      if(!emojiKey) return;
+      e.preventDefault(); e.stopPropagation();
+      setDragOverMid(null);
+      applyLocalReaction(String(mid),emojiKey);
+      sendReaction(String(mid),emojiKey);
+    }catch{ setDragOverMid(null); }
+  };
+  const onMsgDragOver=(mid)=>(e)=>{
+    const dt=e.dataTransfer;
+    const key=dt?.getData?.("application/x-emoji-key")||"";
+    const ch=dt?.getData?.("text/plain")||"";
+    const emojiKey=key || emojiKeyFromChar(ch);
+    if(!emojiKey) return;
+    e.preventDefault();
+    setDragOverMid(String(mid));
+  };
+  const onMsgDragLeave=(mid)=>(_e)=>{ if(String(dragOverMid||"")===String(mid)) setDragOverMid(null); };
 
   const send=async()=>{
     if(!conversationId) return;
@@ -258,17 +388,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     });
   };
 
-  const insertEmojiToInput=(char)=>{
-    if(!char) return;
-    const el=inputRef.current;
-    if(!el){ setText(t=>t+char); return; }
-    const start=el.selectionStart ?? text.length;
-    const end=el.selectionEnd ?? text.length;
-    const next=text.slice(0,start)+char+text.slice(end);
-    setText(next);
-    requestAnimationFrame(()=>{ el.focus(); const pos=start+char.length; el.setSelectionRange?.(pos,pos); });
-  };
-
   const timeline=useMemo(()=>{
     const arr=safeArr(items);
     const out=[];
@@ -290,8 +409,21 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     return out;
   },[items]);
 
+  const toggleReactFor=(id)=>setReactFor(cur=>String(cur||"")===String(id||"")?null:String(id||""));
+
   return (
     <div className="fm-chat" style={{height}}>
+      {/* ✅ Full image viewer */}
+      {imgView?.url && (
+        <div className="fm-chat-imgview" onMouseDown={(e)=>{ if(e.target===e.currentTarget) closeImg(); }}>
+          <button type="button" className="fm-chat-imgview-x" onClick={closeImg} aria-label="Đóng"><i className="fa-solid fa-xmark" /></button>
+          <div className="fm-chat-imgview-box">
+            <img src={imgView.url} alt={imgView.name||"image"} />
+            {!!imgView.name && <div className="fm-chat-imgview-cap">{imgView.name}</div>}
+          </div>
+        </div>
+      )}
+
       <div ref={listRef} className="fm-chat-list">
         {loading ? <div className="fm-chat-loading">Đang tải…</div> : null}
 
@@ -299,6 +431,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           if(row.t==="date") return <div key={row.k} className="fm-chat-date"><span>{row.v}</span></div>;
 
           const m=row.m;
+          const rid=String(m?._id||"");
           const sid=String(m?.senderId?._id||m?.senderId||"");
           const mine=sid===myId;
 
@@ -317,11 +450,40 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           const replyName=replySender?.name||replySender?.nickname||"";
           const replyText=replyMsg?.deletedAt?"Tin nhắn đã thu hồi":clip(replyMsg?.content||"",90);
 
-          const {top:reactTop,myEmoji}=summarizeReacts(m);
-          const cornerEmoji=myEmoji || reactTop[0]?.emoji || "";
+          const {top:reactTop,myEmoji,total}=summarizeReacts(m);
+          const badgeEmoji=myEmoji || reactTop[0]?.emoji || "";
+          const badgeCount=total||0;
 
-          // ✅ “Đang gửi/Đã gửi” chỉ nằm dưới bubble cuối của tôi và đúng messageId
-          const showSendMark=mine && row.end && !!sendMark?.state && String(sendMark?.msgId||"")===String(m?._id||"") && !isDeleted;
+          const showSendMark=mine && row.end && !!sendMark?.state && String(sendMark?.msgId||"")===rid && !isDeleted;
+          const dragOn=String(dragOverMid||"")===rid;
+          const reactOpen=String(reactFor||"")===rid;
+
+          const reactPopup = reactOpen && !isDeleted ? (
+            <div
+              ref={reactPopRef}
+              className="fm-chat-reactpop is-acts"
+              style={{
+                "--shift": `${reactShift}px`,
+                transform: `translateX(calc(-50% + ${reactShift}px))`,
+                zIndex: 2000
+              }}
+            >
+              {EMOJIS.map(e=>{
+                const active=myEmoji===e.k;
+                return (
+                  <button
+                    key={e.k}
+                    type="button"
+                    className={"fm-chat-reactbtn"+(active?" is-active":"")}
+                    title={active?`${e.t} (đang chọn)` : e.t}
+                    onClick={()=>{ applyLocalReaction(rid,e.k); sendReaction(rid,e.k); setReactFor(null); }}
+                  >
+                    {e.c}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null;
 
           return (
             <div key={row.k} className={"fm-chat-row"+(mine?" is-mine":"")+(isTmp?" is-tmp":"")+(row.start?" is-start":"")+(row.end?" is-end":"")}>
@@ -332,16 +494,28 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
               ) : <div className="fm-chat-ava-spacer" />)}
 
               <div className={"fm-chat-main"+(mine?" is-mine":"")}>
-                {/* MINE: reply + retract nằm BÊN TRÁI bubble */}
+                {/* ✅ LEFT sideacts (mine): reply + retract + emoji (có popup) */}
                 {!isDeleted && mine && (
-                  <div className="fm-chat-sideacts is-left">
+                  <div className={"fm-chat-sideacts is-left"+(reactOpen?" is-open":"")} style={reactOpen?{zIndex:1200}:undefined}>
                     <button type="button" className="fm-chat-act" onClick={()=>startReply(m)} title="Trả lời"><i className="fa-solid fa-reply" /></button>
                     <button type="button" className="fm-chat-act is-danger" onClick={()=>retract(m)} title="Thu hồi"><i className="fa-regular fa-trash-can" /></button>
+
+                    <div className="fm-chat-reactwrap">
+                      <button type="button" className={"fm-chat-act fm-chat-act-emoji"+(reactOpen?" is-on":"")} onClick={()=>toggleReactFor(rid)} title="Thả emoji">
+                        <i className="fa-regular fa-face-smile" />
+                      </button>
+                      {reactPopup}
+                    </div>
                   </div>
                 )}
 
                 <div className={"fm-chat-bubblewrap"+(mine?" is-mine":"")}>
-                  <div className={"fm-chat-bubble"+(mine?" is-mine":"")+(isDeleted?" is-deleted":"")+(row.start?" is-start":"")+(row.end?" is-end":"")}>
+                  <div
+                    className={"fm-chat-bubble"+(mine?" is-mine":"")+(isDeleted?" is-deleted":"")+(row.start?" is-start":"")+(row.end?" is-end":"")+(dragOn?" is-dragover":"")}
+                    onDragOver={!isDeleted && !isTmp ? onMsgDragOver(rid) : undefined}
+                    onDrop={!isDeleted && !isTmp ? onMsgDrop(rid) : undefined}
+                    onDragLeave={!isDeleted && !isTmp ? onMsgDragLeave(rid) : undefined}
+                  >
                     {!mine && row.start && !!name && !isDeleted && <div className="fm-chat-inname">{name}</div>}
 
                     {!!replyId && (
@@ -362,9 +536,15 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                         {!!safeArr(m?.attachments).length && (
                           <div className="fm-chat-atts">
                             {safeArr(m.attachments).filter(isImg).map((a,idx)=>(
-                              <a key={`${a.url||idx}`} className="fm-chat-img" href={a.url} target="_blank" rel="noreferrer">
+                              <button
+                                key={`${a.url||idx}`}
+                                type="button"
+                                className="fm-chat-img"
+                                onClick={()=>setImgView({url:a.url,name:a.name||"Ảnh"})}
+                                title="Xem ảnh"
+                              >
                                 <img src={a.url} alt={a.name||"image"} />
-                              </a>
+                              </button>
                             ))}
                           </div>
                         )}
@@ -373,25 +553,14 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
                     {row.end && <div className={"fm-chat-time"+(mine?" is-mine":"")}>{m?.createdAt?dayjs(m.createdAt).format("HH:mm"):""}</div>}
 
-                    {!isDeleted && (
-                      <button type="button" className={"fm-chat-reactcorner"+((reactTop.length||cornerEmoji)?" is-has":"")} onClick={()=>setReactFor(String(m?._id||""))} title="Thả cảm xúc">
-                        {cornerEmoji ? <span className="em">{emojiChar(cornerEmoji)}</span> : <i className="fa-regular fa-face-smile" />}
-                        {reactTop.length>0 ? <span className="ct">{safeArr(m?.reactions).length}</span> : null}
-                      </button>
+                    {!isDeleted && badgeCount>0 && badgeEmoji && (
+                      <div className="fm-chat-reactbadge" title="Cảm xúc">
+                        <span className="em">{emojiChar(badgeEmoji)}</span>
+                        {badgeCount>1 ? <span className="ct">{badgeCount}</span> : null}
+                      </div>
                     )}
                   </div>
 
-                  {reactFor===String(m?._id||"") && !isDeleted && (
-                    <div className={"fm-chat-reactpop"+(mine?" is-mine":"")}>
-                      {EMOJIS.map(e=>(
-                        <button key={e.k} type="button" className="fm-chat-reactbtn" title={e.t} onClick={()=>{ sendReaction(String(m._id),e.k); setReactFor(null); }}>
-                          {e.c}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* ✅ “Đang gửi/Đã gửi” dưới bubble cuối cùng của tôi */}
                   {showSendMark && (
                     <div className="fm-chat-sendmark">
                       {sendMark.state==="sending"
@@ -402,10 +571,17 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                   )}
                 </div>
 
-                {/* OTHER: reply nằm BÊN PHẢI bubble */}
+                {/* ✅ RIGHT sideacts (other): reply + emoji (có popup) */}
                 {!isDeleted && !mine && (
-                  <div className="fm-chat-sideacts is-right">
+                  <div className={"fm-chat-sideacts is-right"+(reactOpen?" is-open":"")} style={reactOpen?{zIndex:1200}:undefined}>
                     <button type="button" className="fm-chat-act" onClick={()=>startReply(m)} title="Trả lời"><i className="fa-solid fa-reply" /></button>
+
+                    <div className="fm-chat-reactwrap">
+                      <button type="button" className={"fm-chat-act fm-chat-act-emoji"+(reactOpen?" is-on":"")} onClick={()=>toggleReactFor(rid)} title="Thả emoji">
+                        <i className="fa-regular fa-face-smile" />
+                      </button>
+                      {reactPopup}
+                    </div>
                   </div>
                 )}
               </div>
@@ -414,7 +590,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
         })}
 
         {!loading && !items.length ? <div className="fm-chat-empty">Chưa có tin nhắn nào.</div> : null}
-        <div ref={bottomRef}/>
+        <div />
       </div>
 
       <div className="fm-chat-compose">
@@ -428,36 +604,53 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           </div>
         )}
 
-        {!!files.length && (
-          <div className="fm-chat-previews">
-            {files.map((f,idx)=>(
-              <div key={idx} className="fm-chat-prev">
-                <img src={URL.createObjectURL(f)} alt={f.name} />
-                <button type="button" className="fm-chat-prev-x" onClick={()=>removeFile(idx)} aria-label="Xóa ảnh"><i className="fa-solid fa-xmark" /></button>
-              </div>
-            ))}
-          </div>
-        )}
-
         <div className="fm-chat-inputrow">
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onPickFile} />
 
           <button type="button" className="fm-chat-attach" onClick={pickFiles} title="Gửi hình ảnh"><i className="fa-regular fa-image" /></button>
 
+          <button type="button" className={"fm-chat-input-emoji"+(pickerOpen?" is-on":"")} onClick={()=>setPickerOpen(v=>!v)} title="Emoji (chèn vào nội dung)">
+            <i className="fa-regular fa-face-smile" />
+          </button>
+
           <div className="fm-chat-inputwrap">
+            {!!files.length && (
+              <div className="fm-chat-draftimgs">
+                {files.map((f,idx)=>(
+                  <div key={idx} className="fm-chat-draftimg">
+                    <img src={fileUrl(f)} alt={f.name} />
+                    <button type="button" className="fm-chat-draftimg-x" onClick={()=>removeFile(idx)} aria-label="Xóa ảnh"><i className="fa-solid fa-xmark" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <input
               ref={inputRef}
               value={text}
               onChange={e=>setText(e.target.value)}
               onKeyDown={e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); e.stopPropagation(); send(); } }}
+              onDrop={onInputDrop}
+              onDragOver={(e)=>{ const dt=e.dataTransfer; const has=(dt?.getData?.("application/x-emoji-key")||emojiKeyFromChar(dt?.getData?.("text/plain")||"")||""); if(has|| (dt?.files&&dt.files.length)) e.preventDefault(); }}
               placeholder={uploading?"Đang tải ảnh…":"Nhập tin nhắn…"}
               className="fm-chat-input"
               disabled={uploading}
             />
+
             {pickerOpen && (
               <div className="fm-chat-emoji-pop">
                 {EMOJIS.map(e=>(
-                  <button key={e.k} type="button" className="fm-chat-emoji-btn" title={e.t} onClick={()=>insertEmojiToInput(e.c)}>{e.c}</button>
+                  <button
+                    key={e.k}
+                    type="button"
+                    className="fm-chat-emoji-btn"
+                    title={e.t}
+                    draggable
+                    onDragStart={(ev)=>{ try{ev.dataTransfer.setData("application/x-emoji-key",e.k); ev.dataTransfer.setData("text/plain",e.c);}catch{} }}
+                    onClick={()=>insertEmojiToInput(e.c)}
+                  >
+                    {e.c}
+                  </button>
                 ))}
               </div>
             )}
