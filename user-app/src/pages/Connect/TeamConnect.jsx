@@ -10,7 +10,7 @@ import { toast } from "react-toastify";
 import TeamEditModal from "./TeamEditModal";
 import TeamManageMembersModal from "./TeamManageMembersModal";
 import UserSideModal from "../UserProfile/UserSideModal";
-import ChatBox from "./ChatBox";
+import ChatBox from "../Chat/ChatBox";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -614,7 +614,7 @@ export default function TeamConnect({ onLeftRoom }){
       <div className="tc-stack">
         <section className="tc-box tc-box-top">
           <div className="tc-top-tabs">
-            <button type="button" className={"tc-top-tab"+(topTab==="setup"?" is-active":"")} onClick={()=>setTopTab("setup")}>Thiết lập nhóm</button>
+            <button type="button" className={"tc-top-tab"+(topTab==="setup"?" is-active":"")} onClick={()=>setTopTab("setup")}>Kết nối</button>
             <button type="button" className={"tc-top-tab"+(topTab==="guidelines"?" is-active":"")} onClick={()=>setTopTab("guidelines")}>Hướng dẫn</button>
             <button type="button" className={"tc-top-tab"+(topTab==="chat"?" is-active":"")} onClick={()=>setTopTab("chat")}>Trò chuyện</button>
           </div>
@@ -671,7 +671,7 @@ export default function TeamConnect({ onLeftRoom }){
                 meId={String(myId||"")}
                 members={members}
                 onOpenUser={openUserModal}
-                height={666}
+                height={670}
               />
             </div>
           ) : (

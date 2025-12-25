@@ -47,6 +47,16 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
   const [imgView,setImgView]=useState(null);
   const closeImg=()=>setImgView(null);
 
+  // ===== Menu (⋯) + delete-for-me (local only) =====
+  const [menuFor,setMenuFor]=useState(null); // {mid}
+  const menuPopRef=useRef(null);
+  const [menuShift,setMenuShift]=useState(0);
+
+  const hiddenKey=useMemo(()=>conversationId&&meId?`fmchat_hidden_${String(meId)}_${conversationId}`:"",[conversationId,meId]);
+  const [hiddenSet,setHiddenSet]=useState(new Set());
+  const hiddenRef=useRef(new Set());
+  const pendingHideRef=useRef(new Map()); // mid -> timeoutId
+
   const listRef=useRef(null);
   const inputRef=useRef(null);
   const fileRef=useRef(null);
@@ -85,6 +95,26 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     return m;
   },[items]);
 
+  // ===== hiddenSet persistence =====
+  useEffect(()=>{ hiddenRef.current=hiddenSet; },[hiddenSet]);
+
+  useEffect(()=>{
+    for(const t of pendingHideRef.current.values()) try{clearTimeout(t)}catch{}
+    pendingHideRef.current.clear();
+
+    if(!hiddenKey){ setHiddenSet(new Set()); return; }
+    try{
+      const raw=localStorage.getItem(hiddenKey);
+      const arr=JSON.parse(raw||"[]");
+      setHiddenSet(new Set(safeArr(arr).map(String).filter(Boolean)));
+    }catch{ setHiddenSet(new Set()); }
+  },[hiddenKey]);
+
+  const persistHidden=()=>{
+    if(!hiddenKey) return;
+    try{ localStorage.setItem(hiddenKey,JSON.stringify(Array.from(hiddenRef.current))) }catch{}
+  };
+
   const scrollBottom=(smooth=false)=>{
     requestAnimationFrame(()=>{
       const el=listRef.current;
@@ -109,7 +139,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
   },[reactModal,msgMap,items]);
 
   const reactModalSummary=useMemo(()=>reactModalMsg?summarizeReacts(reactModalMsg):{top:[],myEmoji:"",total:0},[reactModalMsg]);
-
   const reactModalRows=useMemo(()=>{
     const m=reactModalMsg; if(!m) return [];
     return safeArr(m?.reactions).map(r=>({emoji:String(r?.emoji||""),userId:uidOf(r?.userId),at:r?.reactedAt?new Date(r.reactedAt).getTime():0}))
@@ -137,11 +166,30 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     window.addEventListener("resize",tick);
     const list=listRef.current;
     list?.addEventListener("scroll",tick,{passive:true});
-    return ()=>{
-      window.removeEventListener("resize",tick);
-      list?.removeEventListener("scroll",tick);
-    };
+    return ()=>{ window.removeEventListener("resize",tick); list?.removeEventListener("scroll",tick); };
   },[reactFor]);
+
+  // ===== menu shift (avoid overflow) =====
+  useEffect(()=>{
+    if(!menuFor){ setMenuShift(0); return; }
+    const calc=()=>{
+      const pop=menuPopRef.current, list=listRef.current;
+      if(!pop||!list) return;
+      const pr=pop.getBoundingClientRect();
+      const lr=list.getBoundingClientRect();
+      const pad=10;
+      let dx=0;
+      if(pr.left<lr.left+pad) dx=(lr.left+pad)-pr.left;
+      if(pr.right>lr.right-pad) dx=(lr.right-pad)-pr.right;
+      setMenuShift(dx);
+    };
+    const tick=()=>requestAnimationFrame(()=>requestAnimationFrame(calc));
+    tick();
+    window.addEventListener("resize",tick);
+    const list=listRef.current;
+    list?.addEventListener("scroll",tick,{passive:true});
+    return ()=>{ window.removeEventListener("resize",tick); list?.removeEventListener("scroll",tick); };
+  },[menuFor]);
 
   useEffect(()=>{
     const el=listRef.current;
@@ -225,10 +273,13 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
       if(!t) return;
       if(!t.closest?.(".fm-chat-input-emoji") && !t.closest?.(".fm-chat-emoji-pop")) setPickerOpen(false);
       if(!t.closest?.(".fm-chat-reactpop") && !t.closest?.(".fm-chat-act-emoji")) setReactFor(null);
+      if(!t.closest?.(".fm-chat-menupop") && !t.closest?.(".fm-chat-act-menu")) setMenuFor(null);
     };
     document.addEventListener("mousedown",onDoc);
     return ()=>document.removeEventListener("mousedown",onDoc);
   },[]);
+
+  useEffect(()=>{ if(!menuFor) return; const onKey=e=>{ if(e.key==="Escape") setMenuFor(null); }; window.addEventListener("keydown",onKey); return ()=>window.removeEventListener("keydown",onKey); },[menuFor]);
 
   useEffect(()=>{
     const open=!!reactModal || !!imgView;
@@ -237,8 +288,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     const prevOverflow=b.style.overflow;
     const prevPad=b.style.paddingRight;
     return ()=>{ b.style.overflow=prevOverflow; b.style.paddingRight=prevPad; };
-  },[reactModal]);
-
+  },[reactModal,imgView]);
 
   const startReply=(m)=>{
     if(!m || m.deletedAt) return;
@@ -333,6 +383,56 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     socket.emit("chat:revoke",{conversationId,messageId:id},(ack)=>{ if(!ack?.ok) toast.error(ack?.message||"Thu hồi thất bại"); });
   };
 
+  // ===== Copy / delete-for-me with undo 5s =====
+  const copyText=async(txt)=>{
+    const s=String(txt||"");
+    if(!s) return false;
+    try{ if(navigator.clipboard?.writeText){ await navigator.clipboard.writeText(s); return true; } }catch{}
+    try{
+      const ta=document.createElement("textarea");
+      ta.value=s; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.left="-9999px";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+      return true;
+    }catch{ return false; }
+  };
+
+  const copyMessage=async(m)=>{
+    if(!m) return;
+    if(m?.deletedAt){ toast.info("Tin nhắn đã thu hồi"); return; }
+    const imgs=safeArr(m?.attachments).filter(isImg);
+    const hasText=!!String(m?.content||"").trim();
+    const payload=hasText?String(m.content||""):(imgs.length?imgs.map(x=>x.url).filter(Boolean).join("\n"):"");
+    if(!payload){ toast.info("Không có nội dung để copy"); return; }
+    const ok=await copyText(payload);
+    ok?toast.success("Đã copy"):toast.error("Copy thất bại");
+  };
+
+  const undoHide=(mid)=>{
+    const id=String(mid||""); if(!id) return;
+    const t=pendingHideRef.current.get(id);
+    if(t){ try{clearTimeout(t)}catch{} pendingHideRef.current.delete(id); }
+    setHiddenSet(prev=>{const ns=new Set(prev); ns.delete(id); return ns;});
+    setTimeout(()=>persistHidden(),0);
+  };
+
+  const hideForMe=(m)=>{
+    const id=String(m?._id||"");
+    if(!id || String(id).startsWith("tmp_")) return;
+    if(hiddenRef.current.has(id)) return;
+
+    setHiddenSet(prev=>{const ns=new Set(prev); ns.add(id); return ns;});
+
+    toast(({closeToast})=>(
+      <div className="fm-chat-undo">
+        <div className="fm-chat-undo-txt">Đã xóa tin nhắn (chỉ phía bạn)</div>
+        <button className="fm-chat-undo-btn" onClick={()=>{undoHide(id); closeToast?.();}}>Hoàn tác</button>
+      </div>
+    ),{autoClose:5000,closeOnClick:false,closeButton:true});
+
+    const tt=setTimeout(()=>{ pendingHideRef.current.delete(id); persistHidden(); },5000);
+    pendingHideRef.current.set(id,tt);
+  };
+
   const insertEmojiToInput=(char)=>{
     if(!char) return;
     const el=inputRef.current;
@@ -357,33 +457,29 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
   };
 
   const onInputPaste=(e)=>{
-  try{
-    if(uploading) return;
-    const dt=e.clipboardData;
-    if(!dt) return;
+    try{
+      if(uploading) return;
+      const dt=e.clipboardData;
+      if(!dt) return;
 
-    const items=Array.from(dt.items||[]);
-    const imgFiles=[];
-
-    for(const it of items){
-      if(it?.kind==="file" && String(it.type||"").startsWith("image/")){
-        const f=it.getAsFile?.();
-        if(f) imgFiles.push(f);
+      const items=Array.from(dt.items||[]);
+      const imgFiles=[];
+      for(const it of items){
+        if(it?.kind==="file" && String(it.type||"").startsWith("image/")){
+          const f=it.getAsFile?.();
+          if(f) imgFiles.push(f);
+        }
       }
-    }
 
-    // Case 1: clipboard có file ảnh (screenshot, copy từ app)
-    if(imgFiles.length){
-      pushFiles(imgFiles);
-      const hasText=!!String(dt.getData?.("text/plain")||"").trim();
-      // nếu chỉ dán ảnh (không có text) thì chặn paste text rỗng/linh tinh
-      if(!hasText){ e.preventDefault(); e.stopPropagation(); }
-      return;
-    }
+      if(imgFiles.length){
+        pushFiles(imgFiles);
+        const hasText=!!String(dt.getData?.("text/plain")||"").trim();
+        if(!hasText){ e.preventDefault(); e.stopPropagation(); }
+        return;
+      }
 
-    // Case 2: clipboard chỉ có HTML chứa <img src="data:image/...">
-    const html=dt.getData?.("text/html")||"";
-    const dataImg=pickDataImgFromHtml(html);
+      const html=dt.getData?.("text/html")||"";
+      const dataImg=pickDataImgFromHtml(html);
       if(dataImg){
         const f=dataUrlToFile(dataImg,`pasted_${Date.now()}.png`);
         if(f){
@@ -473,7 +569,8 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
   };
 
   const timeline=useMemo(()=>{
-    const arr=safeArr(items);
+    const hidden=hiddenSet;
+    const arr=safeArr(items).filter(x=>{const id=String(x?._id||""); return !id || !hidden.has(id);});
     const out=[];
     for(let i=0;i<arr.length;i++){
       const m=arr[i];
@@ -491,9 +588,16 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
       out.push({t:"msg",k:String(m?._id||m?.clientMsgId||i),m,start,end});
     }
     return out;
-  },[items]);
+  },[items,hiddenSet]);
 
-  const toggleReactFor=(id)=>setReactFor(cur=>String(cur||"")===String(id||"")?null:String(id||""));
+  const toggleReactFor=(id)=>{
+    setMenuFor(null);
+    setReactFor(cur=>String(cur||"")===String(id||"")?null:String(id||""));
+  };
+  const toggleMenuFor=(id)=>{
+    setReactFor(null);
+    setMenuFor(cur=>String(cur?.mid||"")===String(id||"")?null:{mid:String(id||"")});
+  };
 
   return (
     <div className="fm-chat" style={{height}}>
@@ -579,13 +683,15 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           const replyText=replyMsg?.deletedAt?"Tin nhắn đã thu hồi":clip(replyMsg?.content||"",90);
 
           const {top:reactTop,myEmoji,total}=summarizeReacts(m);
-          const badgeEmojis=reactTop.map(x=>x.emoji).filter(Boolean); 
+          const badgeEmojis=reactTop.map(x=>x.emoji).filter(Boolean);
           const badgeCount=total||0;
           const hasReactBadge=!isDeleted && badgeCount>0 && badgeEmojis.length;
 
           const showSendMark=mine && row.end && !!sendMark?.state && String(sendMark?.msgId||"")===rid && !isDeleted;
           const dragOn=String(dragOverMid||"")===rid;
           const reactOpen=String(reactFor||"")===rid;
+
+          const menuOpen=String(menuFor?.mid||"")===rid;
 
           const reactPopup = reactOpen && !isDeleted ? (
             <div ref={reactPopRef} className="fm-chat-reactpop is-acts" style={{"--shift":`${reactShift}px`,transform:`translateX(calc(-50% + ${reactShift}px))`,zIndex:2000}}>
@@ -617,6 +723,29 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           const canDrop=!isDeleted && !isTmp;
           const bindDrop=canDrop ? {onDragOver:onMsgDragOver(rid),onDrop:onMsgDrop(rid),onDragLeave:onMsgDragLeave(rid)} : {};
 
+          const copyLabel=(!hasText && hasImgs)?"Copy hình ảnh":"Copy tin nhắn";
+          const menuPopup = menuOpen && !isDeleted ? (
+            <div ref={menuPopRef} className="fm-chat-menupop" style={{"--shift":`${menuShift}px`,transform:`translateX(calc(-50% + ${menuShift}px))`,zIndex:2600}}>
+              <button type="button" className="fm-chat-menuit" onClick={()=>{setMenuFor(null);copyMessage(m);}}>
+                <i className="fa-regular fa-copy" /> {copyLabel}
+              </button>
+
+              {mine && !isTmp ? (
+                <>
+                  <div className="fm-chat-menusep" />
+                  <button type="button" className="fm-chat-menuit" onClick={()=>{setMenuFor(null);retract(m);}}>
+                    <i className="fa-solid fa-rotate-left" /> Thu hồi tin nhắn
+                  </button>
+                </>
+              ) : null}
+
+              <div className="fm-chat-menusep" />
+              <button type="button" className="fm-chat-menuit is-danger" onClick={()=>{setMenuFor(null);hideForMe(m);}}>
+                <i className="fa-regular fa-trash-can" /> Xóa chỉ ở phía tôi
+              </button>
+            </div>
+          ) : null;
+
           return (
             <div key={row.k} className={"fm-chat-row"+(mine?" is-mine":"")+(isTmp?" is-tmp":"")+(row.start?" is-start":"")+(row.end?" is-end":"")+(showSendMark?" has-sendmark":"")+(hasReactBadge?" has-reactbadge":"")}>
               {!mine && (row.start ? (
@@ -627,14 +756,21 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
               <div className={"fm-chat-main"+(mine?" is-mine":"")}>
                 {!isDeleted && mine && (
-                  <div className={"fm-chat-sideacts is-left"+(reactOpen?" is-open":"")} style={reactOpen?{zIndex:1200}:undefined}>
+                  <div className={"fm-chat-sideacts is-left"+(reactOpen||menuOpen?" is-open":"")} style={(reactOpen||menuOpen)?{zIndex:1200}:undefined}>
                     <button type="button" className="fm-chat-act" onClick={()=>startReply(m)} title="Trả lời"><i className="fa-solid fa-reply" /></button>
-                    <button type="button" className="fm-chat-act is-danger" onClick={()=>retract(m)} title="Thu hồi"><i className="fa-regular fa-trash-can" /></button>
+
                     <div className="fm-chat-reactwrap">
                       <button type="button" className={"fm-chat-act fm-chat-act-emoji"+(reactOpen?" is-on":"")} onClick={()=>toggleReactFor(rid)} title="Thả emoji">
                         <i className="fa-regular fa-face-smile" />
                       </button>
                       {reactPopup}
+                    </div>
+
+                    <div className="fm-chat-menuwrap">
+                      <button type="button" className={"fm-chat-act fm-chat-act-menu"+(menuOpen?" is-on":"")} onClick={()=>toggleMenuFor(rid)} title="Tùy chọn">
+                        <i className="fa-solid fa-ellipsis" />
+                      </button>
+                      {menuPopup}
                     </div>
                   </div>
                 )}
@@ -669,11 +805,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                       )}
 
                       {hasImgs && (
-                        <div
-                          className={"fm-chat-bubble is-media"+(mine?" is-mine":"")+((!showTextBlock && row.start)?" is-start":"")+(row.end?" is-end":"")+(dragOn?" is-dragover":"")}
-                          {...bindDrop}
-                        >
-                          {/* Nếu chỉ có ảnh (không có bubble text) thì vẫn show name */}
+                        <div className={"fm-chat-bubble is-media"+(mine?" is-mine":"")+((!showTextBlock && row.start)?" is-start":"")+(row.end?" is-end":"")+(dragOn?" is-dragover":"")} {...bindDrop}>
                           {!mine && !showTextBlock && row.start && !!name && <div className="fm-chat-inname">{name}</div>}
 
                           <div className={"fm-chat-atts cols-"+cols}>
@@ -702,13 +834,21 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                 </div>
 
                 {!isDeleted && !mine && (
-                  <div className={"fm-chat-sideacts is-right"+(reactOpen?" is-open":"")} style={reactOpen?{zIndex:1200}:undefined}>
+                  <div className={"fm-chat-sideacts is-right"+(reactOpen||menuOpen?" is-open":"")} style={(reactOpen||menuOpen)?{zIndex:1200}:undefined}>
                     <button type="button" className="fm-chat-act" onClick={()=>startReply(m)} title="Trả lời"><i className="fa-solid fa-reply" /></button>
+
                     <div className="fm-chat-reactwrap">
                       <button type="button" className={"fm-chat-act fm-chat-act-emoji"+(reactOpen?" is-on":"")} onClick={()=>toggleReactFor(rid)} title="Thả emoji">
                         <i className="fa-regular fa-face-smile" />
                       </button>
                       {reactPopup}
+                    </div>
+
+                    <div className="fm-chat-menuwrap">
+                      <button type="button" className={"fm-chat-act fm-chat-act-menu"+(menuOpen?" is-on":"")} onClick={()=>toggleMenuFor(rid)} title="Tùy chọn">
+                        <i className="fa-solid fa-ellipsis" />
+                      </button>
+                      {menuPopup}
                     </div>
                   </div>
                 )}

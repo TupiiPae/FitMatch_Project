@@ -8,7 +8,7 @@ import { getMatchStatus } from "../../api/match";
 import { getMe } from "../../api/account";
 import { toast } from "react-toastify";
 import UserSideModal from "../UserProfile/UserSideModal";
-import ChatBox from "./ChatBox";
+import ChatBox from "../Chat/ChatBox";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -339,7 +339,7 @@ export default function DuoConnect({ onLeftRoom }) {
         )}
         {activeTab === "chat" && (
           <section className="cn-duo-main">
-            <ChatBox conversationId={roomId} meId={myId} height={520}/>
+            <ChatBox conversationId={roomId} meId={myId} height={674}/>
           </section>
         )}
       </div>
