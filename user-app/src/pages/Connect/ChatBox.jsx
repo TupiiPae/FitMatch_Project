@@ -97,6 +97,28 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
   const reactPopRef=useRef(null);
   const [reactShift,setReactShift]=useState(0);
 
+  const [reactModal,setReactModal]=useState(null); // {mid,filter:"all"|emojiKey}
+  const closeReactModal=()=>setReactModal(null);
+
+  useEffect(()=>{ if(!reactModal) return; const onKey=e=>{ if(e.key==="Escape") closeReactModal(); }; window.addEventListener("keydown",onKey); return ()=>window.removeEventListener("keydown",onKey); },[reactModal]);
+
+  const reactModalMsg=useMemo(()=>{
+    const mid=String(reactModal?.mid||"");
+    if(!mid) return null;
+    return msgMap.get(mid)||safeArr(items).find(x=>String(x?._id||"")===mid)||null;
+  },[reactModal,msgMap,items]);
+
+  const reactModalSummary=useMemo(()=>reactModalMsg?summarizeReacts(reactModalMsg):{top:[],myEmoji:"",total:0},[reactModalMsg]);
+
+  const reactModalRows=useMemo(()=>{
+    const m=reactModalMsg; if(!m) return [];
+    return safeArr(m?.reactions).map(r=>({emoji:String(r?.emoji||""),userId:uidOf(r?.userId),at:r?.reactedAt?new Date(r.reactedAt).getTime():0}))
+      .filter(x=>x.emoji&&x.userId).sort((a,b)=>b.at-a.at);
+  },[reactModalMsg]);
+
+  const reactFilter=String(reactModal?.filter||"all");
+  const reactModalRowsFiltered=useMemo(()=>reactFilter==="all"?reactModalRows:reactModalRows.filter(r=>r.emoji===reactFilter),[reactModalRows,reactFilter]);
+
   useEffect(()=>{
     if(!reactFor){ setReactShift(0); return; }
     const calc=()=>{
@@ -208,6 +230,16 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     return ()=>document.removeEventListener("mousedown",onDoc);
   },[]);
 
+  useEffect(()=>{
+    const open=!!reactModal || !!imgView;
+    if(!open) return;
+    const b=document.body;
+    const prevOverflow=b.style.overflow;
+    const prevPad=b.style.paddingRight;
+    return ()=>{ b.style.overflow=prevOverflow; b.style.paddingRight=prevPad; };
+  },[reactModal]);
+
+
   const startReply=(m)=>{
     if(!m || m.deletedAt) return;
     setReplyTo(m);
@@ -256,7 +288,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
   const removeFile=(idx)=>setFiles(prev=>prev.filter((_,i)=>i!==idx));
 
-  const summarizeReacts=(m)=>{
+  function summarizeReacts(m){
     const list=safeArr(m?.reactions);
     const byEmoji=new Map();
     let myKey="";
@@ -270,7 +302,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     const top=[...byEmoji.entries()].map(([emoji,count])=>({emoji,count})).sort((a,b)=>b.count-a.count);
     const total=list.length;
     return { top, myEmoji: myKey, total };
-  };
+  }
 
   const applyLocalReaction=(messageId,emojiKey)=>{
     setItems(prev=>uniq(prev.map(m=>{
@@ -475,6 +507,51 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
         </div>
       )}
 
+      {!!reactModalMsg && (
+        <div className="fm-chat-reactmodal" onMouseDown={(e)=>{ if(e.target===e.currentTarget) closeReactModal(); }}>
+          <div className="fm-chat-reactmodal-box" onMouseDown={(e)=>e.stopPropagation()}>
+            <div className="fm-chat-reactmodal-hd">
+              <div className="fm-chat-reactmodal-title">Cảm xúc về tin nhắn</div>
+              <button type="button" className="fm-chat-reactmodal-x" onClick={closeReactModal} aria-label="Đóng"><i className="fa-solid fa-xmark" /></button>
+            </div>
+
+            <div className="fm-chat-reactmodal-filters">
+              <button type="button" className={"fm-chat-rf"+(reactFilter==="all"?" is-on":"")} onClick={()=>setReactModal(s=>s?{...s,filter:"all"}:s)}>
+                Tất cả {reactModalSummary.total>0?<span className="ct">{reactModalSummary.total}</span>:null}
+              </button>
+
+              {safeArr(reactModalSummary.top).map(x=>(
+                <button key={x.emoji} type="button" className={"fm-chat-rf"+(reactFilter===x.emoji?" is-on":"")} onClick={()=>setReactModal(s=>s?{...s,filter:x.emoji}:s)}>
+                  <span className="em">{emojiChar(x.emoji)}</span><span className="ct">{x.count}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="fm-chat-reactmodal-body">
+              {!reactModalRowsFiltered.length ? <div className="fm-chat-reactmodal-empty">Chưa có cảm xúc.</div> : null}
+
+              {reactModalRowsFiltered.map((r,idx)=>{
+                const u=memberMap.get(String(r.userId))||null;
+                const isMe=String(r.userId)===String(myId);
+                const name=(u?.name||u?.nickname||"Người dùng")+(isMe?" (Bạn)":"");
+                const ava=u?.avatarUrl||u?.imageUrl||"/images/avatar.png";
+                const canOpen=!!onOpenUser && !isMe;
+
+                return (
+                  <button key={idx} type="button" className={"fm-chat-reactrow"+(canOpen?" is-click":"")} onClick={()=>canOpen && onOpenUser(u?.rawUser||u||{_id:r.userId})}>
+                    <div className="fm-chat-reactrow-left">
+                      <img className="fm-chat-reactrow-ava" src={ava} alt={name} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}}/>
+                      <div className="fm-chat-reactrow-name">{name}</div>
+                    </div>
+                    <div className="fm-chat-reactrow-em">{emojiChar(r.emoji)}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div ref={listRef} className="fm-chat-list">
         {loading ? <div className="fm-chat-loading">Đang tải…</div> : null}
 
@@ -502,9 +579,9 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           const replyText=replyMsg?.deletedAt?"Tin nhắn đã thu hồi":clip(replyMsg?.content||"",90);
 
           const {top:reactTop,myEmoji,total}=summarizeReacts(m);
-          const badgeEmoji=myEmoji || reactTop[0]?.emoji || "";
+          const badgeEmojis=reactTop.map(x=>x.emoji).filter(Boolean); 
           const badgeCount=total||0;
-          const hasReactBadge=!isDeleted && badgeCount>0 && badgeEmoji;
+          const hasReactBadge=!isDeleted && badgeCount>0 && badgeEmojis.length;
 
           const showSendMark=mine && row.end && !!sendMark?.state && String(sendMark?.msgId||"")===rid && !isDeleted;
           const dragOn=String(dragOverMid||"")===rid;
@@ -531,10 +608,10 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           const timeNode=row.end?<div className={"fm-chat-time"+(mine?" is-mine":"")}>{m?.createdAt?dayjs(m.createdAt).format("HH:mm"):""}</div>:null;
 
           const reactBadgeNode=hasReactBadge ? (
-            <div className="fm-chat-reactbadge" title="Cảm xúc">
-              <span className="em">{emojiChar(badgeEmoji)}</span>
+            <button type="button" className="fm-chat-reactbadge" onClick={()=>setReactModal({mid:rid,filter:"all"})} title="Xem cảm xúc">
+              <span className="ems">{badgeEmojis.map(k=>(<span key={k} className="em">{emojiChar(k)}</span>))}</span>
               {badgeCount>1 ? <span className="ct">{badgeCount}</span> : null}
-            </div>
+            </button>
           ) : null;
 
           const canDrop=!isDeleted && !isTmp;
@@ -672,17 +749,18 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
             )}
 
             <div className="fm-chat-inputbox">
-              <input
+              <textarea
                 ref={inputRef}
                 value={text}
-                onChange={e=>setText(e.target.value)}
+                onChange={e=>{setText(e.target.value); const el=e.target; el.style.height="0px"; el.style.height=Math.min(el.scrollHeight,140)+"px";}}
                 onKeyDown={e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); e.stopPropagation(); send(); } }}
                 onDrop={onInputDrop}
                 onPaste={onInputPaste}
                 onDragOver={(e)=>{ const dt=e.dataTransfer; const has=(dt?.getData?.("application/x-emoji-key")||emojiKeyFromChar(dt?.getData?.("text/plain")||"")||""); if(has|| (dt?.files&&dt.files.length)) e.preventDefault(); }}
                 placeholder={uploading?"Đang tải ảnh…":"Nhập tin nhắn…"}
-                className="fm-chat-input"
+                className="fm-chat-input fm-chat-textarea"
                 disabled={uploading}
+                rows={1}
               />
 
               <button
