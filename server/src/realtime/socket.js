@@ -12,14 +12,14 @@ const uidFromDecoded=(d)=>String(d?.id||d?._id||d?.userId||d?.sub||"");
 const asOid=(v)=>{try{return new mongoose.Types.ObjectId(String(v))}catch{return null}};
 const safeArr=v=>Array.isArray(v)?v:[];
 
-const REACTIONS=["like","heart","laugh","sad","angry"];
-const REACTION_LABEL={like:"👍",heart:"❤️",laugh:"😂",sad:"😢",angry:"😡"};
+const REACTIONS=["like","heart","laugh","sad","angry","wow"]; 
+const REACTION_LABEL={like:"👍",heart:"❤️",laugh:"😂",sad:"😢",angry:"😡",wow:"😮"};
 const normReaction=(x)=>{
   const v=String(x||"").trim();
   if(!v) return null;
   const low=v.toLowerCase();
   if(REACTIONS.includes(low)) return low;
-  const map={"👍":"like","❤️":"heart","❤":"heart","😂":"laugh","😆":"laugh","😢":"sad","😭":"sad","😡":"angry","😠":"angry"};
+  const map={"👍":"like","❤️":"heart","❤":"heart","😂":"laugh","😆":"laugh","😮":"wow","😲":"wow","🤯":"wow","😢":"sad","😭":"sad","😡":"angry","😠":"angry"};
   return map[v]||null;
 };
 

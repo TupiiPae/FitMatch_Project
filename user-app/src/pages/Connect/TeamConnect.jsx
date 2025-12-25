@@ -920,6 +920,7 @@ function PendingTeamReqCard({ r, isOwner, onOpenAccept, onOpenReject, onOpenUser
   const u=r?.user||{};
   const name=u.name||"Người dùng FitMatch";
   const avatar=u.avatarUrl||"/images/avatar.png";
+  const canOpen=!!onOpenUser && !!(u?.id||u?._id);
 
   const goal=u.goalLabel||"—";
   const location=u.locationLabel||"—";

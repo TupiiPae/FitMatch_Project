@@ -12,7 +12,7 @@ const uniq=(arr)=>{const m=new Map();for(const x of safeArr(arr)){const k=String
 const sameDay=(a,b)=>dayjs(a).isValid()&&dayjs(b).isValid()&&dayjs(a).format("YYYY-MM-DD")===dayjs(b).format("YYYY-MM-DD");
 const clip=(s,n=90)=>{const t=String(s||"").replace(/\s+/g," ").trim();return t.length>n?t.slice(0,n-1)+"…":t;};
 
-const EMOJIS=[{k:"like",c:"👍",t:"Thích"},{k:"heart",c:"❤️",t:"Tim"},{k:"laugh",c:"😂",t:"Cười"},{k:"sad",c:"😢",t:"Buồn"},{k:"angry",c:"😡",t:"Phẫn nộ"}];
+const EMOJIS=[{k:"like",c:"👍",t:"Thích"},{k:"heart",c:"❤️",t:"Tim"},{k:"laugh",c:"😂",t:"Cười"},{k:"wow",c:"😮",t:"Bất ngờ"},{k:"sad",c:"😢",t:"Buồn"},{k:"angry",c:"😡",t:"Phẫn nộ"}];
 const emojiChar=(key)=>EMOJIS.find(x=>x.k===key)?.c||"";
 const isImg=(a)=>String(a?.type||"image")==="image" && !!a?.url;
 
@@ -20,7 +20,7 @@ const uidOf=(u)=>String(u?._id||u||"");
 const emojiKeyFromChar=(ch)=>{
   const s=String(ch||"").trim();
   if(!s) return null;
-  const map={"👍":"like","❤️":"heart","❤":"heart","😂":"laugh","😆":"laugh","😢":"sad","😭":"sad","😡":"angry","😠":"angry"};
+  const map={"👍":"like","❤️":"heart","❤":"heart","😂":"laugh","😆":"laugh","😮":"wow","😲":"wow","🤯":"wow","😢":"sad","😭":"sad","😡":"angry","😠":"angry"};
   if(map[s]) return map[s];
   const found=EMOJIS.find(e=>e.c===s);
   return found?.k||null;
@@ -235,6 +235,25 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     pushFiles(list);
   };
 
+  const dataUrlToFile=(dataUrl,filename="pasted.png")=>{
+    try{
+      const m=String(dataUrl||"").match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+      if(!m) return null;
+      const mime=m[1], b64=m[2];
+      const bin=atob(b64);
+      const len=bin.length;
+      const u8=new Uint8Array(len);
+      for(let i=0;i<len;i++) u8[i]=bin.charCodeAt(i);
+      return new File([u8],filename,{type:mime});
+    }catch{ return null; }
+  };
+
+  const pickDataImgFromHtml=(html="")=>{
+    const s=String(html||"");
+    const m=s.match(/<img[^>]+src=["'](data:image\/[^"']+)["']/i);
+    return m?.[1]||"";
+  };
+
   const removeFile=(idx)=>setFiles(prev=>prev.filter((_,i)=>i!==idx));
 
   const summarizeReacts=(m)=>{
@@ -302,6 +321,45 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
       const hasFiles=dt?.files && dt.files.length>0;
       if(maybeKey){ e.preventDefault(); e.stopPropagation(); insertEmojiToInput(emojiChar(maybeKey)||ch); return; }
       if(hasFiles){ e.preventDefault(); e.stopPropagation(); pushFiles([...dt.files]); }
+    }catch{}
+  };
+
+  const onInputPaste=(e)=>{
+  try{
+    if(uploading) return;
+    const dt=e.clipboardData;
+    if(!dt) return;
+
+    const items=Array.from(dt.items||[]);
+    const imgFiles=[];
+
+    for(const it of items){
+      if(it?.kind==="file" && String(it.type||"").startsWith("image/")){
+        const f=it.getAsFile?.();
+        if(f) imgFiles.push(f);
+      }
+    }
+
+    // Case 1: clipboard có file ảnh (screenshot, copy từ app)
+    if(imgFiles.length){
+      pushFiles(imgFiles);
+      const hasText=!!String(dt.getData?.("text/plain")||"").trim();
+      // nếu chỉ dán ảnh (không có text) thì chặn paste text rỗng/linh tinh
+      if(!hasText){ e.preventDefault(); e.stopPropagation(); }
+      return;
+    }
+
+    // Case 2: clipboard chỉ có HTML chứa <img src="data:image/...">
+    const html=dt.getData?.("text/html")||"";
+    const dataImg=pickDataImgFromHtml(html);
+      if(dataImg){
+        const f=dataUrlToFile(dataImg,`pasted_${Date.now()}.png`);
+        if(f){
+          pushFiles([f]);
+          const hasText=!!String(dt.getData?.("text/plain")||"").trim();
+          if(!hasText){ e.preventDefault(); e.stopPropagation(); }
+        }
+      }
     }catch{}
   };
 
@@ -620,6 +678,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                 onChange={e=>setText(e.target.value)}
                 onKeyDown={e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); e.stopPropagation(); send(); } }}
                 onDrop={onInputDrop}
+                onPaste={onInputPaste}
                 onDragOver={(e)=>{ const dt=e.dataTransfer; const has=(dt?.getData?.("application/x-emoji-key")||emojiKeyFromChar(dt?.getData?.("text/plain")||"")||""); if(has|| (dt?.files&&dt.files.length)) e.preventDefault(); }}
                 placeholder={uploading?"Đang tải ảnh…":"Nhập tin nhắn…"}
                 className="fm-chat-input"
