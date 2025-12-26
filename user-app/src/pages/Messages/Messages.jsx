@@ -1,4 +1,4 @@
-// user-app/src/pages/Messages/Messages.jsx (hoặc đúng path của bạn)
+// user-app/src/pages/Messages/Messages.jsx
 import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -50,6 +50,15 @@ function useQueryUserId() {
   }, [loc.search]);
 }
 
+const unwrapItems = (payload) => {
+  // hỗ trợ nhiều kiểu trả về để tránh vỡ khi bạn đổi BE
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.data)) return payload.data;
+  return [];
+};
+
 export default function Messages() {
   const nav = useNavigate();
   const qUserId = useQueryUserId();
@@ -59,8 +68,8 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState(null);
 
-  // list DM conversations
   const [convs, setConvs] = useState([]);
+
   const convByPeer = useMemo(() => {
     const m = new Map();
     safeArr(convs).forEach((c) => {
@@ -70,7 +79,6 @@ export default function Messages() {
     return m;
   }, [convs]);
 
-  // UI
   const [tab, setTab] = useState("all"); // all | unread
   const [searchText, setSearchText] = useState("");
   const [searchGlobal, setSearchGlobal] = useState([]);
@@ -79,7 +87,6 @@ export default function Messages() {
   const [activeConvId, setActiveConvId] = useState("");
   const [activePeer, setActivePeer] = useState(null);
 
-  // side modal (open user)
   const [sideOpen, setSideOpen] = useState(false);
   const [sideUser, setSideUser] = useState(null);
 
@@ -88,33 +95,6 @@ export default function Messages() {
     if (!id) return;
     setSideUser(u);
     setSideOpen(true);
-  };
-
-  // =========================
-  // Persist / Restore active conversation
-  // =========================
-  const persistActiveConv = (cid, meIdOverride) => {
-    const mid = String(meIdOverride || me?._id || "");
-    const id = String(cid || "");
-    if (!mid || !id) return;
-    try {
-      localStorage.setItem(`fm_dm_last_${mid}`, id);
-    } catch {}
-  };
-
-  const restoreActiveConv = (list, meData) => {
-    const mid = String(meData?._id || "");
-    if (!mid) return null;
-    try {
-      const saved = localStorage.getItem(`fm_dm_last_${mid}`) || "";
-      if (saved) {
-        return (
-          safeArr(list).find((x) => String(x?._id || "") === String(saved)) ||
-          null
-        );
-      }
-    } catch {}
-    return null;
   };
 
   const filteredConvs = useMemo(() => {
@@ -130,26 +110,25 @@ export default function Messages() {
       const meData = await getMe();
       setMe(meData);
 
-      const list = await listDmConversations();
-      const arr = safeArr(list);
+      const listRaw = await listDmConversations();
+      const arr = unwrapItems(listRaw);
+
+      // sort desc by lastMessageAt
+      arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
+
       setConvs(arr);
 
-      // Nếu đang mở bằng ?u=... thì để effect đó xử lý ưu tiên
-      if (qUserId) return;
-
-      // Restore last active conv
-      const restored = restoreActiveConv(arr, meData);
-      const pickConv = restored || arr[0] || null;
-
-      if (pickConv?._id) {
-        const cid = String(pickConv._id);
-        setActiveConvId(cid);
-        setActivePeer(pickConv.peer || null);
-        // IMPORTANT: dùng meData._id (không dùng me state vì setMe async)
-        persistActiveConv(cid, String(meData?._id || ""));
-      } else {
-        setActiveConvId("");
-        setActivePeer(null);
+      // ✅ KHÔNG lưu lịch sử activeConv (không localStorage)
+      // Nếu không có query ?u=... thì mặc định chọn item đầu
+      if (!qUserId) {
+        const pickConv = arr[0] || null;
+        if (pickConv?._id) {
+          setActiveConvId(String(pickConv._id));
+          setActivePeer(pickConv.peer || null);
+        } else {
+          setActiveConvId("");
+          setActivePeer(null);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -175,9 +154,9 @@ export default function Messages() {
         const idx = arr.findIndex((x) => String(x?._id || "") === cid);
 
         if (idx === -1) {
-          // có thể là DM mới -> reload list
+          // DM mới hoặc list chưa có -> reload nhẹ
           listDmConversations()
-            .then((list) => setConvs(safeArr(list)))
+            .then((raw) => setConvs(unwrapItems(raw)))
             .catch(() => {});
           return prev;
         }
@@ -189,17 +168,15 @@ export default function Messages() {
           lastMessageAt:
             p?.lastMessage?.createdAt ??
             p?.lastMessageAt ??
-            cur?.lastMessageAt,
+            cur?.lastMessageAt ??
+            cur?.lastMessage?.createdAt ??
+            null,
           unread: typeof p?.unread === "number" ? p.unread : cur?.unread,
         };
 
         const copy = [...arr];
         copy[idx] = next;
-
-        // sort by lastMessageAt desc
-        copy.sort(
-          (a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0)
-        );
+        copy.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
         return copy;
       });
     };
@@ -208,7 +185,22 @@ export default function Messages() {
     return () => socket.off("chat:conversation_update", onConvUpdate);
   }, [socket]);
 
-  // open DM by query param: /messages?u=USERID
+  // (optional but robust) khi hide_for_me -> reload list
+  useEffect(() => {
+    const onHidden = () => {
+      listDmConversations()
+        .then((raw) => {
+          const arr = unwrapItems(raw);
+          arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
+          setConvs(arr);
+        })
+        .catch(() => {});
+    };
+    socket.on("chat:hidden_update", onHidden);
+    return () => socket.off("chat:hidden_update", onHidden);
+  }, [socket]);
+
+  // open DM by query param: /tin-nhan?u=USERID
   useEffect(() => {
     (async () => {
       if (!qUserId) return;
@@ -220,32 +212,27 @@ export default function Messages() {
         return;
       }
 
-      // if already exists
       const existed = convByPeer.get(String(qUserId));
       if (existed?._id) {
-        const cid = String(existed._id);
-        setActiveConvId(cid);
+        setActiveConvId(String(existed._id));
         setActivePeer(existed.peer || null);
-        persistActiveConv(cid, String(me?._id || ""));
         nav("/tin-nhan", { replace: true });
         return;
       }
 
-      // create/get
       try {
         const conv = await createOrGetDmConversation(qUserId);
         const cid = String(conv?._id || "");
         if (cid) {
           setActiveConvId(cid);
           if (conv?.peer) setActivePeer(conv.peer);
-          persistActiveConv(cid, String(me?._id || ""));
 
-          const list = await listDmConversations();
-          const arr = safeArr(list);
+          const raw = await listDmConversations();
+          const arr = unwrapItems(raw);
+          arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
           setConvs(arr);
 
-          const found =
-            arr.find((x) => String(x?._id || "") === cid) || null;
+          const found = arr.find((x) => String(x?._id || "") === cid) || null;
           if (found?.peer) setActivePeer(found.peer);
         }
       } catch (e) {
@@ -255,9 +242,9 @@ export default function Messages() {
         nav("/tin-nhan", { replace: true });
       }
     })();
-  }, [qUserId, me, convByPeer, nav]); // giữ y như bạn
+  }, [qUserId, me, convByPeer, nav]);
 
-  // search global users (people chưa nhắn)
+  // search global users
   useEffect(() => {
     const q = String(searchText || "").trim();
     if (!q) {
@@ -268,7 +255,8 @@ export default function Messages() {
 
     searchTimer.current = setTimeout(async () => {
       try {
-        const rs = await searchDmUsers(q);
+        const rsRaw = await searchDmUsers(q);
+        const rs = unwrapItems(rsRaw);
         const filtered = safeArr(rs).filter((u) => !convByPeer.has(getId(u)));
         setSearchGlobal(filtered);
       } catch (e) {
@@ -287,7 +275,6 @@ export default function Messages() {
     if (!cid) return;
     setActiveConvId(cid);
     setActivePeer(c?.peer || null);
-    persistActiveConv(cid, String(me?._id || ""));
   };
 
   const openDmWithUser = async (userId) => {
@@ -310,15 +297,14 @@ export default function Messages() {
       if (!cid) throw new Error("No conversationId");
 
       setActiveConvId(cid);
-      persistActiveConv(cid, String(me?._id || ""));
       if (conv?.peer) setActivePeer(conv.peer);
 
-      const list = await listDmConversations();
-      const arr = safeArr(list);
+      const raw = await listDmConversations();
+      const arr = unwrapItems(raw);
+      arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
       setConvs(arr);
 
-      const found =
-        arr.find((x) => String(x?._id || "") === cid) || null;
+      const found = arr.find((x) => String(x?._id || "") === cid) || null;
       if (found?.peer) setActivePeer(found.peer);
 
       setSearchText("");
@@ -329,7 +315,6 @@ export default function Messages() {
     }
   };
 
-  // build members for ChatBox
   const chatMembers = useMemo(() => {
     const meId = String(me?._id || "");
     const peerId = getId(activePeer);
@@ -362,18 +347,13 @@ export default function Messages() {
   return (
     <>
       <div className="msg-page">
-        {/* LEFT */}
         <aside className="msg-left">
           <div className="msg-left-head">
             <div className="msg-head-row">
               <div className="msg-title">Đoạn chat</div>
               <div className="msg-actions">
-                <button className="msg-icbtn" title="Tùy chọn">
-                  ⋯
-                </button>
-                <button className="msg-icbtn" title="Tin nhắn mới">
-                  ✎
-                </button>
+                <button className="msg-icbtn" title="Tùy chọn">⋯</button>
+                <button className="msg-icbtn" title="Tin nhắn mới">✎</button>
               </div>
             </div>
 
@@ -417,57 +397,44 @@ export default function Messages() {
           <div className="msg-left-body">
             {loading ? <div className="msg-loading">Đang tải…</div> : null}
 
-            {/* SEARCH MODE */}
             {!!String(searchText || "").trim() ? (
               <>
                 <div className="msg-section">
                   <div className="msg-sec-title">Đã nhắn tin</div>
                   {safeArr(convs)
                     .filter((c) =>
-                      getName(c?.peer)
-                        .toLowerCase()
-                        .includes(String(searchText).toLowerCase())
+                      getName(c?.peer).toLowerCase().includes(String(searchText).toLowerCase())
                     )
                     .map((c) => {
-                      const active =
-                        String(activeConvId) === String(c?._id || "");
+                      const active = String(activeConvId) === String(c?._id || "");
                       const peer = c.peer;
                       const unread = Number(c?.unread || 0);
 
                       const lastText = String(c?.lastMessage?.text || "").trim();
-                      const lastAt =
-                        c?.lastMessageAt || c?.lastMessage?.createdAt || null;
+                      const lastAt = c?.lastMessageAt || c?.lastMessage?.createdAt || null;
 
                       return (
                         <button
                           key={String(c._id)}
-                          className={`msg-item ${
-                            active ? "is-active" : ""
-                          }`}
+                          className={`msg-item ${active ? "is-active" : ""}`}
                           onClick={() => openConv(c)}
                         >
                           <img
                             className="msg-ava"
                             src={getAvatar(peer)}
                             alt=""
-                            onError={(e) =>
-                              (e.currentTarget.src = "/images/avatar.png")
-                            }
+                            onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
                           />
                           <div className="msg-mid">
                             <div className="msg-top">
                               <div className="msg-name">{getName(peer)}</div>
-                              {unread > 0 ? (
-                                <span className="msg-badge">{unread}</span>
-                              ) : null}
+                              {unread > 0 ? <span className="msg-badge">{unread}</span> : null}
                             </div>
                             <div className="msg-sub">
                               <span className="msg-last">{lastText || " "}</span>
                               {lastAt ? <span className="msg-dot">•</span> : null}
                               {lastAt ? (
-                                <span className="msg-time">
-                                  {dayjs(lastAt).format("HH:mm")}
-                                </span>
+                                <span className="msg-time">{dayjs(lastAt).format("HH:mm")}</span>
                               ) : null}
                             </div>
                           </div>
@@ -491,9 +458,7 @@ export default function Messages() {
                           className="msg-ava"
                           src={getAvatar(u)}
                           alt=""
-                          onError={(e) =>
-                            (e.currentTarget.src = "/images/avatar.png")
-                          }
+                          onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
                         />
                         <div className="msg-mid">
                           <div className="msg-top">
@@ -509,21 +474,18 @@ export default function Messages() {
                 </div>
               </>
             ) : (
-              /* NORMAL LIST MODE */
               <>
                 {!filteredConvs.length && !loading ? (
                   <div className="msg-empty">Chưa có đoạn chat nào.</div>
                 ) : null}
 
                 {filteredConvs.map((c) => {
-                  const active =
-                    String(activeConvId) === String(c?._id || "");
+                  const active = String(activeConvId) === String(c?._id || "");
                   const peer = c.peer;
                   const unread = Number(c?.unread || 0);
 
                   const lastText = String(c?.lastMessage?.text || "").trim();
-                  const lastAt =
-                    c?.lastMessageAt || c?.lastMessage?.createdAt || null;
+                  const lastAt = c?.lastMessageAt || c?.lastMessage?.createdAt || null;
 
                   return (
                     <button
@@ -535,24 +497,18 @@ export default function Messages() {
                         className="msg-ava"
                         src={getAvatar(peer)}
                         alt=""
-                        onError={(e) =>
-                          (e.currentTarget.src = "/images/avatar.png")
-                        }
+                        onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
                       />
                       <div className="msg-mid">
                         <div className="msg-top">
                           <div className="msg-name">{getName(peer)}</div>
-                          {unread > 0 ? (
-                            <span className="msg-badge">{unread}</span>
-                          ) : null}
+                          {unread > 0 ? <span className="msg-badge">{unread}</span> : null}
                         </div>
                         <div className="msg-sub">
                           <span className="msg-last">{lastText || " "}</span>
                           {lastAt ? <span className="msg-dot">•</span> : null}
                           {lastAt ? (
-                            <span className="msg-time">
-                              {dayjs(lastAt).format("HH:mm")}
-                            </span>
+                            <span className="msg-time">{dayjs(lastAt).format("HH:mm")}</span>
                           ) : null}
                         </div>
                       </div>
@@ -564,30 +520,25 @@ export default function Messages() {
           </div>
         </aside>
 
-        {/* RIGHT */}
         <main className="msg-right">
           {!activeConvId ? (
             <div className="msg-placeholder">
               <div className="msg-ph-title">Chọn một đoạn chat</div>
-              <div className="msg-ph-sub">
-                Tìm người dùng để bắt đầu cuộc trò chuyện.
-              </div>
+              <div className="msg-ph-sub">Tìm người dùng để bắt đầu cuộc trò chuyện.</div>
             </div>
           ) : (
             <div className="msg-right-wrap">
               <div className="msg-right-head">
                 <button
                   className="msg-peer"
-                  onClick={() => openUser(activePeer)}
+                  onClick={() => activePeer && openUser(activePeer)}
                   title="Xem thông tin"
                 >
                   <img
                     className="msg-peer-ava"
                     src={getAvatar(activePeer)}
                     alt=""
-                    onError={(e) =>
-                      (e.currentTarget.src = "/images/avatar.png")
-                    }
+                    onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
                   />
                   <div className="msg-peer-name">{getName(activePeer)}</div>
                 </button>
@@ -602,7 +553,7 @@ export default function Messages() {
                   <button
                     className="msg-icbtn"
                     title="Thông tin"
-                    onClick={() => openUser(activePeer)}
+                    onClick={() => activePeer && openUser(activePeer)}
                   >
                     <i className="fa-solid fa-circle-info" />
                   </button>

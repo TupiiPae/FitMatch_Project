@@ -37,17 +37,17 @@ export function getSocket(token) {
   });
 
   // ===== DEBUG bắt lỗi thật sự =====
-  socket.on("connect", () => {
-    console.log("[socket] connected:", socket.id, "origin=", ORIGIN);
-  });
+  // socket.on("connect", () => {
+  //   console.log("[socket] connected:", socket.id, "origin=", ORIGIN);
+  // });
 
-  socket.on("connect_error", (err) => {
-    console.log("[socket] connect_error:", err?.message, err);
-  });
+  // socket.on("connect_error", (err) => {
+  //   console.log("[socket] connect_error:", err?.message, err);
+  // });
 
-  socket.on("disconnect", (reason) => {
-    console.log("[socket] disconnected:", reason);
-  });
+  // socket.on("disconnect", (reason) => {
+  //   console.log("[socket] disconnected:", reason);
+  // });
 
   return socket;
 }

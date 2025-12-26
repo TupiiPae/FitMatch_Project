@@ -86,6 +86,25 @@ async function ensureMember(conversationId, uid) {
   return room;
 }
 
+async function getLastVisibleForUser(conversationId, uidOid) {
+  const cid = asOid(conversationId);
+  if (!cid) return { lastMessage: null, lastMessageAt: null };
+
+  const q = { conversationId: cid, hiddenFor: { $nin: [uidOid] } };
+  const msg = await ChatMessage.findOne(q)
+    .sort({ createdAt: -1 })
+    .select("senderId content attachments createdAt deletedAt")
+    .lean();
+
+  if (!msg) return { lastMessage: null, lastMessageAt: null };
+
+  const text = msg.deletedAt ? "[Tin nhắn đã thu hồi]" : lastTextFrom(msg.content, msg.attachments);
+  return {
+    lastMessage: { text, senderId: String(msg.senderId), createdAt: msg.createdAt },
+    lastMessageAt: msg.createdAt,
+  };
+}
+
 // ✅ FIX CONFLICT: KHÔNG setOnInsert unreadBy:{}
 async function upsertConversationFromRoom(
   room,
@@ -388,6 +407,47 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
 
     socket.on("chat:revoke", handleRevoke);
     socket.on("chat:delete", handleRevoke);
+
+    socket.on("chat:hide_for_me", async ({ conversationId, messageId } = {}, cb) => {
+      try {
+        const uidStr = String(socket.user?._id || "");
+        const uidObj = asOid(uidStr);
+        if (!uidStr || !uidObj) return cb?.({ ok: false, message: "Unauthorized" });
+
+        await ensureMember(conversationId, uidStr);
+
+        const cid = asOid(conversationId);
+        const mid = asOid(messageId);
+        if (!cid || !mid) return cb?.({ ok: false, message: "Bad params" });
+
+        await ChatMessage.updateOne(
+          { _id: mid, conversationId: cid },
+          { $addToSet: { hiddenFor: uidObj } }
+        );
+
+        cb?.({ ok: true });
+
+        // ✅ notify riêng user
+        io.to(`user:${uidStr}`).emit("chat:hidden_update", {
+          conversationId: String(conversationId),
+          messageId: String(messageId),
+          hidden: true,
+        });
+
+        // ✅ update sidebar realtime (lastMessage theo user)
+        const conv = await ChatConversation.findById(cid).select("unreadBy").lean().catch(() => null);
+        const { lastMessage, lastMessageAt } = await getLastVisibleForUser(conversationId, uidObj);
+
+        io.to(`user:${uidStr}`).emit("chat:conversation_update", {
+          conversationId: String(conversationId),
+          lastMessage,
+          lastMessageAt,
+          unread: getUnreadOf(conv, uidStr),
+        });
+      } catch (e) {
+        cb?.({ ok: false, message: e?.message || "Hide failed" });
+      }
+    });
 
     socket.on("chat:react", async ({ conversationId, messageId, emoji } = {}, ack) => {
       try {

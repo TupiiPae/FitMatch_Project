@@ -40,6 +40,7 @@ const ChatMessageSchema=new Schema({
   seenBy:{type:[SeenSchema],default:[]},
   editedAt:{type:Date,default:null},
   deletedAt:{type:Date,default:null},
+  hiddenFor: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] }],
 },{timestamps:true});
 
 ChatMessageSchema.index({conversationId:1,createdAt:-1});

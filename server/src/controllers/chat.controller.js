@@ -8,8 +8,7 @@ import { uploadImageWithResize } from "../utils/cloudinary.js";
 
 const uidFromReq = (req) => String(req?.userId || req?.user?._id || "");
 const asOid = (v) => {
-  try { return new mongoose.Types.ObjectId(String(v)); }
-  catch { return null; }
+  try { return new mongoose.Types.ObjectId(String(v)); } catch { return null; }
 };
 const safeArr = (v) => (Array.isArray(v) ? v : []);
 const pick = (...v) => v.find((x) => x !== undefined && x !== null && x !== "");
@@ -28,6 +27,27 @@ const getUnreadOf = (conv, uid) => {
   if (!m) return 0;
   if (typeof m.get === "function") return Number(m.get(String(uid)) || 0);
   return Number(m[String(uid)] || 0);
+};
+
+const lastTextFrom = (text, attachments) => {
+  const t = String(text || "").trim();
+  if (t) return t;
+  const at = safeArr(attachments);
+  if (!at.length) return "";
+  const img = at.find((x) => String(x?.type || "image") === "image" && x?.url);
+  if (img) return "[Ảnh]";
+  return "[Tệp]";
+};
+
+const buildLastMessageFromMsg = (msg) => {
+  if (!msg) return null;
+  const deleted = !!msg.deletedAt;
+  const text = deleted ? "[Tin nhắn đã thu hồi]" : lastTextFrom(msg.content, msg.attachments);
+  return {
+    text,
+    senderId: msg.senderId,
+    createdAt: msg.createdAt,
+  };
 };
 
 async function ensureMember(conversationId, uid) {
@@ -66,28 +86,22 @@ async function upsertConversationFromRoom(room){
 // =========================
 // GET /api/chat/conversations/:id/messages?limit=50&before=ISO
 // =========================
-export async function getMessages(req, res, next) {
-  try {
-    const uid = uidFromReq(req);
-    const { id } = req.params;
-    const limit = Math.min(parseInt(req.query.limit || "50", 10), 100);
-    const before = req.query.before ? new Date(req.query.before) : null;
+export async function getMessages(req, res) {
+  const uid = String(req?.userId || req?.user?._id || "");
+  const conversationId = String(req?.params?.id || "");
+  await ensureMember(conversationId, uid);
 
-    await ensureMember(id, uid);
+  const cid = asOid(conversationId);
+  const uidOid = asOid(uid);
 
-    const q = { conversationId: id };
-    if (before) q.createdAt = { $lt: before };
+  const q = { conversationId: cid };
+  if (uidOid) q.hiddenFor = { $nin: [uidOid] };
 
-    const msgs = await ChatMessage.find(q).sort({ createdAt: -1 }).limit(limit).lean();
-    const items = msgs.reverse();
+  const items = await ChatMessage.find(q)
+    .sort({ createdAt: 1 })
+    .limit(Math.min(Number(req.query?.limit || 80), 200));
 
-    // ✅ nextCursor phải là tin CŨ NHẤT trong batch để load tiếp lịch sử
-    const nextCursor = msgs.length ? msgs[msgs.length - 1].createdAt : null;
-
-    return responseOk(res, { items, nextCursor });
-  } catch (e) {
-    next(e);
-  }
+  return responseOk(res, { items });
 }
 
 // =========================
@@ -126,7 +140,9 @@ export async function uploadChatImage(req, res, next) {
 export async function getConversationSummary(req, res, next) {
   try {
     const uid = uidFromReq(req);
+    const uidOid = asOid(uid);
     const { id } = req.params;
+
     await ensureMember(id, uid);
 
     let conv = await ChatConversation.findById(id)
@@ -143,14 +159,27 @@ export async function getConversationSummary(req, res, next) {
       }
     }
 
+    // ✅ last message theo user (lọc hiddenFor)
+    const cid = asOid(id);
+    const q = { conversationId: cid };
+    if (uidOid) q.hiddenFor = { $nin: [uidOid] };
+
+    const lastVisible = await ChatMessage.findOne(q)
+      .sort({ createdAt: -1 })
+      .select("_id senderId content attachments createdAt deletedAt")
+      .lean();
+
+    const lastMessage = buildLastMessageFromMsg(lastVisible) || conv?.lastMessage || null;
+    const lastMessageAt = lastVisible?.createdAt || conv?.lastMessageAt || conv?.lastMessage?.createdAt || null;
+
     const unread = getUnreadOf(conv, uid);
 
     return responseOk(res, {
       conversationId: id,
       unread,
       type: conv?.type || null,
-      lastMessage: conv?.lastMessage || null,
-      lastMessageAt: conv?.lastMessageAt || null,
+      lastMessage,
+      lastMessageAt,
     });
   } catch (e) {
     next(e);
@@ -166,39 +195,68 @@ export async function listDmConversations(req, res, next) {
     const uidOid = asOid(uid);
     if (!uidOid) throw Object.assign(new Error("UNAUTHORIZED"), { status: 401 });
 
-    // ✅ robust membership (tránh case members.user bị object/populate)
     const rooms = await MatchRoom.find({
       type: "duo",
-      $or: [
-        { "members.user": uidOid },
-        { "members.user._id": uidOid },
-      ],
+      $or: [{ "members.user": uidOid }, { "members.user._id": uidOid }],
       status: { $ne: "closed" },
     })
       .select("_id members updatedAt createdAt")
       .lean();
 
     const roomIds = rooms.map((r) => r._id);
+    if (!roomIds.length) return responseOk(res, { items: [] });
 
     const convs = await ChatConversation.find({ _id: { $in: roomIds } })
-      .select("_id lastMessage lastMessageAt unreadBy members type")
+      .select("_id unreadBy members type lastMessage lastMessageAt")
       .lean();
-
     const convMap = new Map(convs.map((c) => [String(c._id), c]));
 
+    // ✅ LẤY last message theo user (lọc hiddenFor) bằng aggregate 1 lần
+    const lastAgg = await ChatMessage.aggregate([
+      {
+        $match: {
+          conversationId: { $in: roomIds },
+          hiddenFor: { $nin: [uidOid] },
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$conversationId",
+          doc: { $first: "$$ROOT" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          conversationId: "$_id",
+          senderId: "$doc.senderId",
+          content: "$doc.content",
+          attachments: "$doc.attachments",
+          createdAt: "$doc.createdAt",
+          deletedAt: "$doc.deletedAt",
+        },
+      },
+    ]);
+
+    const lastMap = new Map(lastAgg.map((x) => [String(x.conversationId), x]));
+
     // ✅ peerIds unique
-    const peerIds = [...new Set(
-      rooms.map((r) => {
-        const ms = safeArr(r.members);
-        const peer = ms.find((m) => String(m?.user?._id || m?.user || "") !== String(uidOid));
-        return String(peer?.user?._id || peer?.user || "");
-      }).filter(Boolean)
-    )];
+    const peerIds = [
+      ...new Set(
+        rooms
+          .map((r) => {
+            const ms = safeArr(r.members);
+            const peer = ms.find((m) => String(m?.user?._id || m?.user || "") !== String(uidOid));
+            return String(peer?.user?._id || peer?.user || "");
+          })
+          .filter(Boolean)
+      ),
+    ];
 
     const peers = await User.find({ _id: { $in: peerIds.map(asOid).filter(Boolean) } })
       .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address")
       .lean();
-
     const peerMap = new Map(peers.map((u) => [String(u._id), u]));
 
     const items = rooms
@@ -206,19 +264,25 @@ export async function listDmConversations(req, res, next) {
         const ms = safeArr(r.members);
         const peer = ms.find((m) => String(m?.user?._id || m?.user || "") !== String(uidOid));
         const peerId = String(peer?.user?._id || peer?.user || "");
-
         const conv = convMap.get(String(r._id)) || null;
+
+        const lastVisible = lastMap.get(String(r._id)) || null;
+        const lastMessage = lastVisible
+          ? buildLastMessageFromMsg(lastVisible)
+          : (conv?.lastMessage || null);
+
         const lastAt =
-          conv?.lastMessageAt ||
-          conv?.lastMessage?.createdAt ||
+          (lastVisible?.createdAt) ||
+          (conv?.lastMessageAt) ||
+          (conv?.lastMessage?.createdAt) ||
           r.updatedAt ||
           r.createdAt ||
           null;
 
         return {
           _id: r._id,
-          peer: peerId ? (peerMap.get(peerId) || { _id: peerId }) : null,
-          lastMessage: conv?.lastMessage || null,
+          peer: peerId ? peerMap.get(peerId) || { _id: peerId } : null,
+          lastMessage,
           lastMessageAt: lastAt,
           unread: getUnreadOf(conv, uid),
           type: "duo",
@@ -228,7 +292,7 @@ export async function listDmConversations(req, res, next) {
 
     items.sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
 
-    return responseOk(res, items);
+    return responseOk(res, { items });
   } catch (e) {
     next(e);
   }
@@ -327,7 +391,7 @@ export async function searchDmUsers(req, res, next) {
       .limit(20)
       .lean();
 
-    return responseOk(res, users);
+    return responseOk(res, { items: users });
   } catch (e) {
     next(e);
   }

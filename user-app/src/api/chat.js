@@ -20,21 +20,18 @@ export async function getChatConversationSummary(conversationId){
 // ===== DM (Tin nhắn riêng) =====
 const asArr = (x) => (Array.isArray(x) ? x : Array.isArray(x?.items) ? x.items : []);
 
-export async function listDmConversations() {
-  const r = await api.get("/api/chat/dm/conversations", {
-    params: { _ts: Date.now() }, 
-    headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
-  });
-  return r.data?.data ?? r.data;
-}
+export const listDmConversations = async () => {
+  const r = await api.get("/api/chat/dm/conversations");
+  return r.data?.items ?? r.data?.data ?? r.data;
+};
+
+export const searchDmUsers = async (q) => {
+  const r = await api.get("/api/chat/dm/users", { params: { q } });
+  return r.data?.items ?? r.data?.data ?? r.data;
+};
 
 export async function createOrGetDmConversation(userId) {
   const r = await api.post(`/chat/dm/conversations`, { userId });
   return r.data?.data ?? r.data;
 }
 
-export async function searchDmUsers(q) {
-  const r = await api.get(`/chat/dm/search-users`, { params: { q } });
-  const data = r.data?.data ?? r.data;
-  return asArr(data);
-}
