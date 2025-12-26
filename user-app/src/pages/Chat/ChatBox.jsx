@@ -666,7 +666,6 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           <button type="button" className="fm-chat-imgview-x" onClick={closeImg} aria-label="Đóng"><i className="fa-solid fa-xmark" /></button>
           <div className="fm-chat-imgview-box">
             <img src={imgView.url} alt={imgView.name||"image"} />
-            {!!imgView.name && <div className="fm-chat-imgview-cap">{imgView.name}</div>}
           </div>
         </div>
       )}

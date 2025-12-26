@@ -7,6 +7,7 @@ const ORIGIN = trimmed.endsWith("/api") ? trimmed.slice(0, -4) : trimmed;
 let socket = null;
 let lastToken = "";
 
+// lưu token dạng "jwt" (không Bearer)
 const cleanToken = (t) => String(t || "").replace(/^Bearer\s+/i, "").trim();
 
 export function getSocket(token) {
@@ -23,21 +24,30 @@ export function getSocket(token) {
 
   lastToken = t;
 
-  // token rỗng -> tạo socket nhưng KHÔNG connect
   socket = io(ORIGIN, {
     transports: ["websocket", "polling"],
-    auth: { token: t },
+    auth: { token: t ? `Bearer ${t}` : "" },
+    withCredentials: true,
     autoConnect: !!t,
+
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 400,
     reconnectionDelayMax: 4000,
   });
 
-  // nếu có token thì connect ngay
-  if (t) {
-    try { socket.connect(); } catch {}
-  }
+  // ===== DEBUG bắt lỗi thật sự =====
+  socket.on("connect", () => {
+    console.log("[socket] connected:", socket.id, "origin=", ORIGIN);
+  });
+
+  socket.on("connect_error", (err) => {
+    console.log("[socket] connect_error:", err?.message, err);
+  });
+
+  socket.on("disconnect", (reason) => {
+    console.log("[socket] disconnected:", reason);
+  });
 
   return socket;
 }

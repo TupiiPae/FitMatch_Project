@@ -8,7 +8,7 @@ import HomeGuard from "./routes/HomeGuard";
 import OnboardingRoutes from "./pages/Onboarding/OnboardingRoutes";
 import Home from "./pages/Home/Home";
 import NotFound from "./pages/Misc/NotFound";
-//Hehe
+
 // Account pages
 import Profile from "./pages/Account/Profile"; 
 import AccountSettings from "./pages/Account/AccountSettings";
@@ -16,6 +16,7 @@ import PrivacyPolicyPage from "./pages/Account/PrivacyPolicy";
 import TermsCondiotionsPage from "./pages/Account/TermsConditions";
 import ContactPage from "./pages/Account/Contact/Contact";
 import FAQPage from "./pages/Account/FAQ";
+import Messages from "./pages/Messages/Messages";
 
 // Diary
 import RecordMeal from "./pages/Nutrition/RecordMeal";
@@ -150,6 +151,7 @@ export default function App() {
           <Route path="/tai-khoan/dieu-khoan-dich-vu" element={<TermsCondiotionsPage />} />
           <Route path="/tai-khoan/lien-he" element={<ContactPage></ContactPage>} />
           <Route path="/tai-khoan/faq" element={<FAQPage />} />
+          <Route path="/tin-nhan" element={<Messages />} />
 
           {/* Khác */}
           {/* <Route path="/cong-dong" element={<CongDong />} /> */} {/* Đã xóa */}

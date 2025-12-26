@@ -42,6 +42,7 @@ const INTENSITY_LABELS = {
 };
 
 export default function BodyProfile() {
+  
   const [user, setUser] = useState(null);
   const [onb, setOnb] = useState(null); // OnboardingProfile (base + goals)
   const [loading, setLoading] = useState(true);

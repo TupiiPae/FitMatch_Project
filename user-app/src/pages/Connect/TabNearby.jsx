@@ -142,10 +142,20 @@ export default function TabNearby({
     setUserModalOpen(false);
     toast.info("Tính năng xem hồ sơ public của người dùng đang phát triển.");
   };
-  const handleStartChat=(uid)=>{
+  const handleStartChat = (uid) => {
     setUserModalOpen(false);
-    toast.info("Chức năng nhắn tin riêng đang phát triển.");
+
+    const id = String(uid || "").trim();
+    if (!id) return;
+
+    if (meId && id === String(meId)) {
+      toast.info("Bạn không thể nhắn tin cho chính mình.");
+      return;
+    }
+
+    nav(`/tin-nhan?u=${encodeURIComponent(id)}`);
   };
+
 
   async function handleSubmitReport(payload){
     const t=reportState.target;

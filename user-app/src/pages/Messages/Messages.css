@@ -1,0 +1,208 @@
+.msg-page{
+  display:flex;
+  width:100%;
+  height: calc(100vh - 90px);
+  border-radius:10px;
+  overflow:hidden;
+  background:#0b1220;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+/* LEFT */
+.msg-left{
+  width:340px;
+  background:#0b1220;
+  border-right:1px solid rgba(255,255,255,.08);
+  display:flex;
+  flex-direction:column;
+}
+.msg-left-head{ padding:14px 14px 10px; }
+
+.msg-head-row{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px;
+}
+.msg-title{ font-size:18px; font-weight:800; color:#fff; }
+.msg-actions{ display:flex; gap:8px; }
+
+.msg-icbtn{
+  width:34px;height:34px;border-radius:8px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:#e5e7eb;
+  cursor:pointer;
+}
+.msg-icbtn:hover{ background:rgba(255,255,255,.10); }
+
+.msg-search{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;
+}
+.msg-search i{ opacity:.8; }
+.msg-search input{
+  width:100%;
+  border:none; outline:none;
+  background:transparent;
+  color:#e5e7eb;
+  font-size:14px;
+}
+.msg-clear{
+  border:none; background:transparent; color:#e5e7eb;
+  cursor:pointer;
+}
+
+.msg-tabs{
+  display:flex; gap:10px;
+  margin-top:10px;
+}
+.msg-tab{
+  border:none;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  color:#e5e7eb;
+  padding:8px 12px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:13px;
+}
+.msg-tab.is-on{
+  background:rgba(24,119,242,.18);
+  border-color:rgba(24,119,242,.28);
+}
+
+.msg-left-body{
+  flex:1;
+  overflow:auto;
+  padding:8px;
+}
+
+.msg-loading,.msg-empty{
+  padding:14px 10px;
+  opacity:.75;
+}
+
+.msg-section{ padding:6px 2px 12px; }
+.msg-sec-title{
+  padding:8px 8px 6px;
+  font-size:12px;
+  font-weight:900;
+  opacity:.75;
+}
+
+.msg-item{
+  width:100%;
+  display:flex;
+  gap:10px;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  text-align:left;
+}
+.msg-item:hover{ background:rgba(255,255,255,.06); }
+.msg-item.is-active{ background:rgba(24,119,242,.18); }
+
+.msg-ava{
+  width:46px;height:46px;border-radius:999px;
+  object-fit:cover;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);
+}
+
+.msg-mid{ flex:1; min-width:0; }
+.msg-top{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px;
+}
+.msg-name{
+  font-weight:900;
+  font-size:14px;
+  color:#fff;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.msg-badge{
+  min-width:20px; height:20px;
+  padding:0 6px;
+  border-radius:999px;
+  background:#1877f2;
+  color:#fff;
+  font-size:12px;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.msg-sub{
+  margin-top:3px;
+  display:flex; align-items:center;
+  gap:6px;
+  font-size:12px;
+  opacity:.75;
+}
+.msg-last{
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  max-width:210px;
+}
+.msg-dot{ opacity:.7; }
+.msg-time{ white-space:nowrap; }
+
+/* RIGHT */
+.msg-right{
+  flex:1;
+  background:#020617;
+  display:flex;
+}
+.msg-placeholder{
+  margin:auto;
+  text-align:center;
+  opacity:.8;
+}
+.msg-ph-title{ font-size:18px; font-weight:900; color:#fff; }
+.msg-ph-sub{ margin-top:8px; }
+
+.msg-right-wrap{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+
+.msg-right-head{
+  height:64px;
+  padding:10px 14px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:#020617;
+}
+
+.msg-peer{
+  border:none;
+  background:transparent;
+  color:inherit;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+}
+.msg-peer-ava{
+  width:40px;height:40px;border-radius:999px;
+  object-fit:cover;
+  border:1px solid rgba(255,255,255,.12);
+}
+.msg-peer-name{ font-weight:900; color:#fff; }
+
+.msg-right-actions{ display:flex; gap:8px; }
+
+.msg-chat{
+  flex:1;
+  min-height:0;
+  padding:10px;
+}
+.msg-chat .fm-chat{
+  height:100% !important;
+}

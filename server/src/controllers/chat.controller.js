@@ -1,90 +1,334 @@
+import mongoose from "mongoose";
 import ChatMessage from "../models/ChatMessage.js";
 import MatchRoom from "../models/MatchRoom.js";
+import ChatConversation from "../models/ChatConversation.js";
+import { User } from "../models/User.js"; // giữ đúng như bạn đang dùng
 import { responseOk } from "../utils/response.js";
 import { uploadImageWithResize } from "../utils/cloudinary.js";
-import ChatConversation from "../models/ChatConversation.js";
 
-const uidFromReq=(req)=>String(req?.userId||req?.user?._id||"");
+const uidFromReq = (req) => String(req?.userId || req?.user?._id || "");
+const asOid = (v) => {
+  try { return new mongoose.Types.ObjectId(String(v)); }
+  catch { return null; }
+};
+const safeArr = (v) => (Array.isArray(v) ? v : []);
+const pick = (...v) => v.find((x) => x !== undefined && x !== null && x !== "");
 
-async function ensureMember(conversationId,uid){
-  const room=await MatchRoom.findById(conversationId).lean();
-  if(!room) throw Object.assign(new Error("Room not found"),{status:404});
-  const members=(room.members||[]).map(m=>String(m?.user||""));
-  if(!members.includes(String(uid))) throw Object.assign(new Error("Forbidden"),{status:403});
+// ✅ normalize ObjectId from value | populated obj
+const oidOf = (x) => {
+  if (!x) return null;
+  if (x instanceof mongoose.Types.ObjectId) return x;
+  if (x?._id) return asOid(x._id);
+  return asOid(x);
+};
+
+const getUnreadOf = (conv, uid) => {
+  if (!conv || !uid) return 0;
+  const m = conv.unreadBy;
+  if (!m) return 0;
+  if (typeof m.get === "function") return Number(m.get(String(uid)) || 0);
+  return Number(m[String(uid)] || 0);
+};
+
+async function ensureMember(conversationId, uid) {
+  const room = await MatchRoom.findById(conversationId).lean();
+  if (!room) throw Object.assign(new Error("Room not found"), { status: 404 });
+  const members = (room.members || []).map((m) => String(m?.user?._id || m?.user || ""));
+  if (!members.includes(String(uid))) throw Object.assign(new Error("Forbidden"), { status: 403 });
   return room;
 }
 
-// GET /api/chat/conversations/:id/messages?limit=50&before=ISO
-export async function getMessages(req,res,next){
-  try{
-    const uid=uidFromReq(req);
-    const { id }=req.params;
-    const limit=Math.min(parseInt(req.query.limit||"50",10),100);
-    const before=req.query.before?new Date(req.query.before):null;
+// ✅ upsert conv, members normalize
+async function upsertConversationFromRoom(room){
+  if(!room?._id) return;
 
-    await ensureMember(id,uid);
+  const members = safeArr(room.members)
+    .map((m) => oidOf(m?.user))
+    .filter(Boolean);
 
-    const q={conversationId:id};
-    if(before) q.createdAt={$lt:before};
+  const type = room.type === "group" ? "group" : "duo";
 
-    const msgs=await ChatMessage.find(q).sort({createdAt:-1}).limit(limit).lean();
-    return responseOk(res,{items:msgs.reverse(),nextCursor:msgs.length?msgs[0].createdAt:null});
-  }catch(e){next(e)}
+  await ChatConversation.updateOne(
+    { _id: room._id },
+    {
+      $set: { type, members },
+      $setOnInsert: { createdAt: new Date(), unreadBy: {} },
+    },
+    { upsert: true }
+  );
+
+  // ✅ return latest conv for caller (optional)
+  return ChatConversation.findById(room._id)
+    .select("type lastMessage lastMessageAt unreadBy members")
+    .lean();
 }
 
-export async function uploadChatImage(req,res,next){
-  try{
-    const uid=uidFromReq(req);
-    const { id }=req.params;
-    await ensureMember(id,uid);
+// =========================
+// GET /api/chat/conversations/:id/messages?limit=50&before=ISO
+// =========================
+export async function getMessages(req, res, next) {
+  try {
+    const uid = uidFromReq(req);
+    const { id } = req.params;
+    const limit = Math.min(parseInt(req.query.limit || "50", 10), 100);
+    const before = req.query.before ? new Date(req.query.before) : null;
 
-    const file=req.file;
-    if(!file) return res.status(400).json({ message:"Không có ảnh" });
+    await ensureMember(id, uid);
 
-    // Upload lên Cloudinary folder chat_images
+    const q = { conversationId: id };
+    if (before) q.createdAt = { $lt: before };
+
+    const msgs = await ChatMessage.find(q).sort({ createdAt: -1 }).limit(limit).lean();
+    const items = msgs.reverse();
+
+    // ✅ nextCursor phải là tin CŨ NHẤT trong batch để load tiếp lịch sử
+    const nextCursor = msgs.length ? msgs[msgs.length - 1].createdAt : null;
+
+    return responseOk(res, { items, nextCursor });
+  } catch (e) {
+    next(e);
+  }
+}
+
+// =========================
+// POST /api/chat/conversations/:id/images
+// =========================
+export async function uploadChatImage(req, res, next) {
+  try {
+    const uid = uidFromReq(req);
+    const { id } = req.params;
+    await ensureMember(id, uid);
+
+    const file = req.file;
+    if (!file) return res.status(400).json({ success: false, message: "Không có ảnh" });
+
     const url = await uploadImageWithResize(
       file.buffer,
       "asset/folder/chat_images",
-      { width: 2048, height: 2048, fit: "inside" }, // không crop, chỉ giới hạn kích thước
+      { width: 2048, height: 2048, fit: "inside" },
       { quality: 85 }
     );
 
-    return responseOk(res,{
-      type:"image",
+    return responseOk(res, {
+      type: "image",
       url,
-      name:file.originalname||"",
-      size:file.size||0,
+      name: file.originalname || "",
+      size: file.size || 0,
     });
-  }catch(e){next(e)}
+  } catch (e) {
+    next(e);
+  }
 }
 
-export async function getConversationSummary(req,res,next){
-  try{
-    const uid=uidFromReq(req);
-    const { id }=req.params;
-    await ensureMember(id,uid);
+// =========================
+// GET /api/chat/conversations/:id/summary
+// =========================
+export async function getConversationSummary(req, res, next) {
+  try {
+    const uid = uidFromReq(req);
+    const { id } = req.params;
+    await ensureMember(id, uid);
 
-    let conv=await ChatConversation.findById(id).select("type lastMessage lastMessageAt unreadBy").lean();
-    if(!conv){
-      const room=await MatchRoom.findById(id).lean();
-      if(room){
-        try{
-          await ChatConversation.create({
-            _id:id,
-            type: room.type==="group" ? "group" : "duo",
-            members:(room.members||[]).map(m=>m.user).filter(Boolean),
-            lastMessage:null,
-            lastMessageAt:null,
-            unreadBy:{},
-          });
-        }catch{}
+    let conv = await ChatConversation.findById(id)
+      .select("type lastMessage lastMessageAt unreadBy")
+      .lean();
+
+    if (!conv) {
+      const room = await MatchRoom.findById(id).lean();
+      if (room) {
+        await upsertConversationFromRoom(room);
+        conv = await ChatConversation.findById(id)
+          .select("type lastMessage lastMessageAt unreadBy")
+          .lean();
       }
-      conv=await ChatConversation.findById(id).select("type lastMessage lastMessageAt unreadBy").lean();
     }
 
-    const m=conv?.unreadBy;
-    const unread=typeof m?.get==="function" ? Number(m.get(String(uid))||0) : Number(m?.[String(uid)]||0);
+    const unread = getUnreadOf(conv, uid);
 
-    return responseOk(res,{conversationId:id,unread,type:conv?.type||null,lastMessage:conv?.lastMessage||null,lastMessageAt:conv?.lastMessageAt||null});
-  }catch(e){next(e)}
+    return responseOk(res, {
+      conversationId: id,
+      unread,
+      type: conv?.type || null,
+      lastMessage: conv?.lastMessage || null,
+      lastMessageAt: conv?.lastMessageAt || null,
+    });
+  } catch (e) {
+    next(e);
+  }
+}
+
+// ===================================================
+// DM: GET /api/chat/dm/conversations
+// ===================================================
+export async function listDmConversations(req, res, next) {
+  try {
+    const uid = uidFromReq(req);
+    const uidOid = asOid(uid);
+    if (!uidOid) throw Object.assign(new Error("UNAUTHORIZED"), { status: 401 });
+
+    // ✅ robust membership (tránh case members.user bị object/populate)
+    const rooms = await MatchRoom.find({
+      type: "duo",
+      $or: [
+        { "members.user": uidOid },
+        { "members.user._id": uidOid },
+      ],
+      status: { $ne: "closed" },
+    })
+      .select("_id members updatedAt createdAt")
+      .lean();
+
+    const roomIds = rooms.map((r) => r._id);
+
+    const convs = await ChatConversation.find({ _id: { $in: roomIds } })
+      .select("_id lastMessage lastMessageAt unreadBy members type")
+      .lean();
+
+    const convMap = new Map(convs.map((c) => [String(c._id), c]));
+
+    // ✅ peerIds unique
+    const peerIds = [...new Set(
+      rooms.map((r) => {
+        const ms = safeArr(r.members);
+        const peer = ms.find((m) => String(m?.user?._id || m?.user || "") !== String(uidOid));
+        return String(peer?.user?._id || peer?.user || "");
+      }).filter(Boolean)
+    )];
+
+    const peers = await User.find({ _id: { $in: peerIds.map(asOid).filter(Boolean) } })
+      .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address")
+      .lean();
+
+    const peerMap = new Map(peers.map((u) => [String(u._id), u]));
+
+    const items = rooms
+      .map((r) => {
+        const ms = safeArr(r.members);
+        const peer = ms.find((m) => String(m?.user?._id || m?.user || "") !== String(uidOid));
+        const peerId = String(peer?.user?._id || peer?.user || "");
+
+        const conv = convMap.get(String(r._id)) || null;
+        const lastAt =
+          conv?.lastMessageAt ||
+          conv?.lastMessage?.createdAt ||
+          r.updatedAt ||
+          r.createdAt ||
+          null;
+
+        return {
+          _id: r._id,
+          peer: peerId ? (peerMap.get(peerId) || { _id: peerId }) : null,
+          lastMessage: conv?.lastMessage || null,
+          lastMessageAt: lastAt,
+          unread: getUnreadOf(conv, uid),
+          type: "duo",
+        };
+      })
+      .filter((x) => x.peer);
+
+    items.sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
+
+    return responseOk(res, items);
+  } catch (e) {
+    next(e);
+  }
+}
+
+// ===================================================
+// DM: POST /api/chat/dm/conversations  { userId }
+// ===================================================
+export async function createOrGetDmConversation(req, res, next) {
+  try {
+    const uid = uidFromReq(req);
+    const uidOid = asOid(uid);
+    if (!uidOid) return res.status(401).json({ success: false, message: "UNAUTHORIZED" });
+
+    const targetId = String(req.body?.userId || "").trim();
+    const targetOid = asOid(targetId);
+    if (!targetOid) return res.status(400).json({ success: false, message: "Invalid userId" });
+    if (String(targetOid) === String(uidOid))
+      return res.status(400).json({ success: false, message: "Bạn không thể nhắn tin cho chính mình." });
+
+    // ✅ lấy peer info luôn để FE render header ngay
+    const target = await User.findById(targetOid)
+      .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address")
+      .lean();
+    if (!target) return res.status(404).json({ success: false, message: "User not found" });
+
+    let room = await MatchRoom.findOne({
+      type: "duo",
+      status: { $ne: "closed" },
+      $and: [
+        { $or: [{ "members.user": uidOid }, { "members.user._id": uidOid }] },
+        { $or: [{ "members.user": targetOid }, { "members.user._id": targetOid }] },
+      ],
+    })
+      .select("_id type members")
+      .lean();
+
+    if (!room) {
+      const created = await MatchRoom.create({
+        type: "duo",
+        createdBy: uidOid,
+        members: [
+          { user: uidOid, role: "owner" },
+          { user: targetOid, role: "member" },
+        ],
+      });
+      room = created.toObject();
+    }
+
+    // ✅ upsert ChatConversation (type: "duo" đúng enum của ChatConversation)
+    const members = safeArr(room.members)
+      .map((m) => (m?.user?._id ? asOid(m.user._id) : asOid(m?.user)))
+      .filter(Boolean);
+
+    await ChatConversation.updateOne(
+      { _id: room._id },
+      { $set: { type: "duo", members }, $setOnInsert: { unreadBy: {} } },
+      { upsert: true }
+    );
+
+    return responseOk(res, { _id: room._id, id: room._id, type: "duo", peer: target });
+  } catch (e) {
+    if (e?.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message:
+          Object.values(e.errors || {})
+            .map((x) => x?.message)
+            .filter(Boolean)
+            .join(" | ") || "ValidationError",
+      });
+    }
+    next(e);
+  }
+}
+
+// ===================================================
+// DM: GET /api/chat/dm/search-users?q=...
+// ===================================================
+export async function searchDmUsers(req, res, next) {
+  try {
+    const uid = uidFromReq(req);
+    const uidOid = asOid(uid);
+    if (!uidOid) throw Object.assign(new Error("UNAUTHORIZED"), { status: 401 });
+
+    const q = String(req.query?.q || "").trim();
+    if (!q) return responseOk(res, []);
+
+    const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+
+    const users = await User.find({
+      _id: { $ne: uidOid },
+      $or: [{ "profile.nickname": rx }, { email: rx }],
+    })
+      .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address")
+      .limit(20)
+      .lean();
+
+    return responseOk(res, users);
+  } catch (e) {
+    next(e);
+  }
 }

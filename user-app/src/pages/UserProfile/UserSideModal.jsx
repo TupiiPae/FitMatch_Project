@@ -4,6 +4,9 @@ import api from "../../lib/api";
 import { createConnectReport } from "../../api/match";
 import ReportSideModal from "../Connect/ReportSideModal";
 import "./UserSideModal.css";
+import { useNavigate } from "react-router-dom";
+
+
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return"";try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -27,6 +30,7 @@ const sexLabel=(s)=>s==="male"?"Nam":s==="female"?"Nữ":s? "Khác":"";
 
 
 export default function UserSideModal({ open, user, meId, onClose, onViewProfile, onStartChat }){
+  const nav = useNavigate();
   const [reportOpen,setReportOpen]=useState(false);
   const [reportLoading,setReportLoading]=useState(false);
 
@@ -111,10 +115,11 @@ export default function UserSideModal({ open, user, meId, onClose, onViewProfile
     toast.info("Trang xem hồ sơ đang phát triển (button placeholder).");
   };
 
-  const handleChat=()=>{
-    if(info.isSelf) return toast.info("Bạn không thể nhắn tin cho chính mình.");
-    if(onStartChat) return onStartChat(info.id);
-    toast.info("Chức năng nhắn tin đang phát triển (button placeholder).");
+  const handleChat = () => {
+    if (info.isSelf) return toast.info("Bạn không thể nhắn tin cho chính mình.");
+    if (onStartChat) return onStartChat(info.id);
+
+    nav(`/tin-nhan?u=${encodeURIComponent(info.id)}`);
   };
 
   const openReport=()=>{

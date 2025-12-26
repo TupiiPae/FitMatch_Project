@@ -240,6 +240,6 @@
 
 .fm-chat-seen{display:flex;gap:3px;align-items:center}
 .fm-chat-seen.is-mine{justify-content:flex-end}
-.fm-chat-seen-ava{width:18px;height:18px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.7)}
+.fm-chat-seen-ava{width:18px;height:18px;border-radius:50%;object-fit:cover}
 .fm-chat-sendseen{display:flex;align-items:center}
-.fm-chat-seen-more{margin-left:6px;font-size:12px;opacity:.8;font-weight:600}
+.fm-chat-seen-more{margin-left:6px;font-size:12px;font-weight:600}

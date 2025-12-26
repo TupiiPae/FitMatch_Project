@@ -1,12 +1,33 @@
+// server/src/routes/chat.routes.js
 import express from "express";
 import { auth } from "../middleware/auth.js";
-import { getMessages, uploadChatImage, getConversationSummary } from "../controllers/chat.controller.js";
+import {
+  getMessages,
+  uploadChatImage,
+  getConversationSummary,
+  listDmConversations,
+  createOrGetDmConversation,
+  searchDmUsers,
+} from "../controllers/chat.controller.js";
 import { uploadChatImageSingle } from "../middleware/upload.js";
 
-const r=express.Router();
+const r = express.Router();
 
-r.get("/conversations/:id/messages",auth,getMessages);
-r.post("/conversations/:id/images",auth,uploadChatImageSingle,uploadChatImage);
-r.get("/conversations/:id/summary",auth,getConversationSummary);
+const noStore = (_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  next();
+};
+
+// ===== existing =====
+r.get("/conversations/:id/messages", auth, noStore, getMessages);
+r.post("/conversations/:id/images", auth, noStore, uploadChatImageSingle, uploadChatImage);
+r.get("/conversations/:id/summary", auth, noStore, getConversationSummary);
+
+// ===== DM =====
+r.get("/dm/conversations", auth, noStore, listDmConversations);
+r.post("/dm/conversations", auth, noStore, createOrGetDmConversation);
+r.get("/dm/users", auth, noStore, searchDmUsers);
 
 export default r;
