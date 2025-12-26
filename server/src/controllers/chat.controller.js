@@ -207,11 +207,11 @@ export async function listDmConversations(req, res, next) {
     if (!roomIds.length) return responseOk(res, { items: [] });
 
     const convs = await ChatConversation.find({ _id: { $in: roomIds } })
-      .select("_id unreadBy members type lastMessage lastMessageAt")
+      .select("_id unreadBy")
       .lean();
     const convMap = new Map(convs.map((c) => [String(c._id), c]));
 
-    // ✅ LẤY last message theo user (lọc hiddenFor) bằng aggregate 1 lần
+    // ✅ last message (lọc hiddenFor) để render preview đúng theo user
     const lastAgg = await ChatMessage.aggregate([
       {
         $match: {
@@ -220,12 +220,7 @@ export async function listDmConversations(req, res, next) {
         },
       },
       { $sort: { createdAt: -1 } },
-      {
-        $group: {
-          _id: "$conversationId",
-          doc: { $first: "$$ROOT" },
-        },
-      },
+      { $group: { _id: "$conversationId", doc: { $first: "$$ROOT" } } },
       {
         $project: {
           _id: 0,
@@ -238,10 +233,27 @@ export async function listDmConversations(req, res, next) {
         },
       },
     ]);
-
     const lastMap = new Map(lastAgg.map((x) => [String(x.conversationId), x]));
 
-    // ✅ peerIds unique
+    // ✅ stats: có message chưa? ai đã gửi?
+    const statsAgg = await ChatMessage.aggregate([
+      { $match: { conversationId: { $in: roomIds } } },
+      {
+        $group: {
+          _id: "$conversationId",
+          count: { $sum: 1 },
+          meSent: {
+            $max: { $cond: [{ $eq: ["$senderId", uidOid] }, 1, 0] },
+          },
+          otherSent: {
+            $max: { $cond: [{ $ne: ["$senderId", uidOid] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+    const statsMap = new Map(statsAgg.map((x) => [String(x._id), x]));
+
+    // peerIds unique
     const peerIds = [
       ...new Set(
         rooms
@@ -261,34 +273,37 @@ export async function listDmConversations(req, res, next) {
 
     const items = rooms
       .map((r) => {
+        const sid = String(r._id);
+        const stats = statsMap.get(sid);
+        const lastVisible = lastMap.get(sid);
+
+        // ✅ quan trọng:
+        // - không có tin nhắn => không trả về sidebar
+        // - hoặc user đã hidden hết => không có lastVisible => cũng không trả về
+        if (!stats || !stats.count || !lastVisible) return null;
+
         const ms = safeArr(r.members);
         const peer = ms.find((m) => String(m?.user?._id || m?.user || "") !== String(uidOid));
         const peerId = String(peer?.user?._id || peer?.user || "");
-        const conv = convMap.get(String(r._id)) || null;
+        if (!peerId) return null;
 
-        const lastVisible = lastMap.get(String(r._id)) || null;
-        const lastMessage = lastVisible
-          ? buildLastMessageFromMsg(lastVisible)
-          : (conv?.lastMessage || null);
+        const conv = convMap.get(sid) || null;
 
-        const lastAt =
-          (lastVisible?.createdAt) ||
-          (conv?.lastMessageAt) ||
-          (conv?.lastMessage?.createdAt) ||
-          r.updatedAt ||
-          r.createdAt ||
-          null;
+        const lastMessage = buildLastMessageFromMsg(lastVisible);
+        const lastAt = lastVisible.createdAt;
 
         return {
           _id: r._id,
-          peer: peerId ? peerMap.get(peerId) || { _id: peerId } : null,
+          peer: peerMap.get(peerId) || { _id: peerId },
           lastMessage,
           lastMessageAt: lastAt,
           unread: getUnreadOf(conv, uid),
           type: "duo",
+          meSent: stats.meSent === 1,
+          otherSent: stats.otherSent === 1,
         };
       })
-      .filter((x) => x.peer);
+      .filter(Boolean);
 
     items.sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
 
@@ -396,3 +411,41 @@ export async function searchDmUsers(req, res, next) {
     next(e);
   }
 }
+
+
+export async function getSharedTeam(req, res, next) {
+  try {
+    const uid = uidFromReq(req);
+    const uidOid = asOid(uid);
+    if (!uidOid) throw Object.assign(new Error("UNAUTHORIZED"), { status: 401 });
+
+    const otherId = String(req.query?.userId || "").trim();
+    const otherOid = asOid(otherId);
+    if (!otherOid) return responseOk(res, { shared: false, room: null });
+    if (String(otherOid) === String(uidOid)) return responseOk(res, { shared: false, room: null });
+
+    // tìm 1 nhóm mà cả 2 cùng tham gia (ưu tiên mới nhất)
+    const room = await MatchRoom.findOne({
+      type: { $in: ["group", "team"] },
+      status: { $ne: "closed" },
+      $and: [
+        { $or: [{ "members.user": uidOid }, { "members.user._id": uidOid }] },
+        { $or: [{ "members.user": otherOid }, { "members.user._id": otherOid }] },
+      ],
+    })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .select("_id name teamName title roomName groupName")
+      .lean();
+
+    const name =
+      (room && (room.name || room.teamName || room.title || room.roomName || room.groupName)) || "";
+
+    return responseOk(res, {
+      shared: !!room,
+      room: room ? { _id: room._id, name: name || "Nhóm" } : null,
+    });
+  } catch (e) {
+    next(e);
+  }
+}
+

@@ -68,6 +68,7 @@ export default function ChatBox({
   members = [],
   height = 520,
   onOpenUser,
+  emptyText,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1608,7 +1609,7 @@ export default function ChatBox({
           );
         })}
 
-        {!loading && !items.length ? <div className="fm-chat-empty">Chưa có tin nhắn nào.</div> : null}
+        {!loading && !items.length ? <div className="fm-chat-empty">{emptyText || "Chưa có tin nhắn nào."}</div> : null}
         <div />
       </div>
 

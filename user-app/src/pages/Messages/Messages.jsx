@@ -1,4 +1,3 @@
-// user-app/src/pages/Messages/Messages.jsx
 import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -10,6 +9,7 @@ import UserSideModal from "../UserProfile/UserSideModal";
 
 import { getMe } from "../../api/account";
 import { getSocket } from "../../lib/socket";
+import api from "../../lib/api";
 import {
   listDmConversations,
   createOrGetDmConversation,
@@ -51,18 +51,17 @@ function useQueryUserId() {
 }
 
 const unwrapItems = (payload) => {
-  // hỗ trợ nhiều kiểu trả về để tránh vỡ khi bạn đổi BE
   if (!payload) return [];
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload.items)) return payload.items;
   if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload?.data?.items)) return payload.data.items;
   return [];
 };
 
 export default function Messages() {
   const nav = useNavigate();
   const qUserId = useQueryUserId();
-
   const socket = useMemo(() => getSocket(), []);
 
   const [loading, setLoading] = useState(true);
@@ -70,16 +69,7 @@ export default function Messages() {
 
   const [convs, setConvs] = useState([]);
 
-  const convByPeer = useMemo(() => {
-    const m = new Map();
-    safeArr(convs).forEach((c) => {
-      const pid = getId(c?.peer);
-      if (pid) m.set(pid, c);
-    });
-    return m;
-  }, [convs]);
-
-  const [tab, setTab] = useState("all"); // all | unread
+  const [tab, setTab] = useState("all"); // all | new | unread
   const [searchText, setSearchText] = useState("");
   const [searchGlobal, setSearchGlobal] = useState([]);
   const searchTimer = useRef(null);
@@ -90,6 +80,9 @@ export default function Messages() {
   const [sideOpen, setSideOpen] = useState(false);
   const [sideUser, setSideUser] = useState(null);
 
+  // header: shared team
+  const [sharedInfo, setSharedInfo] = useState({ loading: false, text: "" });
+
   const openUser = (u) => {
     const id = getId(u);
     if (!id) return;
@@ -97,11 +90,31 @@ export default function Messages() {
     setSideOpen(true);
   };
 
-  const filteredConvs = useMemo(() => {
-    const base = safeArr(convs);
-    if (tab === "unread") return base.filter((c) => Number(c?.unread || 0) > 0);
-    return base;
-  }, [convs, tab]);
+  const convByPeer = useMemo(() => {
+    const m = new Map();
+    safeArr(convs).forEach((c) => {
+      const pid = getId(c?.peer);
+      if (pid) m.set(pid, c);
+    });
+    return m;
+  }, [convs]);
+
+  const isNewConv = (c) => !!c?.otherSent && !c?.meSent;
+  const isAllConv = (c) => !!c?.meSent;
+  const isUnreadConv = (c) => !!c?.meSent && Number(c?.unread || 0) > 0;
+
+  const newConvs = useMemo(() => safeArr(convs).filter(isNewConv), [convs]);
+  const allConvs = useMemo(() => safeArr(convs).filter(isAllConv), [convs]);
+  const unreadConvs = useMemo(() => safeArr(convs).filter(isUnreadConv), [convs]);
+
+  const newCount = newConvs.length;
+  const unreadCount = unreadConvs.length;
+
+  const listByTab = useMemo(() => {
+    if (tab === "new") return newConvs;
+    if (tab === "unread") return unreadConvs;
+    return allConvs;
+  }, [tab, newConvs, unreadConvs, allConvs]);
 
   const loadMeAndConvs = async () => {
     try {
@@ -113,15 +126,12 @@ export default function Messages() {
       const listRaw = await listDmConversations();
       const arr = unwrapItems(listRaw);
 
-      // sort desc by lastMessageAt
       arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
-
       setConvs(arr);
 
-      // ✅ KHÔNG lưu lịch sử activeConv (không localStorage)
-      // Nếu không có query ?u=... thì mặc định chọn item đầu
+      // Không auto-open nếu user vào theo ?u=
       if (!qUserId) {
-        const pickConv = arr[0] || null;
+        const pickConv = arr.find((c) => isAllConv(c)) || arr[0] || null;
         if (pickConv?._id) {
           setActiveConvId(String(pickConv._id));
           setActivePeer(pickConv.peer || null);
@@ -143,7 +153,7 @@ export default function Messages() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // realtime: conversation update (unread + last msg)
+  // ===== realtime update =====
   useEffect(() => {
     const onConvUpdate = (p) => {
       const cid = String(p?.conversationId || "");
@@ -153,17 +163,33 @@ export default function Messages() {
         const arr = safeArr(prev);
         const idx = arr.findIndex((x) => String(x?._id || "") === cid);
 
+        // DM mới xuất hiện (VD người khác nhắn lần đầu) -> reload list để có peer + flags
         if (idx === -1) {
-          // DM mới hoặc list chưa có -> reload nhẹ
           listDmConversations()
-            .then((raw) => setConvs(unwrapItems(raw)))
+            .then((raw) => {
+              const next = unwrapItems(raw);
+              next.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
+              setConvs(next);
+            })
             .catch(() => {});
           return prev;
         }
 
         const cur = arr[idx];
+
+        const senderId = String(p?.lastMessage?.senderId || "");
+        const meId = String(me?._id || "");
+        const patchFlags =
+          senderId && meId
+            ? {
+                meSent: senderId === meId ? true : cur?.meSent,
+                otherSent: senderId && senderId !== meId ? true : cur?.otherSent,
+              }
+            : {};
+
         const next = {
           ...cur,
+          ...patchFlags,
           lastMessage: p?.lastMessage ?? cur?.lastMessage,
           lastMessageAt:
             p?.lastMessage?.createdAt ??
@@ -183,9 +209,9 @@ export default function Messages() {
 
     socket.on("chat:conversation_update", onConvUpdate);
     return () => socket.off("chat:conversation_update", onConvUpdate);
-  }, [socket]);
+  }, [socket, me]);
 
-  // (optional but robust) khi hide_for_me -> reload list
+  // reload list khi hide_for_me (optional)
   useEffect(() => {
     const onHidden = () => {
       listDmConversations()
@@ -200,7 +226,7 @@ export default function Messages() {
     return () => socket.off("chat:hidden_update", onHidden);
   }, [socket]);
 
-  // open DM by query param: /tin-nhan?u=USERID
+  // ===== open by query /tin-nhan?u=USERID =====
   useEffect(() => {
     (async () => {
       if (!qUserId) return;
@@ -221,19 +247,12 @@ export default function Messages() {
       }
 
       try {
+        // tạo/đã có room nhưng sidebar sẽ KHÔNG hiện nếu chưa có tin nhắn (BE đã filter)
         const conv = await createOrGetDmConversation(qUserId);
         const cid = String(conv?._id || "");
         if (cid) {
           setActiveConvId(cid);
           if (conv?.peer) setActivePeer(conv.peer);
-
-          const raw = await listDmConversations();
-          const arr = unwrapItems(raw);
-          arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
-          setConvs(arr);
-
-          const found = arr.find((x) => String(x?._id || "") === cid) || null;
-          if (found?.peer) setActivePeer(found.peer);
         }
       } catch (e) {
         console.error(e);
@@ -244,7 +263,7 @@ export default function Messages() {
     })();
   }, [qUserId, me, convByPeer, nav]);
 
-  // search global users
+  // ===== search global users =====
   useEffect(() => {
     const q = String(searchText || "").trim();
     if (!q) {
@@ -257,8 +276,7 @@ export default function Messages() {
       try {
         const rsRaw = await searchDmUsers(q);
         const rs = unwrapItems(rsRaw);
-        const filtered = safeArr(rs).filter((u) => !convByPeer.has(getId(u)));
-        setSearchGlobal(filtered);
+        setSearchGlobal(rs);
       } catch (e) {
         console.error(e);
         setSearchGlobal([]);
@@ -268,7 +286,7 @@ export default function Messages() {
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
-  }, [searchText, convByPeer]);
+  }, [searchText]);
 
   const openConv = (c) => {
     const cid = String(c?._id || "");
@@ -280,8 +298,7 @@ export default function Messages() {
   const openDmWithUser = async (userId) => {
     const uid = String(userId || "");
     if (!uid) return;
-    if (uid === String(me?._id || ""))
-      return toast.info("Bạn không thể nhắn tin cho chính mình.");
+    if (uid === String(me?._id || "")) return toast.info("Bạn không thể nhắn tin cho chính mình.");
 
     const existed = convByPeer.get(uid);
     if (existed?._id) {
@@ -299,14 +316,7 @@ export default function Messages() {
       setActiveConvId(cid);
       if (conv?.peer) setActivePeer(conv.peer);
 
-      const raw = await listDmConversations();
-      const arr = unwrapItems(raw);
-      arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
-      setConvs(arr);
-
-      const found = arr.find((x) => String(x?._id || "") === cid) || null;
-      if (found?.peer) setActivePeer(found.peer);
-
+      // sidebar không hiện nếu chưa có tin nhắn (BE filter) -> OK theo yêu cầu
       setSearchText("");
       setSearchGlobal([]);
     } catch (e) {
@@ -314,6 +324,53 @@ export default function Messages() {
       toast.error("Không thể tạo đoạn chat");
     }
   };
+
+  // ===== header: shared team info =====
+  useEffect(() => {
+    let alive = true;
+
+    const run = async () => {
+      const peerId = getId(activePeer);
+      const peerName = getName(activePeer);
+
+      if (!peerId || !peerName) {
+        if (alive) setSharedInfo({ loading: false, text: "" });
+        return;
+      }
+
+      try {
+        if (alive) setSharedInfo({ loading: true, text: "" });
+
+        const r = await api.get("/api/chat/shared-team", { params: { userId: peerId } });
+        const data = r.data?.data ?? r.data;
+
+        if (!alive) return;
+
+        if (data?.shared && data?.room?.name) {
+          setSharedInfo({
+            loading: false,
+            text: `Bạn đang cùng nhóm "${data.room.name}" với ${peerName}`,
+          });
+        } else {
+          setSharedInfo({
+            loading: false,
+            text: `Bạn và ${peerName} chưa có nhóm chung`,
+          });
+        }
+      } catch {
+        if (!alive) return;
+        setSharedInfo({
+          loading: false,
+          text: `Bạn và ${peerName} chưa có nhóm chung`,
+        });
+      }
+    };
+
+    run();
+    return () => {
+      alive = false;
+    };
+  }, [activePeer]);
 
   const chatMembers = useMemo(() => {
     const meId = String(me?._id || "");
@@ -344,17 +401,52 @@ export default function Messages() {
     return out;
   }, [me, activePeer]);
 
+  // ===== render list (normal mode) =====
+  const renderConvItem = (c) => {
+    const active = String(activeConvId) === String(c?._id || "");
+    const peer = c.peer;
+    const unread = Number(c?.unread || 0);
+
+    const lastText = String(c?.lastMessage?.text || "").trim();
+    const lastAt = c?.lastMessageAt || c?.lastMessage?.createdAt || null;
+
+    return (
+      <button
+        key={String(c._id)}
+        className={`msg-item ${active ? "is-active" : ""}`}
+        onClick={() => openConv(c)}
+      >
+        <img
+          className="msg-ava"
+          src={getAvatar(peer)}
+          alt=""
+          onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
+        />
+        <div className="msg-mid">
+          <div className="msg-top">
+            <div className="msg-name">
+              {getName(peer)}
+              {isNewConv(c) ? <span className="msg-pill">Mới</span> : null}
+            </div>
+            {unread > 0 ? <span className="msg-badge">{unread}</span> : null}
+          </div>
+          <div className="msg-sub">
+            <span className="msg-last">{lastText || " "}</span>
+            {lastAt ? <span className="msg-dot">•</span> : null}
+            {lastAt ? <span className="msg-time">{dayjs(lastAt).format("HH:mm")}</span> : null}
+          </div>
+        </div>
+      </button>
+    );
+  };
+
   return (
     <>
       <div className="msg-page">
         <aside className="msg-left">
           <div className="msg-left-head">
             <div className="msg-head-row">
-              <div className="msg-title">Đoạn chat</div>
-              <div className="msg-actions">
-                <button className="msg-icbtn" title="Tùy chọn">⋯</button>
-                <button className="msg-icbtn" title="Tin nhắn mới">✎</button>
-              </div>
+              <div className="msg-title">Tin nhắn</div>
             </div>
 
             <div className="msg-search">
@@ -362,7 +454,7 @@ export default function Messages() {
               <input
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Tìm kiếm trên Messenger"
+                placeholder="Tìm kiếm người dùng"
               />
               {!!searchText && (
                 <button
@@ -385,11 +477,21 @@ export default function Messages() {
               >
                 Tất cả
               </button>
+
               <button
                 className={`msg-tab ${tab === "unread" ? "is-on" : ""}`}
                 onClick={() => setTab("unread")}
               >
                 Chưa đọc
+                {unreadCount > 0 ? <span className="msg-tab-badge">{unreadCount}</span> : null}
+              </button>
+
+              <button
+                className={`msg-tab ${tab === "new" ? "is-on" : ""}`}
+                onClick={() => setTab("new")}
+              >
+                Mới
+                {newCount > 0 ? <span className="msg-tab-badge">{newCount}</span> : null}
               </button>
             </div>
           </div>
@@ -400,51 +502,19 @@ export default function Messages() {
             {!!String(searchText || "").trim() ? (
               <>
                 <div className="msg-section">
-                  <div className="msg-sec-title">Đã nhắn tin</div>
+                  <div className="msg-sec-title">Cuộc trò chuyện</div>
                   {safeArr(convs)
                     .filter((c) =>
                       getName(c?.peer).toLowerCase().includes(String(searchText).toLowerCase())
                     )
-                    .map((c) => {
-                      const active = String(activeConvId) === String(c?._id || "");
-                      const peer = c.peer;
-                      const unread = Number(c?.unread || 0);
-
-                      const lastText = String(c?.lastMessage?.text || "").trim();
-                      const lastAt = c?.lastMessageAt || c?.lastMessage?.createdAt || null;
-
-                      return (
-                        <button
-                          key={String(c._id)}
-                          className={`msg-item ${active ? "is-active" : ""}`}
-                          onClick={() => openConv(c)}
-                        >
-                          <img
-                            className="msg-ava"
-                            src={getAvatar(peer)}
-                            alt=""
-                            onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
-                          />
-                          <div className="msg-mid">
-                            <div className="msg-top">
-                              <div className="msg-name">{getName(peer)}</div>
-                              {unread > 0 ? <span className="msg-badge">{unread}</span> : null}
-                            </div>
-                            <div className="msg-sub">
-                              <span className="msg-last">{lastText || " "}</span>
-                              {lastAt ? <span className="msg-dot">•</span> : null}
-                              {lastAt ? (
-                                <span className="msg-time">{dayjs(lastAt).format("HH:mm")}</span>
-                              ) : null}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
+                    .map(renderConvItem)}
+                  {!safeArr(convs).some((c) =>
+                    getName(c?.peer).toLowerCase().includes(String(searchText).toLowerCase())
+                  ) ? <div className="msg-empty">Không có cuộc trò chuyện phù hợp</div> : null}
                 </div>
 
                 <div className="msg-section">
-                  <div className="msg-sec-title">Người dùng khác</div>
+                  <div className="msg-sec-title">Người dùng</div>
                   {!searchGlobal.length ? (
                     <div className="msg-empty">Không có kết quả</div>
                   ) : (
@@ -465,7 +535,7 @@ export default function Messages() {
                             <div className="msg-name">{getName(u)}</div>
                           </div>
                           <div className="msg-sub">
-                            <span className="msg-last">Nhắn tin</span>
+                            <span className="msg-last">Mở khung chat</span>
                           </div>
                         </div>
                       </button>
@@ -475,102 +545,61 @@ export default function Messages() {
               </>
             ) : (
               <>
-                {!filteredConvs.length && !loading ? (
-                  <div className="msg-empty">Chưa có đoạn chat nào.</div>
+                {!listByTab.length && !loading ? (
+                  <div className="msg-empty">
+                    {tab === "new"
+                      ? "Chưa có tin nhắn mới."
+                      : tab === "unread"
+                      ? "Không có tin nhắn chưa đọc."
+                      : "Chưa có cuộc trò chuyện nào."}
+                  </div>
                 ) : null}
 
-                {filteredConvs.map((c) => {
-                  const active = String(activeConvId) === String(c?._id || "");
-                  const peer = c.peer;
-                  const unread = Number(c?.unread || 0);
-
-                  const lastText = String(c?.lastMessage?.text || "").trim();
-                  const lastAt = c?.lastMessageAt || c?.lastMessage?.createdAt || null;
-
-                  return (
-                    <button
-                      key={String(c._id)}
-                      className={`msg-item ${active ? "is-active" : ""}`}
-                      onClick={() => openConv(c)}
-                    >
-                      <img
-                        className="msg-ava"
-                        src={getAvatar(peer)}
-                        alt=""
-                        onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
-                      />
-                      <div className="msg-mid">
-                        <div className="msg-top">
-                          <div className="msg-name">{getName(peer)}</div>
-                          {unread > 0 ? <span className="msg-badge">{unread}</span> : null}
-                        </div>
-                        <div className="msg-sub">
-                          <span className="msg-last">{lastText || " "}</span>
-                          {lastAt ? <span className="msg-dot">•</span> : null}
-                          {lastAt ? (
-                            <span className="msg-time">{dayjs(lastAt).format("HH:mm")}</span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                {listByTab.map(renderConvItem)}
               </>
             )}
           </div>
         </aside>
 
         <main className="msg-right">
-          {!activeConvId ? (
-            <div className="msg-placeholder">
-              <div className="msg-ph-title">Chọn một đoạn chat</div>
-              <div className="msg-ph-sub">Tìm người dùng để bắt đầu cuộc trò chuyện.</div>
-            </div>
-          ) : (
-            <div className="msg-right-wrap">
-              <div className="msg-right-head">
-                <button
-                  className="msg-peer"
-                  onClick={() => activePeer && openUser(activePeer)}
-                  title="Xem thông tin"
-                >
-                  <img
-                    className="msg-peer-ava"
-                    src={getAvatar(activePeer)}
-                    alt=""
-                    onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
-                  />
-                  <div className="msg-peer-name">{getName(activePeer)}</div>
-                </button>
-
-                <div className="msg-right-actions">
-                  <button className="msg-icbtn" title="Gọi">
-                    <i className="fa-solid fa-phone" />
-                  </button>
-                  <button className="msg-icbtn" title="Video">
-                    <i className="fa-solid fa-video" />
-                  </button>
-                  <button
-                    className="msg-icbtn"
-                    title="Thông tin"
-                    onClick={() => activePeer && openUser(activePeer)}
-                  >
-                    <i className="fa-solid fa-circle-info" />
+          <div className="msg-right-box">
+            {!activeConvId ? (
+              <div className="msg-placeholder">
+                <div className="msg-ph-title">Chọn một đoạn chat</div>
+                <div className="msg-ph-sub">Tìm người dùng để bắt đầu cuộc trò chuyện.</div>
+              </div>
+            ) : (
+              <div className="msg-right-wrap">
+                <div className="msg-right-head">
+                  <button className="msg-peer" onClick={() => activePeer && openUser(activePeer)}>
+                    <img
+                      className="msg-peer-ava"
+                      src={getAvatar(activePeer)}
+                      alt=""
+                      onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
+                    />
+                    <div className="msg-peer-text">
+                      <div className="msg-peer-name">{getName(activePeer)}</div>
+                      <div className="msg-peer-sub">
+                        {sharedInfo.loading ? "Đang kiểm tra nhóm chung…" : (sharedInfo.text || "")}
+                      </div>
+                    </div>
                   </button>
                 </div>
-              </div>
 
-              <div className="msg-chat">
-                <ChatBox
-                  conversationId={activeConvId}
-                  meId={String(me?._id || "")}
-                  members={chatMembers}
-                  height={"100%"}
-                  onOpenUser={(u) => openUser(u)}
-                />
+                <div className="msg-chat">
+                  <ChatBox
+                    conversationId={activeConvId}
+                    meId={String(me?._id || "")}
+                    members={chatMembers}
+                    height={"100%"}
+                    onOpenUser={(u) => openUser(u)}
+                    emptyText={"Chưa có tin nhắn nào giữa 2 bạn."}
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </main>
       </div>
 

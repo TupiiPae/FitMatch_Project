@@ -1,8 +1,21 @@
-.fm-chat{display:flex;flex-direction:column;background:rgba(255,255,255,.04);overflow:hidden;overflow-x:hidden; border-radius: 8px;}
+.fm-chat{display:flex;flex-direction:column;overflow:hidden;overflow-x:hidden;}
 .fm-chat-list{flex:1;overflow:auto;padding:14px;background:rgba(0,0,0,.06);overflow-x:hidden;overscroll-behavior:contain;--sbw:0px;scrollbar-width:thin;scrollbar-color:transparent transparent;position:relative}
-.fm-chat-loading,.fm-chat-empty{opacity:.75;padding:8px 2px}
+/* .fm-chat-loading,.fm-chat-empty{opacity:.75;padding:8px 2px} */
+.fm-chat-empty{
+  position: absolute;
+  inset: 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:16px;
+  color: rgba(255,255,255,.75);
+  font-weight: 500;
+  font-size: 16px;
+  pointer-events:none;
+}
 .fm-chat-date{display:flex;justify-content:center;margin:12px 0}
-.fm-chat-date>span{font-size:12px;opacity:.75;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05)}
+.fm-chat-date>span{font-size:12px;opacity:.75}
 
 .fm-chat-row{display:flex;gap:10px;margin:6px 0;align-items:flex-end}
 .fm-chat-row.is-mine{justify-content:flex-end}
@@ -116,7 +129,7 @@
 .fm-chat-prev img{width:100%;height:100%;object-fit:cover;display:block}
 .fm-chat-prev-x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.35);color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-.fm-chat-inputrow{display:flex;gap:8px;align-items:center}
+.fm-chat-inputrow{display:flex;gap:8px;align-items:center;}
 .fm-chat-inputwrap{position:relative;flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
 .fm-chat-input{width:100%;border-radius:22px;border:1px solid rgba(255,255,255,.16);background:transparent;color:inherit;padding:10px 14px;outline:none;min-width:0}
 .fm-chat-textarea{resize:none;line-height:1.35;overflow:auto; max-height:140px; overflow: hidden;}
