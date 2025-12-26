@@ -42,6 +42,27 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
   const [sendMark,setSendMark]=useState(null);
   const sendMarkRef=useRef(null);
 
+  const seenSentRef=useRef("");
+  const emitSeenLatest=(mid)=>{
+    const id=String(mid||"");
+    if(!conversationId||!id||id.startsWith("tmp_")) return;
+    if(seenSentRef.current===id) return;
+    seenSentRef.current=id;
+    socket.emit("chat:seen",{conversationId,messageId:id},()=>{});
+  };
+
+  const applySeenLocal=(messageId,userId,seenAt)=>{
+    const mid=String(messageId||"");
+    const uid=String(userId||"");
+    if(!mid||!uid) return;
+    setItems(prev=>uniq(prev.map(m=>{
+      if(String(m?._id||"")!==mid) return m;
+      const list=safeArr(m?.seenBy);
+      const kept=list.filter(x=>String(x?.userId?._id||x?.userId||"")!==uid);
+      return {...m,seenBy:[...kept,{userId:uid,seenAt:seenAt||new Date().toISOString()}]};
+    })));
+  };
+
   const [dragOverMid,setDragOverMid]=useState(null);
 
   const [imgView,setImgView]=useState(null);
@@ -209,8 +230,18 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     setLoading(true);
     try{
       const data=await getChatMessages(conversationId,{limit:80});
-      setItems(uniq(data?.items||[]));
+      const arr=uniq(data?.items||[]);
+      setItems(arr);
       scrollBottom(false);
+
+      const last=arr.filter(x=>{
+        const id=String(x?._id||"");
+        if(!id||id.startsWith("tmp_")) return false;
+        if(x?.deletedAt) return false;
+        return true;
+      }).slice(-1)[0];
+
+      if(last) emitSeenLatest(last._id);
     }catch(e){
       toast.error(e?.response?.data?.message||"Không tải được tin nhắn");
       setItems([]);
@@ -228,6 +259,10 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
       if(String(msg?.conversationId||"")!==String(conversationId)) return;
       setItems(prev=>uniq([...prev,msg]));
       scrollBottom(true);
+      try{
+        const sid=String(msg?.senderId?._id||msg?.senderId||"");
+        if(sid && sid!==myId) emitSeenLatest(msg?._id);
+      }catch{}
 
       try{
         const sid=String(msg?.senderId?._id||msg?.senderId||"");
@@ -251,11 +286,17 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
       setItems(prev=>uniq(prev.map(m=>String(m?._id||"")===String(message._id)?message:m)));
     };
 
+    const onSeen=({conversationId:cid,messageId,userId,seenAt}={})=>{
+      if(String(cid)!==String(conversationId) || !messageId || !userId) return;
+      applySeenLocal(messageId,userId,seenAt);
+    };
+
     socket.on("chat:new",onNew);
     socket.on("chat:deleted",onDeleted);
     socket.on("chat:revoke_update",onDeleted);
     socket.on("chat:reaction_update",onReact);
     socket.on("chat:react_update",onReact);
+    socket.on("chat:seen_update",onSeen);
 
     return ()=>{
       socket.off("chat:new",onNew);
@@ -263,6 +304,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
       socket.off("chat:revoke_update",onDeleted);
       socket.off("chat:reaction_update",onReact);
       socket.off("chat:react_update",onReact);
+      socket.off("chat:seen_update",onSeen);
       socket.emit("chat:leave",{conversationId});
     };
   },[socket,conversationId,myId]);
@@ -598,6 +640,24 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
     setReactFor(null);
     setMenuFor(cur=>String(cur?.mid||"")===String(id||"")?null:{mid:String(id||"")});
   };
+  const lastReadableId=useMemo(()=>{
+    const hidden=hiddenSet;
+    const arr=safeArr(items).filter(x=>{
+      const id=String(x?._id||"");
+      if(!id||hidden.has(id)||id.startsWith("tmp_")) return false;
+      if(x?.deletedAt) return false;
+      return true;
+    });
+    return String(arr.length?arr[arr.length-1]._id:"");
+  },[items,hiddenSet]);
+
+  const lastSeenUsers=useMemo(()=>{
+    const id=String(lastReadableId||"");
+    if(!id) return [];
+    const m=msgMap.get(id)||safeArr(items).find(x=>String(x?._id||"")===id)||null;
+    const ids=safeArr(m?.seenBy).map(s=>String(s?.userId?._id||s?.userId||"")).filter(uid=>uid && uid!==myId);
+    return Array.from(new Set(ids));
+  },[lastReadableId,msgMap,items,myId]);
 
   return (
     <div className="fm-chat" style={{height}}>
@@ -688,6 +748,7 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           const hasReactBadge=!isDeleted && badgeCount>0 && badgeEmojis.length;
 
           const showSendMark=mine && row.end && !!sendMark?.state && String(sendMark?.msgId||"")===rid && !isDeleted;
+          const showSeen=rid && String(rid)===String(lastReadableId) && row.end && lastSeenUsers.length>0;
           const dragOn=String(dragOverMid||"")===rid;
           const reactOpen=String(reactFor||"")===rid;
 
@@ -829,6 +890,17 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
                         ? (<><i className="fa-solid fa-circle-notch fa-spin" /> Đang gửi</>)
                         : (<><i className="fa-solid fa-check" /> Đã gửi</>)
                       }
+                    </div>
+                  )}
+
+                  {showSeen && (
+                    <div className={"fm-chat-seen"+(mine?" is-mine":"")}>
+                      {lastSeenUsers.map(uid=>{
+                        const u=memberMap.get(String(uid))||null;
+                        const ava=u?.avatarUrl||u?.imageUrl||"/images/avatar.png";
+                        const nm=u?.name||u?.nickname||"Người dùng";
+                        return <img key={uid} className="fm-chat-seen-ava" src={ava} alt={nm} title={`${nm} đã xem`} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}}/>;
+                      })}
                     </div>
                   )}
                 </div>

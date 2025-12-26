@@ -11,6 +11,8 @@ import TeamEditModal from "./TeamEditModal";
 import TeamManageMembersModal from "./TeamManageMembersModal";
 import UserSideModal from "../UserProfile/UserSideModal";
 import ChatBox from "../Chat/ChatBox";
+import { getChatConversationSummary } from "../../api/chat";
+import { getSocket } from "../../lib/socket";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -136,6 +138,8 @@ export default function TeamConnect({ onLeftRoom }){
   const [leaving,setLeaving]=useState(false);
 
   const [topTab,setTopTab]=useState("setup"); // setup | guidelines | chat
+  const socket=useMemo(()=>getSocket(),[]);
+  const [chatUnread,setChatUnread]=useState(0);
   const [reqTab,setReqTab]=useState("pending"); // pending | accepted | rejected
 
   const [reqLoading,setReqLoading]=useState(false);
@@ -418,6 +422,35 @@ export default function TeamConnect({ onLeftRoom }){
 
   useEffect(()=>{ if(roomId) loadRequests(roomId); },[roomId]);
 
+  useEffect(()=>{
+    if(!roomId) return;
+    getChatConversationSummary(roomId).then(d=>setChatUnread(Number(d?.unread||0))).catch(()=>{});
+  },[roomId]);
+
+  useEffect(()=>{
+  if(!roomId) return;
+
+  const onUpd=(p={})=>{
+    if(String(p?.conversationId||"")!==String(roomId)) return;
+
+    // đang ở tab chat => luôn coi là đã đọc
+    if(topTab==="chat"){ setChatUnread(0); return; }
+
+    const unreadRaw=p?.unread ?? p?.unreadCount ?? p?.data?.unread;
+    const unread=Number(unreadRaw);
+
+    if(Number.isFinite(unread)) setChatUnread(unread);
+      else{
+        // fallback (trường hợp payload không có unread)
+        const sid=String(p?.lastMessage?.senderId||p?.lastMessage?.sender?._id||"");
+        if(myId && sid && sid!==String(myId)) setChatUnread(v=>v+1);
+      }
+    };
+
+    socket.on("chat:conversation_update",onUpd);
+    return ()=>socket.off("chat:conversation_update",onUpd);
+  },[socket,roomId,topTab,myId]);
+
   const onAccept=async(r)=>{
     try{ await api.patch(`/match/requests/${r.id}/accept`); toast.success("Đã duyệt yêu cầu."); await Promise.all([loadRequests(roomId), loadRoom()]); }
     catch(e){ toast.error(e?.response?.data?.message||e?.response?.data?.error||"Không thể duyệt yêu cầu."); await Promise.all([loadRequests(roomId), loadRoom()]); }
@@ -616,7 +649,7 @@ export default function TeamConnect({ onLeftRoom }){
           <div className="tc-top-tabs">
             <button type="button" className={"tc-top-tab"+(topTab==="setup"?" is-active":"")} onClick={()=>setTopTab("setup")}>Kết nối</button>
             <button type="button" className={"tc-top-tab"+(topTab==="guidelines"?" is-active":"")} onClick={()=>setTopTab("guidelines")}>Hướng dẫn</button>
-            <button type="button" className={"tc-top-tab"+(topTab==="chat"?" is-active":"")} onClick={()=>setTopTab("chat")}>Trò chuyện</button>
+            <button type="button" className={"tc-top-tab"+(topTab==="chat"?" is-active":"")} onClick={()=>{ setTopTab("chat"); setChatUnread(0); }} > Trò chuyện {topTab!=="chat" && chatUnread>0 && ( <span className="tc-top-tab-badge">{chatUnread>99?"99+":chatUnread}</span> )} </button>
           </div>
 
           {topTab==="setup" ? (

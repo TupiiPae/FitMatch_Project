@@ -9,6 +9,8 @@ import { getMe } from "../../api/account";
 import { toast } from "react-toastify";
 import UserSideModal from "../UserProfile/UserSideModal";
 import ChatBox from "../Chat/ChatBox";
+import { getChatConversationSummary } from "../../api/chat";
+import { getSocket } from "../../lib/socket";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -32,6 +34,8 @@ export default function DuoConnect({ onLeftRoom }) {
   const [leaving, setLeaving] = useState(false);
 
   const [activeTab, setActiveTab] = useState("connect"); // 'connect' | 'chat'
+  const [chatUnread,setChatUnread]=useState(0);
+  const socket=useMemo(()=>getSocket(),[]);
 
   // ===== USER SIDE MODAL =====
   const [userModalOpen,setUserModalOpen]=useState(false);
@@ -140,6 +144,31 @@ export default function DuoConnect({ onLeftRoom }) {
     document.addEventListener("visibilitychange",onVis);
     return ()=>document.removeEventListener("visibilitychange",onVis);
   },[roomId,activeTab]);
+
+  useEffect(()=>{
+    if(!roomId||!myId) return;
+    getChatConversationSummary(roomId).then(d=>setChatUnread(Number(d?.unread||0))).catch(()=>{});
+  },[roomId,myId]);
+
+  useEffect(()=>{
+    if(!roomId||!myId) return;
+    const onUpd=(p={})=>{
+      if(String(p?.conversationId||"")!==String(roomId)) return;
+
+      // đang ở tab chat => không đếm
+      if(activeTab==="chat"){ setChatUnread(0); return; }
+
+      const unreadRaw=p?.unread ?? p?.unreadCount ?? p?.data?.unread;
+      const unread=Number(unreadRaw);
+      if(Number.isFinite(unread)) setChatUnread(unread);
+      else{
+        const sid=String(p?.lastMessage?.senderId||p?.lastMessage?.sender?._id||"");
+        if(sid && sid!==String(myId)) setChatUnread(v=>v+1);
+      }
+    };
+    socket.on("chat:conversation_update",onUpd);
+    return ()=>socket.off("chat:conversation_update",onUpd);
+  },[socket,roomId,myId,activeTab]);
 
   // ===== Chuẩn hoá member & tạo 2 slot (BỔ SUNG: bio/location/goal...) =====
   const { slotMe, slotPartner } = useMemo(() => {
@@ -302,7 +331,7 @@ export default function DuoConnect({ onLeftRoom }) {
         {/* ===== TAB BAR ===== */}
         <div className="cn-duo-tabs">
           <button type="button" className={"cn-duo-tab"+(activeTab==="connect"?" is-active":"")} onClick={()=>setActiveTab("connect")}>Kết nối</button>
-          <button type="button" className={"cn-duo-tab"+(activeTab==="chat"?" is-active":"")} onClick={()=>setActiveTab("chat")}>Trò chuyện</button>
+          <button type="button" className={"cn-duo-tab"+(activeTab==="chat"?" is-active":"")} onClick={()=>{setActiveTab("chat");setChatUnread(0);}} > Trò chuyện {activeTab!=="chat" && chatUnread>0 && ( <span className="cn-duo-tab-badge">{chatUnread>99?"99+":chatUnread}</span> )} </button>
         </div>
 
         {/* ===== MAIN (tab Kết nối) ===== */}
@@ -339,7 +368,7 @@ export default function DuoConnect({ onLeftRoom }) {
         )}
         {activeTab === "chat" && (
           <section className="cn-duo-main">
-            <ChatBox conversationId={roomId} meId={myId} height={674}/>
+            <ChatBox conversationId={roomId} meId={myId} members={[slotMe,slotPartner].filter(Boolean)} height={674}/>
           </section>
         )}
       </div>

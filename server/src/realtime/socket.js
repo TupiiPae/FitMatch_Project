@@ -7,6 +7,28 @@ import ChatConversation from "../models/ChatConversation.js";
 
 let io=null;
 
+const roomUserIds=(roomName)=>{
+  const out=new Set();
+  try{
+    const sids=io?.sockets?.adapter?.rooms?.get(roomName);
+    if(!sids) return out;
+    for(const sid of sids){
+      const s=io.sockets.sockets.get(sid);
+      const uid=String(s?.user?._id||"");
+      if(uid) out.add(uid);
+    }
+  }catch{}
+  return out;
+};
+
+const getUnreadOf=(conv,uid)=>{
+  if(!conv||!uid) return 0;
+  const m=conv.unreadBy;
+  if(!m) return 0;
+  if(typeof m.get==="function") return Number(m.get(String(uid))||0);
+  return Number(m[String(uid)]||0);
+};
+
 const normToken=(t)=>{if(!t)return"";return String(t).replace(/^Bearer\s+/i,"").trim()};
 const uidFromDecoded=(d)=>String(d?.id||d?._id||d?.userId||d?.sub||"");
 const asOid=(v)=>{try{return new mongoose.Types.ObjectId(String(v))}catch{return null}};
@@ -115,6 +137,7 @@ export function initSocket(httpServer,{corsOrigin}={}){
 
         await upsertConversationFromRoom(room,{});
         await resetUnread(conversationId,uid);
+        io.to(`user:${uid}`).emit("chat:conversation_update",{conversationId,unread:0});
 
         ack?.({ok:true});
       }catch(e){ack?.({ok:false,message:e?.message||"join failed"})}
@@ -168,19 +191,27 @@ export function initSocket(httpServer,{corsOrigin}={}){
         const otherIds=(room.members||[]).map(m=>String(m?.user?._id||m?.user||"")).filter(x=>x && x!==String(uid));
         const lastText=lastTextFrom(text,at);
 
+        // ai đang ở tab chat sẽ join conv:<id> => không tăng unread
+        const viewers=roomUserIds(`conv:${conversationId}`);
+        const incUnreadFor=otherIds.filter(x=>!viewers.has(String(x)));
+
         await upsertConversationFromRoom(room,{
           lastText,
           lastSenderId:uidOid,
           lastAt:msg.createdAt,
-          incUnreadFor:otherIds
+          incUnreadFor
         });
 
         io.to(`conv:${conversationId}`).emit("chat:new",plain);
 
+        // lấy unread mới để push cho từng user
+        const conv=await ChatConversation.findById(conversationId).select("unreadBy").lean().catch(()=>null);
+
         for(const other of otherIds){
           io.to(`user:${other}`).emit("chat:conversation_update",{
             conversationId,
-            lastMessage:{text:lastText,senderId:uid,createdAt:msg.createdAt}
+            lastMessage:{text:lastText,senderId:uid,createdAt:msg.createdAt},
+            unread:getUnreadOf(conv,other),
           });
         }
 
@@ -195,15 +226,40 @@ export function initSocket(httpServer,{corsOrigin}={}){
         if(!uidOid) throw new Error("UNAUTHORIZED");
         await ensureMember(conversationId,uid);
 
+        const mid=asOid(messageId);
+        if(!mid) throw new Error("Invalid messageId");
+
         const now=new Date();
+
         await ChatMessage.updateOne(
-          { _id: asOid(messageId)||messageId, conversationId },
-          { $addToSet:{ seenBy:{userId:uidOid,seenAt:now} } }
+          { _id: mid, conversationId },
+          [{
+            $set:{
+              seenBy:{
+                $let:{
+                  vars:{ base:{ $ifNull:["$seenBy",[]] } },
+                  in:{
+                    $concatArrays:[
+                      { $filter:{ input:"$$base", as:"s", cond:{ $ne:["$$s.userId", uidOid] } } },
+                      [{ userId: uidOid, seenAt: now }]
+                    ]
+                  }
+                }
+              }
+            }
+          }]
         );
 
         await resetUnread(conversationId,uid);
+        io.to(`user:${uid}`).emit("chat:conversation_update",{conversationId,unread:0});
 
-        io.to(`conv:${conversationId}`).emit("chat:seen_update",{conversationId,messageId,userId:uid,seenAt:now});
+        io.to(`conv:${conversationId}`).emit("chat:seen_update",{
+          conversationId,
+          messageId:String(mid),
+          userId:uid,
+          seenAt:now.toISOString()
+        });
+
         ack?.({ok:true});
       }catch(e){ack?.({ok:false,message:e?.message||"seen failed"})}
     });

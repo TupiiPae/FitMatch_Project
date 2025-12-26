@@ -2,6 +2,7 @@ import ChatMessage from "../models/ChatMessage.js";
 import MatchRoom from "../models/MatchRoom.js";
 import { responseOk } from "../utils/response.js";
 import { uploadImageWithResize } from "../utils/cloudinary.js";
+import ChatConversation from "../models/ChatConversation.js";
 
 const uidFromReq=(req)=>String(req?.userId||req?.user?._id||"");
 
@@ -54,5 +55,36 @@ export async function uploadChatImage(req,res,next){
       name:file.originalname||"",
       size:file.size||0,
     });
+  }catch(e){next(e)}
+}
+
+export async function getConversationSummary(req,res,next){
+  try{
+    const uid=uidFromReq(req);
+    const { id }=req.params;
+    await ensureMember(id,uid);
+
+    let conv=await ChatConversation.findById(id).select("type lastMessage lastMessageAt unreadBy").lean();
+    if(!conv){
+      const room=await MatchRoom.findById(id).lean();
+      if(room){
+        try{
+          await ChatConversation.create({
+            _id:id,
+            type: room.type==="group" ? "group" : "duo",
+            members:(room.members||[]).map(m=>m.user).filter(Boolean),
+            lastMessage:null,
+            lastMessageAt:null,
+            unreadBy:{},
+          });
+        }catch{}
+      }
+      conv=await ChatConversation.findById(id).select("type lastMessage lastMessageAt unreadBy").lean();
+    }
+
+    const m=conv?.unreadBy;
+    const unread=typeof m?.get==="function" ? Number(m.get(String(uid))||0) : Number(m?.[String(uid)]||0);
+
+    return responseOk(res,{conversationId:id,unread,type:conv?.type||null,lastMessage:conv?.lastMessage||null,lastMessageAt:conv?.lastMessageAt||null});
   }catch(e){next(e)}
 }

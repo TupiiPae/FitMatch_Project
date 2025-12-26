@@ -14,7 +14,7 @@ const AttachmentSchema=new Schema({
 },{_id:false});
 
 const ReactionSchema=new Schema({
-  emoji:{type:String,enum:["like","heart","laugh","sad","angry"],required:true},
+  emoji:{type:String,enum:["like","heart","laugh","sad","angry","wow"],required:true},
   userId:{type:Schema.Types.ObjectId,ref:"User",required:true},
   reactedAt:{type:Date,default:Date.now}
 },{_id:false});

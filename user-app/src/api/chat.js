@@ -11,3 +11,8 @@ export async function uploadChatImage(conversationId, file){
   const r=await api.post(`/chat/conversations/${conversationId}/images`,fd,{headers:{"Content-Type":"multipart/form-data"}});
   return r.data?.data ?? r.data; // {type:"image",url,name,size}
 }
+
+export async function getChatConversationSummary(conversationId){
+  const r=await api.get(`/chat/conversations/${conversationId}/summary`);
+  return r.data?.data ?? r.data;
+}
