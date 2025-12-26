@@ -9,6 +9,7 @@ import {
   createOrGetDmConversation,
   searchDmUsers,
   getSharedTeam,
+  deleteDmConversation,
 } from "../controllers/chat.controller.js";
 import { uploadChatImageSingle } from "../middleware/upload.js";
 
@@ -31,5 +32,6 @@ r.get("/dm/conversations", auth, noStore, listDmConversations);
 r.post("/dm/conversations", auth, noStore, createOrGetDmConversation);
 r.get("/dm/users", auth, noStore, searchDmUsers);
 r.get("/shared-team", auth, noStore, getSharedTeam);
+r.delete("/dm/conversations/:id", auth, noStore, deleteDmConversation)
 
 export default r;

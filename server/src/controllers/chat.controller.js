@@ -449,3 +449,33 @@ export async function getSharedTeam(req, res, next) {
   }
 }
 
+// ===================================================
+// DM: DELETE /api/chat/dm/conversations/:id
+// - Xóa toàn bộ tin nhắn của conversation (duo)
+// - Xóa ChatConversation để sidebar không còn preview/unread
+// ===================================================
+export async function deleteDmConversation(req, res, next) {
+  try {
+    const uid = uidFromReq(req);
+    const uidOid = asOid(uid);
+    if (!uidOid) throw Object.assign(new Error("UNAUTHORIZED"), { status: 401 });
+
+    const conversationId = String(req.params?.id || "").trim();
+    const cid = asOid(conversationId);
+    if (!cid) throw Object.assign(new Error("Invalid conversationId"), { status: 400 });
+
+    const room = await ensureMember(conversationId, uid);
+
+    // chỉ cho xóa trong DM/duo
+    if (String(room?.type || "") !== "duo") {
+      throw Object.assign(new Error("Chỉ hỗ trợ xóa đoạn chat DM (duo)."), { status: 400 });
+    }
+
+    await ChatMessage.deleteMany({ conversationId: cid });
+    await ChatConversation.deleteOne({ _id: cid });
+
+    return responseOk(res, { deleted: true, conversationId });
+  } catch (e) {
+    next(e);
+  }
+}

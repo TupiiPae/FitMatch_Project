@@ -271,3 +271,93 @@
 .msg-right-head{
   height:68px;
 }
+
+/* ===== delete icon on hover ===== */
+.msg-item{
+  position:relative;
+  padding-right:52px; /* chừa chỗ cho icon thùng rác */
+  outline:none;
+}
+.msg-item:focus{ box-shadow: 0 0 0 2px rgba(239,68,68,.25); }
+
+.msg-trash{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  width:28px;height:28px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:#e5e7eb;
+  cursor:pointer;
+  opacity:0;
+  pointer-events:none;
+  font-size: 12px;
+}
+.msg-item:hover .msg-trash{
+  opacity:1;
+  pointer-events:auto;
+}
+.msg-trash:hover{
+  background:rgba(239,68,68,.18);
+  border-color:rgba(239,68,68,.35);
+  color:#fff;
+}
+
+/* ===== confirm modal ===== */
+.msg-modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:2500;
+}
+.msg-modal{
+  width:min(420px, calc(100vw - 28px));
+  background:#121212;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;
+  padding:14px;
+  color:#e5e7eb;
+}
+.msg-modal-title{
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+}
+.msg-modal-sub{
+  margin-top:8px;
+  font-size:13px;
+  line-height:1.45;
+  opacity:.9;
+}
+.msg-modal-actions{
+  margin-top:14px;
+  display:flex;
+  justify-content:flex-end;
+  gap:6px;
+}
+.msg-btn{
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.msg-actions.ghost {
+  background: #020617;
+  border-color: #4b5563;
+  color: #e5e7eb;
+}
+.msg-btn:hover{ background:rgba(255,255,255,.10); }
+.msg-btn.danger{
+  background: #f00519;
+  color: #fff;
+}
+.msg-btn.danger:hover{ background:#ef4444; }
+.msg-btn:disabled{ opacity:.6; cursor:not-allowed; }

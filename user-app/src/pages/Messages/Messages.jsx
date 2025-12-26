@@ -80,6 +80,61 @@ export default function Messages() {
   const [sideOpen, setSideOpen] = useState(false);
   const [sideUser, setSideUser] = useState(null);
 
+    // ===== delete conversation (box chat) =====
+  const [delOpen, setDelOpen] = useState(false);
+  const [delConv, setDelConv] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const openDelete = (c) => {
+    if (!c?._id) return;
+    setDelConv(c);
+    setDelOpen(true);
+  };
+
+  const closeDelete = () => {
+    if (deleting) return;
+    setDelOpen(false);
+    setDelConv(null);
+  };
+
+  const confirmDelete = async () => {
+    const cid = String(delConv?._id || "");
+    if (!cid) return;
+
+    try {
+      setDeleting(true);
+
+      await api.delete(`/api/chat/dm/conversations/${cid}`);
+
+      // remove khỏi sidebar ngay
+      setConvs((prev) => safeArr(prev).filter((x) => String(x?._id || "") !== cid));
+
+      // nếu đang mở đúng conv thì đóng
+      if (String(activeConvId || "") === cid) {
+        setActiveConvId("");
+        setActivePeer(null);
+      }
+
+      toast.success("Đã xóa đoạn chat");
+      closeDelete();
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.response?.data?.message || "Không thể xóa đoạn chat");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ESC để đóng modal
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && delOpen) closeDelete();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [delOpen, deleting]);
+
+
   // header: shared team
   const [sharedInfo, setSharedInfo] = useState({ loading: false, text: "" });
 
@@ -411,10 +466,18 @@ export default function Messages() {
     const lastAt = c?.lastMessageAt || c?.lastMessage?.createdAt || null;
 
     return (
-      <button
+      <div
         key={String(c._id)}
         className={`msg-item ${active ? "is-active" : ""}`}
+        role="button"
+        tabIndex={0}
         onClick={() => openConv(c)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openConv(c);
+          }
+        }}
       >
         <img
           className="msg-ava"
@@ -422,6 +485,7 @@ export default function Messages() {
           alt=""
           onError={(e) => (e.currentTarget.src = "/images/avatar.png")}
         />
+
         <div className="msg-mid">
           <div className="msg-top">
             <div className="msg-name">
@@ -430,13 +494,27 @@ export default function Messages() {
             </div>
             {unread > 0 ? <span className="msg-badge">{unread}</span> : null}
           </div>
+
           <div className="msg-sub">
             <span className="msg-last">{lastText || " "}</span>
             {lastAt ? <span className="msg-dot">•</span> : null}
             {lastAt ? <span className="msg-time">{dayjs(lastAt).format("HH:mm")}</span> : null}
           </div>
         </div>
-      </button>
+
+        <button
+          type="button"
+          className="msg-trash"
+          title="Xóa đoạn chat"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openDelete(c);
+          }}
+        >
+          <i className="fa-solid fa-trash" />
+        </button>
+      </div>
     );
   };
 
@@ -602,6 +680,32 @@ export default function Messages() {
           </div>
         </main>
       </div>
+
+            {delOpen && (
+        <div
+          className="msg-modal-backdrop"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeDelete();
+          }}
+        >
+          <div className="msg-modal" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="msg-modal-title">Xóa đoạn chat?</div>
+            <div className="msg-modal-sub">
+              Bạn sẽ xóa toàn bộ tin nhắn với{" "}
+              <b>{getName(delConv?.peer)}</b>. Thao tác này không thể hoàn tác.
+            </div>
+
+            <div className="msg-modal-actions">
+              <button className="msg-btn ghost" onClick={closeDelete} disabled={deleting}>
+                Hủy
+              </button>
+              <button className="msg-btn danger" onClick={confirmDelete} disabled={deleting}>
+                {deleting ? "Đang xóa..." : "Xóa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <UserSideModal
         open={sideOpen}
