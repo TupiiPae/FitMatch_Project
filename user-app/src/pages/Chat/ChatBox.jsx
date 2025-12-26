@@ -748,7 +748,10 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
           const hasReactBadge=!isDeleted && badgeCount>0 && badgeEmojis.length;
 
           const showSendMark=mine && row.end && !!sendMark?.state && String(sendMark?.msgId||"")===rid && !isDeleted;
-          const showSeen=rid && String(rid)===String(lastReadableId) && row.end && lastSeenUsers.length>0;
+          const showSeen=mine && row.end && rid && String(rid)===String(lastReadableId) && lastSeenUsers.length>0;
+          const seenShow=showSeen?lastSeenUsers.slice(0,5):[];
+          const seenMore=showSeen?Math.max(0,lastSeenUsers.length-5):0;
+
           const dragOn=String(dragOverMid||"")===rid;
           const reactOpen=String(reactFor||"")===rid;
 
@@ -886,14 +889,25 @@ export default function ChatBox({ conversationId, meId, members=[], height=520, 
 
                   {showSendMark && (
                     <div className={"fm-chat-sendmark-float"+(mine?" is-mine":"")}>
-                      {sendMark.state==="sending"
-                        ? (<><i className="fa-solid fa-circle-notch fa-spin" /> Đang gửi</>)
-                        : (<><i className="fa-solid fa-check" /> Đã gửi</>)
-                      }
+                      {sendMark.state==="sending" ? (
+                        <><i className="fa-solid fa-circle-notch fa-spin" /> Đang gửi</>
+                      ) : showSeen ? (
+                        <span className="fm-chat-sendseen" title="Đã xem">
+                          {seenShow.map(uid=>{
+                            const u=memberMap.get(String(uid))||null;
+                            const ava=u?.avatarUrl||u?.imageUrl||"/images/avatar.png";
+                            const nm=u?.name||u?.nickname||"Người dùng";
+                            return <img key={uid} className="fm-chat-seen-ava" src={ava} alt={nm} title={`${nm} đã xem`} onError={(e)=>{e.currentTarget.src="/images/avatar.png";}}/>;
+                          })}
+                          {seenMore>0 ? <span className="fm-chat-seen-more">+{seenMore}</span> : null}
+                        </span>
+                      ) : (
+                        <><i className="fa-solid fa-check" /> Đã gửi</>
+                      )}
                     </div>
                   )}
 
-                  {showSeen && (
+                  {showSeen && !showSendMark && (
                     <div className={"fm-chat-seen"+(mine?" is-mine":"")}>
                       {lastSeenUsers.map(uid=>{
                         const u=memberMap.get(String(uid))||null;

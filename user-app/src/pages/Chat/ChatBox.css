@@ -238,6 +238,8 @@
 .fm-chat-undo-btn{border:none;background:transparent;color:#1A73E8;font-weight:600;cursor:pointer; font-size: 13px;}
 .fm-chat-undo-btn:hover{text-decoration:underline}
 
-.fm-chat-seen{margin-top:6px;display:flex;gap:6px;align-items:center}
+.fm-chat-seen{display:flex;gap:3px;align-items:center}
 .fm-chat-seen.is-mine{justify-content:flex-end}
 .fm-chat-seen-ava{width:18px;height:18px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.7)}
+.fm-chat-sendseen{display:flex;align-items:center}
+.fm-chat-seen-more{margin-left:6px;font-size:12px;opacity:.8;font-weight:600}
