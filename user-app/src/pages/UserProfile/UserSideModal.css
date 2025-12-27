@@ -27,7 +27,7 @@
 
 .usp-note{margin-top:12px;color:rgba(234,243,255,.55);font-size:12px}
 
-.usp-actions{margin-top:auto;display:flex;gap:10px;justify-content:flex-end;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+.usp-actions{margin-top:auto;display:flex;gap:10px;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(255,255,255,.08); font-size: 14px;width: 100%;}
 .usp-btn{border:0;border-radius:4px;padding:10px 14px;font-weight:600;cursor:pointer;display:flex;gap:8px;align-items:center}
 .usp-btn:disabled{opacity:.6;cursor:not-allowed}
 .usp-btn-ghost{background:rgba(255,255,255,.08);color:#eaf3ff}

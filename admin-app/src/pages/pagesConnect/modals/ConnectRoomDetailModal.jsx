@@ -93,7 +93,7 @@ export default function ConnectRoomDetailModal({
                   <MemberChip m={m}/>
                   <div className="cr-mact">
                     <button className="btn ghost sm" onClick={()=>onOpenReports(m)}>
-                      <i className="fa-solid fa-flag" /> <span>Xem báo cáo</span>
+                      <i className="fa-solid fa-triangle-exclamation"></i> <span>Xem báo cáo</span>
                     </button>
 
                     {d.type==="group" && m.role!=="owner" && (

@@ -232,7 +232,7 @@ export default function ConnectRooms_List(){
           <div className="ct-filter-row">
             <select value={status} onChange={(e)=>setStatus(e.target.value)}>{STATUS_OPTS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>
             <button type="button" className={"cr-pill"+(pendingOnly?" on":"")} onClick={()=>setPendingOnly(v=>!v)}>
-              <i className="fa-solid fa-flag" /> <span>Chỉ báo cáo chờ xử lý</span>
+              <i className="fa-solid fa-triangle-exclamation"></i> <span>Chỉ báo cáo chờ xử lý</span>
             </button>
           </div>
         </div>
@@ -252,7 +252,7 @@ export default function ConnectRooms_List(){
               />
             </div>
             <div className="cell code">Mã</div>
-            <div className="cell name">{activeTab==="duo"?"Thành viên":"Nhóm"}</div>
+            <div className="cell name ctn">{activeTab==="duo"?"Thành viên":"Nhóm"}</div>
             {activeTab==="group" && <div className="cell info">Thông tin</div>}
             <div className="cell st">Trạng thái</div>
             <div className="cell rep">Báo cáo <i className="fa-regular fa-circle-question cr-tip" title="Báo cáo chờ xử lý / Tổng số báo cáo" /></div>
@@ -307,7 +307,7 @@ export default function ConnectRooms_List(){
                   </div>
                 )}
 
-                <div className="cell st">
+                <div className="cell st ctn">
                   <span className={"cr-badge "+(it.status||"")}>{statusLabel(it.status)}</span>
                   {activeTab==="duo" && <div className="cr-sub">Thành viên: {it.membersCount}/{it.maxMembers}</div>}
                 </div>
