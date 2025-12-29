@@ -6,8 +6,17 @@ import mongoose from "mongoose";
 import ChatMessage from "../models/ChatMessage.js";
 import MatchRoom from "../models/MatchRoom.js";
 import ChatConversation from "../models/ChatConversation.js";
+import { User } from "../models/User.js";
+
+import { setIO } from "./io.js";
+import { createNotification } from "../utils/notify.js";
 
 let io = null;
+
+const notifySafe = async (payload) => {
+  try { await createNotification(payload); } catch {}
+};
+
 
 const safeArr = (v) => (Array.isArray(v) ? v : []);
 const normToken = (t) => (!t ? "" : String(t).replace(/^Bearer\s+/i, "").trim());
@@ -194,6 +203,7 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
   io = new Server(httpServer, {
     cors: { origin: corsOrigin || true, credentials: true },
   });
+  setIO(io);
 
   io.use((socket, next) => {
     try {
@@ -219,6 +229,15 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
   io.on("connection", (socket) => {
     const uid = String(socket.user?._id || "");
     const uidOid = asOid(uid);
+
+    let cachedSenderName = null;
+    const getSenderName = async () => {
+      if (cachedSenderName) return cachedSenderName;
+      const u = await User.findById(uid).select("username email profile.nickname").lean().catch(()=>null);
+      cachedSenderName = u?.profile?.nickname || u?.username || u?.email || "Người dùng FitMatch";
+      return cachedSenderName;
+    };
+
     if (uid) socket.join(`user:${uid}`);
 
     socket.on("chat:join", async ({ conversationId } = {}, ack) => {
@@ -302,6 +321,22 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
 
         const viewers = roomUserIds(`conv:${conversationId}`);
         const incUnreadFor = otherIds.filter((x) => !viewers.has(String(x)));
+
+        const isPersonalChat = room?.type !== "group";
+
+        if (isPersonalChat && incUnreadFor.length) {
+          const senderName = await getSenderName();
+          for (const toId of incUnreadFor) {
+            await notifySafe({
+              to: String(toId),
+              from: String(uid),
+              type: "chat_message",
+              title: `Tin nhắn mới từ ${senderName}`,
+              body: lastText,
+              data: { screen: "Messages", conversationId: String(conversationId) },
+            });
+          }
+        }
 
         await upsertConversationFromRoom(room, {
           lastText,
@@ -427,14 +462,12 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
 
         cb?.({ ok: true });
 
-        // ✅ notify riêng user
         io.to(`user:${uidStr}`).emit("chat:hidden_update", {
           conversationId: String(conversationId),
           messageId: String(messageId),
           hidden: true,
         });
 
-        // ✅ update sidebar realtime (lastMessage theo user)
         const conv = await ChatConversation.findById(cid).select("unreadBy").lean().catch(() => null);
         const { lastMessage, lastMessageAt } = await getLastVisibleForUser(conversationId, uidObj);
 

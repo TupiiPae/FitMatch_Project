@@ -43,12 +43,141 @@ export default function ConnectSidebar(){
   const [showCreateTeam,setShowCreateTeam]=useState(false);
   const [nearbyReloadKey,setNearbyReloadKey]=useState(0);
 
+    // ✅ intent điều hướng từ notification (state/query)
+  const [navIntent, setNavIntent] = useState(null);
+
+  const normMode = (m) => {
+    const s = String(m || "").trim().toLowerCase();
+    if (s === "group") return "group";
+    if (s === "duo" || s === "one_to_one" || s === "one-to-one" || s === "1:1") return "duo";
+    return null;
+  };
+
+  const normTab = (t) => {
+    const s = String(t || "").trim().toLowerCase();
+    if (!s) return null;
+    if (s.includes("request")) return "requests";
+    if (s.includes("nearby")) return "nearby";
+    if (s.includes("team")) return "team";
+    if (s.includes("duo")) return "duo";
+    return s; // fallback
+  };
+
+  const parseConnectIntent = (locationObj) => {
+    const search = locationObj?.search || "";
+    const qs = new URLSearchParams(search);
+
+    // state có thể là {data:{...}} hoặc {...}
+    const stRaw = locationObj?.state;
+    const st = stRaw?.data && typeof stRaw.data === "object" ? stRaw.data : stRaw;
+
+    const fromState =
+      st && (st.screen || st.tab || st.mode || st.roomId || st.requestId) ? st : null;
+
+    const fromQuery = {
+      screen: qs.get("screen") || null,
+      tab: qs.get("tab") || null,
+      mode: qs.get("mode") || null,
+      roomId: qs.get("roomId") || qs.get("room") || null,
+      requestId: qs.get("requestId") || qs.get("request") || null,
+    };
+    const hasQuery =
+      fromQuery.screen || fromQuery.tab || fromQuery.mode || fromQuery.roomId || fromQuery.requestId;
+
+    const raw = fromState || (hasQuery ? fromQuery : null);
+    if (!raw) return null;
+
+    if (raw.screen && String(raw.screen).toLowerCase() !== "connect") return null;
+
+    const tab = normTab(raw.tab);
+    const mode = normMode(raw.mode);
+
+    const roomId = raw.roomId ? String(raw.roomId) : null;
+    const requestId = raw.requestId ? String(raw.requestId) : null;
+
+    return {
+      screen: "Connect",
+      tab,
+      mode,
+      roomId,
+      requestId,
+      _fromState: !!fromState,
+    };
+  };
+
+  const buildCanonicalSearch = (intent) => {
+    const qs = new URLSearchParams();
+    qs.set("screen", "Connect");
+    if (intent?.tab) qs.set("tab", intent.tab);
+    if (intent?.mode) qs.set("mode", intent.mode);
+    if (intent?.roomId) qs.set("roomId", intent.roomId);
+    if (intent?.requestId) qs.set("requestId", intent.requestId);
+    const s = qs.toString();
+    return s ? `?${s}` : "";
+  };
+
   // ✅ route /ket-noi/duo | /ket-noi/nhom -> mở tab "Kết nối của tôi" + sync connectionMode
   useEffect(()=>{
     const p=loc?.pathname||"";
     if(p.includes("/ket-noi/duo")){setActiveTab("my-connections");setConnectionMode("one_to_one");}
     if(p.includes("/ket-noi/nhom")){setActiveTab("my-connections");setConnectionMode("group");}
   },[loc?.pathname]);
+
+    // ✅ Điều hướng theo notification intent (state/query) + canonicalize URL để refresh vẫn đúng
+  useEffect(() => {
+    const intent = parseConnectIntent(loc);
+    if (!intent) return;
+
+    // suy ra mode nếu thiếu nhưng tab gợi ý
+    const inferredMode =
+      intent.mode ||
+      (intent.tab === "team" ? "group" : intent.tab === "duo" ? "duo" : null);
+
+    // quyết định path mục tiêu
+    const desiredPath =
+      inferredMode === "group"
+        ? "/ket-noi/nhom"
+        : inferredMode === "duo"
+        ? "/ket-noi/duo"
+        : loc.pathname || "/ket-noi";
+
+    // mở đúng tab UI
+    if (intent.tab === "nearby") {
+      setActiveTab("nearby");
+      setShowCreateTeam(false);
+    } else {
+      setActiveTab("my-connections");
+      setShowCreateTeam(false);
+      // bật tab "Kết nối của tôi" nếu đi từ noti/request
+      if (intent.tab === "requests" || intent.requestId || intent.roomId) {
+        setHasRequestsTabEnabled(true);
+      }
+    }
+
+    // sync connectionMode (chỉ ảnh hưởng filter UI)
+    if (inferredMode === "group") setConnectionMode("group");
+    if (inferredMode === "duo") setConnectionMode("one_to_one");
+
+    // nếu intent có roomId thì prefill room để TabMyConnections render đúng (trước khi getMatchStatus về)
+    if (intent.roomId) {
+      setActiveRoomId(intent.roomId);
+      setActiveRoomType(inferredMode === "group" ? "group" : "duo");
+    }
+
+    // đẩy intent xuống TabMyConnections (để mở đúng sub-tab Requests/Room nếu bạn muốn)
+    setNavIntent({ ...intent, mode: inferredMode, targetPath: desiredPath });
+
+    // canonicalize URL (đặc biệt để refresh vẫn mở đúng)
+    const canonicalSearch = buildCanonicalSearch({ ...intent, mode: inferredMode });
+    const needReplace =
+      desiredPath !== (loc.pathname || "") ||
+      canonicalSearch !== (loc.search || "") ||
+      !!intent._fromState; // có state thì replace để xoá state
+
+    if (needReplace) {
+      nav({ pathname: desiredPath, search: canonicalSearch }, { replace: true, state: null });
+    }
+  }, [loc?.key]); // chạy mỗi lần location đổi
 
   useEffect(()=>{let cancelled=false;(async()=>{
     try{
@@ -266,7 +395,7 @@ export default function ConnectSidebar(){
               />
             )
           ) : (
-            <TabMyConnections currentUser={user} activeRoomId={activeRoomId} activeRoomType={activeRoomType} onEnteredRoom={handleEnteredRoom} onLeftRoom={handleLeftRoom} />
+            <TabMyConnections currentUser={user} activeRoomId={activeRoomId} activeRoomType={activeRoomType} onEnteredRoom={handleEnteredRoom} onLeftRoom={handleLeftRoom} navIntent={navIntent} onConsumeNavIntent={() => setNavIntent(null)}/>
           )}
         </main>
       </div>

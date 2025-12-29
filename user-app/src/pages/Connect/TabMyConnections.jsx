@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { getMyRequests, acceptMatchRequest, rejectMatchRequest, cancelMatchRequest } from "../../api/match";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  getMyRequests,
+  acceptMatchRequest,
+  rejectMatchRequest,
+  cancelMatchRequest,
+} from "../../api/match";
 import { toast } from "react-toastify";
 import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
 import DuoConnect from "./DuoConnect";
@@ -8,15 +13,40 @@ import TeamConnect from "./TeamConnect";
 import api from "../../lib/api";
 import UserSideModal from "../UserProfile/UserSideModal";
 
-const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
-const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
-const normType=(t)=>{if(!t)return null;const s=String(t).toLowerCase();if(s==="duo"||s==="one_to_one"||s==="one-to-one"||s==="1:1")return"duo";if(s==="group"||s==="team")return"group";return s;};
+const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/,"");
+const toAbs = (u) => { if(!u) return u; try{ return new URL(u,API_ORIGIN).toString() }catch{ return u } };
+const normType = (t) => {
+  if(!t) return null;
+  const s = String(t).toLowerCase();
+  if (s === "duo" || s === "one_to_one" || s === "one-to-one" || s === "1:1") return "duo";
+  if (s === "group" || s === "team") return "group";
+  return s;
+};
 const DEFAULT_AVATAR="/images/avatar.png";
 
 const norm=(v)=>(v||"").toString().trim().toLowerCase();
-const calcAge=(dob)=>{if(!dob) return null; const d=new Date(dob); if(Number.isNaN(d.getTime())) return null; const now=new Date(); let a=now.getFullYear()-d.getFullYear(); const m=now.getMonth()-d.getMonth(); if(m<0||(m===0&&now.getDate()<d.getDate())) a--; return a>=0&&a<=120?a:null;};
-const genderKey=(g)=>{const v=norm(g); if(!v) return null; if(["male","nam","m","man","men"].includes(v)) return "male"; if(["female","nu","nữ","f","woman","women"].includes(v)) return "female"; return "other";};
-const addrLabel=(addr)=>{const a=addr||{}; const parts=[a.ward,a.district,a.city].map(s=>(s||"").toString().trim()).filter(Boolean); return parts.join(" - ");};
+const calcAge=(dob)=>{
+  if(!dob) return null;
+  const d=new Date(dob);
+  if(Number.isNaN(d.getTime())) return null;
+  const now=new Date();
+  let a=now.getFullYear()-d.getFullYear();
+  const m=now.getMonth()-d.getMonth();
+  if(m<0||(m===0&&now.getDate()<d.getDate())) a--;
+  return a>=0&&a<=120?a:null;
+};
+const genderKey=(g)=>{
+  const v=norm(g);
+  if(!v) return null;
+  if(["male","nam","m","man","men"].includes(v)) return "male";
+  if(["female","nu","nữ","f","woman","women"].includes(v)) return "female";
+  return "other";
+};
+const addrLabel=(addr)=>{
+  const a=addr||{};
+  const parts=[a.ward,a.district,a.city].map(s=>(s||"").toString().trim()).filter(Boolean);
+  return parts.join(" - ");
+};
 
 const userToCard=(u)=>{
   const p=u?.profile||{};
@@ -31,9 +61,7 @@ const userToCard=(u)=>{
   const age=calcAge(dob);
 
   const gender=genderKey(p.gender??p.gioiTinh??p.sex??u?.gender??u?.sex);
-
-  const locationLabel=(u?.connectLocationLabel||p.locationLabel||u?.locationLabel||addrLabel(p.address||u?.address)||"").toString().trim();
-
+  const locationLabel=(u?.connectLocationLabel||p.locationLabel||addrLabel(p.address||u?.address)||"").toString().trim();
   const goal=(u?.connectGoalLabel||p.goalLabel||p.goal||u?.goal||"").toString().trim();
 
   const trainingTypes=Array.isArray(p.trainingTypes)?p.trainingTypes:(Array.isArray(u?.trainingTypes)?u.trainingTypes:[]);
@@ -47,7 +75,6 @@ const pickUserPayload=(res)=>{
   return payload?.user ?? payload?.data?.user ?? payload?.data ?? payload ?? null;
 };
 
-// nếu request có meta snapshot (giống TeamConnect bạn đã làm) thì tận dụng luôn
 const mergeReqMetaToCard=(card, meta, side /* "from" | "to" */)=>{
   if(!card || !meta) return card;
   const pre=side==="to"?"to":"from";
@@ -74,14 +101,28 @@ const mergeReqMetaToCard=(card, meta, side /* "from" | "to" */)=>{
 const cardLooksEmpty=(c)=>{
   if(!c) return true;
   const hasText = (s)=>!!String(s||"").trim();
-  return !hasText(c.bio) && !hasText(c.locationLabel) && !hasText(c.goal) && !hasText(c.intensityLabel) && !(Array.isArray(c.trainingTypes)&&c.trainingTypes.length) && !c.age && !c.gender;
+  return !hasText(c.bio) && !hasText(c.locationLabel) && !hasText(c.goal) && !hasText(c.intensityLabel)
+    && !(Array.isArray(c.trainingTypes)&&c.trainingTypes.length) && !c.age && !c.gender;
 };
 
+export default function TabMyConnections({
+  currentUser,
+  activeRoomId,
+  activeRoomType,
+  onEnteredRoom,
+  onLeftRoom,
 
-export default function TabMyConnections({ currentUser, activeRoomId, activeRoomType, onEnteredRoom, onLeftRoom }) {
+  // ✅ thêm 2 props mới từ ConnectSidebar
+  navIntent,
+  onConsumeNavIntent,
+}) {
   const nav = useNavigate();
+  const loc = useLocation();
 
-  const meId=useMemo(()=>String(currentUser?._id||currentUser?.id||currentUser?.user?._id||currentUser?.user?.id||""),[currentUser]);
+  const meId = useMemo(
+    ()=>String(currentUser?._id||currentUser?.id||currentUser?.user?._id||currentUser?.user?.id||""),
+    [currentUser]
+  );
 
   const [incoming, setIncoming] = useState([]);
   const [outgoing, setOutgoing] = useState([]);
@@ -96,18 +137,54 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
   const [userModalTarget,setUserModalTarget]=useState(null);
   const [userFetching,setUserFetching]=useState(false);
 
+  // ===== NAV / FOCUS REQUEST =====
+  const requestsAnchorRef = useRef(null);
+  const [focusReqId, setFocusReqId] = useState(null);
+  const [flashReqId, setFlashReqId] = useState(null);
+
+  // lấy requestId/tab từ query (phòng khi refresh)
+  useEffect(()=>{
+    const qs = new URLSearchParams(loc?.search || "");
+    const qTab = (qs.get("tab") || "").toLowerCase();
+    const qReq = qs.get("requestId") || qs.get("request") || null;
+
+    if(qReq) {
+      setFocusReqId(String(qReq));
+      return;
+    }
+    if(qTab.includes("request")) {
+      // tab=requests nhưng không có requestId -> scroll tới anchor
+      setFocusReqId(null);
+      // scroll sau khi load xong
+    }
+  },[loc?.search]);
+
+  // nhận navIntent từ ConnectSidebar (click notification)
+  useEffect(()=>{
+    if(!navIntent) return;
+
+    if(navIntent?.requestId){
+      setFocusReqId(String(navIntent.requestId));
+    } else if (navIntent?.tab === "requests") {
+      setFocusReqId(null);
+    }
+
+    // consume để lần sau không chạy lại
+    onConsumeNavIntent?.();
+  }, [navIntent, onConsumeNavIntent]);
+
   const openUserModal=async(rawUser, req=null, side="from")=>{
     const uid=String(rawUser?._id||rawUser?.id||"");
     if(!uid) return;
     if(meId && uid===String(meId)) return;
 
-    // 1) dựng card từ data đang có (thường chỉ nickname/avatar)
     let card=userToCard(rawUser);
     card=mergeReqMetaToCard(card, req?.meta, side);
 
     setUserModalTarget(card);
     setUserModalOpen(true);
     if(!cardLooksEmpty(card)) return;
+
     try{
       setUserFetching(true);
       let res=null;
@@ -115,7 +192,7 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
       catch{
         try{ res=await api.get(`/users/${uid}`); }
         catch{
-          res=await api.get(`/user/public/${uid}`); // nếu bạn có route public
+          res=await api.get(`/user/public/${uid}`);
         }
       }
 
@@ -132,6 +209,7 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
       setUserFetching(false);
     }
   };
+
   const closeUserModal=()=>setUserModalOpen(false);
   const handleViewPublicProfile=(uid)=>{ setUserModalOpen(false); toast.info("Tính năng xem hồ sơ public của người dùng đang phát triển."); };
   const handleStartChat=(uid)=>{ setUserModalOpen(false); toast.info("Chức năng nhắn tin riêng đang phát triển."); };
@@ -165,6 +243,31 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
   useEffect(() => { load(); }, []);
 
   const handleLeftRoomInternal = () => { onLeftRoom && onLeftRoom(); load(); };
+
+  // ✅ scroll tới request/anchor sau khi data load xong
+  useEffect(()=>{
+    if(loading) return;
+    if(errorMsg) return;
+
+    // nếu có requestId -> scroll tới đúng row
+    if(focusReqId){
+      const el = document.getElementById(`req-${focusReqId}`);
+      if(el){
+        el.scrollIntoView({ behavior:"smooth", block:"center" });
+        setFlashReqId(String(focusReqId));
+        const t = setTimeout(()=>setFlashReqId(null), 4500);
+        return ()=>clearTimeout(t);
+      }
+    }
+
+    // nếu tab=requests mà không có requestId -> scroll tới anchor
+    const qs = new URLSearchParams(loc?.search || "");
+    const qTab = (qs.get("tab") || "").toLowerCase();
+    const wantsRequests = (navIntent?.tab === "requests") || qTab.includes("request");
+    if(wantsRequests && requestsAnchorRef.current){
+      requestsAnchorRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
+    }
+  }, [loading, errorMsg, focusReqId, incoming, outgoing, loc?.search]); // eslint-disable-line
 
   async function handleConfirm() {
     const { mode, requestId } = confirmState;
@@ -216,12 +319,22 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
   const isInGroupRoom = !!activeRoomId && roomTypeNorm === "group";
   if (isInGroupRoom) return <section className="cn-myconnections"><TeamConnect onLeftRoom={handleLeftRoomInternal} /></section>;
 
+  const highlightStyle = (id) => {
+    if(!id) return null;
+    return (flashReqId && String(flashReqId) === String(id))
+      ? { outline: "2px solid rgba(69,195,154,0.75)", outlineOffset: 4, borderRadius: 14 }
+      : null;
+  };
+
   return (
     <section className="cn-myconnections">
       <header className="cn-main-header">
         <h1>Các yêu cầu của bạn</h1>
         <p>Tìm kiếm những người có cùng mục tiêu và lịch tập, tạo nhóm tối đa 5 người để cùng nhau hoàn thành mục tiêu.</p>
       </header>
+
+      {/* ✅ anchor để scroll khi tab=requests */}
+      <div ref={requestsAnchorRef} />
 
       {loading && <div className="cn-empty" style={{ marginTop: 6 }}><p>Đang tải danh sách lời mời...</p></div>}
       {errorMsg && !loading && <div className="cn-error" style={{ marginTop: 6 }}><p>{errorMsg}</p></div>}
@@ -248,7 +361,12 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const createdAtText = formatViDateTime(req.createdAt);
 
                 return (
-                  <article key={req._id} className="cn-request-row">
+                  <article
+                    key={req._id}
+                    id={`req-${req._id}`}
+                    className="cn-request-row"
+                    style={highlightStyle(req._id)}
+                  >
                     <div className="cn-request-thumb" onClick={()=>openUserModal(fromUser, req, "from")} style={{cursor:"pointer"}}>
                       <img src={thumbSrc} alt={nickname} onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}} />
                     </div>
@@ -296,7 +414,12 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const createdAtText = formatViDateTime(req.createdAt);
 
                 return (
-                  <article key={req._id} className="cn-request-row">
+                  <article
+                    key={req._id}
+                    id={`req-${req._id}`}
+                    className="cn-request-row"
+                    style={highlightStyle(req._id)}
+                  >
                     <div className="cn-request-thumb" onClick={()=>openUserModal(toUser, req, "to")} style={{cursor:"pointer"}}>
                       <img src={thumbSrc} alt={nickname} onError={(e)=>{e.currentTarget.onerror=null;e.currentTarget.src=DEFAULT_AVATAR;}} />
                     </div>
@@ -341,7 +464,12 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
                 const note = req.message || "Bạn đã gửi lời mời tham gia nhóm, đang chờ quản lý nhóm duyệt.";
 
                 return (
-                  <article key={req._id} className="cn-request-row">
+                  <article
+                    key={req._id}
+                    id={`req-${req._id}`}
+                    className="cn-request-row"
+                    style={highlightStyle(req._id)}
+                  >
                     {imageUrl && <div className="cn-request-thumb"><img src={imageUrl} alt={groupName} /></div>}
                     <div className="cn-request-main-col">
                       <div className="cn-request-type">Lời mời bạn gửi đi</div>
@@ -365,7 +493,14 @@ export default function TabMyConnections({ currentUser, activeRoomId, activeRoom
         </div>
       )}
 
-      <ConnectRequestConfirmModal open={confirmState.open} mode={confirmState.mode} targetName={confirmState.targetName} onClose={closeConfirm} onConfirm={handleConfirm} loading={confirmLoading} />
+      <ConnectRequestConfirmModal
+        open={confirmState.open}
+        mode={confirmState.mode}
+        targetName={confirmState.targetName}
+        onClose={closeConfirm}
+        onConfirm={handleConfirm}
+        loading={confirmLoading}
+      />
 
       <UserSideModal
         open={userModalOpen}
@@ -384,6 +519,9 @@ function formatViDateTime(value) {
   try {
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return "—";
-    return d.toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+    return d.toLocaleString("vi-VN", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: false
+    });
   } catch { return "—"; }
 }

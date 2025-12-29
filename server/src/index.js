@@ -34,6 +34,8 @@ import adminMatchRoomsRoutes from "./routes/admin.matchrooms.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
 import adminContactRoutes from "./routes/admin.contact.routes.js";
 
+import notificationRoutes from "./routes/notification.routes.js";
+
 import chatRoutes from "./routes/chat.routes.js";
 import { initSocket } from "./realtime/socket.js";
 
@@ -154,6 +156,7 @@ app.use("/api", contactRoutes);
 app.use("/api", faqRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api", matchRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ===== Debug: list registered routes in DEV =====
 if (isDev) {

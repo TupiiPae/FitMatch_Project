@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 // Import thêm useLocation
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCaretDown, faAngleRight, faCalendar, faFire, faLightbulb, faPenToSquare,
@@ -8,13 +8,13 @@ import {
   faShieldHalved, faCamera, faChartLine, faUserFriends, faMobileAlt,
   faAppleAlt, faUtensils, faBrain, faCalculator, faBookOpen,
   faHeartPulse, faPersonRunning, faDumbbell, faVolleyball,
-  faClipboard,
-  faClipboardList,
-  faClipboardCheck
+  faClipboard,faClipboardList,faClipboardCheck,faBell,
 } from "@fortawesome/free-solid-svg-icons";
 import { getMe } from "../../api/account";
 import api from "../../lib/api";
 import { toast } from "react-toastify";
+import { getSocket } from "../../lib/socket";
+import NotificationBell from "../NotificationBell/NotificationBell";
 
 const logoHref =
   (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") +
@@ -60,6 +60,103 @@ export default function Navbar({
   const [accountOpen, setAccountOpen] = useState(false);
   const [openLogout, setOpenLogout] = useState(false);
 
+    // ================= NOTIFICATIONS =================
+  const nav = useNavigate();
+
+  const [notiOpen, setNotiOpen] = useState(false);
+  const [notiLoading, setNotiLoading] = useState(false);
+  const [notiItems, setNotiItems] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const safeArr = (v) => (Array.isArray(v) ? v : []);
+
+  const parseNotiList = (res) => {
+    // hỗ trợ nhiều kiểu responseOk/res.data
+    const d = res?.data ?? res;
+    const data = d?.data ?? d;
+    const items =
+      data?.items ??
+      data?.notifications ??
+      data?.rows ??
+      (Array.isArray(data) ? data : []);
+    return safeArr(items);
+  };
+
+  const fetchNotifications = async ({ silent = false } = {}) => {
+    try {
+      if (!silent) setNotiLoading(true);
+
+      // ✅ bạn có thể tạo endpoint này trên BE:
+      // GET /api/notifications?limit=20
+      const r = await api.get("/api/notifications", { params: { limit: 20 } });
+      const items = parseNotiList(r);
+
+      setNotiItems(items);
+
+      // nếu API trả kèm unread -> dùng luôn, không thì tính tạm
+      const unread =
+        Number(r?.data?.data?.unread ?? r?.data?.unread ?? NaN);
+      if (Number.isFinite(unread)) setUnreadCount(unread);
+      else setUnreadCount(items.filter((x) => !x?.readAt).length);
+    } catch (e) {
+      // nếu bạn chưa làm API, phần realtime vẫn chạy
+    } finally {
+      if (!silent) setNotiLoading(false);
+    }
+  };
+
+  const markRead = async (id) => {
+    if (!id) return;
+    // PATCH /api/notifications/:id/read
+    try {
+      await api.patch(`/api/notifications/${id}/read`);
+    } catch {}
+    setNotiItems((prev) =>
+      prev.map((x) =>
+        String(x?._id) === String(id) ? { ...x, readAt: x.readAt || new Date().toISOString() } : x
+      )
+    );
+    setUnreadCount((c) => Math.max(0, Number(c || 0) - 1));
+  };
+
+  const markAllRead = async () => {
+    // PATCH /api/notifications/read-all
+    try {
+      await api.patch("/api/notifications/read-all");
+    } catch {}
+    setNotiItems((prev) => prev.map((x) => ({ ...x, readAt: x.readAt || new Date().toISOString() })));
+    setUnreadCount(0);
+  };
+
+  const goByNoti = async (n) => {
+    if (!n) return;
+
+    const id = String(n?._id || "");
+    if (id) await markRead(id);
+
+    const type = String(n?.type || "");
+    const data = n?.data || {};
+
+    setNotiOpen(false);
+
+    // map route theo type (bạn có thể mở rộng thêm)
+    if (type === "chat_message" && data?.conversationId) {
+      nav(`/tin-nhan?conversationId=${encodeURIComponent(String(data.conversationId))}`, {
+        state: { conversationId: String(data.conversationId) },
+      });
+      return;
+    }
+
+    // match request / accept / reject => về trang kết nối
+    if (type.startsWith("match_") || type.includes("group_") || type.includes("duo")) {
+      nav("/ket-noi");
+      return;
+    }
+
+    // fallback
+    nav("/home");
+  };
+
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,6 +180,49 @@ export default function Navbar({
       }
     })();
     return () => { mounted = false; };
+  }, []);
+
+    // Realtime notifications
+  useEffect(() => {
+    const token =
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("jwt");
+
+    if (!token) return;
+
+    // load lần đầu (nếu bạn đã có API)
+    fetchNotifications({ silent: true });
+
+    const s = getSocket?.();
+    if (!s) return;
+
+    const onNew = (n) => {
+      if (!n) return;
+
+      // prepend item
+      setNotiItems((prev) => {
+        const id = String(n?._id || "");
+        if (id && prev.some((x) => String(x?._id) === id)) return prev;
+        return [n, ...prev].slice(0, 30);
+      });
+
+      // tăng badge (server cũng sẽ bắn noti:count)
+      if (!n?.readAt) setUnreadCount((c) => Number(c || 0) + 1);
+    };
+
+    const onCount = (p) => {
+      const u = Number(p?.unread ?? p?.count ?? NaN);
+      if (Number.isFinite(u)) setUnreadCount(u);
+    };
+
+    s.on("noti:new", onNew);
+    s.on("noti:count", onCount);
+
+    return () => {
+      s.off("noti:new", onNew);
+      s.off("noti:count", onCount);
+    };
   }, []);
 
   // Logic xử lý props (KHÔNG THAY ĐỔI)
@@ -110,7 +250,7 @@ export default function Navbar({
   useEffect(() => {
     const onDocClick = (e) => {
       if (!accRef.current) return;
-      if (!accRef.current.contains(e.target)) setAccountOpen(false);
+      if (!accRef.current.contains(e.target)) {setAccountOpen(false); setNotiOpen(false);}
     };
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
@@ -335,6 +475,7 @@ export default function Navbar({
 
         {/* RIGHT: HELLO + AVATAR + ACCOUNT DROPDOWN (KHÔNG THAY ĐỔI) */}
         <div className="fm-right" ref={accRef}>
+          <NotificationBell />
           <span className="fm-hello">
             Xin chào, <strong>{displayNickname}</strong>
             {loading ? "…" : ""}
