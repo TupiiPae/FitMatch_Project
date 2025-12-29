@@ -750,7 +750,7 @@ export default function TeamConnect({ onLeftRoom }){
                     <div className="tc-group-meta">
                       {team.createdDateLabel ? (
                         <>
-                          <span className="tc-group-created">Tạo ngày {team.createdDateLabel}</span>
+                          <span className="tc-group-created">Nhóm thành lập {team.createdDateLabel}</span>
                           {team.createdDays ? (
                             <span className="tc-group-days"> · Đã hoạt động {team.createdDays} ngày</span>
                           ) : null}

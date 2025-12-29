@@ -532,7 +532,7 @@ export default function Messages() {
               <input
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Tìm kiếm người dùng"
+                placeholder="Tìm kiếm người dùng xung quanh bạn "
               />
               {!!searchText && (
                 <button
