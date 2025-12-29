@@ -50,6 +50,27 @@ function useQueryUserId() {
   }, [loc.search]);
 }
 
+const normType = (t) => String(t || "").toLowerCase().trim();
+const isDmConv = (c, meId = "") => {
+  const t = normType(c?.type || c?.kind || c?.conversationType);
+  if (t) return t === "dm" || t === "direct";
+  if (c?.roomId || c?.matchRoomId || c?.room || c?.matchRoom) return false;
+  const members = safeArr(c?.members);
+  if (members.length !== 2) return false;
+
+  return true;
+};
+
+const ensurePeer = (c, meId = "") => {
+  if (c?.peer) return c;
+  const mems = safeArr(c?.members)
+    .map((m) => m?.user || m) 
+    .filter(Boolean);
+  const peer = mems.find((u) => getId(u) && getId(u) !== String(meId)) || null;
+  return { ...c, peer };
+};
+
+
 const unwrapItems = (payload) => {
   if (!payload) return [];
   if (Array.isArray(payload)) return payload;
@@ -104,7 +125,7 @@ export default function Messages() {
     try {
       setDeleting(true);
 
-      await api.delete(`/api/chat/dm/conversations/${cid}`);
+      await api.delete(`/chat/dm/conversations/${cid}`);
 
       // remove khỏi sidebar ngay
       setConvs((prev) => safeArr(prev).filter((x) => String(x?._id || "") !== cid));
@@ -179,7 +200,12 @@ export default function Messages() {
       setMe(meData);
 
       const listRaw = await listDmConversations();
-      const arr = unwrapItems(listRaw);
+      const rawArr = unwrapItems(listRaw);
+
+      const meId = String(meData?._id || "");
+      const arr = rawArr
+        .filter((c) => isDmConv(c, meId))
+        .map((c) => ensurePeer(c, meId));
 
       arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
       setConvs(arr);
@@ -211,6 +237,9 @@ export default function Messages() {
   // ===== realtime update =====
   useEffect(() => {
     const onConvUpdate = (p) => {
+      const pType = normType(p?.type || p?.kind || p?.conversationType);
+      if (pType && pType !== "dm" && pType !== "direct") return;
+
       const cid = String(p?.conversationId || "");
       if (!cid) return;
 
@@ -222,7 +251,12 @@ export default function Messages() {
         if (idx === -1) {
           listDmConversations()
             .then((raw) => {
-              const next = unwrapItems(raw);
+              const meId = String(me?._id || "");
+              const nextRaw = unwrapItems(raw);
+              const next = nextRaw
+                .filter((c) => isDmConv(c, meId))
+                .map((c) => ensurePeer(c, meId));
+
               next.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
               setConvs(next);
             })
@@ -271,7 +305,12 @@ export default function Messages() {
     const onHidden = () => {
       listDmConversations()
         .then((raw) => {
-          const arr = unwrapItems(raw);
+          const meId = String(me?._id || "");
+          const arrRaw = unwrapItems(raw);
+          const arr = arrRaw
+            .filter((c) => isDmConv(c, meId))
+            .map((c) => ensurePeer(c, meId));
+
           arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
           setConvs(arr);
         })
@@ -279,7 +318,7 @@ export default function Messages() {
     };
     socket.on("chat:hidden_update", onHidden);
     return () => socket.off("chat:hidden_update", onHidden);
-  }, [socket]);
+  }, [socket, me]);
 
   // ===== open by query /tin-nhan?u=USERID =====
   useEffect(() => {
@@ -344,6 +383,11 @@ export default function Messages() {
   }, [searchText]);
 
   const openConv = (c) => {
+    const meId = String(me?._id || "");
+    if (!isDmConv(c, meId)) {
+      toast.info("Đoạn chat này thuộc Connect (Duo/Group), không hiển thị trong Tin nhắn.");
+      return;
+    }
     const cid = String(c?._id || "");
     if (!cid) return;
     setActiveConvId(cid);
@@ -374,10 +418,10 @@ export default function Messages() {
       // sidebar không hiện nếu chưa có tin nhắn (BE filter) -> OK theo yêu cầu
       setSearchText("");
       setSearchGlobal([]);
-    } catch (e) {
-      console.error(e);
-      toast.error("Không thể tạo đoạn chat");
-    }
+      } catch (e) {
+        console.error("createOrGetDmConversation error:", e?.response?.data || e);
+        toast.error(e?.response?.data?.message || e?.message || "Không thể tạo đoạn chat");
+      }
   };
 
   // ===== header: shared team info =====
@@ -396,7 +440,7 @@ export default function Messages() {
       try {
         if (alive) setSharedInfo({ loading: true, text: "" });
 
-        const r = await api.get("/api/chat/shared-team", { params: { userId: peerId } });
+        const r = await api.get("/chat/shared-team", { params: { userId: peerId } });
         const data = r.data?.data ?? r.data;
 
         if (!alive) return;

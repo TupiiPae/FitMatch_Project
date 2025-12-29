@@ -21,17 +21,19 @@ export async function getChatConversationSummary(conversationId){
 const asArr = (x) => (Array.isArray(x) ? x : Array.isArray(x?.items) ? x.items : []);
 
 export const listDmConversations = async () => {
-  const r = await api.get("/api/chat/dm/conversations");
+  const r = await api.get("/chat/dm/conversations");
   return r.data?.items ?? r.data?.data ?? r.data;
 };
 
 export const searchDmUsers = async (q) => {
-  const r = await api.get("/api/chat/dm/users", { params: { q } });
+  const r = await api.get("/chat/dm/users", { params: { q } });
   return r.data?.items ?? r.data?.data ?? r.data;
 };
 
 export async function createOrGetDmConversation(userId) {
-  const r = await api.post(`/chat/dm/conversations`, { userId });
+  const uid = String(userId || "").trim();
+  if (!/^[0-9a-fA-F]{24}$/.test(uid)) throw new Error("INVALID_USER_ID");
+
+  const r = await api.post("/chat/dm/conversations", { userId: uid }); 
   return r.data?.data ?? r.data;
 }
-

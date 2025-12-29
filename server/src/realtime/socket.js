@@ -113,7 +113,7 @@ async function upsertConversationFromRoom(
   if (!room?._id) return;
 
   const convId = room._id;
-  const type = room.type === "group" ? "group" : "duo";
+  const type = room.type === "group" ? "group" : room.type === "dm"    ? "dm" : "duo";
   const members = (room.members || []).map((m) => m?.user?._id || m?.user).filter(Boolean);
 
   const $set = {

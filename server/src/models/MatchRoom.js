@@ -18,7 +18,7 @@ const MatchRoomMemberSchema = new Schema(
 
 const MatchRoomSchema = new Schema(
   {
-    type: { type: String, enum: ["duo", "group"], required: true },
+     type: { type: String, enum: ["duo", "group", "dm"], required: true },
 
     // ===== Group fields =====
     name: { type: String, trim: true, maxlength: 50, required: function () { return this.type === "group"; } },
@@ -37,7 +37,7 @@ const MatchRoomSchema = new Schema(
 
     members: { type: [MatchRoomMemberSchema], default: [] },
 
-    maxMembers: { type: Number, default: function () { return this.type === "duo" ? 2 : 5; }, enum: [2, 3, 4, 5] },
+    maxMembers: { type: Number, default: function () { return (this.type === "duo" || this.type === "dm") ? 2 : 5; }, enum: [2, 3, 4, 5] },
 
     status: { type: String, enum: ["active", "full", "closed"], default: "active" },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },

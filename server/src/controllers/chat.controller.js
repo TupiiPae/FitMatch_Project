@@ -66,7 +66,10 @@ async function upsertConversationFromRoom(room){
     .map((m) => oidOf(m?.user))
     .filter(Boolean);
 
-  const type = room.type === "group" ? "group" : "duo";
+  const type =
+  room.type === "group" ? "group" :
+  room.type === "dm"    ? "dm" :
+  "duo";
 
   await ChatConversation.updateOne(
     { _id: room._id },
@@ -196,7 +199,7 @@ export async function listDmConversations(req, res, next) {
     if (!uidOid) throw Object.assign(new Error("UNAUTHORIZED"), { status: 401 });
 
     const rooms = await MatchRoom.find({
-      type: "duo",
+      type: "dm",
       $or: [{ "members.user": uidOid }, { "members.user._id": uidOid }],
       status: { $ne: "closed" },
     })
@@ -298,7 +301,7 @@ export async function listDmConversations(req, res, next) {
           lastMessage,
           lastMessageAt: lastAt,
           unread: getUnreadOf(conv, uid),
-          type: "duo",
+          type: "dm",
           meSent: stats.meSent === 1,
           otherSent: stats.otherSent === 1,
         };
@@ -335,7 +338,7 @@ export async function createOrGetDmConversation(req, res, next) {
     if (!target) return res.status(404).json({ success: false, message: "User not found" });
 
     let room = await MatchRoom.findOne({
-      type: "duo",
+      type: "dm",
       status: { $ne: "closed" },
       $and: [
         { $or: [{ "members.user": uidOid }, { "members.user._id": uidOid }] },
@@ -347,8 +350,9 @@ export async function createOrGetDmConversation(req, res, next) {
 
     if (!room) {
       const created = await MatchRoom.create({
-        type: "duo",
+        type: "dm",
         createdBy: uidOid,
+        maxMembers: 2, 
         members: [
           { user: uidOid, role: "owner" },
           { user: targetOid, role: "member" },
@@ -364,11 +368,11 @@ export async function createOrGetDmConversation(req, res, next) {
 
     await ChatConversation.updateOne(
       { _id: room._id },
-      { $set: { type: "duo", members }, $setOnInsert: { unreadBy: {} } },
+      { $set: { type: "dm", members }, $setOnInsert: { unreadBy: {} } },
       { upsert: true }
     );
 
-    return responseOk(res, { _id: room._id, id: room._id, type: "duo", peer: target });
+    return responseOk(res, { _id: room._id, id: room._id, type: "dm", peer: target });
   } catch (e) {
     if (e?.name === "ValidationError") {
       return res.status(400).json({
@@ -467,8 +471,8 @@ export async function deleteDmConversation(req, res, next) {
     const room = await ensureMember(conversationId, uid);
 
     // chỉ cho xóa trong DM/duo
-    if (String(room?.type || "") !== "duo") {
-      throw Object.assign(new Error("Chỉ hỗ trợ xóa đoạn chat DM (duo)."), { status: 400 });
+    if (String(room?.type || "") !== "dm") {
+      throw Object.assign(new Error("Chỉ hỗ trợ xóa đoạn chat DM."), { status: 400 });
     }
 
     await ChatMessage.deleteMany({ conversationId: cid });

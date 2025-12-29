@@ -201,7 +201,19 @@ export default function TeamConnect({ onLeftRoom }){
   const closeUserModal=()=>setUserModalOpen(false);
 
   const handleViewPublicProfile=(uid)=>{ setUserModalOpen(false); toast.info("Tính năng xem hồ sơ public của người dùng đang phát triển."); };
-  const handleStartChat=(uid)=>{ setUserModalOpen(false); toast.info("Chức năng nhắn tin riêng đang phát triển."); };
+  const handleStartChat = (uid) => {
+    setUserModalOpen(false);
+
+    const id = String(uid || "").trim();
+    if (!id) return;
+
+    if (myId && String(id) === String(myId)) {
+      toast.info("Bạn không thể nhắn tin cho chính mình.");
+      return;
+    }
+
+    nav(`/tin-nhan?u=${encodeURIComponent(id)}`);
+  };
 
   const loadRoom=async()=>{
     const [stRaw,meRaw]=await Promise.all([getMatchStatus(),getMe().catch(()=>null)]);

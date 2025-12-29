@@ -42,7 +42,19 @@ export default function DuoConnect({ onLeftRoom }) {
   const [userModalTarget,setUserModalTarget]=useState(null);
   const closeUserModal=()=>setUserModalOpen(false);
   const handleViewPublicProfile=(uid)=>{ setUserModalOpen(false); toast.info("Tính năng xem hồ sơ public của người dùng đang phát triển."); };
-  const handleStartChat=(uid)=>{ setUserModalOpen(false); toast.info("Chức năng nhắn tin riêng đang phát triển."); };
+  const handleStartChat = (uid) => {
+    setUserModalOpen(false);
+
+    const id = String(uid || "").trim();
+    if (!id) return;
+
+    if (myId && String(id) === String(myId)) {
+      toast.info("Bạn không thể nhắn tin cho chính mình.");
+      return;
+    }
+
+    nav(`/tin-nhan?u=${encodeURIComponent(id)}`);
+  };
 
   const openUserModalFromMember=(member)=>{
     if(!member) return;
@@ -188,10 +200,14 @@ export default function DuoConnect({ onLeftRoom }) {
       const gKey = genderKey(profile.gender ?? profile.gioiTinh ?? profile.sex ?? u.gender);
       const dobRaw = profile.birthDate ?? profile.dob ?? profile.ngaySinh ?? profile.birthday ?? null;
 
-      const bio=(profile.bio||profile.intro||profile.about||u.bio||"").toString();
-      const locationLabel=(profile.locationLabel||u.locationLabel||addrLabel(profile.address)||"").toString();
-      const goal=(profile.goalLabel||profile.goal||u.goal||"").toString();
-      const trainingTypes=Array.isArray(profile.trainingTypes)?profile.trainingTypes:(Array.isArray(u.trainingTypes)?u.trainingTypes:[]);
+      const bio=(profile.bio || profile.intro || profile.about || u.connectBio || u.bio || "").toString();
+      const locationLabel=(profile.locationLabel || u.connectLocationLabel || addrLabel(profile.address) || "").toString();
+      const goal=(profile.goalLabel || profile.goal || u.connectGoalLabel || u.connectGoalKey || u.goal || "").toString();
+      const trainingTypes =
+        Array.isArray(profile.trainingTypes) ? profile.trainingTypes
+        : Array.isArray(u.connectTrainingTypes) ? u.connectTrainingTypes
+        : Array.isArray(u.trainingTypes) ? u.trainingTypes
+        : [];
       const intensityLabel=(profile.intensityLabel||u.intensityLabel||"").toString();
 
       return {

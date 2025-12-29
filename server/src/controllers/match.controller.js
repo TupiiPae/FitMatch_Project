@@ -11,7 +11,11 @@ import ConnectReport from "../models/ConnectReport.js";
 
 // ===== Helpers =====
 async function findActiveRoomOfUser(userId){
-  return MatchRoom.findOne({ "members.user": userId, status: { $in: ["active","full"] } });
+  return MatchRoom.findOne({
+    type: { $in: ["duo", "group"] },  
+    "members.user": userId,
+    status: { $in: ["active","full"] }
+  });
 }
 
 const GOAL_LABELS = { giam_can:"Giảm cân", duy_tri:"Duy trì", tang_can:"Tăng cân", giam_mo:"Giảm mỡ", tang_co:"Tăng cơ" };
@@ -539,7 +543,24 @@ export async function getRoomDetail(req, res, next){
     const { id } = req.params;
 
     const room = await MatchRoom.findById(id)
-      .populate({ path:"members.user", select:"username email profile.nickname profile.avatarUrl profile.sex profile.dob connectGoalKey connectGoalLabel profile.goal profile.trainingIntensity" })
+      .populate({
+        path:"members.user",
+        select: [
+          "username","email",
+          "profile.nickname","profile.avatarUrl",
+          "profile.sex","profile.dob",
+          "profile.bio",
+          "profile.address",
+          "profile.locationLabel",
+          "profile.goal","profile.goalLabel",
+          "profile.trainingTypes",
+          "profile.trainingIntensity",
+          "connectGoalKey","connectGoalLabel",
+          "connectBio","connectLocationLabel",
+          "connectTrainingTypes",
+          "connectTrainingFrequencyLabel",
+        ].join(" ")
+      })
       .lean();
 
     if(!room) return res.status(404).json({ success:false, message:"Không tìm thấy phòng kết nối" });
@@ -553,6 +574,7 @@ export async function getRoomDetail(req, res, next){
     return responseOk(res, room);
   }catch(err){ next(err); }
 }
+
 
 // POST /api/match/rooms/:id/leave
 export async function leaveMatchRoom(req, res, next){
