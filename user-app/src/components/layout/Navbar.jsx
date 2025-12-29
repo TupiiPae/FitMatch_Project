@@ -15,6 +15,7 @@ import api from "../../lib/api";
 import { toast } from "react-toastify";
 import { getSocket } from "../../lib/socket";
 import NotificationBell from "../NotificationBell/NotificationBell";
+import ChatBell from "../ChatBell/ChatBell";
 
 const logoHref =
   (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") +
@@ -475,6 +476,7 @@ export default function Navbar({
 
         {/* RIGHT: HELLO + AVATAR + ACCOUNT DROPDOWN (KHÔNG THAY ĐỔI) */}
         <div className="fm-right" ref={accRef}>
+          <ChatBell/>
           <NotificationBell />
           <span className="fm-hello">
             Xin chào, <strong>{displayNickname}</strong>

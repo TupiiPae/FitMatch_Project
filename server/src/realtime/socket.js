@@ -301,6 +301,15 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
           }
         }
 
+        let isFirstContact = false;
+        try {
+          // exists nhanh hơn count
+          const existed = await ChatMessage.exists({ conversationId });
+          isFirstContact = !existed;
+        } catch {
+          isFirstContact = false;
+        }
+
         const msg = await ChatMessage.create({
           conversationId,
           senderId: uidOid,
@@ -324,16 +333,23 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
 
         const isPersonalChat = room?.type !== "group";
 
-        if (isPersonalChat && incUnreadFor.length) {
+        if (room?.type === "dm" && incUnreadFor.length) {
           const senderName = await getSenderName();
+
           for (const toId of incUnreadFor) {
             await notifySafe({
               to: String(toId),
               from: String(uid),
               type: "chat_message",
-              title: `Tin nhắn mới từ ${senderName}`,
+              title: isFirstContact
+                ? `${senderName} muốn nhắn tin với bạn`
+                : `Tin nhắn mới từ ${senderName}`,
               body: lastText,
-              data: { screen: "Messages", conversationId: String(conversationId) },
+              data: {
+                screen: "Messages",
+                conversationId: String(conversationId),
+                firstContact: !!isFirstContact,  
+              },
             });
           }
         }
