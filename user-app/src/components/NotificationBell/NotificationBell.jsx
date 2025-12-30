@@ -3,10 +3,7 @@ import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { getSocket } from "../../lib/socket";
-import {
-  listNotifications,
-  markNotificationRead,
-} from "../../api/notification";
+import { listNotifications, markNotificationRead } from "../../api/notification";
 import "./NotificationBell.css";
 
 const safeArr = (v) => (Array.isArray(v) ? v : []);
@@ -53,10 +50,11 @@ export default function NotificationBell() {
     [items]
   );
 
+  // ✅ mặc định ~7 noti mới nhất
   const loadFirst = async () => {
     try {
       setLoading(true);
-      const l = await listNotifications({ limit: 30 });
+      const l = await listNotifications({ limit: 7 });
       const fetched = unwrapItems(l);
       setRawItems(fetched);
       setCursor(getNextCursor(l));
@@ -67,11 +65,12 @@ export default function NotificationBell() {
     }
   };
 
+  // ✅ mỗi lần "Xem thêm" -> lấy thêm 10 noti cũ hơn
   const loadMore = async () => {
     if (!cursor) return;
     try {
       setLoading(true);
-      const l = await listNotifications({ limit: 30, cursor });
+      const l = await listNotifications({ limit: 10, cursor });
       const fetched = unwrapItems(l);
       setRawItems((prev) => [...safeArr(prev), ...fetched]);
       setCursor(getNextCursor(l));
@@ -173,7 +172,7 @@ export default function NotificationBell() {
   };
 
   const onMarkAllVisible = async () => {
-    // ✅ Chỉ mark-read các noti đang hiển thị trong bell
+    // ✅ mark-read các noti đang hiển thị trong bell
     const unreadList = items.filter((x) => !x?.readAt && x?._id);
     if (!unreadList.length) return;
 
@@ -207,12 +206,23 @@ export default function NotificationBell() {
         ) : null}
       </button>
 
-      <div className={`noti-pop ${open ? "is-open" : ""}`} role="menu" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`noti-pop ${open ? "is-open" : ""}`}
+        role="menu"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="noti-head">
           <div className="noti-title">Thông báo</div>
+
           <div className="noti-actions">
-            <button type="button" className="noti-btn" onClick={onMarkAllVisible}>
-              Đã đọc tất cả
+            <button
+              type="button"
+              className="noti-actionLink"
+              onClick={onMarkAllVisible}
+              title="Đánh dấu tất cả là đã đọc"
+            >
+              <i className="fa-solid fa-check-double" />
+              <span>Đã đọc tất cả</span>
             </button>
           </div>
         </div>
@@ -249,16 +259,11 @@ export default function NotificationBell() {
                       title="Đánh dấu đã đọc"
                       onClick={async (e) => {
                         e.stopPropagation();
-                        try { await markNotificationRead(n._id); } catch {}
+                        try {
+                          await markNotificationRead(n._id);
+                        } catch {}
                       }}
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontWeight: 900,
-                        opacity: 0.8,
-                        color: "inherit",
-                      }}
+                      className="noti-mini-btn"
                     >
                       ✓
                     </button>
@@ -271,8 +276,13 @@ export default function NotificationBell() {
           ))}
 
           {cursor ? (
-            <button type="button" className="noti-btn" style={{ width: "100%", margin: 10 }} onClick={loadMore} disabled={loading}>
-              {loading ? "Đang tải…" : "Xem thêm"}
+            <button
+              type="button"
+              className="noti-loadmore"
+              onClick={loadMore}
+              disabled={loading}
+            >
+              {loading ? "Đang tải…" : "Xem thêm thông báo"}
             </button>
           ) : null}
         </div>

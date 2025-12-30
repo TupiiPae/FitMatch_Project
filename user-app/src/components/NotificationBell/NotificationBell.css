@@ -1,9 +1,6 @@
-/* Dùng chung palette từ Navbar.css:
-   --nav-accent, --fm-ring, --fm-muted ... */
-
 .fw { font-weight: 700; }
 
-/* wrapper + trigger (đúng style navbar) */
+/* wrapper + trigger */
 .fm-noti {
   position: relative;
   display: inline-flex;
@@ -49,12 +46,15 @@
   width: 360px;
   max-width: calc(100vw - 24px);
   background: #020617;
-  border: 1px solid var(--fm-ring);
-  border-radius: 12px;
+  border: 1px solid #F7F8F355;
+  border-radius: 8px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
   overflow: hidden;
   z-index: 80;
+
+  display: none; /* ✅ */
 }
+.noti-pop.is-open { display: block; } /* ✅ */
 
 .noti-pop::after {
   content: "";
@@ -74,34 +74,52 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-bottom: 1px solid #111827;
+  border-bottom: 1px solid #F7F8F355;
 }
 
 .noti-title {
-  font-weight: 900;
+  font-weight: 600;
+  font-size: 18px;
   color: #f9fafb;
 }
 
 .noti-actions {
   display: inline-flex;
-  gap: 8px;
+  gap: 10px;
+  align-items: center;
 }
 
-.noti-btn {
+.noti-actionLink {
   border: 0;
-  background: #111827;
+  background: transparent;
   color: #e5e7eb;
-  padding: 6px 10px;
-  border-radius: 10px;
+  padding: 0;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 500;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
 }
-.noti-btn:hover { filter: brightness(1.1); }
+.noti-actionLink:hover { opacity: 1; text-decoration: underline; }
+.noti-actionLink i { color: var(--nav-accent); }
+
 
 .noti-list {
   max-height: 360px;
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(229, 231, 235, 0.35) transparent;
+}
+.noti-list::-webkit-scrollbar { width: 6px; height: 6px; }
+.noti-list::-webkit-scrollbar-track { background: transparent; }
+.noti-list::-webkit-scrollbar-thumb {
+  background: rgba(229, 231, 235, 0.22);
+  border-radius: 999px;
+}
+.noti-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(229, 231, 235, 0.35);
 }
 
 .noti-item {
@@ -115,24 +133,10 @@
 
 .noti-item.unread { background: rgba(211, 0, 22, 0.10); }
 
-.noti-item-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
 .noti-item-title {
   font-weight: 800;
   font-size: 13px;
   color: #f9fafb;
-}
-
-.noti-item-right {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
 }
 
 .noti-item-time {
@@ -149,7 +153,7 @@
   background: #020617;
   color: #e5e7eb;
   cursor: pointer;
-  font-weight: 900;
+  font-weight: 600;
   line-height: 24px;
 }
 .noti-mini-btn:hover { background: #111827; }
@@ -166,14 +170,17 @@
   text-align: center;
 }
 
+/* load more nằm trong list -> scroll, popup không đổi kích thước */
 .noti-loadmore {
   width: 100%;
   border: 0;
   background: #111827;
   color: #e5e7eb;
-  padding: 10px 12px;
+  padding: 14px 12px;
   cursor: pointer;
-  font-weight: 800;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: left;
 }
 .noti-loadmore:hover { filter: brightness(1.08); }
 .noti-loadmore:disabled { opacity: .6; cursor: not-allowed; }

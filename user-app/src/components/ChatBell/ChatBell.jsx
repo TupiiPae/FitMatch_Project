@@ -26,7 +26,6 @@ export default function ChatBell() {
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [cursor, setCursor] = useState(null);
   const [raw, setRaw] = useState([]);
 
   const loadFirst = async () => {
@@ -34,25 +33,9 @@ export default function ChatBell() {
       setLoading(true);
       const l = await listNotifications({ limit: 40 });
       setRaw(unwrapItems(l));
-      setCursor(l?.nextCursor ?? null);
     } catch (e) {
       console.error(e);
       setRaw([]);
-      setCursor(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMore = async () => {
-    if (!cursor) return;
-    try {
-      setLoading(true);
-      const l = await listNotifications({ limit: 40, cursor });
-      setRaw((prev) => [...safeArr(prev), ...unwrapItems(l)]);
-      setCursor(l?.nextCursor ?? null);
-    } catch (e) {
-      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -134,6 +117,21 @@ export default function ChatBell() {
     [grouped]
   );
 
+  const onMarkAllVisible = async () => {
+    const unreadList = safeArr(raw).filter((x) => isChatNoti(x) && !x?.readAt && x?._id);
+    if (!unreadList.length) return;
+
+    await Promise.all(unreadList.map((x) => markNotificationRead(x._id).catch(() => null)));
+
+    setRaw((prev) =>
+      safeArr(prev).map((x) =>
+        unreadList.some((u) => String(u._id) === String(x?._id))
+          ? { ...x, readAt: x.readAt || new Date().toISOString() }
+          : x
+      )
+    );
+  };
+
   const openConversation = async (g) => {
     const cid = g?.cid;
     if (!cid) {
@@ -151,6 +149,11 @@ export default function ChatBell() {
     nav(`/tin-nhan?conversationId=${encodeURIComponent(String(cid))}`, {
       state: { conversationId: String(cid) },
     });
+  };
+
+  const openInbox = () => {
+    setOpen(false);
+    nav("/tin-nhan");
   };
 
   return (
@@ -173,16 +176,18 @@ export default function ChatBell() {
         <div className="cnb-pop" role="menu" onClick={(e) => e.stopPropagation()}>
           <div className="cnb-head">
             <div className="cnb-title">Tin nhắn</div>
-            <button
-              type="button"
-              className="cnb-openinbox"
-              onClick={() => {
-                setOpen(false);
-                nav("/tin-nhan");
-              }}
-            >
-              Mở hộp thư
-            </button>
+
+            <div className="cnb-actions">
+              <button
+                type="button"
+                className="cnb-actionLink"
+                onClick={onMarkAllVisible}
+                title="Đánh dấu tất cả là đã đọc"
+              >
+                <i className="fa-solid fa-check-double" />
+                <span>Đã đọc tất cả</span>
+              </button>
+            </div>
           </div>
 
           <div className="cnb-list">
@@ -221,11 +226,10 @@ export default function ChatBell() {
               );
             })}
 
-            {cursor ? (
-              <button className="cnb-loadmore" onClick={loadMore} disabled={loading} type="button">
-                {loading ? "Đang tải…" : "Xem thêm"}
-              </button>
-            ) : null}
+            <button className="cnb-loadmore" onClick={openInbox} type="button">
+              <i className="fa-regular fa-envelope-open" />
+              <span>Mở hộp thư</span>
+            </button>
           </div>
         </div>
       ) : null}
