@@ -98,3 +98,12 @@ export const uploadChatImageSingle = multer({
     cb(new Error("Chỉ chấp nhận file ảnh cho chat"));
   },
 }).single("image");
+
+export const uploadAiImageSingle = multer({
+  storage: memory,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    if ((file.mimetype || "").startsWith("image/")) return cb(null, true);
+    cb(new Error("Chỉ chấp nhận file ảnh cho AI"));
+  },
+}).single("image");

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 
 import "./Messages.css";
 import ChatBox from "../Chat/ChatBox";
+import AiChatBox from "../Chat/AiChatBox";
 import UserSideModal from "../UserProfile/UserSideModal";
 
 import { getMe } from "../../api/account";
@@ -57,19 +58,17 @@ const isDmConv = (c, meId = "") => {
   if (c?.roomId || c?.matchRoomId || c?.room || c?.matchRoom) return false;
   const members = safeArr(c?.members);
   if (members.length !== 2) return false;
-
   return true;
 };
 
 const ensurePeer = (c, meId = "") => {
   if (c?.peer) return c;
   const mems = safeArr(c?.members)
-    .map((m) => m?.user || m) 
+    .map((m) => m?.user || m)
     .filter(Boolean);
   const peer = mems.find((u) => getId(u) && getId(u) !== String(meId)) || null;
   return { ...c, peer };
 };
-
 
 const unwrapItems = (payload) => {
   if (!payload) return [];
@@ -79,6 +78,10 @@ const unwrapItems = (payload) => {
   if (Array.isArray(payload?.data?.items)) return payload.data.items;
   return [];
 };
+
+const AI_CONV_ID = "ai";
+const AI_TITLE = "FitMatch AI";
+const AI_SUB = "Quét ảnh món ăn • Gợi ý thực đơn • Gợi ý lịch tập";
 
 export default function Messages() {
   const nav = useNavigate();
@@ -98,16 +101,29 @@ export default function Messages() {
   const [activeConvId, setActiveConvId] = useState("");
   const [activePeer, setActivePeer] = useState(null);
 
-  const [sideOpen, setSideOpen] = useState(false);
-  const [sideUser, setSideUser] = useState(null);
+  // ===== AI preview (for sidebar) =====
+  const [aiPreview, setAiPreview] = useState({
+    lastText: "Nhắn để bắt đầu…",
+    lastAt: null,
+    unread: 0,
+  });
 
-    // ===== delete conversation (box chat) =====
+  const isAiActive = String(activeConvId || "") === AI_CONV_ID;
+
+  const openAi = () => {
+    setActiveConvId(AI_CONV_ID);
+    setActivePeer(null);
+    setAiPreview((p) => ({ ...p, unread: 0 }));
+  };
+
+  // ===== delete conversation (box chat) =====
   const [delOpen, setDelOpen] = useState(false);
   const [delConv, setDelConv] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   const openDelete = (c) => {
     if (!c?._id) return;
+    if (String(c?._id) === AI_CONV_ID) return; // no delete for AI
     setDelConv(c);
     setDelOpen(true);
   };
@@ -120,19 +136,18 @@ export default function Messages() {
 
   const confirmDelete = async () => {
     const cid = String(delConv?._id || "");
-    if (!cid) return;
+    if (!cid || cid === AI_CONV_ID) return;
 
     try {
       setDeleting(true);
 
       await api.delete(`/chat/dm/conversations/${cid}`);
 
-      // remove khỏi sidebar ngay
       setConvs((prev) => safeArr(prev).filter((x) => String(x?._id || "") !== cid));
 
-      // nếu đang mở đúng conv thì đóng
       if (String(activeConvId || "") === cid) {
-        setActiveConvId("");
+        // nếu đang mở đúng conv thì đóng hoặc chuyển qua AI
+        setActiveConvId(AI_CONV_ID);
         setActivePeer(null);
       }
 
@@ -155,9 +170,11 @@ export default function Messages() {
     return () => window.removeEventListener("keydown", onKey);
   }, [delOpen, deleting]);
 
-
   // header: shared team
   const [sharedInfo, setSharedInfo] = useState({ loading: false, text: "" });
+
+  const [sideOpen, setSideOpen] = useState(false);
+  const [sideUser, setSideUser] = useState(null);
 
   const openUser = (u) => {
     const id = getId(u);
@@ -217,13 +234,15 @@ export default function Messages() {
           setActiveConvId(String(pickConv._id));
           setActivePeer(pickConv.peer || null);
         } else {
-          setActiveConvId("");
-          setActivePeer(null);
+          // nếu chưa có DM nào -> mở AI
+          openAi();
         }
       }
     } catch (e) {
       console.error(e);
       toast.error("Không tải được tin nhắn");
+      // vẫn mở AI để user có chỗ chat
+      openAi();
     } finally {
       setLoading(false);
     }
@@ -234,7 +253,7 @@ export default function Messages() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ===== realtime update =====
+  // ===== realtime update (DM only) =====
   useEffect(() => {
     const onConvUpdate = (p) => {
       const pType = normType(p?.type || p?.kind || p?.conversationType);
@@ -247,7 +266,7 @@ export default function Messages() {
         const arr = safeArr(prev);
         const idx = arr.findIndex((x) => String(x?._id || "") === cid);
 
-        // DM mới xuất hiện (VD người khác nhắn lần đầu) -> reload list để có peer + flags
+        // DM mới xuất hiện -> reload list
         if (idx === -1) {
           listDmConversations()
             .then((raw) => {
@@ -265,7 +284,6 @@ export default function Messages() {
         }
 
         const cur = arr[idx];
-
         const senderId = String(p?.lastMessage?.senderId || "");
         const meId = String(me?._id || "");
         const patchFlags =
@@ -341,7 +359,6 @@ export default function Messages() {
       }
 
       try {
-        // tạo/đã có room nhưng sidebar sẽ KHÔNG hiện nếu chưa có tin nhắn (BE đã filter)
         const conv = await createOrGetDmConversation(qUserId);
         const cid = String(conv?._id || "");
         if (cid) {
@@ -415,13 +432,12 @@ export default function Messages() {
       setActiveConvId(cid);
       if (conv?.peer) setActivePeer(conv.peer);
 
-      // sidebar không hiện nếu chưa có tin nhắn (BE filter) -> OK theo yêu cầu
       setSearchText("");
       setSearchGlobal([]);
-      } catch (e) {
-        console.error("createOrGetDmConversation error:", e?.response?.data || e);
-        toast.error(e?.response?.data?.message || e?.message || "Không thể tạo đoạn chat");
-      }
+    } catch (e) {
+      console.error("createOrGetDmConversation error:", e?.response?.data || e);
+      toast.error(e?.response?.data?.message || e?.message || "Không thể tạo đoạn chat");
+    }
   };
 
   // ===== header: shared team info =====
@@ -429,6 +445,11 @@ export default function Messages() {
     let alive = true;
 
     const run = async () => {
+      if (isAiActive) {
+        if (alive) setSharedInfo({ loading: false, text: "" });
+        return;
+      }
+
       const peerId = getId(activePeer);
       const peerName = getName(activePeer);
 
@@ -469,7 +490,7 @@ export default function Messages() {
     return () => {
       alive = false;
     };
-  }, [activePeer]);
+  }, [activePeer, isAiActive]);
 
   const chatMembers = useMemo(() => {
     const meId = String(me?._id || "");
@@ -500,13 +521,55 @@ export default function Messages() {
     return out;
   }, [me, activePeer]);
 
-  // ===== render list (normal mode) =====
+  // ===== render AI item =====
+  const renderAiItem = () => {
+    const active = isAiActive;
+    const unread = Number(aiPreview?.unread || 0);
+    const lastText = String(aiPreview?.lastText || AI_SUB);
+    const lastAt = aiPreview?.lastAt || null;
+
+    return (
+      <div
+        className={`msg-item is-ai ${active ? "is-active" : ""}`}
+        role="button"
+        tabIndex={0}
+        onClick={openAi}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openAi();
+          }
+        }}
+      >
+        <div className="msg-ava-box msg-ava-ai" aria-hidden="true">
+          <i className="fa-solid fa-wand-magic-sparkles" />
+        </div>
+
+        <div className="msg-mid">
+          <div className="msg-top">
+            <div className="msg-name">
+              {AI_TITLE} <span className="msg-pill msg-pill-ai">AI</span>
+            </div>
+            {unread > 0 ? <span className="msg-badge">{unread}</span> : null}
+          </div>
+
+          <div className="msg-sub">
+            <span className="msg-last">{lastText || " "}</span>
+            {lastAt ? <span className="msg-dot">•</span> : null}
+            {lastAt ? <span className="msg-time">{dayjs(lastAt).format("HH:mm")}</span> : null}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ===== render list (DM item) =====
   const renderConvItem = (c) => {
     const active = String(activeConvId) === String(c?._id || "");
     const peer = c.peer;
     const unread = Number(c?.unread || 0);
 
-    const lastText = String(c?.lastMessage?.text || "").trim();
+    const lastText = String(c?.lastMessage?.text || c?.lastMessage?.content || "").trim();
     const lastAt = c?.lastMessageAt || c?.lastMessage?.createdAt || null;
 
     return (
@@ -593,25 +656,16 @@ export default function Messages() {
             </div>
 
             <div className="msg-tabs">
-              <button
-                className={`msg-tab ${tab === "all" ? "is-on" : ""}`}
-                onClick={() => setTab("all")}
-              >
+              <button className={`msg-tab ${tab === "all" ? "is-on" : ""}`} onClick={() => setTab("all")}>
                 Tất cả
               </button>
 
-              <button
-                className={`msg-tab ${tab === "unread" ? "is-on" : ""}`}
-                onClick={() => setTab("unread")}
-              >
+              <button className={`msg-tab ${tab === "unread" ? "is-on" : ""}`} onClick={() => setTab("unread")}>
                 Chưa đọc
                 {unreadCount > 0 ? <span className="msg-tab-badge">{unreadCount}</span> : null}
               </button>
 
-              <button
-                className={`msg-tab ${tab === "new" ? "is-on" : ""}`}
-                onClick={() => setTab("new")}
-              >
+              <button className={`msg-tab ${tab === "new" ? "is-on" : ""}`} onClick={() => setTab("new")}>
                 Mới
                 {newCount > 0 ? <span className="msg-tab-badge">{newCount}</span> : null}
               </button>
@@ -620,6 +674,9 @@ export default function Messages() {
 
           <div className="msg-left-body">
             {loading ? <div className="msg-loading">Đang tải…</div> : null}
+
+            {/* ✅ AI pinned luôn ở đầu */}
+            <div className="msg-pinned">{renderAiItem()}</div>
 
             {!!String(searchText || "").trim() ? (
               <>
@@ -690,6 +747,35 @@ export default function Messages() {
                 <div className="msg-ph-title">Chọn một đoạn chat</div>
                 <div className="msg-ph-sub">Tìm người dùng để bắt đầu cuộc trò chuyện.</div>
               </div>
+            ) : isAiActive ? (
+              <div className="msg-right-wrap">
+                <div className="msg-right-head is-ai">
+                  <div className="msg-peer is-ai">
+                    <div className="msg-peer-ava msg-peer-ava-ai" aria-hidden="true">
+                      <i className="fa-solid fa-wand-magic-sparkles" />
+                    </div>
+                    <div className="msg-peer-text">
+                      <div className="msg-peer-name">{AI_TITLE}</div>
+                      <div className="msg-peer-sub">{AI_SUB}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="msg-chat">
+                  <AiChatBox
+                    meId={String(me?._id || "")}
+                    height={"100%"}
+                    emptyText={"Bắt đầu hỏi FitMatch AI… (có thể gửi kèm ảnh món ăn)"}
+                    onPreview={({ lastText, lastAt }) => {
+                      setAiPreview((p) => ({
+                        ...p,
+                        lastText: lastText || p.lastText,
+                        lastAt: lastAt || p.lastAt,
+                      }));
+                    }}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="msg-right-wrap">
                 <div className="msg-right-head">
@@ -725,7 +811,7 @@ export default function Messages() {
         </main>
       </div>
 
-            {delOpen && (
+      {delOpen && (
         <div
           className="msg-modal-backdrop"
           onMouseDown={(e) => {

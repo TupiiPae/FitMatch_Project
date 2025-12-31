@@ -369,13 +369,13 @@ export default function Navbar({
                           <span>Thêm nhanh các bữa ăn sáng, trưa, tối</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/dinh-duong/tao-mon-an-ai" className="fm-megamenu-link" role="menuitem">
+                      {/* <NavLink to="/dinh-duong/tao-mon-an-ai" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faBrain} />
                         <div>
                           <strong>Tạo món ăn với AI</strong>
                           <span>Để AI tính toán công thức món ăn cho bạn</span>
                         </div>
-                      </NavLink>
+                      </NavLink> */}
                       <NavLink to="/dinh-duong/thuc-don-goi-y" className="fm-megamenu-link" role="menuitem">
                         <FontAwesomeIcon icon={faLightbulb} />
                         <div>

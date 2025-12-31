@@ -6,6 +6,8 @@ import http from "http";
 
 import { connectDB } from "./config/db.js";
 
+import aiRoutes from "./routes/ai.routes.js";
+
 // ===== Routes =====
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -157,6 +159,7 @@ app.use("/api", faqRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api", matchRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/ai", aiRoutes);
 
 // ===== Debug: list registered routes in DEV =====
 if (isDev) {
