@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react"; // Thêm useRef
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   createFood as createFoodJSON,
   createFoodWithImage,
@@ -233,6 +233,58 @@ export default function FoodForm() {
     );
 
   const currentImageUrl = preview || (existingUrl ? toAbs(existingUrl) : null);
+
+  const loc = useLocation();
+  const appliedPrefillRef = useRef(false);
+
+  useEffect(() => {
+    if (isEdit) return;
+    if (appliedPrefillRef.current) return;
+
+    let prefill = loc.state?.aiPrefill || null;
+
+    // fallback từ sessionStorage (tránh mất khi refresh)
+    if (!prefill) {
+      try {
+        const raw = sessionStorage.getItem("fm_ai_food_prefill");
+        if (raw) prefill = JSON.parse(raw);
+      } catch {}
+    }
+
+    if (!prefill) return;
+
+    appliedPrefillRef.current = true;
+    try { sessionStorage.removeItem("fm_ai_food_prefill"); } catch {}
+
+    setForm((s) => ({
+      ...s,
+      name: prefill.name || s.name,
+      portionName: prefill.portionName || s.portionName,
+      massG: prefill.massG != null ? String(prefill.massG) : s.massG,
+      unit: prefill.unit === "ml" ? "ml" : "g",
+      kcal: prefill.kcal != null ? String(prefill.kcal) : s.kcal,
+      proteinG: prefill.proteinG != null ? String(prefill.proteinG) : s.proteinG,
+      carbG: prefill.carbG != null ? String(prefill.carbG) : s.carbG,
+      fatG: prefill.fatG != null ? String(prefill.fatG) : s.fatG,
+      saltG: prefill.saltG != null ? String(prefill.saltG) : s.saltG,
+      sugarG: prefill.sugarG != null ? String(prefill.sugarG) : s.sugarG,
+      fiberG: prefill.fiberG != null ? String(prefill.fiberG) : s.fiberG,
+      description: prefill.description || s.description,
+    }));
+
+    // set ảnh url
+    if (prefill.imageUrl) {
+      if (file) setFile(null);
+      if (preview) {
+        try { URL.revokeObjectURL(preview); } catch {}
+        setPreview("");
+      }
+      setExistingUrl(prefill.imageUrl);
+    }
+
+    toast.info("Đã tự điền dữ liệu từ AI. Bạn hãy kiểm tra và nhấn Tạo món.");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit]);
 
   return (
     <div className="ff-wrap">
