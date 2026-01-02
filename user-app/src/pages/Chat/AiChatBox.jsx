@@ -1,9 +1,11 @@
+// user-app/src/pages/Chat/AiChatBox.jsx
 import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { listAiMessages, sendAiChat, uploadAiImage } from "../../api/ai";
 import "./ChatBox.css"; // reuse style .fm-chat
+import "./AiChatBoxTheme.css";
 import "./AiFoodCard.css";
 import DetailModal from "../Nutrition/components/DetailModal/DetailModal";
 import { getFood } from "../../api/foods";
@@ -58,6 +60,35 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
   const inputRef = useRef(null);
   const fileRef = useRef(null);
 
+  // ===== Image viewer (giống ChatBox) =====
+  const [imgView, setImgView] = useState(null);
+  const closeImg = () => setImgView(null);
+
+  useEffect(() => {
+    if (!imgView) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") closeImg();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [imgView]);
+
+  useEffect(() => {
+    if (!imgView) return;
+    const b = document.body;
+    const prevOverflow = b.style.overflow;
+    b.style.overflow = "hidden";
+    return () => {
+      b.style.overflow = prevOverflow;
+    };
+  }, [imgView]);
+
+  const openImgView = (a) => {
+    const url = toAbs(a?.url);
+    if (!url) return;
+    setImgView({ url, name: a?.name || "Ảnh" });
+  };
+
   // ===== DetailModal state =====
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailFood, setDetailFood] = useState(null);
@@ -66,7 +97,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
   // ===== File preview urls =====
   const fileUrlMapRef = useRef(new Map());
 
-  // ===== stable ref for onPreview (tránh gọi setState của cha trong updater) =====
+  // ===== stable ref for onPreview =====
   const onPreviewRef = useRef(onPreview);
   useEffect(() => {
     onPreviewRef.current = onPreview;
@@ -185,15 +216,13 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
   const goCreateFood = (draft) => {
     if (!draft) return;
-
     try {
       sessionStorage.setItem("fm_ai_food_prefill", JSON.stringify(draft));
     } catch {}
-
     nav("/dinh-duong/ghi-lai/tao-mon", { state: { aiPrefill: draft } });
   };
 
-  // auto navigate nếu BE trả action=create_food (user gõ "Có" sau offer)
+  // auto navigate nếu BE trả action=create_food
   const lastAutoNavRef = useRef("");
   useEffect(() => {
     const last = [...safeArr(items)].reverse().find(
@@ -237,8 +266,54 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
     }
   };
 
+  // ===== timeline + dồn time (giống ChatBox) =====
   const timeline = useMemo(() => {
     const arr = safeArr(items);
+
+    const idOf = (m, i) => String(m?._id || i || "");
+    const roleOf = (m) => String(m?.role || "");
+    const isImageOnlyMsg = (m) => {
+      const imgs = safeArr(m?.attachments).filter(isImg);
+      const hasImgs = imgs.length > 0;
+      const hasText = !!String(m?.content ?? m?.text ?? "").trim();
+      return hasImgs && !hasText;
+    };
+
+    const timeAtById = new Map();
+    for (let i = 0; i < arr.length; ) {
+      const base = arr[i];
+      const r0 = roleOf(base);
+      const baseAt = base?.createdAt;
+
+      let j = i;
+      while (j < arr.length) {
+        const mj = arr[j];
+        if (roleOf(mj) !== r0) break;
+
+        if (baseAt && mj?.createdAt && !sameDay(mj.createdAt, baseAt)) break;
+        if (baseAt && !mj?.createdAt) break;
+        if (!baseAt && mj?.createdAt) break;
+
+        j++;
+      }
+
+      const endMsg = arr[j - 1];
+      const endAt = endMsg?.createdAt || null;
+
+      if (endAt) {
+        let ownerKey = "";
+        for (let k = j - 1; k >= i; k--) {
+          if (!isImageOnlyMsg(arr[k])) {
+            ownerKey = idOf(arr[k], k);
+            break;
+          }
+        }
+        if (ownerKey) timeAtById.set(ownerKey, endAt);
+      }
+
+      i = j;
+    }
+
     const out = [];
     for (let i = 0; i < arr.length; i++) {
       const m = arr[i];
@@ -258,12 +333,14 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
         });
       }
 
-      out.push({ t: "msg", k: String(m?._id || i), m });
+      const key = idOf(m, i);
+      out.push({ t: "msg", k: key, m, timeAt: timeAtById.get(key) || null });
     }
+
     return out;
   }, [items]);
 
-  // ====== SEND (support overrideText for buttons like "Không") ======
+  // ====== SEND ======
   const send = async (overrideText) => {
     const isOverride = overrideText !== undefined;
     const content = String(isOverride ? overrideText : text || "").trim();
@@ -309,7 +386,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       if (!isOverride) setFiles([]);
     }
 
-    // gắn attachments vào tmp (để UI thấy ảnh ngay)
+    // gắn attachments vào tmp
     if (imageUrls.length) {
       setItems((prev) =>
         prev.map((x) =>
@@ -368,7 +445,36 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
   };
 
   return (
-    <div className="fm-chat" style={{ height }}>
+    <div className="fm-chat fm-ai-chat" style={{ height }}>
+      {imgView?.url && (
+        <div
+          className="fm-chat-imgview"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeImg();
+          }}
+        >
+          <button
+            type="button"
+            className="fm-chat-imgview-x"
+            onClick={closeImg}
+            aria-label="Đóng"
+          >
+            <i className="fa-solid fa-xmark" />
+          </button>
+
+          <div className="fm-chat-imgview-box">
+            <img
+              src={imgView.url}
+              alt={imgView.name || "image"}
+              onError={(e) => {
+                // fallback nếu url lỗi
+                e.currentTarget.alt = "Ảnh lỗi";
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <div ref={listRef} className="fm-chat-list">
         {loading ? <div className="fm-chat-loading">Đang tải…</div> : null}
 
@@ -389,10 +495,18 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
           const m = row.m;
           const mine = String(m?.role || "") === "user";
+
           const imgs = safeArr(m?.attachments).filter(isImg);
           const hasImgs = imgs.length > 0;
           const hasText = !!String(m?.content ?? m?.text ?? "").trim();
           const cols = Math.min(3, Math.max(1, imgs.length));
+
+          const timeAt = row.timeAt;
+          const timeNode = timeAt ? (
+            <div className={"fm-chat-time" + (mine ? " is-mine" : "")}>
+              {dayjs(timeAt).isValid() ? dayjs(timeAt).format("HH:mm") : ""}
+            </div>
+          ) : null;
 
           const offer = !mine && m?.meta?.offerCreateFood && m?.meta?.foodDraft;
           const draft = offer ? m.meta.foodDraft : null;
@@ -403,19 +517,13 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
             <div key={row.k} className={"fm-chat-row" + (mine ? " is-mine" : "")}>
               {!mine ? (
                 <div className="fm-chat-ava" title="FitMatch AI" style={{ cursor: "default" }}>
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "rgba(239,68,68,.18)",
-                      color: "#fff",
+                  <img
+                    src="/images/ai-avatar.png"
+                    alt="FitMatch AI"
+                    onError={(e) => {
+                      e.currentTarget.src = "/images/avatar.png";
                     }}
-                  >
-                    <i className="fa-solid fa-wand-magic-sparkles" />
-                  </div>
+                  />
                 </div>
               ) : null}
 
@@ -428,28 +536,39 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                           {m.content ?? m.text}
                         </div>
                       ) : null}
-                      <div className={"fm-chat-time" + (mine ? " is-mine" : "")}>
-                        {m?.createdAt ? dayjs(m.createdAt).format("HH:mm") : ""}
-                      </div>
+                      {timeNode}
                     </div>
                   )}
 
+                  {/* Image bubble (KHÔNG render time) */}
                   {hasImgs && (
                     <div className={"fm-chat-bubble is-media" + (mine ? " is-mine" : "")}>
                       <div className={"fm-chat-atts cols-" + cols}>
-                        {imgs.map((a, idx) => (
-                          <div key={`${a.url || idx}`} className="fm-chat-img" title="Ảnh">
-                            <img src={a.url} alt={a.name || "image"} />
-                          </div>
-                        ))}
-                      </div>
-                      <div className={"fm-chat-time" + (mine ? " is-mine" : "")}>
-                        {m?.createdAt ? dayjs(m.createdAt).format("HH:mm") : ""}
+                        {imgs.map((a, idx) => {
+                          const abs = toAbs(a.url);
+                          return (
+                            <button
+                              key={`${a.url || idx}`}
+                              type="button"
+                              className="fm-chat-img"
+                              title="Xem ảnh"
+                              onClick={() => openImgView({ ...a, url: abs })}
+                            >
+                              <img
+                                src={abs}
+                                alt={a.name || "image"}
+                                onError={(e) => {
+                                  e.currentTarget.src = "/images/food-placeholder.png";
+                                }}
+                              />
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
 
-                  {/* ===== AI FOOD CARD (meal_scan) ===== */}
+                  {/* ===== AI FOOD CARD ===== */}
                   {offer && draft ? (
                     <div className="fm-ai-card">
                       <div className="fm-ai-title">Ước lượng từ ảnh</div>
@@ -509,25 +628,16 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                             </div>
                           </>
                         ) : (
-                          <>ℹ️ Chưa thấy món tương tự trong danh sách hiện tại.</>
+                          <>Chưa thấy món tương tự trong danh sách hiện tại.</>
                         )}
                       </div>
 
                       <div className="fm-ai-actions">
-                        <button
-                          type="button"
-                          className="fm-ai-btn"
-                          onClick={() => goCreateFood(draft)}
-                        >
-                          Tạo món
-                        </button>
-
-                        <button
-                          type="button"
-                          className="fm-ai-btn ghost"
-                          onClick={() => send("Không")}
-                        >
+                        <button type="button" className="fm-ai-btn ghost" onClick={() => send("Không")}>
                           Không
+                        </button>
+                        <button type="button" className="fm-ai-btn" onClick={() => goCreateFood(draft)}>
+                          Tạo món
                         </button>
                       </div>
                     </div>
@@ -543,21 +653,9 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
       <div className="fm-chat-compose">
         <div className="fm-chat-inputrow">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={onPickFile}
-          />
+          <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onPickFile} />
 
-          <button
-            type="button"
-            className="fm-chat-attach"
-            onClick={pickFiles}
-            title="Gửi hình ảnh cho AI"
-          >
+          <button type="button" className="fm-chat-attach" onClick={pickFiles} title="Gửi hình ảnh cho AI">
             <i className="fa-regular fa-images" />
           </button>
 
@@ -617,9 +715,8 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
         </div>
       </div>
 
-      {/* ===== DetailModal ===== */}
-      {detailLoading ? null : null}
       <DetailModal open={detailOpen} food={detailFood} onClose={closeFoodDetail} />
+      {detailLoading ? null : null}
     </div>
   );
 }

@@ -1,0 +1,111 @@
+/* Đồng bộ tone Messages cho AI chat (scope bằng .fm-ai-chat) */
+
+.fm-ai-chat{
+  color:#e5e7eb;
+}
+
+/* nền list */
+.fm-ai-chat .fm-chat-list{
+  background: #121212;
+  color:#e5e7eb;
+}
+
+/* date chip */
+.fm-ai-chat .fm-chat-date span{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(229,231,235,.80);
+}
+
+/* bubble mặc định (AI) */
+.fm-ai-chat .fm-chat-bubble{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  color:#e5e7eb;
+}
+
+/* bubble của tôi */
+.fm-ai-chat .fm-chat-bubble.is-mine{
+  background:#1A73E8
+}
+
+/* text + time đỡ chìm */
+.fm-ai-chat .fm-chat-text{
+  color:#e5e7eb;
+  line-height:1.5;
+}
+
+.fm-ai-chat .fm-chat-time{
+  color: rgba(229,231,235,.60);
+}
+
+/* media bubble */
+.fm-ai-chat .fm-chat-bubble.is-media{
+  background: rgba(255,255,255,.04);
+}
+
+/* ảnh trong bubble */
+.fm-ai-chat .fm-chat-img img{
+  background: rgba(255,255,255,.04);
+}
+
+/* avatar AI (icon nền xanh giống Messages AI) */
+.fm-ai-chat .fm-chat-ava{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+}
+
+.fm-ai-chat .fm-ai-ava{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background: rgba(26,115,232,.16);
+  border: 1px solid rgba(26,115,232,.28);
+  color:#fff;
+  border-radius:999px;
+}
+
+/* compose đồng bộ Messages */
+.fm-ai-chat .fm-chat-compose{
+  background:#221010;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+/* input */
+.fm-ai-chat .fm-chat-input,
+.fm-ai-chat .fm-chat-textarea{
+  background: rgba(255,255,255,.03);
+  color:#e5e7eb;
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.fm-ai-chat .fm-chat-input::placeholder,
+.fm-ai-chat .fm-chat-textarea::placeholder{
+  color: rgba(229,231,235,.55);
+}
+
+/* attach/send buttons */
+.fm-ai-chat .fm-chat-attach,
+.fm-ai-chat .fm-chat-send{
+  color:#e5e7eb;
+}
+
+.fm-ai-chat .fm-chat-attach:hover,
+.fm-ai-chat .fm-chat-send:hover{
+  background: rgba(255,255,255,.10);
+}
+
+/* draft image chips */
+.fm-ai-chat .fm-chat-draftimg{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+}
+
+.fm-ai-chat .fm-chat-draftimg-x{
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(255,255,255,.14);
+  color:#fff;
+}

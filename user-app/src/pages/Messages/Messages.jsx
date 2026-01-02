@@ -80,7 +80,7 @@ const unwrapItems = (payload) => {
 };
 
 const AI_CONV_ID = "ai";
-const AI_TITLE = "FitMatch AI";
+const AI_TITLE = "Fitmatch AI";
 const AI_SUB = "Quét ảnh món ăn • Gợi ý thực đơn • Gợi ý lịch tập";
 
 export default function Messages() {
@@ -542,7 +542,7 @@ export default function Messages() {
         }}
       >
         <div className="msg-ava-box msg-ava-ai" aria-hidden="true">
-          <i className="fa-solid fa-wand-magic-sparkles" />
+          <img className="msg-ava" src="/images/ai-avatar.png" alt="FitMatch AI" />
         </div>
 
         <div className="msg-mid">
@@ -749,10 +749,10 @@ export default function Messages() {
               </div>
             ) : isAiActive ? (
               <div className="msg-right-wrap">
-                <div className="msg-right-head is-ai">
-                  <div className="msg-peer is-ai">
+                <div className="msg-right-head">
+                  <div className="msg-peer">
                     <div className="msg-peer-ava msg-peer-ava-ai" aria-hidden="true">
-                      <i className="fa-solid fa-wand-magic-sparkles" />
+                      <img className="msg-ava" src="/images/ai-avatar.png" alt="FitMatch AI" />
                     </div>
                     <div className="msg-peer-text">
                       <div className="msg-peer-name">{AI_TITLE}</div>

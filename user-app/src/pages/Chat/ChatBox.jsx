@@ -972,7 +972,7 @@ export default function ChatBox({
     );
   };
 
-  // ===== Timeline (apply hiddenSet) =====
+  // ===== Timeline (apply hiddenSet) + TIME SHIFT for image-only =====
   const timeline = useMemo(() => {
     const hidden = hiddenSet;
     const arr = safeArr(items).filter((x) => {
@@ -980,6 +980,74 @@ export default function ChatBox({
       return !id || !hidden.has(id);
     });
 
+    const sidOf = (m) => String(m?.senderId?._id || m?.senderId || "");
+    const hasImgsOf = (m) => safeArr(m?.attachments).some(isImg);
+    const hasTextOf = (m) => !!String(m?.content || "").trim();
+    const hasReplyOf = (m) => !!String(m?.replyTo || "").trim();
+    const showTextBlockOf = (m) => hasReplyOf(m) || hasTextOf(m);
+
+    // meta for grouping + time shifting
+    const meta = arr.map((m, i) => {
+      const sid = sidOf(m);
+      const prev = arr[i - 1];
+      const next = arr[i + 1];
+      const prevSid = sidOf(prev);
+      const nextSid = sidOf(next);
+
+      const start =
+        i === 0 ||
+        !prev ||
+        prevSid !== sid ||
+        !sameDay(prev?.createdAt, m?.createdAt);
+
+      const end =
+        !next ||
+        nextSid !== sid ||
+        !sameDay(next?.createdAt, m?.createdAt);
+
+      const hasImgs = hasImgsOf(m);
+      const showTextBlock = showTextBlockOf(m);
+      const imageOnly = !m?.deletedAt && hasImgs && !showTextBlock;
+
+      return { start, end, sid, hasImgs, showTextBlock, imageOnly };
+    });
+
+    // Decide which message row will show the time
+    // Default: the "end" message shows time
+    // Exception: if the end message is image-only => shift time to previous text/reply message in the same sender/day cluster
+    const showTimeKeySet = new Set();
+
+    const keyOf = (m, i) => String(m?._id || m?.clientMsgId || i);
+
+    for (let i = 0; i < arr.length; i++) {
+      if (!meta[i]?.end) continue;
+
+      // Normal case: end msg is not image-only => it owns time
+      if (!meta[i].imageOnly) {
+        showTimeKeySet.add(keyOf(arr[i], i));
+        continue;
+      }
+
+      // Image-only end => shift time backwards to nearest message in same sender/day cluster that has text/reply
+      const sid = meta[i].sid;
+      const day = arr[i]?.createdAt;
+
+      let owner = -1;
+      for (let j = i - 1; j >= 0; j--) {
+        if (meta[j].sid !== sid) break;
+        if (!sameDay(arr[j]?.createdAt, day)) break;
+
+        if (!arr[j]?.deletedAt && meta[j].showTextBlock) {
+          owner = j;
+          break;
+        }
+      }
+
+      if (owner >= 0) showTimeKeySet.add(keyOf(arr[owner], owner));
+      // else: no previous text => no time shown (as requested)
+    }
+
+    // Build timeline output (date separators + msg rows)
     const out = [];
     for (let i = 0; i < arr.length; i++) {
       const m = arr[i];
@@ -991,34 +1059,24 @@ export default function ChatBox({
           k: `d0_${m.createdAt}`,
           v: dayjs(m.createdAt).format("DD/MM/YYYY"),
         });
-      else if (
-        m?.createdAt &&
-        p?.createdAt &&
-        !sameDay(m.createdAt, p.createdAt)
-      )
+      else if (m?.createdAt && p?.createdAt && !sameDay(m.createdAt, p.createdAt))
         out.push({
           t: "date",
           k: `d_${m.createdAt}`,
           v: dayjs(m.createdAt).format("DD/MM/YYYY"),
         });
 
-      const sid = String(m?.senderId?._id || m?.senderId || "");
-      const prev = arr[i - 1],
-        next = arr[i + 1];
-      const prevSid = String(prev?.senderId?._id || prev?.senderId || "");
-      const nextSid = String(next?.senderId?._id || next?.senderId || "");
-      const start =
-        i === 0 ||
-        !prev ||
-        prevSid !== sid ||
-        !sameDay(prev?.createdAt, m?.createdAt);
-      const end =
-        !next ||
-        nextSid !== sid ||
-        !sameDay(next?.createdAt, m?.createdAt);
-
-      out.push({ t: "msg", k: String(m?._id || m?.clientMsgId || i), m, start, end });
+      const k = keyOf(m, i);
+      out.push({
+        t: "msg",
+        k,
+        m,
+        start: meta[i].start,
+        end: meta[i].end,
+        showTime: showTimeKeySet.has(k),
+      });
     }
+
     return out;
   }, [items, hiddenSet]);
 
@@ -1278,7 +1336,7 @@ export default function ChatBox({
           const hasText = !!String(m?.content || "").trim();
           const showTextBlock = !!replyId || hasText;
           const cols = Math.min(3, Math.max(1, imgs.length));
-          const timeNode = row.end ? (
+          const timeNode = row.showTime ? (
             <div className={"fm-chat-time" + (mine ? " is-mine" : "")}>
               {m?.createdAt ? dayjs(m.createdAt).format("HH:mm") : ""}
             </div>
@@ -1473,7 +1531,7 @@ export default function ChatBox({
                           )}
 
                           {hasText ? <div className="fm-chat-text">{m.content}</div> : null}
-                          {!hasImgs ? timeNode : null}
+                          {timeNode}
                           {!hasImgs ? reactBadgeNode : null}
                         </div>
                       )}
@@ -1505,7 +1563,6 @@ export default function ChatBox({
                             ))}
                           </div>
 
-                          {timeNode}
                           {reactBadgeNode}
                         </div>
                       )}

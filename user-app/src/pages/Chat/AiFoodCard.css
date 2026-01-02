@@ -1,14 +1,16 @@
 .fm-ai-card{
-  margin-top:8px;
-  border:1px dashed rgba(0,0,0,.18);
-  background:rgba(255,255,255,.75);
+  margin-top:10px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
   border-radius:12px;
   padding:10px;
+  color:#e5e7eb;
 }
 
 .fm-ai-card .fm-ai-title{
-  font-weight:700;
+  font-weight:600;
   margin-bottom:6px;
+  color:#fff;
 }
 
 .fm-ai-macros{
@@ -22,10 +24,11 @@
 .fm-ai-similar{
   margin-top:10px;
   font-size:13px;
+  color: rgba(229,231,235,.88);
 }
 
 .fm-ai-simlist{
-  margin-top:6px;
+  margin-top:8px;
   display:flex;
   gap:8px;
   flex-wrap:wrap;
@@ -35,17 +38,23 @@
   display:flex;
   gap:8px;
   align-items:center;
-  padding:6px 8px;
+  padding:7px 9px;
   border-radius:10px;
-  border:1px solid rgba(0,0,0,.08);
-  background:#fff;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
   max-width:260px;
   cursor:pointer;
   user-select:none;
+  transition: background .12s ease, border-color .12s ease;
+}
+
+.fm-ai-simitem:hover{
+  background: rgba(26,115,232,.10);
+  border-color: rgba(26,115,232,.28);
 }
 
 .fm-ai-simitem:focus{
-  outline:2px solid rgba(0,128,128,.35);
+  outline:2px solid rgba(26,115,232,.35);
   outline-offset:2px;
 }
 
@@ -53,18 +62,20 @@
   width:36px;height:36px;
   object-fit:cover;
   border-radius:8px;
-  border:1px solid rgba(0,0,0,.08);
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
 }
 
 .fm-ai-simname{
   font-size:13px;
-  font-weight:600;
+  font-weight:700;
   line-height:1.2;
+  color:#fff;
 }
 
 .fm-ai-simsub{
   font-size:12px;
-  opacity:.7;
+  color: rgba(229,231,235,.72);
 }
 
 .fm-ai-actions{
@@ -72,20 +83,33 @@
   display:flex;
   gap:8px;
   flex-wrap:wrap;
+  justify-content: right;
 }
 
 .fm-ai-btn{
-  border:none;
-  border-radius:10px;
-  padding:8px 12px;
-  cursor:pointer;
-  background:#008080;
-  color:#fff;
-  font-weight:600;
+  font-size: 14px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  color: #fff;
+  background-color: #f00519;
+  padding: 0 10px;
+  font-weight: 500;
+}
+
+.fm-ai-btn:hover{
+  color: #002c3e;
+  background-color: #fff;
 }
 
 .fm-ai-btn.ghost{
+font-weight: 500;
   background:transparent;
-  color:#111;
-  border:1px solid rgba(0,0,0,.18);
+  color:#e5e7eb;
+  border:1px solid rgba(255,255,255,.18);
+}
+
+.fm-ai-btn.ghost:hover{
+  background: rgba(255,255,255,.06);
 }

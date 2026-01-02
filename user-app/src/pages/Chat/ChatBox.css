@@ -77,6 +77,12 @@
 /* =========================
     Media attachments
    ========================= */
+.fm-chat-bubble.is-media{
+  background: rgba(255,255,255,.04);
+}
+.fm-chat-img img{
+  background: rgba(255,255,255,.04);
+}
 .fm-chat-bubble.is-media .fm-chat-atts{margin-top:0;}
 .fm-chat-atts{display:grid;max-width:100%}
 .fm-chat-atts.cols-1{grid-template-columns:1fr}
