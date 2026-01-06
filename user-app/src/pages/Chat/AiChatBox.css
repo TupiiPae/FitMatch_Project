@@ -1,0 +1,304 @@
+/* Đồng bộ tone Messages cho AI chat (scope bằng .fm-ai-chat) */
+
+.fm-ai-chat{
+  color:#e5e7eb;
+}
+
+/* nền list */
+.fm-ai-chat .fm-chat-list{
+  background: #121212;
+  color:#e5e7eb;
+}
+
+/* date chip */
+.fm-ai-chat .fm-chat-date span{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(229,231,235,.80);
+}
+
+/* bubble mặc định (AI) */
+.fm-ai-chat .fm-chat-bubble{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  color:#e5e7eb;
+}
+
+/* bubble của tôi */
+.fm-ai-chat .fm-chat-bubble.is-mine{
+  background:#1A73E8
+}
+
+/* text + time đỡ chìm */
+.fm-ai-chat .fm-chat-text{
+  color:#e5e7eb;
+  line-height:1.5;
+}
+
+.fm-ai-chat .fm-chat-time{
+  color: rgba(229,231,235,.60);
+}
+
+/* media bubble */
+.fm-ai-chat .fm-chat-bubble.is-media{
+  background: rgba(255,255,255,.04);
+}
+
+/* ảnh trong bubble */
+.fm-ai-chat .fm-chat-img img{
+  background: rgba(255,255,255,.04);
+}
+
+/* avatar AI (icon nền xanh giống Messages AI) */
+.fm-ai-chat .fm-chat-ava{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+}
+
+/* compose đồng bộ Messages */
+.fm-ai-chat .fm-chat-compose{
+  background:#221010;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+/* input */
+.fm-ai-chat .fm-chat-input,
+.fm-ai-chat .fm-chat-textarea{
+  background: rgba(255,255,255,.03);
+  color:#e5e7eb;
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.fm-ai-chat .fm-chat-input::placeholder,
+.fm-ai-chat .fm-chat-textarea::placeholder{
+  color: rgba(229,231,235,.55);
+}
+
+/* attach/send buttons */
+.fm-ai-chat .fm-chat-attach,
+.fm-ai-chat .fm-chat-send{
+  color:#e5e7eb;
+}
+
+.fm-ai-chat .fm-chat-attach:hover,
+.fm-ai-chat .fm-chat-send:hover{
+  background: rgba(255,255,255,.10);
+}
+
+/* draft image chips */
+.fm-ai-chat .fm-chat-draftimg{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+}
+
+.fm-ai-chat .fm-chat-draftimg-x{
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(255,255,255,.14);
+  color:#fff;
+}
+
+/* AiFoodCard */
+.fm-ai-card{
+  margin-top:10px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  border-radius:12px;
+  padding:10px;
+  color:#e5e7eb;
+}
+
+.fm-ai-card .fm-ai-title{
+  font-weight:600;
+  margin-bottom:6px;
+  color:#fff;
+}
+
+.fm-ai-macros{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  font-size:13px;
+  opacity:.95;
+}
+
+.fm-ai-similar{
+  margin-top:10px;
+  font-size:13px;
+  color: rgba(229,231,235,.88);
+}
+
+.fm-ai-simlist{
+  margin-top:8px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.fm-ai-simitem{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  padding:7px 9px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  max-width:260px;
+  cursor:pointer;
+  user-select:none;
+  transition: background .12s ease, border-color .12s ease;
+}
+
+.fm-ai-simitem:hover{
+  background: rgba(26,115,232,.10);
+  border-color: rgba(26,115,232,.28);
+}
+
+.fm-ai-simitem:focus{
+  outline:2px solid rgba(26,115,232,.35);
+  outline-offset:2px;
+}
+
+.fm-ai-simitem img{
+  width:36px;height:36px;
+  object-fit:cover;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+}
+
+.fm-ai-simname{
+  font-size:13px;
+  font-weight:700;
+  line-height:1.2;
+  color:#fff;
+}
+
+.fm-ai-simsub{
+  font-size:12px;
+  color: rgba(229,231,235,.72);
+}
+
+.fm-ai-actions{
+  margin-top:10px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content: right;
+}
+
+.fm-ai-btn{
+  font-size: 14px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  color: #fff;
+  background-color: #f00519;
+  padding: 0 10px;
+  font-weight: 500;
+}
+
+.fm-ai-btn:hover{
+  color: #002c3e;
+  background-color: #fff;
+}
+
+.fm-ai-btn.ghost{
+  font-weight: 500;
+  background:transparent;
+  color:#e5e7eb;
+  border:1px solid rgba(255,255,255,.18);
+}
+
+.fm-ai-btn.ghost:hover{
+  background: rgba(255,255,255,.06);
+}
+
+/* ====== MERGED: Suggest Menu UI ====== */
+.fm-ai-card-menu .fm-ai-menuhint{
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: rgba(229,231,235,.86);
+}
+
+.fm-ai-menulist{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.fm-ai-menuitem{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:9px 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  cursor:pointer;
+  user-select:none;
+  transition: background .12s ease, border-color .12s ease;
+}
+
+.fm-ai-menuitem:hover{
+  background: rgba(26,115,232,.10);
+  border-color: rgba(26,115,232,.28);
+}
+
+.fm-ai-menuitem:focus{
+  outline:2px solid rgba(26,115,232,.35);
+  outline-offset:2px;
+}
+
+.fm-ai-menuitem > img{
+  width:44px;
+  height:44px;
+  object-fit:cover;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  flex: 0 0 auto;
+}
+
+.fm-ai-menuinfo{
+  min-width:0;
+  flex:1 1 auto;
+}
+
+.fm-ai-savebtn{
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(0,0,0,.18);
+  color: rgba(229,231,235,.92);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease;
+}
+
+.fm-ai-savebtn:hover{
+  background: rgba(255,255,255,.06);
+}
+
+.fm-ai-savebtn.is-saved{
+  background: rgba(26,115,232,.18);
+  border-color: rgba(26,115,232,.35);
+  color: #fff;
+}
+
+.fm-ai-savebtn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* tiny loading line (optional) */
+.fm-ai-detailloading{
+  position: absolute;
+  left: 12px;
+  bottom: 64px;
+  font-size: 12px;
+  color: rgba(229,231,235,.65);
+  pointer-events: none;
+}

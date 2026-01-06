@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { listAiMessages, sendAiChat, uploadAiImage } from "../../api/ai";
-import "./ChatBox.css"; // reuse style .fm-chat
-import "./AiChatBoxTheme.css";
-import "./AiFoodCard.css";
+import { toggleSaveSuggestMenu } from "../../api/suggestMenus";
+
+import "./AiChatBox.css"; 
+
 import DetailModal from "../Nutrition/components/DetailModal/DetailModal";
 import { getFood } from "../../api/foods";
 import api from "../../lib/api";
@@ -93,6 +94,9 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailFood, setDetailFood] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // ===== SuggestMenu saving state =====
+  const [savingMenuMap, setSavingMenuMap] = useState({}); // { [menuId]: true/false }
 
   // ===== File preview urls =====
   const fileUrlMapRef = useRef(new Map());
@@ -263,6 +267,119 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       toast.error(e?.response?.data?.message || "Không tải được chi tiết món ăn");
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  // ===== SuggestMenu helpers (merge AiSuggestMenu vào đây) =====
+  const getSuggestMenusFromMeta = (meta) => {
+    if (!meta) return [];
+    const a = pick(meta?.suggestMenus, meta?.suggestedMenus, meta?.menus, meta?.menuSuggestions);
+    const b = meta?.suggestMenu ? [meta.suggestMenu] : [];
+    const out = safeArr(a).length ? safeArr(a) : b;
+    return out.filter(Boolean);
+  };
+
+  const menuIdOf = (menu) => String(pick(menu?._id, menu?.id, menu?.menuId) || "");
+  const menuNameOf = (menu) => String(pick(menu?.name, menu?.title, menu?.menuName) || "Thực đơn");
+  const menuImgOf = (menu) => toAbs(pick(menu?.imageUrl, menu?.thumbUrl, menu?.coverUrl, menu?.thumbnail) || "");
+  const menuKcalOf = (menu) =>
+    pick(
+      menu?.kcalPerDay,
+      menu?.kcalDay,
+      menu?.dayKcal,
+      menu?.targetKcal,
+      menu?.totalKcal,
+      menu?.totalCalories
+    );
+  const menuDaysOf = (menu) => pick(menu?.days, menu?.numDays, menu?.dayCount);
+
+  const menuSavedOf = (menu) =>
+    !!pick(menu?.isSaved, menu?.saved, menu?.savedByMe, menu?.isBookmarked);
+
+  const patchSuggestMenusInMessage = (msg, menuId, patch) => {
+    if (!msg?.meta) return msg;
+    const meta = msg.meta;
+
+    const keys = ["suggestMenus", "suggestedMenus", "menus", "menuSuggestions"];
+    let changed = false;
+    const nextMeta = { ...meta };
+
+    for (const k of keys) {
+      if (Array.isArray(meta?.[k])) {
+        const nextArr = meta[k].map((mn) => {
+          if (!mn) return mn;
+          const id = menuIdOf(mn);
+          if (id && id === menuId) {
+            changed = true;
+            return { ...mn, ...patch };
+          }
+          return mn;
+        });
+        nextMeta[k] = nextArr;
+      }
+    }
+
+    if (meta?.suggestMenu && menuIdOf(meta.suggestMenu) === menuId) {
+      changed = true;
+      nextMeta.suggestMenu = { ...meta.suggestMenu, ...patch };
+    }
+
+    return changed ? { ...msg, meta: nextMeta } : msg;
+  };
+
+  const patchMenuSavedEverywhere = (menuId, saved) => {
+    setItems((prev) =>
+      prev.map((msg) =>
+        String(msg?.role) === "assistant"
+          ? patchSuggestMenusInMessage(msg, menuId, { isSaved: saved, saved })
+          : msg
+      )
+    );
+  };
+
+  const goSuggestMenuDetail = (menu) => {
+    const id = menuIdOf(menu);
+    if (!id) return;
+    // Nếu route của bạn khác, chỉ cần đổi path ở đây:
+    nav(`/dinh-duong/thuc-don-goi-y/${id}`, { state: { fromAiChat: true } });
+  };
+
+  const toggleSaveMenu = async (menu) => {
+    const id = menuIdOf(menu);
+    if (!id) return;
+
+    if (savingMenuMap[id]) return;
+
+    const curSaved = menuSavedOf(menu);
+    const optimistic = !curSaved;
+
+    // optimistic update
+    patchMenuSavedEverywhere(id, optimistic);
+    setSavingMenuMap((p) => ({ ...p, [id]: true }));
+
+    try {
+      const r = await toggleSaveSuggestMenu(id);
+
+      // cố gắng đọc trạng thái saved từ response
+      const savedFromRes = pick(
+        r?.data?.data?.saved,
+        r?.data?.data?.isSaved,
+        r?.data?.saved,
+        r?.data?.isSaved,
+        r?.saved,
+        r?.isSaved
+      );
+
+      if (savedFromRes !== undefined) {
+        patchMenuSavedEverywhere(id, !!savedFromRes);
+      }
+    } catch (e) {
+      console.error(e);
+      // revert
+      patchMenuSavedEverywhere(id, curSaved);
+      toast.error(e?.response?.data?.message || "Không thể lưu/bỏ lưu thực đơn");
+    } finally {
+      setSavingMenuMap((p) => ({ ...p, [id]: false }));
     }
   };
 
@@ -467,7 +584,6 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
               src={imgView.url}
               alt={imgView.name || "image"}
               onError={(e) => {
-                // fallback nếu url lỗi
                 e.currentTarget.alt = "Ảnh lỗi";
               }}
             />
@@ -508,10 +624,21 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
             </div>
           ) : null;
 
-          const offer = !mine && m?.meta?.offerCreateFood && m?.meta?.foodDraft;
-          const draft = offer ? m.meta.foodDraft : null;
-          const similarFoods = offer ? safeArr(m?.meta?.similarFoods) : [];
-          const hasSimilar = offer ? !!m?.meta?.hasSimilar : false;
+          // ===== AI: create food card =====
+          const offerFood = !mine && m?.meta?.offerCreateFood && m?.meta?.foodDraft;
+          const draft = offerFood ? m.meta.foodDraft : null;
+          const similarFoods = offerFood ? safeArr(m?.meta?.similarFoods) : [];
+          const hasSimilar = offerFood ? !!m?.meta?.hasSimilar : false;
+
+          // ===== AI: suggest menu card (merge) =====
+          const suggestMenus = !mine ? getSuggestMenusFromMeta(m?.meta) : [];
+          const hasSuggestMenus = suggestMenus.length > 0;
+          const targetKcalHint = pick(
+            m?.meta?.targetKcal,
+            m?.meta?.goalKcal,
+            m?.meta?.userTargetKcal,
+            m?.meta?.caloTarget
+          );
 
           return (
             <div key={row.k} className={"fm-chat-row" + (mine ? " is-mine" : "")}>
@@ -569,7 +696,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                   )}
 
                   {/* ===== AI FOOD CARD ===== */}
-                  {offer && draft ? (
+                  {offerFood && draft ? (
                     <div className="fm-ai-card">
                       <div className="fm-ai-title">Ước lượng từ ảnh</div>
 
@@ -642,6 +769,92 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                       </div>
                     </div>
                   ) : null}
+
+                  {/* ===== AI SUGGEST MENU CARD (MERGED) ===== */}
+                  {hasSuggestMenus ? (
+                    <div className="fm-ai-card fm-ai-card-menu">
+                      <div className="fm-ai-title">Thực đơn gợi ý</div>
+
+                      {targetKcalHint !== undefined && targetKcalHint !== null && targetKcalHint !== "" ? (
+                        <div className="fm-ai-menuhint">
+                          Phù hợp mục tiêu: <b>{fmt(targetKcalHint)}</b> kcal/ngày
+                        </div>
+                      ) : null}
+
+                      <div className="fm-ai-menulist">
+                        {suggestMenus.slice(0, 6).map((mn) => {
+                          const id = menuIdOf(mn);
+                          const name = menuNameOf(mn);
+                          const img = menuImgOf(mn) || "/images/food-placeholder.png";
+                          const kcal = menuKcalOf(mn);
+                          const days = menuDaysOf(mn);
+                          const saved = menuSavedOf(mn);
+                          const saving = !!savingMenuMap[id];
+
+                          return (
+                            <div
+                              key={id || name}
+                              className="fm-ai-menuitem"
+                              role="button"
+                              tabIndex={0}
+                              title="Xem chi tiết thực đơn"
+                              onClick={() => goSuggestMenuDetail(mn)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") goSuggestMenuDetail(mn);
+                              }}
+                            >
+                              <img
+                                src={img}
+                                alt=""
+                                onError={(e) => {
+                                  e.currentTarget.src = "/images/food-placeholder.png";
+                                }}
+                              />
+
+                              <div className="fm-ai-menuinfo">
+                                <div className="fm-ai-simname">{name}</div>
+                                <div className="fm-ai-simsub">
+                                  {kcal !== undefined && kcal !== null && kcal !== "" ? (
+                                    <>
+                                      {fmt(kcal)} kcal/ngày
+                                      {days !== undefined && days !== null && days !== "" ? " • " : ""}
+                                    </>
+                                  ) : null}
+                                  {days !== undefined && days !== null && days !== "" ? (
+                                    <>{fmt(days)} ngày</>
+                                  ) : null}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className={"fm-ai-savebtn" + (saved ? " is-saved" : "")}
+                                disabled={!id || saving}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  toggleSaveMenu(mn);
+                                }}
+                                title={saved ? "Bỏ lưu" : "Lưu thực đơn"}
+                              >
+                                {saving ? "…" : saved ? "Đã lưu" : "Lưu"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="fm-ai-actions">
+                        <button
+                          type="button"
+                          className="fm-ai-btn ghost"
+                          onClick={() => nav("/dinh-duong/thuc-don-goi-y")}
+                        >
+                          Xem tất cả
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -655,7 +868,13 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
         <div className="fm-chat-inputrow">
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onPickFile} />
 
-          <button type="button" className="fm-chat-attach" onClick={pickFiles} title="Gửi hình ảnh cho AI">
+          <button
+            type="button"
+            className="fm-chat-attach"
+            onClick={pickFiles}
+            title="Gửi hình ảnh cho AI"
+            disabled={uploading || sending}
+          >
             <i className="fa-regular fa-images" />
           </button>
 
@@ -716,7 +935,9 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       </div>
 
       <DetailModal open={detailOpen} food={detailFood} onClose={closeFoodDetail} />
-      {detailLoading ? null : null}
+
+      {/* giữ lại loading để không bị eslint unused */}
+      {detailLoading ? <div className="fm-ai-detailloading">Đang tải chi tiết…</div> : null}
     </div>
   );
 }
