@@ -1087,6 +1087,7 @@ export async function getRoomDetail(req, res, next) {
 }
 
 // POST /api/match/rooms/:id/leave
+// POST /api/match/rooms/:id/leave
 export async function leaveMatchRoom(req, res, next) {
   try {
     const userId = getUserIdFromReq(req);
@@ -1118,6 +1119,10 @@ export async function leaveMatchRoom(req, res, next) {
       });
     }
 
+    // snapshot name trước khi splice (để thông báo)
+    const leaverName = await getUserNameById(userId);
+
+    // remove member
     room.members.splice(idx, 1);
 
     if (room.members.length === 0) {
@@ -1134,6 +1139,57 @@ export async function leaveMatchRoom(req, res, next) {
     }
 
     await room.save();
+
+    // ==========================
+    // ✅ NEW NOTIFICATIONS (added)
+    // ==========================
+    const remainIds = (room.members || [])
+      .map((m) => String(m?.user || ""))
+      .filter(Boolean);
+
+    // 1) Duo: notify người còn lại
+    if (room.type === "duo" && remainIds.length) {
+      for (const toId of remainIds) {
+        if (String(toId) === String(userId)) continue;
+        await notifySafe({
+          to: String(toId),
+          from: String(userId),
+          type: "duo_member_left",
+          title: "Đối phương đã rời kết nối",
+          body: `${leaverName} đã rời khỏi kết nối đôi.`,
+          data: {
+            screen: "Connect",
+            tab: "duo",
+            mode: "duo",
+            roomId: String(room._id),
+            action: "left",
+          },
+        });
+      }
+    }
+
+    // 2) Group: notify các thành viên còn lại (không đụng tới "group_member_removed")
+    if (room.type === "group" && remainIds.length) {
+      const roomName = room?.name || "Nhóm tập luyện";
+      for (const toId of remainIds) {
+        if (String(toId) === String(userId)) continue;
+        await notifySafe({
+          to: String(toId),
+          from: String(userId),
+          type: "group_member_left",
+          title: "Thành viên đã rời nhóm",
+          body: `${leaverName} đã rời khỏi nhóm "${roomName}".`,
+          data: {
+            screen: "Connect",
+            tab: "team",
+            mode: "group",
+            roomId: String(room._id),
+            action: "left",
+          },
+        });
+      }
+    }
+
     return responseOk(res, {
       roomId: room._id,
       status: room.status,
@@ -1442,29 +1498,76 @@ export async function manageGroupMembers(req, res, next) {
     // ✅ NOTIFICATIONS: owner assigned + member removed
     const actorName = await getUserNameById(userId);
 
-    // (a) Bạn được chỉ định làm chủ nhóm
+    // (a) Chỉ định nhóm trưởng -> thông báo cho TẤT CẢ thành viên
     if (newOwner && beforeOwnerId && String(newOwner) !== String(beforeOwnerId)) {
-      await notifySafe({
-        to: String(newOwner),
-        from: String(userId),
-        type: "group_owner_assigned",
-        title: "Bạn đã được chỉ định làm chủ nhóm",
-        body: `${actorName} đã chỉ định bạn làm chủ nhóm "${room?.name || "Nhóm tập luyện"}".`,
-        data: { screen: "Connect", tab: "team", mode: "group", roomId: String(room._id) },
-      });
+      const roomName = room?.name || "Nhóm tập luyện";
+      const newOwnerName = await getUserNameById(newOwner);
+
+      const idsAfter = roomMemberIds(room); // members sau khi đã save()
+
+      for (const toId of idsAfter) {
+        const isNewOwner = String(toId) === String(newOwner);
+
+        await notifySafe({
+          to: String(toId),
+          from: String(userId),
+          type: "group_owner_assigned",
+          title: "Chỉ định nhóm trưởng",
+          body: isNewOwner
+            ? `${actorName} đã chỉ định bạn làm chủ nhóm "${roomName}".`
+            : `${actorName} đã chỉ định ${newOwnerName} làm chủ nhóm "${roomName}".`,
+          data: {
+            screen: "Connect",
+            tab: "team",
+            mode: "group",
+            roomId: String(room._id),
+            action: "owner_assigned",
+            ownerId: String(newOwner),
+          },
+        });
+      }
     }
 
-    // (b) Bạn đã bị mời ra khỏi nhóm
-    for (const removedId of removeSet) {
-      if (!beforeMemberIds.has(String(removedId))) continue;
-      await notifySafe({
-        to: String(removedId),
-        from: String(userId),
-        type: "group_member_removed",
-        title: "Bạn đã bị mời ra khỏi nhóm",
-        body: `Bạn đã bị mời ra khỏi nhóm "${room?.name || "Nhóm tập luyện"}".`,
-        data: { screen: "Connect", tab: "team", mode: "group", roomId: String(room._id) },
-      });
+    // (c) Thông báo cho các thành viên còn lại: thành viên đã bị chủ nhóm mời ra
+    const removedIds = [...removeSet].filter((rid) => beforeMemberIds.has(String(rid)));
+    const remainIds = roomMemberIds(room);
+
+    // lấy tên các user bị remove theo batch để giảm query
+    let removedNameMap = new Map();
+    if (removedIds.length) {
+      const docs = await User.find({ _id: { $in: removedIds } })
+        .select("username email profile.nickname")
+        .lean()
+        .catch(() => []);
+      removedNameMap = new Map(docs.map((u) => [String(u._id), pickName(u)]));
+    }
+
+    const roomName = room?.name || "Nhóm tập luyện";
+
+    for (const removedId of removedIds) {
+      const removedName = removedNameMap.get(String(removedId)) || "Một thành viên";
+
+      for (const toId of remainIds) {
+        // không notify cho người thực hiện và người bị remove
+        if (String(toId) === String(userId)) continue;
+        if (String(toId) === String(removedId)) continue;
+
+        await notifySafe({
+          to: String(toId),
+          from: String(userId),
+          type: "group_member_kicked",
+          title: "Thành viên đã bị mời ra khỏi nhóm",
+          body: `${removedName} đã bị ${actorName} mời ra khỏi nhóm "${roomName}".`,
+          data: {
+            screen: "Connect",
+            tab: "team",
+            mode: "group",
+            roomId: String(room._id),
+            action: "kicked",
+            kickedUserId: String(removedId),
+          },
+        });
+      }
     }
 
     const populated = await MatchRoom.findById(roomId)
