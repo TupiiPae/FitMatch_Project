@@ -82,6 +82,80 @@ const unwrapItems = (payload) => {
 const AI_CONV_ID = "ai";
 const AI_TITLE = "Fitmatch AI";
 const AI_SUB = "Quét ảnh món ăn • Gợi ý thực đơn • Gợi ý lịch tập";
+const AI_HELP_PAGES = [
+  {
+    key: "scan",
+    title: "Quét ảnh món ăn",
+    sub: "Gửi kèm ảnh món ăn để AI ước tính kcal & macro.",
+    prompts: [
+      "Mình gửi ảnh món ăn này, giúp ước tính kcal + protein/carb/fat cho 1 phần.",
+      "Ảnh này là món gì? Ước tính dinh dưỡng giúp mình.",
+      "Món trong ảnh này khoảng bao nhiêu kcal? Cho mình luôn macro nhé.",
+      "Giúp mình ước lượng khẩu phần (gram) và kcal cho món trong ảnh.",
+      "Nếu mình ăn món trong ảnh này, nên ghi log khẩu phần như thế nào?",
+    ],
+  },
+  {
+    key: "menu_rec",
+    title: "Gợi ý thực đơn (DB FitMatch)",
+    sub: "AI sẽ lấy mục tiêu + calo của bạn và gợi ý thực đơn phù hợp trong FitMatch.",
+    prompts: [
+      "Gợi ý thực đơn phù hợp với mục tiêu của mình.",
+      "Gợi ý thực đơn 3–5 ngày cho mình theo calo mục tiêu.",
+      "Gợi ý thực đơn trong khoảng 2200-2400 kcal/ngày.",
+      "Mình muốn thực đơn ít tinh bột - tăng đạm, gợi ý giúp mình.",
+      "Cho mình vài thực đơn FitMatch phù hợp để mình lưu lại.",
+    ],
+  },
+  {
+    key: "menu_gen",
+    title: "Tạo thực đơn mới (AI tự tạo)",
+    sub: "Dùng khi không thấy thực đơn phù hợp trong FitMatch.",
+    prompts: [
+      "Tạo thực đơn mới 3 ngày cho mình theo calo mục tiêu.",
+      "Mình không ưng các thực đơn trên, tạo thực đơn mới giúp mình.",
+      "Tạo thực đơn mới ít dầu mỡ, dễ làm, đủ calo mục tiêu.",
+      "Tạo thực đơn mới cho mục tiêu tăng cơ, ưu tiên đạm cao.",
+    ],
+  },
+  {
+    key: "plan_rec",
+    title: "Gợi ý lịch tập (DB FitMatch)",
+    sub: "AI sẽ ưu tiên theo mục tiêu + cường độ tập của bạn.",
+    prompts: [
+      "Gợi ý lịch tập phù hợp với mục tiêu của mình.",
+      "Gợi ý lịch tập tại nhà cho mình.",
+      "Gợi ý lịch tập tại gym cho mình.",
+      "Gợi ý lịch tập Cardio và HIIT cho mình.",
+      "Cho mình vài lịch tập FitMatch phù hợp để mình lưu lại.",
+    ],
+  },
+  {
+    key: "plan_gen",
+    title: "Tạo lịch tập mới (AI tự tạo)",
+    sub: "Dùng khi không thấy lịch tập phù hợp trong FitMatch.",
+    prompts: [
+      "Mình không ưng các lịch tập trên, tạo lịch tập mới giúp mình.",
+      "Tạo lịch tập mới 3 buổi/tuần cho người mới bắt đầu.",
+      "Tạo lịch tập mới 4 buổi/tuần để tăng cơ.",
+      "Tạo lịch tập mới ưu tiên giảm mỡ, tăng sức bền.",
+    ],
+  },
+  {
+    key: "nutrition",
+    title: "Hỏi nhanh dinh dưỡng / macro",
+    sub: "Hỏi kiến thức dinh dưỡng chung (không cần thực đơn DB).",
+    prompts: [
+      "1 ngày mình nên chia protein/carb/fat thế nào để phù hợp mục tiêu?",
+      "Ăn trước tập nên ăn gì để đủ năng lượng mà không nặng bụng?",
+      "Sau tập nên ăn gì để phục hồi và tăng cơ?",
+      "Một bữa nên có bao nhiêu protein là hợp lý?",
+      "Mình muốn giảm mỡ nhưng không mất cơ, nên chú ý gì về ăn uống?",
+    ],
+  },
+];
+
+const AI_HELP_INTERVAL_MS = 3000;
 
 
 export default function Messages() {
@@ -110,6 +184,114 @@ export default function Messages() {
   });
 
   const isAiActive = String(activeConvId || "") === AI_CONV_ID;
+
+    const onAiHelpPointerDown = (e) => {
+    // chỉ xử lý khi dropdown đang mở
+    if (!aiHelpOpen) return;
+
+    setAiHelpAuto(false); // user chạm => tắt auto
+    setAiHelpDragging(true);
+
+    aiHelpDragRef.current = {
+      active: true,
+      startX: e.clientX,
+      pointerId: e.pointerId,
+    };
+
+  };
+
+  const onAiHelpPointerMove = (e) => {
+    if (!aiHelpDragRef.current.active) return;
+    const dx = e.clientX - aiHelpDragRef.current.startX;
+    setAiHelpDragX(dx);
+  };
+
+  const onAiHelpPointerEnd = (e) => {
+    if (!aiHelpDragRef.current.active) return;
+
+    const dx = e.clientX - aiHelpDragRef.current.startX;
+    const w = aiHelpViewportRef.current?.clientWidth || 1;
+    const threshold = Math.min(90, w * 0.22);
+
+    if (dx > threshold) {
+      // prev
+      setAiHelpIndex((i) => (i - 1 + AI_HELP_PAGES.length) % AI_HELP_PAGES.length);
+    } else if (dx < -threshold) {
+      // next
+      setAiHelpIndex((i) => (i + 1) % AI_HELP_PAGES.length);
+    }
+
+    setAiHelpDragX(0);
+    setAiHelpDragging(false);
+    aiHelpDragRef.current = { active: false, startX: 0, pointerId: null };
+
+    try {
+      aiHelpViewportRef.current?.releasePointerCapture?.(e.pointerId);
+    } catch {}
+  };
+
+    // ===== AI Help dropdown (carousel) =====
+  const [aiHelpOpen, setAiHelpOpen] = useState(false);
+  const [aiHelpIndex, setAiHelpIndex] = useState(0);
+  const [aiHelpAuto, setAiHelpAuto] = useState(true);
+
+  const aiHelpRef = useRef(null);
+  const aiHelpBtnRef = useRef(null);
+  const aiHelpViewportRef = useRef(null);
+
+  const [aiHelpDragX, setAiHelpDragX] = useState(0);
+  const [aiHelpDragging, setAiHelpDragging] = useState(false);
+  const aiHelpDragRef = useRef({ active: false, startX: 0, pointerId: null });
+
+  const closeAiHelp = () => {
+    setAiHelpOpen(false);
+    setAiHelpDragX(0);
+    setAiHelpDragging(false);
+    aiHelpDragRef.current = { active: false, startX: 0, pointerId: null };
+  };
+
+  const toggleAiHelp = () => {
+    setAiHelpOpen((v) => {
+      const next = !v;
+      if (next) {
+        setAiHelpIndex(0);     // mở ra luôn ở trang 1
+        setAiHelpAuto(true);   // bật auto khi mở
+      }
+      return next;
+    });
+  };
+
+  const copyPromptText = async (text) => {
+    const t = String(text || "").trim();
+    if (!t) return;
+
+    try {
+      await navigator.clipboard.writeText(t);
+      toast.success("Đã copy câu hỏi mẫu ");
+    } catch {
+      // fallback cho môi trường chặn clipboard
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = t;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        toast.success("Đã copy câu hỏi mẫu");
+      } catch {
+        toast.error("Không thể copy. Bạn thử copy thủ công giúp mình nhé.");
+      }
+    }
+  };
+
+  const goToAiHelp = (idx) => {
+    const n = AI_HELP_PAGES.length;
+    const next = ((Number(idx) || 0) % n + n) % n;
+    setAiHelpIndex(next);
+    setAiHelpAuto(false); // user đã can thiệp => tắt auto
+  };
 
   const openAi = () => {
     setActiveConvId(AI_CONV_ID);
@@ -508,6 +690,47 @@ export default function Messages() {
     };
   }, [activePeer, isAiActive]);
 
+    // đóng dropdown nếu rời khỏi AI chat
+  useEffect(() => {
+    if (!isAiActive) closeAiHelp();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAiActive]);
+
+  // auto slide mỗi 3s khi open và còn auto
+  useEffect(() => {
+    if (!aiHelpOpen || !aiHelpAuto) return;
+
+    const t = setInterval(() => {
+      setAiHelpIndex((i) => (i + 1) % AI_HELP_PAGES.length);
+    }, AI_HELP_INTERVAL_MS);
+
+    return () => clearInterval(t);
+  }, [aiHelpOpen, aiHelpAuto]);
+
+  // click outside + ESC để đóng
+  useEffect(() => {
+    if (!aiHelpOpen) return;
+
+    const onDown = (e) => {
+      const el = aiHelpRef.current;
+      const btn = aiHelpBtnRef.current;
+      if (el?.contains(e.target)) return;
+      if (btn?.contains(e.target)) return;
+      closeAiHelp();
+    };
+
+    const onKey = (e) => {
+      if (e.key === "Escape") closeAiHelp();
+    };
+
+    document.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [aiHelpOpen]);
+
   const chatMembers = useMemo(() => {
     const meId = String(me?._id || "");
     const peerId = getId(activePeer);
@@ -790,6 +1013,96 @@ export default function Messages() {
                       <div className="msg-peer-sub">{AI_SUB}</div>
                     </div>
                   </div>
+
+                  <div className="msg-head-spacer" />
+
+                  {/* ✅ Help icon + dropdown carousel */}
+                  <div className="msg-ai-help" ref={aiHelpRef}>
+                    <button
+                      ref={aiHelpBtnRef}
+                      type="button"
+                      className={`msg-ai-help-btn ${aiHelpOpen ? "is-on" : ""}`}
+                      title="Gợi ý câu hỏi cho FitMatch AI"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleAiHelp();
+                      }}
+                    >
+                      <i className="fa-solid fa-circle-question" />
+                    </button>
+
+                    {aiHelpOpen && (
+                      <div className="msg-ai-dd" role="dialog" aria-label="Gợi ý câu hỏi FitMatch AI">
+                        <div className="msg-ai-dd-head">
+                          <div className="msg-ai-dd-title">Gợi ý câu hỏi</div>
+                          <div className="msg-ai-dd-hint">Nhấp vào câu để copy</div>
+                        </div>
+
+                        <div
+                          className="msg-ai-dd-viewport"
+                          ref={aiHelpViewportRef}
+                          onPointerDown={onAiHelpPointerDown}
+                          onPointerMove={onAiHelpPointerMove}
+                          onPointerUp={onAiHelpPointerEnd}
+                          onPointerCancel={onAiHelpPointerEnd}
+                        >
+                          <div
+                            className="msg-ai-dd-track"
+                            style={{
+                              transform: `translate3d(calc(${-aiHelpIndex * 100}% + ${aiHelpDragX}px), 0, 0)`,
+                              transition: aiHelpDragging ? "none" : "transform .22s ease",
+                            }}
+                          >
+                            {AI_HELP_PAGES.map((pg) => (
+                              <div className="msg-ai-dd-page" key={pg.key}>
+                                <div className="msg-ai-dd-page-top">
+                                  <div className="msg-ai-dd-page-title">{pg.title}</div>
+                                  {pg.sub ? <div className="msg-ai-dd-page-sub">{pg.sub}</div> : null}
+                                </div>
+
+                                <div className="msg-ai-dd-page-body msg-ai-dd-grid">
+                                  <div className="msg-ai-dd-list">
+                                    {safeArr(pg.prompts).map((q, idx) => (
+                                      <div
+                                        key={`${pg.key}-${idx}`}
+                                        className="msg-ai-dd-item"
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => copyPromptText(q)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            copyPromptText(q);
+                                          }
+                                        }}
+                                        title="Nhấp để copy"
+                                      >
+                                        {q}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="msg-ai-dd-dots" aria-label="Chuyển trang gợi ý">
+                          {AI_HELP_PAGES.map((_, i) => (
+                            <button
+                              key={`dot-${i}`}
+                              type="button"
+                              className={`msg-ai-dd-dot ${i === aiHelpIndex ? "is-on" : ""}`}
+                              onClick={() => goToAiHelp(i)}
+                              aria-label={`Trang ${i + 1}`}
+                              title={`Trang ${i + 1}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="msg-chat">
@@ -797,7 +1110,11 @@ export default function Messages() {
                     key={`ai-${aiResetSeq}`}
                     meId={String(me?._id || "")}
                     height={"100%"}
-                    emptyText={"Bắt đầu hỏi FitMatch AI… (có thể gửi kèm ảnh món ăn)"}
+                    emptyText={
+                      "Bắt đầu hỏi FitMatch AI… (có thể gửi kèm ảnh món ăn)\n" +
+                      "Gợi ý nhanh: “Gợi ý thực đơn…”, “Gợi ý lịch tập…”, “Tạo thực đơn mới”.\n" +
+                      "Nhấn biểu tượng (?) ở góc phải để xem thêm câu hỏi mẫu."
+                    }
                     onPreview={({ lastText, lastAt }) => {
                       setAiPreview((p) => ({
                         ...p,
