@@ -828,7 +828,7 @@ function postJsonNode(url, body, headers = {}) {
   });
 }
 
-async function callOpenAIResponses({ systemText, historyItems }) {
+async function callOpenAIResponses({ systemText, historyItems, temperature = 0.4, maxOutputTokens }) {
   if (!OPENAI_KEY) throw new Error("Missing OPENAI_API_KEY");
 
   const input = [
@@ -847,7 +847,8 @@ async function callOpenAIResponses({ systemText, historyItems }) {
   const payload = {
     model: OPENAI_MODEL,
     input,
-    temperature: 0.4,
+    temperature,
+    ...(Number.isFinite(maxOutputTokens) ? { max_output_tokens: maxOutputTokens } : {}),
   };
 
   const json = await postJsonNode(`${OPENAI_BASE}/v1/responses`, payload, {
@@ -901,6 +902,79 @@ function tryParseJsonLoose(text) {
   }
 }
 
+const ROUTE_INTENTS = new Set([
+  "menu_recommend",
+  "menu_generate",
+  "plan_recommend",
+  "plan_generate",
+  "nutrition",
+  "general",
+]);
+
+async function routeByLLM({ text, lastMeta }) {
+  const sys = [
+    "Bạn là FitMatch AI Router.",
+    "Nhiệm vụ: phân loại ý định của người dùng để hệ thống quyết định chạy logic nội bộ hay để AI trả lời tự do.",
+    "",
+    "CHỈ TRẢ JSON THUẦN (không markdown) theo schema:",
+    "{",
+    '  "intent": "menu_recommend|menu_generate|plan_recommend|plan_generate|nutrition|general",',
+    '  "confidence": 0-1,',
+    '  "reply": "chỉ điền khi intent = nutrition hoặc general, còn lại để chuỗi rỗng",',
+    '  "notes": "ghi ngắn 1 dòng lý do chọn intent (tùy chọn)"',
+    "}",
+    "",
+    "QUY TẮC CHỌN INTENT:",
+    "- menu_recommend: user hỏi gợi ý thực đơn/chế độ ăn/ăn gì/bữa sáng-trưa-tối/meal plan/diet theo mục tiêu.",
+    "- menu_generate: user muốn 'tạo thực đơn mới', 'thực đơn khác', 'không ưng', 'thêm lựa chọn', 'tùy chỉnh theo nhu cầu'.",
+    "- plan_recommend: user hỏi gợi ý lịch tập/tập gì/workout plan/routine.",
+    "- plan_generate: user muốn 'tạo lịch tập mới', 'lịch tập khác', 'không ưng', 'tùy chỉnh lịch'.",
+    "- nutrition: user hỏi về kcal/macro/dinh dưỡng theo câu hỏi chung (không yêu cầu thực đơn DB).",
+    "- general: còn lại.",
+    "",
+    "RÀNG BUỘC AN TOÀN:",
+    "- KHÔNG tự ý chọn plan_* nếu user không hỏi tập luyện.",
+    "- Nếu intent là menu_* hoặc plan_* thì reply bắt buộc là chuỗi rỗng.",
+  ].join("\n");
+
+  const ctx = [
+    `Tin nhắn user: ${s(text)}`,
+    lastMeta?.action ? `Ngữ cảnh trước: ${s(lastMeta.action)}` : "",
+    lastMeta?.intent ? `Intent trước: ${s(lastMeta.intent)}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  let out = "";
+  try {
+    out = await callOpenAIResponses({
+      systemText: sys,
+      historyItems: [{ role: "user", text: ctx, imageUrls: [] }],
+      temperature: 0,
+      maxOutputTokens: 220,
+    });
+  } catch (e) {
+    // fallback sang chat.completions nếu cần
+    out = await callOpenAIChatFallback({
+      systemText: sys,
+      historyItems: [{ role: "user", text: ctx, imageUrls: [] }],
+    });
+  }
+
+  const parsed = tryParseJsonLoose(out);
+  const intent = s(parsed?.intent);
+  const confidence = Number(parsed?.confidence);
+
+  if (!ROUTE_INTENTS.has(intent)) return null;
+  return {
+    intent,
+    confidence: Number.isFinite(confidence) ? confidence : 0,
+    reply: s(parsed?.reply),
+    notes: s(parsed?.notes),
+  };
+}
+
+
 /* =========================
  * BUILD SUGGESTIONS (đã làm sạch)
  * - KHÔNG tự ý gợi ý plan nếu user không hỏi
@@ -909,11 +983,9 @@ async function buildSuggestions({ userId, userText, detectedFoodName, intent }) 
   const out = { foods: [], menus: [], plans: [] };
 
   const t = s(userText);
-  const askMenu = /(thực\s*đơn|menu|bữa\s*ăn)/i.test(t);
-  const askPlan = /(lịch\s*tập|workout|plan|kế\s*hoạch\s*tập)/i.test(t);
 
-  const allowMenus = intent === "menu_recommend" || GEN_MENU_RE.test(t) || askMenu;
-  const allowPlans = intent === "plan_recommend" || GEN_PLAN_RE.test(t) || askPlan;
+  const allowMenus = intent === "menu_recommend" || intent === "menu_generate";
+  const allowPlans = intent === "plan_recommend" || intent === "plan_generate";
 
   // FOODS (luôn ok: giúp tìm món tương tự)
   const foodQuery = s(detectedFoodName) || s(userText);
@@ -1130,14 +1202,50 @@ export async function sendAiChat(req, res) {
       });
     }
 
+    // ===== SMART ROUTING (giảm hard-code câu chữ) =====
+    let smart = null;
+    if (!imageUrls.length) {
+      // lấy message assistant gần nhất làm context cho router (nhẹ)
+      const lastAssistant = await AiMessage.findOne({ user: userId, role: "assistant" })
+        .sort({ createdAt: -1 })
+        .lean()
+        .catch(() => null);
+
+      // chỉ gọi router khi inferIntent đang là general (đỡ tốn token)
+      const ruleIntent = inferIntent(text, imageUrls);
+      const needRouter =
+        ruleIntent === "general" ||
+        /(khác|thêm|tùy\s*chỉnh|không\s*ưng|không\s*hợp|đổi|thay)/i.test(text);
+
+      if (needRouter) {
+        smart = await routeByLLM({ text, lastMeta: lastAssistant?.meta });
+      }
+    }
+
+    // ưu tiên explicit commands bạn đã có
+    let intentFinal = inferIntent(text, imageUrls);
+    if (GEN_MENU_RE.test(text)) intentFinal = "menu_generate";
+    if (GEN_PLAN_RE.test(text)) intentFinal = "plan_generate";
+
+    // nếu router có kết quả và đủ tin cậy → override
+    if (smart?.intent && (smart.confidence >= 0.55)) {
+      intentFinal = smart.intent;
+    }
+    await AiMessage.updateOne(
+      { _id: userMessage._id },
+      { $set: { "meta.intent": intentFinal } }
+    ).catch(() => null);
+
+    const intentForOpenAI = intentFinal;
+
     // =========================
     // MENU RECOMMEND (DB-first)
     // =========================
-    if (!imageUrls.length && (intent === "menu_recommend" || GEN_MENU_RE.test(text))) {
+    if (!imageUrls.length && (intentFinal === "menu_recommend" || intentFinal === "menu_generate")) {
       const { goalKey, goalLabel, targetKcal } = await getUserGoalAndTargetKcal(userId);
 
       // user yêu cầu tạo thực đơn mới => OpenAI generate (không lưu DB)
-      if (GEN_MENU_RE.test(text)) {
+      if (intentFinal === "menu_generate") {
         const sys = [
           "Bạn là FitMatch AI Coach.",
           "Hãy tạo một bộ THỰC ĐƠN GỢI Ý MỚI (không lưu DB) cho người dùng.",
@@ -1193,7 +1301,7 @@ export async function sendAiChat(req, res) {
           role: "assistant",
           text: replyMissing,
           imageUrls: [],
-          meta: { intent, action: "menu_missing_target", goalKey: goalKey || undefined },
+          meta: { intent: intentFinal, action: "menu_missing_target", goalKey: goalKey || undefined },
         });
 
         return res.json({
@@ -1224,7 +1332,7 @@ export async function sendAiChat(req, res) {
         text: reply,
         imageUrls: [],
         meta: {
-          intent,
+          intent: intentFinal,
           action: "recommend_menus",
           menuRecommendations: {
             goalKey: goalKey || undefined,
@@ -1248,7 +1356,7 @@ export async function sendAiChat(req, res) {
     // =========================
     // PLAN RECOMMEND (DB-first)
     // =========================
-    if (!imageUrls.length && (intent === "plan_recommend" || GEN_PLAN_RE.test(text))) {
+    if (!imageUrls.length && (intentFinal === "plan_recommend" || intentFinal === "plan_generate")) {
       const { goalKey, goalLabel } = await getUserGoalAndTargetKcal(userId);
 
       if (!goalKey) {
@@ -1261,7 +1369,7 @@ export async function sendAiChat(req, res) {
           role: "assistant",
           text: replyMissing,
           imageUrls: [],
-          meta: { intent, action: "plan_missing_goal" },
+          meta: { intent: intentFinal, action: "plan_missing_goal" },
         });
 
         return res.json({
@@ -1272,7 +1380,7 @@ export async function sendAiChat(req, res) {
       }
 
       // user yêu cầu tạo lịch tập mới => OpenAI generate (không lưu DB)
-      if (GEN_PLAN_RE.test(text)) {
+      if (intentFinal === "plan_generate") {
         const intensity = await getUserTrainingIntensity(userId);
         const level = parsePlanLevelFromIntensity(intensity, text) || "Cơ bản";
         const sessionsPerWeek = level === "Nâng cao" ? 5 : level === "Trung bình" ? 4 : 3;
@@ -1346,7 +1454,7 @@ export async function sendAiChat(req, res) {
         text: reply,
         imageUrls: [],
         meta: {
-          intent,
+          intent: intentFinal,
           action: "recommend_plans",
           planRecommendations: {
             goalKey,
@@ -1363,6 +1471,40 @@ export async function sendAiChat(req, res) {
         assistantMessage: toClientMsg(assistantMessage),
         items: [toClientMsg(assistantMessage)],
         suggestions: { plans: rec.items || [] },
+      });
+    }
+
+    // ===== FAST PATH: Router đã tạo reply cho nutrition/general =====
+    if (
+      !imageUrls.length &&
+      (intentFinal === "nutrition" || intentFinal === "general") &&
+      s(smart?.reply)
+    ) {
+      const suggestions = await buildSuggestions({
+        userId,
+        userText: text,
+        detectedFoodName: "",
+        intent: intentFinal,
+      });
+
+      const assistantMessage = await AiMessage.create({
+        user: userId,
+        role: "assistant",
+        text: s(smart.reply),
+        imageUrls: [],
+        meta: {
+          intent: intentFinal,
+          action: "router_reply",
+          router: { confidence: smart?.confidence, notes: smart?.notes },
+          suggestions,
+        },
+      });
+
+      return res.json({
+        userMessage: toClientMsg(userMessage),
+        assistantMessage: toClientMsg(assistantMessage),
+        items: [toClientMsg(assistantMessage)],
+        suggestions,
       });
     }
 
