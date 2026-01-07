@@ -29,3 +29,8 @@ export async function sendAiChat(body = {}) {
   const r = await api.post("/ai/chat", body);
   return r.data?.data ?? r.data;
 }
+
+export const clearAiMessages = async () => {
+  const r = await api.delete("/ai/messages");
+  return r.data?.data ?? r.data;
+};

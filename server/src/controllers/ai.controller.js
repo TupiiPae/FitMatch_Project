@@ -1439,3 +1439,18 @@ export async function sendAiChat(req, res) {
     return res.status(500).json({ message: "AI server lỗi, vui lòng thử lại" });
   }
 }
+
+/* =========================
+ * DELETE /api/ai/messages
+ * => Clear all AI chat history of current user
+ * ========================= */
+export async function clearAiMessages(req, res) {
+  try {
+    const userId = req.userId;
+    await AiMessage.deleteMany({ user: userId });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("[ai.clear]", e?.message || e);
+    return res.status(500).json({ message: "Không thể xóa đoạn chat AI" });
+  }
+}

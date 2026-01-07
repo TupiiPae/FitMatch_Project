@@ -83,6 +83,7 @@ const AI_CONV_ID = "ai";
 const AI_TITLE = "Fitmatch AI";
 const AI_SUB = "Quét ảnh món ăn • Gợi ý thực đơn • Gợi ý lịch tập";
 
+
 export default function Messages() {
   const nav = useNavigate();
   const qUserId = useQueryUserId();
@@ -120,10 +121,10 @@ export default function Messages() {
   const [delOpen, setDelOpen] = useState(false);
   const [delConv, setDelConv] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [aiResetSeq, setAiResetSeq] = useState(0);
 
   const openDelete = (c) => {
     if (!c?._id) return;
-    if (String(c?._id) === AI_CONV_ID) return; // no delete for AI
     setDelConv(c);
     setDelOpen(true);
   };
@@ -136,17 +137,32 @@ export default function Messages() {
 
   const confirmDelete = async () => {
     const cid = String(delConv?._id || "");
-    if (!cid || cid === AI_CONV_ID) return;
+    if (!cid) return;
 
     try {
       setDeleting(true);
 
+      if (cid === AI_CONV_ID) {
+        await api.delete("/ai/messages"); // baseURL đang là /api => thành /api/ai/messages
+
+        // reset preview + remount AiChatBox
+        setAiPreview({ lastText: "Nhắn để bắt đầu…", lastAt: null, unread: 0 });
+        setAiResetSeq((s) => s + 1);
+
+        // dọn session (nếu còn kẹt prefill từ AI)
+        try { sessionStorage.removeItem("fm_ai_food_prefill"); } catch {}
+
+        toast.success("Đã xóa đoạn chat với FitMatch AI");
+        closeDelete();
+        return;
+      }
+
+      // ✅ DM: delete conversation
       await api.delete(`/chat/dm/conversations/${cid}`);
 
       setConvs((prev) => safeArr(prev).filter((x) => String(x?._id || "") !== cid));
 
       if (String(activeConvId || "") === cid) {
-        // nếu đang mở đúng conv thì đóng hoặc chuyển qua AI
         setActiveConvId(AI_CONV_ID);
         setActivePeer(null);
       }
@@ -558,6 +574,19 @@ export default function Messages() {
             {lastAt ? <span className="msg-dot">•</span> : null}
             {lastAt ? <span className="msg-time">{dayjs(lastAt).format("HH:mm")}</span> : null}
           </div>
+
+          <button
+            type="button"
+            className="msg-trash"
+            title="Xóa đoạn chat AI"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              openDelete({ _id: AI_CONV_ID, peer: { name: AI_TITLE } });
+            }}
+          >
+            <i className="fa-solid fa-trash" />
+          </button>
         </div>
       </div>
     );
@@ -624,6 +653,8 @@ export default function Messages() {
       </div>
     );
   };
+
+  const isDelAi = String(delConv?._id || "") === AI_CONV_ID;
 
   return (
     <>
@@ -763,6 +794,7 @@ export default function Messages() {
 
                 <div className="msg-chat">
                   <AiChatBox
+                    key={`ai-${aiResetSeq}`}
                     meId={String(me?._id || "")}
                     height={"100%"}
                     emptyText={"Bắt đầu hỏi FitMatch AI… (có thể gửi kèm ảnh món ăn)"}
@@ -819,10 +851,16 @@ export default function Messages() {
           }}
         >
           <div className="msg-modal" onMouseDown={(e) => e.stopPropagation()}>
-            <div className="msg-modal-title">Xóa đoạn chat?</div>
+            <div className="msg-modal-title">
+              {isDelAi ? "Xóa đoạn chat AI?" : "Xóa đoạn chat?"}
+            </div>
+
             <div className="msg-modal-sub">
-              Bạn sẽ xóa toàn bộ tin nhắn với{" "}
-              <b>{getName(delConv?.peer)}</b>. Thao tác này không thể hoàn tác.
+              {isDelAi ? (
+                <>Bạn sẽ xóa toàn bộ nội dung trò chuyện với <b>{AI_TITLE}</b>. Thao tác này không thể hoàn tác.</>
+              ) : (
+                <>Bạn sẽ xóa toàn bộ tin nhắn với <b>{getName(delConv?.peer)}</b>. Thao tác này không thể hoàn tác.</>
+              )}
             </div>
 
             <div className="msg-modal-actions">
