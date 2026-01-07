@@ -302,3 +302,58 @@
   color: rgba(229,231,235,.65);
   pointer-events: none;
 }
+
+/* ====== NEW: Suggest Plan UI ====== */
+.fm-ai-card-plan .fm-ai-planhint{
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: rgba(229,231,235,.86);
+}
+
+.fm-ai-card-plan .fm-ai-dot{
+  opacity: .7;
+}
+
+.fm-ai-planlist{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.fm-ai-planitem{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:9px 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  cursor:pointer;
+  user-select:none;
+  transition: background .12s ease, border-color .12s ease;
+}
+
+.fm-ai-planitem:hover{
+  background: rgba(26,115,232,.10);
+  border-color: rgba(26,115,232,.28);
+}
+
+.fm-ai-planitem:focus{
+  outline:2px solid rgba(26,115,232,.35);
+  outline-offset:2px;
+}
+
+.fm-ai-planitem > img{
+  width:44px;
+  height:44px;
+  object-fit:cover;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  flex: 0 0 auto;
+}
+
+.fm-ai-planinfo{
+  min-width:0;
+  flex:1 1 auto;
+}

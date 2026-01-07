@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { listAiMessages, sendAiChat, uploadAiImage } from "../../api/ai";
 import { toggleSaveSuggestMenu } from "../../api/suggestMenus";
 
-import "./AiChatBox.css"; 
+import "./AiChatBox.css";
 
 import DetailModal from "../Nutrition/components/DetailModal/DetailModal";
 import { getFood } from "../../api/foods";
@@ -97,6 +97,9 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
   // ===== SuggestMenu saving state =====
   const [savingMenuMap, setSavingMenuMap] = useState({}); // { [menuId]: true/false }
+
+  // ===== SuggestPlan saving state =====
+  const [savingPlanMap, setSavingPlanMap] = useState({}); // { [planId]: true/false }
 
   // ===== File preview urls =====
   const fileUrlMapRef = useRef(new Map());
@@ -226,8 +229,17 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
     nav("/dinh-duong/ghi-lai/tao-mon", { state: { aiPrefill: draft } });
   };
 
-  // auto navigate nếu BE trả action=create_food
+  // auto navigate nếu BE trả action=create_food (CHỈ 1 LẦN + CHỈ message "mới")
   const lastAutoNavRef = useRef("");
+
+  useEffect(() => {
+    // load dấu vết từ sessionStorage để không lặp khi mở lại trang
+    try {
+      lastAutoNavRef.current = sessionStorage.getItem(`fm_ai_autonav_create_food_${myId}`) || "";
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myId]);
+
   useEffect(() => {
     const last = [...safeArr(items)].reverse().find(
       (m) =>
@@ -236,10 +248,30 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
         m?.meta?.foodDraft
     );
     if (!last) return;
-    if (lastAutoNavRef.current === String(last._id)) return;
-    lastAutoNavRef.current = String(last._id);
+
+    const id = String(last?._id || "");
+    if (!id) return;
+
+    // chỉ auto-nav nếu message rất mới (tránh mở lại chat bị đá sang FoodForm)
+    const createdMs = new Date(last?.createdAt || 0).getTime();
+    const WINDOW_MS = 15000; // 15s
+    if (Number.isFinite(createdMs) && Date.now() - createdMs > WINDOW_MS) return;
+
+    let stored = "";
+    try {
+      stored = sessionStorage.getItem(`fm_ai_autonav_create_food_${myId}`) || "";
+    } catch {}
+
+    if (lastAutoNavRef.current === id || stored === id) return;
+
+    lastAutoNavRef.current = id;
+    try {
+      sessionStorage.setItem(`fm_ai_autonav_create_food_${myId}`, id);
+    } catch {}
+
     goCreateFood(last.meta.foodDraft);
-  }, [items]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, myId]);
 
   // ===== open DetailModal for a food =====
   const closeFoodDetail = () => {
@@ -324,6 +356,31 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       nextMeta.suggestMenu = { ...meta.suggestMenu, ...patch };
     }
 
+    // hỗ trợ meta.menuRecommendations.items nếu BE trả kiểu này trong tương lai
+    if (Array.isArray(meta?.menuRecommendations?.items)) {
+      const nextItems = meta.menuRecommendations.items.map((mn) => {
+        const id = menuIdOf(mn);
+        if (id && id === menuId) {
+          changed = true;
+          return { ...mn, ...patch };
+        }
+        return mn;
+      });
+      nextMeta.menuRecommendations = { ...meta.menuRecommendations, items: nextItems };
+    }
+
+    if (Array.isArray(meta?.suggestions?.menus)) {
+      const nextMenus = meta.suggestions.menus.map((mn) => {
+        const id = menuIdOf(mn);
+        if (id && id === menuId) {
+          changed = true;
+          return { ...mn, ...patch };
+        }
+        return mn;
+      });
+      nextMeta.suggestions = { ...meta.suggestions, menus: nextMenus };
+    }
+
     return changed ? { ...msg, meta: nextMeta } : msg;
   };
 
@@ -380,6 +437,145 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       toast.error(e?.response?.data?.message || "Không thể lưu/bỏ lưu thực đơn");
     } finally {
       setSavingMenuMap((p) => ({ ...p, [id]: false }));
+    }
+  };
+
+  // ===== SuggestPlan helpers (NEW) =====
+  const getSuggestPlansFromMeta = (meta) => {
+    if (!meta) return [];
+    // ưu tiên theo schema mới của BE ai.controller: meta.planRecommendations.items, meta.suggestions.plans
+    const pr = meta?.planRecommendations;
+    const a = pick(
+      pr?.items,
+      meta?.suggestPlans,
+      meta?.suggestedPlans,
+      meta?.plans,
+      meta?.planSuggestions,
+      meta?.suggestions?.plans
+    );
+    const b = meta?.suggestPlan ? [meta.suggestPlan] : [];
+    const out = safeArr(a).length ? safeArr(a) : b;
+    return out.filter(Boolean);
+  };
+
+  const planIdOf = (p0) => String(pick(p0?._id, p0?.id, p0?.planId) || "");
+  const planNameOf = (p0) => String(pick(p0?.name, p0?.title, p0?.planName) || "Lịch tập");
+  const planImgOf = (p0) =>
+    toAbs(pick(p0?.imageUrl, p0?.thumbUrl, p0?.coverUrl, p0?.thumbnail) || "");
+  const planSessionsOf = (p0) => pick(p0?.sessionsCount, p0?.sessionCount, p0?.numSessions);
+  const planLevelOf = (p0) => pick(p0?.level, p0?.planLevel);
+  const planGoalOf = (p0) => pick(p0?.goal, p0?.planGoal);
+  const planCategoryOf = (p0) => pick(p0?.category, p0?.planCategory);
+
+  const planSavedOf = (p0) =>
+    !!pick(p0?.isSaved, p0?.saved, p0?.savedByMe, p0?.isBookmarked);
+
+  const patchSuggestPlansInMessage = (msg, planId, patch) => {
+    if (!msg?.meta) return msg;
+    const meta = msg.meta;
+
+    let changed = false;
+    const nextMeta = { ...meta };
+
+    const keys = ["suggestPlans", "suggestedPlans", "plans", "planSuggestions"];
+    for (const k of keys) {
+      if (Array.isArray(meta?.[k])) {
+        const nextArr = meta[k].map((pl) => {
+          if (!pl) return pl;
+          const id = planIdOf(pl);
+          if (id && id === planId) {
+            changed = true;
+            return { ...pl, ...patch };
+          }
+          return pl;
+        });
+        nextMeta[k] = nextArr;
+      }
+    }
+
+    if (meta?.suggestPlan && planIdOf(meta.suggestPlan) === planId) {
+      changed = true;
+      nextMeta.suggestPlan = { ...meta.suggestPlan, ...patch };
+    }
+
+    // schema mới: planRecommendations.items
+    if (Array.isArray(meta?.planRecommendations?.items)) {
+      const nextItems = meta.planRecommendations.items.map((pl) => {
+        const id = planIdOf(pl);
+        if (id && id === planId) {
+          changed = true;
+          return { ...pl, ...patch };
+        }
+        return pl;
+      });
+      nextMeta.planRecommendations = { ...meta.planRecommendations, items: nextItems };
+    }
+
+    // schema mới: suggestions.plans
+    if (Array.isArray(meta?.suggestions?.plans)) {
+      const nextPlans = meta.suggestions.plans.map((pl) => {
+        const id = planIdOf(pl);
+        if (id && id === planId) {
+          changed = true;
+          return { ...pl, ...patch };
+        }
+        return pl;
+      });
+      nextMeta.suggestions = { ...meta.suggestions, plans: nextPlans };
+    }
+
+    return changed ? { ...msg, meta: nextMeta } : msg;
+  };
+
+  const patchPlanSavedEverywhere = (planId, saved) => {
+    setItems((prev) =>
+      prev.map((msg) =>
+        String(msg?.role) === "assistant"
+          ? patchSuggestPlansInMessage(msg, planId, { isSaved: saved, saved })
+          : msg
+      )
+    );
+  };
+
+  const goSuggestPlanDetail = (plan) => {
+    const id = planIdOf(plan);
+    if (!id) return;
+    nav(`/tap-luyen/goi-y/chi-tiet/${id}`, { state: { fromAiChat: true } });
+  };
+
+  const toggleSavePlan = async (plan) => {
+    const id = planIdOf(plan);
+    if (!id) return;
+
+    if (savingPlanMap[id]) return;
+
+    const curSaved = planSavedOf(plan);
+    const optimistic = !curSaved;
+
+    patchPlanSavedEverywhere(id, optimistic);
+    setSavingPlanMap((p) => ({ ...p, [id]: true }));
+
+    try {
+      const r = await toggleSaveSuggestPlan(id);
+
+      const savedFromRes = pick(
+        r?.data?.data?.saved,
+        r?.data?.data?.isSaved,
+        r?.data?.saved,
+        r?.data?.isSaved,
+        r?.saved,
+        r?.isSaved
+      );
+
+      if (savedFromRes !== undefined) {
+        patchPlanSavedEverywhere(id, !!savedFromRes);
+      }
+    } catch (e) {
+      console.error(e);
+      patchPlanSavedEverywhere(id, curSaved);
+      toast.error(e?.response?.data?.message || "Không thể lưu/bỏ lưu lịch tập");
+    } finally {
+      setSavingPlanMap((p) => ({ ...p, [id]: false }));
     }
   };
 
@@ -630,14 +826,32 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
           const similarFoods = offerFood ? safeArr(m?.meta?.similarFoods) : [];
           const hasSimilar = offerFood ? !!m?.meta?.hasSimilar : false;
 
-          // ===== AI: suggest menu card (merge) =====
+          // ===== AI: suggest menu card =====
           const suggestMenus = !mine ? getSuggestMenusFromMeta(m?.meta) : [];
           const hasSuggestMenus = suggestMenus.length > 0;
           const targetKcalHint = pick(
             m?.meta?.targetKcal,
             m?.meta?.goalKcal,
             m?.meta?.userTargetKcal,
-            m?.meta?.caloTarget
+            m?.meta?.caloTarget,
+            m?.meta?.menuRecommendations?.targetKcal
+          );
+
+          // ===== AI: suggest plan card (NEW) =====
+          const suggestPlans = !mine ? getSuggestPlansFromMeta(m?.meta) : [];
+          const hasSuggestPlans = suggestPlans.length > 0;
+
+          const planGoalHint = pick(
+            m?.meta?.planRecommendations?.goalLabel,
+            m?.meta?.planRecommendations?.goalKey,
+            m?.meta?.goalLabel,
+            m?.meta?.goalKey
+          );
+
+          const planLevelHint = pick(
+            m?.meta?.planRecommendations?.preferred?.level,
+            m?.meta?.planRecommendations?.preferredLevel,
+            m?.meta?.preferredLevel
           );
 
           return (
@@ -770,7 +984,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                     </div>
                   ) : null}
 
-                  {/* ===== AI SUGGEST MENU CARD (MERGED) ===== */}
+                  {/* ===== AI SUGGEST MENU CARD ===== */}
                   {hasSuggestMenus ? (
                     <div className="fm-ai-card fm-ai-card-menu">
                       <div className="fm-ai-title">Thực đơn gợi ý</div>
@@ -849,6 +1063,108 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                           type="button"
                           className="fm-ai-btn ghost"
                           onClick={() => nav("/dinh-duong/thuc-don-goi-y")}
+                        >
+                          Xem tất cả
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* ===== AI SUGGEST PLAN CARD (NEW) ===== */}
+                  {hasSuggestPlans ? (
+                    <div className="fm-ai-card fm-ai-card-plan">
+                      <div className="fm-ai-title">Lịch tập gợi ý</div>
+
+                      {(planGoalHint || planLevelHint) ? (
+                        <div className="fm-ai-planhint">
+                          {planGoalHint ? (
+                            <>
+                              Phù hợp mục tiêu: <b>{String(planGoalHint)}</b>
+                            </>
+                          ) : null}
+                          {planGoalHint && planLevelHint ? <span className="fm-ai-dot"> • </span> : null}
+                          {planLevelHint ? (
+                            <>
+                              Mức độ: <b>{String(planLevelHint)}</b>
+                            </>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      <div className="fm-ai-planlist">
+                        {suggestPlans.slice(0, 6).map((pl) => {
+                          const id = planIdOf(pl);
+                          const name = planNameOf(pl);
+                          const img = planImgOf(pl) || "/images/food-placeholder.png";
+                          const sessions = planSessionsOf(pl);
+                          const cate = planCategoryOf(pl);
+                          const lv = planLevelOf(pl);
+                          const gl = planGoalOf(pl);
+
+                          const saved = planSavedOf(pl);
+                          const saving = !!savingPlanMap[id];
+
+                          return (
+                            <div
+                              key={id || name}
+                              className="fm-ai-planitem"
+                              role="button"
+                              tabIndex={0}
+                              title="Xem chi tiết lịch tập"
+                              onClick={() => goSuggestPlanDetail(pl)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") goSuggestPlanDetail(pl);
+                              }}
+                            >
+                              <img
+                                src={img}
+                                alt=""
+                                onError={(e) => {
+                                  e.currentTarget.src = "/images/food-placeholder.png";
+                                }}
+                              />
+
+                              <div className="fm-ai-planinfo">
+                                <div className="fm-ai-simname">{name}</div>
+
+                                <div className="fm-ai-simsub">
+                                  {sessions !== undefined && sessions !== null && sessions !== "" ? (
+                                    <>
+                                      {fmt(sessions)} buổi
+                                      {(cate || lv || gl) ? " • " : ""}
+                                    </>
+                                  ) : null}
+                                  {cate ? <>{String(cate)}</> : null}
+                                  {cate && (lv || gl) ? " • " : null}
+                                  {lv ? <>{String(lv)}</> : null}
+                                  {(cate || lv) && gl ? " • " : null}
+                                  {gl ? <>{String(gl)}</> : null}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className={"fm-ai-savebtn" + (saved ? " is-saved" : "")}
+                                disabled={!id || saving}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  toggleSavePlan(pl);
+                                }}
+                                title={saved ? "Bỏ lưu" : "Lưu lịch tập"}
+                              >
+                                {saving ? "…" : saved ? "Đã lưu" : "Lưu"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="fm-ai-actions">
+                        <button
+                          type="button"
+                          className="fm-ai-btn ghost"
+                          onClick={() => nav("/tap-luyen/goi-y")}
                         >
                           Xem tất cả
                         </button>
