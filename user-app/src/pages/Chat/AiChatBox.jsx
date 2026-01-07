@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { listAiMessages, sendAiChat, uploadAiImage } from "../../api/ai";
 import { toggleSaveSuggestMenu } from "../../api/suggestMenus";
+import { toggleSaveSuggestPlan } from "../../api/suggestPlans";
 
 import "./AiChatBox.css";
 
@@ -302,15 +303,24 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
     }
   };
 
-  // ===== SuggestMenu helpers (merge AiSuggestMenu vào đây) =====
   const getSuggestMenusFromMeta = (meta) => {
     if (!meta) return [];
-    const a = pick(meta?.suggestMenus, meta?.suggestedMenus, meta?.menus, meta?.menuSuggestions);
+    const mr = meta?.menuRecommendations;
+
+    const a = pick(
+      mr?.items,                 
+      meta?.suggestMenus,
+      meta?.suggestedMenus,
+      meta?.menus,
+      meta?.menuSuggestions,
+      meta?.suggestions?.menus   
+    );
+
     const b = meta?.suggestMenu ? [meta.suggestMenu] : [];
     const out = safeArr(a).length ? safeArr(a) : b;
     return out.filter(Boolean);
   };
-
+  
   const menuIdOf = (menu) => String(pick(menu?._id, menu?.id, menu?.menuId) || "");
   const menuNameOf = (menu) => String(pick(menu?.name, menu?.title, menu?.menuName) || "Thực đơn");
   const menuImgOf = (menu) => toAbs(pick(menu?.imageUrl, menu?.thumbUrl, menu?.coverUrl, menu?.thumbnail) || "");
@@ -828,7 +838,11 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
           // ===== AI: suggest menu card =====
           const suggestMenus = !mine ? getSuggestMenusFromMeta(m?.meta) : [];
-          const hasSuggestMenus = suggestMenus.length > 0;
+          const canShowMenus =
+            !!m?.meta?.menuRecommendations ||
+            m?.meta?.intent === "menu_recommend" ||
+            m?.meta?.action === "recommend_menus";
+          const hasSuggestMenus = canShowMenus && suggestMenus.length > 0;
           const targetKcalHint = pick(
             m?.meta?.targetKcal,
             m?.meta?.goalKcal,
@@ -839,7 +853,11 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
           // ===== AI: suggest plan card (NEW) =====
           const suggestPlans = !mine ? getSuggestPlansFromMeta(m?.meta) : [];
-          const hasSuggestPlans = suggestPlans.length > 0;
+          const canShowPlans =
+            !!m?.meta?.planRecommendations ||
+            m?.meta?.intent === "plan_recommend" ||
+            m?.meta?.action === "recommend_plans";
+          const hasSuggestPlans = canShowPlans && suggestPlans.length > 0;
 
           const planGoalHint = pick(
             m?.meta?.planRecommendations?.goalLabel,
