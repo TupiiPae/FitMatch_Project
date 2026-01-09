@@ -1,0 +1,13 @@
+.st-users-note{
+  margin: 2px 12px 0;
+  border:1px dashed #e5e7eb;
+  background:#fafafa;
+  border-radius:12px;
+  padding:10px 12px;
+  display:flex;
+  gap:8px;
+  align-items:flex-start;
+  color:#6b7280;
+  font-size:13px;
+}
+.st-users-note i{ margin-top:2px; color:#94a3b8; }

@@ -32,6 +32,10 @@ import ConnectRooms_List from "./pages/pagesConnect/ConnectRooms_List.jsx";
 
 // ===== Statistic / Audit Log
 import AuditLog from "./pages/pagesStatistic/Audit_Log/Audit_Log.jsx";
+import StatsUsers from "./pages/pagesStatistic/Stats_Users/Stats_Users.jsx";
+import StatsNutrition from "./pages/pagesStatistic/Stats_Nutrition/Stats_Nutrition.jsx";
+import StatsWorkouts from "./pages/pagesStatistic/Stats_Workouts/Stats_Workouts.jsx";
+import StatsConnections from "./pages/pagesStatistic/Stats_Connections/Stats_Connections.jsx";
 
 // ===== Contact Messages
 import Contact from "./pages/pagesContact/Contact_List.jsx";
@@ -69,9 +73,6 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          {/* Dashboard */}
-          <Route path="/dashboard" element={<Dashboard />} />
-
           {/* Trang profile (Admin cấp 2 dùng được) */}
           <Route path="/profile" element={<ProfilePage />} />
 
@@ -106,8 +107,14 @@ export default function App() {
           {/* Kết nối */}
           <Route path="/connect/rooms" element={<ConnectRooms_List />} />
 
-          {/* Thống kê - Audit Log */}
+          {/* Thống kê */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/statistics/users" element={<StatsUsers />} />
+          <Route path="/statistics/nutrition" element={<StatsNutrition />} />
+          <Route path="/statistics/workouts" element={<StatsWorkouts />} />
+          <Route path="/statistics/connections" element={<StatsConnections />} />
           <Route path="/statistics/audit-log" element={<AuditLog />} />
+          
 
           {/* Người dùng */}
           <Route path="/users" element={<UsersList />} />

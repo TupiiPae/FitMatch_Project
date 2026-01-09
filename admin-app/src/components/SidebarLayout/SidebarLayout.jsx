@@ -140,9 +140,13 @@ const buildManagementSections = (rawLevel) => {
     title: "Thống kê",
     icon: <BarChartOutlinedIcon fontSize="small" />,
     items: [
-      { to: "/stats/users", label: "Người dùng" },
-      { to: "/stats/journal", label: "Nhật ký" },
-      { to: "/stats/matching", label: "Kết nối" },
+      { to: "/dashboard", label: "Tổng quan", exact: true },
+
+      { to: "/statistics/users", label: "Thống kê người dùng" },
+      { to: "/statistics/nutrition", label: "Thống kê dinh dưỡng" },
+      { to: "/statistics/workouts", label: "Thống kê tập luyện" },
+      { to: "/statistics/connections", label: "Thống kê kết nối" },
+
       { to: "/statistics/audit-log", label: "Nhật ký thao tác" },
     ],
   };

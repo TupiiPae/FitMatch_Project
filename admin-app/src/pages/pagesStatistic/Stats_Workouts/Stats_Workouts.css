@@ -1,0 +1,11 @@
+.st-block-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 12px;
+  margin-top:2px;
+  font-weight:800;
+  color:#111827;
+  font-size:14px;
+}
+.st-block-title i{ color:#94a3b8; }
