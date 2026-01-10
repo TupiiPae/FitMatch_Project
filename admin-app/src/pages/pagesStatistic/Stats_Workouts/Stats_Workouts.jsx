@@ -17,9 +17,9 @@ import {
 import { getStatsWorkoutsAdmin } from "../../../lib/api"; // <- sửa path nếu bạn đặt khác
 
 const TYPE_LABEL = {
-  Strength: "Strength (Sức mạnh)",
+  Strength: "Sức mạnh (Strength)",
   Cardio: "Cardio",
-  Sport: "Sport",
+  Sport: "Thể thao (Sport)",
   unknown: "Khác",
 };
 
@@ -34,7 +34,9 @@ export default function Stats_Workouts() {
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const clearFilters = () => {
@@ -89,51 +91,51 @@ export default function Stats_Workouts() {
   const kpis = useMemo(() => {
     return [
       {
-        label: "Workout plans",
+        label: "Lịch tập (tạo mới)",
         value: k.totalPlans ?? "—",
-        sub: "Số lịch tập tạo trong kỳ",
+        sub: "Số lịch tập được tạo trong kỳ",
         icon: "fa-solid fa-dumbbell",
       },
       {
-        label: "Users tập luyện",
+        label: "Người dùng có lịch tập",
         value: k.usersWithPlans ?? "—",
-        sub: "Unique users",
+        sub: "Số người dùng phát sinh lịch tập",
         icon: "fa-solid fa-users",
       },
       {
-        label: "Avg plans/user",
+        label: "TB lịch tập/người dùng",
         value: k.avgPlansPerUser ?? "—",
-        sub: "Theo kỳ",
+        sub: "Trung bình theo kỳ",
         icon: "fa-solid fa-chart-line",
       },
       {
-        label: "Total kcal",
+        label: "Tổng kcal ước tính",
         value: k.totalKcal ?? "—",
-        sub: "Tổng kcal (ước tính)",
+        sub: "Tổng kcal tiêu hao (ước tính)",
         icon: "fa-solid fa-fire",
       },
       {
-        label: "Saved plans",
+        label: "Lượt lưu lịch tập",
         value: k.savedPlans ?? "—",
         sub: "Tổng lượt lưu",
         icon: "fa-solid fa-bookmark",
       },
       {
-        label: "Strength",
+        label: "Bài tập sức mạnh",
         value: k.strengthCount ?? "—",
-        sub: "Số bài trong plans",
+        sub: "Số bài trong các lịch tập",
         icon: "fa-solid fa-dumbbell",
       },
       {
-        label: "Cardio",
+        label: "Bài tập cardio",
         value: k.cardioCount ?? "—",
-        sub: "Số bài trong plans",
+        sub: "Số bài trong các lịch tập",
         icon: "fa-solid fa-heart-pulse",
       },
       {
-        label: "Sport",
+        label: "Bài tập thể thao",
         value: k.sportCount ?? "—",
-        sub: "Số bài trong plans",
+        sub: "Số bài trong các lịch tập",
         icon: "fa-solid fa-person-running",
       },
     ];
@@ -163,13 +165,19 @@ export default function Stats_Workouts() {
       <StatsBreadcrumb current="Thống kê tập luyện" groupLabel="Thống kê" />
 
       <StatsCard
-        title="Thống kê về tập luyện"
-        subtitle="Workout plans, phân loại bài tập, mức độ hoạt động"
+        title="Thống kê tập luyện"
+        subtitle="Lịch tập, phân loại bài tập, mức độ hoạt động"
         actions={
           <>
-            <SButton variant="ghost" icon="fa-solid fa-eraser" onClick={clearFilters} disabled={loading}>
+            <SButton
+              variant="ghost"
+              icon="fa-solid fa-eraser"
+              onClick={clearFilters}
+              disabled={loading}
+            >
               Xoá bộ lọc
             </SButton>
+
             <SButton
               variant="ghost"
               icon="fa-solid fa-rotate-right"
@@ -178,13 +186,14 @@ export default function Stats_Workouts() {
             >
               Làm mới
             </SButton>
+
             <SButton
               variant="primary"
               icon="fa-solid fa-file-export"
-              onClick={() => toast.info("TODO: Export")}
+              onClick={() => toast.info("TODO: Xuất dữ liệu")}
               disabled={loading}
             >
-              Export
+              Xuất dữ liệu
             </SButton>
           </>
         }
@@ -203,40 +212,46 @@ export default function Stats_Workouts() {
 
         <KpiGrid>
           {kpis.map((x) => (
-            <KpiCard key={x.label} label={x.label} value={x.value} sub={x.sub} icon={x.icon} />
+            <KpiCard
+              key={x.label}
+              label={x.label}
+              value={x.value}
+              sub={x.sub}
+              icon={x.icon}
+            />
           ))}
         </KpiGrid>
 
         <ChartGrid>
           <ChartCard
-            title="Workout plans theo thời gian"
-            hint="Số plan được tạo trong kỳ"
+            title="Lịch tập theo thời gian"
+            hint="Số lịch tập được tạo trong kỳ"
             type="line"
             data={series?.plansCreated || []}
           />
           <ChartCard
-            title="Kcal đốt theo thời gian"
+            title="Kcal tiêu hao theo thời gian"
             hint="Tổng kcal (ước tính) theo kỳ"
             type="bar"
             data={series?.kcalBurned || []}
           />
           <ChartCard
             title="Tỷ trọng loại bài tập"
-            hint="Dựa theo items.type trong plans"
+            hint="Dựa theo loại bài tập trong lịch tập"
             type="pie"
             data={itemTypesPie}
-            labelFormatter={(key) => TYPE_LABEL[key] || key}
+            labelFormatter={(key) => TYPE_LABEL[key] || String(key)}
           />
           <ChartCard
-            title="Top exercises phổ biến"
-            hint="Dựa theo số lần xuất hiện trong plans"
+            title="Top bài tập phổ biến"
+            hint="Dựa theo số lần xuất hiện trong lịch tập"
             type="bar"
             data={topExercisesBar}
           />
         </ChartGrid>
 
         <div className="st-block-title">
-          <i className="fa-solid fa-medal" /> <span>Top exercises</span>
+          <i className="fa-solid fa-medal" /> <span>Top bài tập</span>
         </div>
 
         <SimpleTopTable
@@ -246,7 +261,7 @@ export default function Stats_Workouts() {
             { key: "note", label: "Ghi chú", w: "1.2fr" },
           ]}
           rows={topExercises}
-          emptyText="Chưa có dữ liệu top exercises"
+          emptyText="Chưa có dữ liệu top bài tập"
         />
       </StatsCard>
     </div>

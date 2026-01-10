@@ -115,14 +115,54 @@ export default function Stats_Users() {
         : "—";
 
     return [
-      { label: "Users mới", value: fmtNum(k?.newUsersInRange), sub: "Theo khoảng thời gian", icon: "fa-solid fa-user-plus" },
-      { label: "Tổng Users", value: fmtNum(k?.totalAll), sub: "Toàn hệ thống", icon: "fa-solid fa-users" },
-      { label: "Onboarding hoàn tất", value: `${fmtNum(k?.onboardedFiltered)} (${k?.onboardedRate ?? 0}%)`, sub: "Theo bộ lọc", icon: "fa-solid fa-clipboard-check" },
-      { label: "Active users", value: activeLabel, sub: k?.active?.basis || "—", icon: "fa-solid fa-bolt" },
-      { label: "Blocked", value: fmtNum(k?.blockedFiltered), sub: "Theo bộ lọc", icon: "fa-solid fa-user-slash" },
-      { label: "Profile đầy đủ", value: `${fmtNum(k?.profileCompleteFiltered)} (${k?.profileCompleteRate ?? 0}%)`, sub: "Completeness", icon: "fa-solid fa-id-card" },
-      { label: "Độ tuổi phổ biến", value: topAge, sub: "Age segment", icon: "fa-solid fa-chart-simple" },
-      { label: "Khu vực top", value: topCity, sub: "Location", icon: "fa-solid fa-location-dot" },
+      {
+        label: "Người dùng mới",
+        value: fmtNum(k?.newUsersInRange),
+        sub: "Theo khoảng thời gian",
+        icon: "fa-solid fa-user-plus",
+      },
+      {
+        label: "Tổng người dùng",
+        value: fmtNum(k?.totalAll),
+        sub: "Toàn hệ thống",
+        icon: "fa-solid fa-users",
+      },
+      {
+        label: "Hoàn tất onboarding",
+        value: `${fmtNum(k?.onboardedFiltered)} (${k?.onboardedRate ?? 0}%)`,
+        sub: "Theo bộ lọc",
+        icon: "fa-solid fa-clipboard-check",
+      },
+      {
+        label: "Người dùng hoạt động",
+        value: activeLabel,
+        sub: k?.active?.basis || "—",
+        icon: "fa-solid fa-bolt",
+      },
+      {
+        label: "Người dùng bị khóa",
+        value: fmtNum(k?.blockedFiltered),
+        sub: "Theo bộ lọc",
+        icon: "fa-solid fa-user-slash",
+      },
+      {
+        label: "Hồ sơ đầy đủ",
+        value: `${fmtNum(k?.profileCompleteFiltered)} (${k?.profileCompleteRate ?? 0}%)`,
+        sub: "Mức độ hoàn thiện hồ sơ",
+        icon: "fa-solid fa-id-card",
+      },
+      {
+        label: "Độ tuổi phổ biến",
+        value: topAge,
+        sub: "Nhóm tuổi nổi bật",
+        icon: "fa-solid fa-chart-simple",
+      },
+      {
+        label: "Khu vực nổi bật",
+        value: topCity,
+        sub: "Theo khu vực",
+        icon: "fa-solid fa-location-dot",
+      },
     ];
   }, [data]);
 
@@ -138,34 +178,38 @@ export default function Stats_Users() {
       }));
     }
     return [
-      { name: "Goal: —", value: "—", note: "Phân khúc phổ biến" },
-      { name: "Sex: —", value: "—", note: "Tỷ lệ theo giới tính" },
-      { name: "Age: —", value: "—", note: "Nhóm tuổi nổi bật" },
+      { name: "Mục tiêu: —", value: "—", note: "Phân khúc phổ biến" },
+      { name: "Giới tính: —", value: "—", note: "Tỷ lệ theo giới tính" },
+      { name: "Độ tuổi: —", value: "—", note: "Nhóm tuổi nổi bật" },
     ];
   }, [data]);
-
-  // (Tuỳ bạn nối chart lib sau)
-  // series/pie data đã có:
-  // data?.series.newUsers, data?.series.activeUsers
-  // data?.distributions.goalNew, data?.distributions.sexNew
 
   return (
     <div className="st-page">
       <StatsBreadcrumb current="Thống kê người dùng" groupLabel="Thống kê" />
 
       <StatsCard
-        title="Thống kê về người dùng"
-        subtitle="Tăng trưởng, phân khúc, mức độ hoạt động (engagement)"
+        title="Thống kê người dùng"
+        subtitle="Tăng trưởng, phân khúc, mức độ hoạt động"
         actions={
           <>
             <SButton variant="ghost" icon="fa-solid fa-eraser" onClick={clearFilters}>
               Xoá bộ lọc
             </SButton>
-            <SButton variant="ghost" icon="fa-solid fa-rotate-right" onClick={() => refresh()} disabled={loading}>
+            <SButton
+              variant="ghost"
+              icon="fa-solid fa-rotate-right"
+              onClick={() => refresh()}
+              disabled={loading}
+            >
               Làm mới
             </SButton>
-            <SButton variant="primary" icon="fa-solid fa-file-export" onClick={() => toast.info("TODO: Export")}>
-              Export
+            <SButton
+              variant="primary"
+              icon="fa-solid fa-file-export"
+              onClick={() => toast.info("TODO: Xuất dữ liệu")}
+            >
+              Xuất dữ liệu
             </SButton>
           </>
         }
@@ -184,7 +228,7 @@ export default function Stats_Users() {
           <div className="st-filter-group">
             <span className="st-filter-label">Mục tiêu</span>
             <MultiSelectDropdown
-              label="Goal"
+              label="Mục tiêu"
               placeholder="Tất cả mục tiêu"
               options={GOAL_OPTIONS}
               values={filterGoals}
@@ -196,7 +240,7 @@ export default function Stats_Users() {
           <div className="st-filter-group">
             <span className="st-filter-label">Giới tính</span>
             <MultiSelectDropdown
-              label="Sex"
+              label="Giới tính"
               placeholder="Tất cả"
               options={SEX_OPTIONS}
               values={filterSex}
@@ -214,37 +258,41 @@ export default function Stats_Users() {
 
         <ChartGrid>
           <ChartCard
-            title="Users mới theo thời gian"
-            hint={`Points: ${data?.series?.newUsers?.length || 0}`}
+            title="Người dùng mới theo thời gian"
+            hint={`Số điểm: ${data?.series?.newUsers?.length || 0}`}
             type="line"
-            data={data?.series?.newUsers || []}          // [{t,v}]
+            data={data?.series?.newUsers || []} // [{t,v}]
           />
           <ChartCard
-            title="Active users theo chu kỳ"
-            hint={`Points: ${data?.series?.activeUsers?.length || 0}`}
+            title="Người dùng hoạt động theo chu kỳ"
+            hint={`Số điểm: ${data?.series?.activeUsers?.length || 0}`}
             type="bar"
-            data={data?.series?.activeUsers || []}       // [{t,v}]
+            data={data?.series?.activeUsers || []} // [{t,v}]
           />
           <ChartCard
-            title="Phân bố mục tiêu (Goal)"
-            hint={`Segments: ${data?.distributions?.goalNew?.length || 0}`}
+            title="Phân bố mục tiêu"
+            hint={`Số nhóm: ${data?.distributions?.goalNew?.length || 0}`}
             type="pie"
-            data={data?.distributions?.goalNew || []}    // [{key,value}]
-            labelFormatter={(k) => GOAL_LABEL?.[k] ? `Goal: ${GOAL_LABEL[k]}` : `Goal: ${k}`}
+            data={data?.distributions?.goalNew || []} // [{key,value}]
+            labelFormatter={(k) =>
+              GOAL_LABEL?.[k] ? `Mục tiêu: ${GOAL_LABEL[k]}` : `Mục tiêu: ${k}`
+            }
           />
           <ChartCard
             title="Phân bố giới tính"
-            hint={`Segments: ${data?.distributions?.sexNew?.length || 0}`}
+            hint={`Số nhóm: ${data?.distributions?.sexNew?.length || 0}`}
             type="pie"
-            data={data?.distributions?.sexNew || []}     // [{key,value}]
-            labelFormatter={(k) => SEX_LABEL?.[k] ? `Sex: ${SEX_LABEL[k]}` : `Sex: ${k}`}
+            data={data?.distributions?.sexNew || []} // [{key,value}]
+            labelFormatter={(k) =>
+              SEX_LABEL?.[k] ? `Giới tính: ${SEX_LABEL[k]}` : `Giới tính: ${k}`
+            }
           />
         </ChartGrid>
 
         <div className="st-users-note">
           <i className="fa-solid fa-circle-info" />
           <span>
-            Dữ liệu chart đã sẵn (series + distributions). Bạn chỉ cần nối vào chart library (Recharts/Chart.js) là hiển thị ngay.
+            Dữ liệu biểu đồ đã có sẵn (chuỗi thời gian + phân bố). Chỉ cần nối vào thư viện biểu đồ là hiển thị.
           </span>
         </div>
 

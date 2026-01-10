@@ -486,7 +486,7 @@ export default function Audit_Log() {
         <span className="sep">/</span>
         <span className="grp">
           <i className="fa-solid fa-chart-line" />{" "}
-          <span>Thống kê &amp; Nhật ký</span>
+          <span>Thống kê</span>
         </span>
         <span className="sep">/</span>
         <span className="cur">Nhật ký thao tác (Audit Log)</span>

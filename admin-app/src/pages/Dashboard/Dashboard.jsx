@@ -56,7 +56,11 @@ function KpiCard({ title, value, sub, tone = "default" }) {
     <div className={`db-kpi db-kpi--${tone}`}>
       <div className="db-kpi-title">{title}</div>
       <div className="db-kpi-value">{value}</div>
-      {sub ? <div className="db-kpi-sub">{sub}</div> : <div className="db-kpi-sub"> </div>}
+      {sub ? (
+        <div className="db-kpi-sub">{sub}</div>
+      ) : (
+        <div className="db-kpi-sub"> </div>
+      )}
     </div>
   );
 }
@@ -110,6 +114,13 @@ export default function Dashboard() {
   const [q, setQ] = useState("");
   const [top, setTop] = useState(8);
 
+  const granularityLabel = useMemo(() => {
+    if (granularity === "day") return "Ngày";
+    if (granularity === "week") return "Tuần";
+    if (granularity === "month") return "Tháng";
+    return "—";
+  }, [granularity]);
+
   /* =========================
    * Data
    * ========================= */
@@ -146,7 +157,7 @@ export default function Dashboard() {
       setLastUpdatedAt(new Date());
     } catch (e) {
       console.error(e);
-      toast.error("Không tải được dữ liệu Dashboard");
+      toast.error("Không tải được dữ liệu bảng tổng quan");
     } finally {
       setLoading(false);
     }
@@ -171,8 +182,13 @@ export default function Dashboard() {
     setDateFrom(next.from);
     setDateTo(next.to);
 
-    // load ngay để UX giống Audit_Log (clear là thấy đổi liền)
-    load({ q: "", granularity: next.granularity, top: next.top, from: next.from, to: next.to });
+    load({
+      q: "",
+      granularity: next.granularity,
+      top: next.top,
+      from: next.from,
+      to: next.to,
+    });
   };
 
   /* =========================
@@ -220,11 +236,13 @@ export default function Dashboard() {
     note: x?.note || "—",
   }));
 
-  const topReportReasons = safeArr(connectStats?.top?.reportReasonsTop).map((x) => ({
-    name: x?.key || x?.name || "—",
-    value: x?.value ?? "—",
-    note: "Lý do báo cáo",
-  }));
+  const topReportReasons = safeArr(connectStats?.top?.reportReasonsTop).map(
+    (x) => ({
+      name: x?.key || x?.name || "—",
+      value: x?.value ?? "—",
+      note: "Lý do báo cáo",
+    })
+  );
 
   return (
     <div className="al-page db-page">
@@ -234,8 +252,14 @@ export default function Dashboard() {
           <i className="fa-solid fa-house" /> <span>Trang chủ</span>
         </Link>
         <span className="sep">/</span>
+        <span className="grp">
+          <i className="fa-solid fa-chart-line" />{" "}
+          <span>Thống kê</span>
+        </span>
+        <span className="sep">/</span>
         <span className="cur">
-          <i className="fa-solid fa-gauge-high" /> <span>Dashboard tổng quan</span>
+          <i className="fa-solid fa-gauge-high" />{" "}
+          <span>Tổng quan</span>
         </span>
       </nav>
 
@@ -244,7 +268,7 @@ export default function Dashboard() {
         <div className="al-head db-head">
           <div className="db-head-left">
             <h2>
-              Dashboard tổng quan{" "}
+              Bảng tổng quan{" "}
               {loading ? <span className="db-muted">(Đang tải...)</span> : null}
             </h2>
 
@@ -252,7 +276,9 @@ export default function Dashboard() {
               {lastUpdatedAt ? (
                 <>
                   Cập nhật lúc{" "}
-                  <strong>{new Date(lastUpdatedAt).toLocaleString("vi-VN")}</strong>
+                  <strong>
+                    {new Date(lastUpdatedAt).toLocaleString("vi-VN")}
+                  </strong>
                 </>
               ) : (
                 <span className="db-muted">Chưa có dữ liệu</span>
@@ -280,14 +306,17 @@ export default function Dashboard() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Tìm nhanh (tùy API): username, food name, plan name, room..."
+              placeholder="Tìm nhanh (tuỳ API): tên người dùng, món ăn, lịch tập, phòng nhóm..."
             />
           </div>
 
           <div className="al-filter-row">
             <div className="al-filter-group">
-              <span className="al-filter-label">Granularity</span>
-              <select value={granularity} onChange={(e) => setGranularity(e.target.value)}>
+              <span className="al-filter-label">Nhóm theo thời gian</span>
+              <select
+                value={granularity}
+                onChange={(e) => setGranularity(e.target.value)}
+              >
                 <option value="day">Ngày</option>
                 <option value="week">Tuần</option>
                 <option value="month">Tháng</option>
@@ -295,22 +324,33 @@ export default function Dashboard() {
             </div>
 
             <div className="al-filter-group">
-              <span className="al-filter-label">Top</span>
-              <select value={top} onChange={(e) => setTop(Number(e.target.value) || 8)}>
-                <option value="5">Top 5</option>
-                <option value="8">Top 8</option>
-                <option value="10">Top 10</option>
-                <option value="15">Top 15</option>
-                <option value="20">Top 20</option>
+              <span className="al-filter-label">Số mục xếp hạng</span>
+              <select
+                value={top}
+                onChange={(e) => setTop(Number(e.target.value) || 8)}
+              >
+                <option value="5">5 mục</option>
+                <option value="8">8 mục</option>
+                <option value="10">10 mục</option>
+                <option value="15">15 mục</option>
+                <option value="20">20 mục</option>
               </select>
             </div>
 
             <div className="al-filter-group al-date-range">
               <span className="al-filter-label">Thời gian</span>
               <div className="al-date-row">
-                <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
                 <span className="al-date-sep">đến</span>
-                <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
               </div>
             </div>
 
@@ -346,49 +386,70 @@ export default function Dashboard() {
           </div>
 
           <div className="db-kpi-grid">
-            <KpiCard title="Tổng users (toàn hệ thống)" value={fmtNum(uK?.totalAll)} />
-            <KpiCard title="Tổng users (theo filter)" value={fmtNum(uK?.totalFiltered)} />
-            <KpiCard title="Users mới trong khoảng" value={fmtNum(uK?.newUsersInRange)} tone="good" />
-            <KpiCard title="Users bị khóa (theo filter)" value={fmtNum(uK?.blockedFiltered)} tone="warn" />
+            <KpiCard
+              title="Tổng người dùng (toàn hệ thống)"
+              value={fmtNum(uK?.totalAll)}
+            />
+            <KpiCard
+              title="Tổng người dùng (theo bộ lọc)"
+              value={fmtNum(uK?.totalFiltered)}
+            />
+            <KpiCard
+              title="Người dùng mới trong khoảng"
+              value={fmtNum(uK?.newUsersInRange)}
+              tone="good"
+            />
+            <KpiCard
+              title="Người dùng bị khoá (theo bộ lọc)"
+              value={fmtNum(uK?.blockedFiltered)}
+              tone="warn"
+            />
 
             <KpiCard
-              title="Onboarded"
+              title="Hoàn tất onboarding"
               value={fmtNum(uK?.onboardedFiltered)}
               sub={`Tỉ lệ: ${fmtPct(uK?.onboardedRate)}`}
             />
             <KpiCard
-              title="Profile đầy đủ"
+              title="Hồ sơ đầy đủ"
               value={fmtNum(uK?.profileCompleteFiltered)}
               sub={`Tỉ lệ: ${fmtPct(uK?.profileCompleteRate)}`}
             />
-            <KpiCard title="DAU" value={fmtNum(uK?.active?.dau)} sub="Hoạt động 1 ngày" />
             <KpiCard
-              title="WAU / MAU"
+              title="Người dùng hoạt động trong ngày"
+              value={fmtNum(uK?.active?.dau)}
+              sub="Trong 1 ngày gần nhất"
+            />
+            <KpiCard
+              title="Hoạt động 7 ngày / 30 ngày"
               value={`${fmtNum(uK?.active?.wau)} / ${fmtNum(uK?.active?.mau)}`}
-              sub="Hoạt động 7 & 30 ngày"
+              sub="Trong 7 ngày & 30 ngày"
             />
           </div>
 
           <div className="db-panels-2">
             <div className="db-panel">
               <div className="db-panel-head">
-                <h4>Users mới theo thời gian</h4>
-                <span className="db-muted">({granularity})</span>
+                <h4>Người dùng mới theo thời gian</h4>
+                <span className="db-muted">({granularityLabel})</span>
               </div>
               <MiniBars data={uSeriesNew} />
             </div>
 
             <div className="db-panel">
               <div className="db-panel-head">
-                <h4>Users hoạt động theo thời gian</h4>
-                <span className="db-muted">({granularity})</span>
+                <h4>Người dùng hoạt động theo thời gian</h4>
+                <span className="db-muted">({granularityLabel})</span>
               </div>
               <MiniBars data={uSeriesActive} />
             </div>
           </div>
 
           <div className="db-panels-1">
-            <SimpleTopTable title="Top phân khúc (theo filter)" items={topSegments} />
+            <SimpleTopTable
+              title="Phân khúc nổi bật (theo bộ lọc)"
+              items={topSegments}
+            />
           </div>
         </div>
 
@@ -396,7 +457,7 @@ export default function Dashboard() {
         <div className="db-section">
           <div className="db-section-head">
             <h3>
-              <i className="fa-solid fa-bowl-food" /> Nutrition
+              <i className="fa-solid fa-bowl-food" /> Dinh dưỡng
             </h3>
             <div className="db-section-meta">
               {nutritionStats?.query?.from && nutritionStats?.query?.to ? (
@@ -411,27 +472,37 @@ export default function Dashboard() {
           </div>
 
           <div className="db-kpi-grid">
-            <KpiCard title="Tổng log dinh dưỡng" value={fmtNum(nK?.totalLogs)} />
-            <KpiCard title="Users có log" value={fmtNum(nK?.usersWithLogs)} />
-            <KpiCard title="Avg kcal / user-day" value={fmtNum(nK?.avgKcalPerUserDay)} tone="good" />
-            <KpiCard title="Avg protein / user-day" value={fmtNum(nK?.avgProteinPerUserDay)} />
+            <KpiCard title="Tổng nhật ký dinh dưỡng" value={fmtNum(nK?.totalLogs)} />
+            <KpiCard title="Người dùng có nhật ký" value={fmtNum(nK?.usersWithLogs)} />
+            <KpiCard
+              title="TB kcal / người / ngày"
+              value={fmtNum(nK?.avgKcalPerUserDay)}
+              tone="good"
+            />
+            <KpiCard
+              title="TB đạm / người / ngày"
+              value={fmtNum(nK?.avgProteinPerUserDay)}
+            />
 
-            <KpiCard title="Food Pending" value={fmtNum(nK?.foodsPending)} tone="warn" />
-            <KpiCard title="Food Approved" value={fmtNum(nK?.foodsApproved)} tone="good" />
-            <KpiCard title="Food Rejected" value={fmtNum(nK?.foodsRejected)} tone="bad" />
-            <KpiCard title="SuggestMenu Saves" value={fmtNum(nK?.suggestMenuSaves)} />
+            <KpiCard title="Món ăn chờ duyệt" value={fmtNum(nK?.foodsPending)} tone="warn" />
+            <KpiCard title="Món ăn đã duyệt" value={fmtNum(nK?.foodsApproved)} tone="good" />
+            <KpiCard title="Món ăn bị từ chối" value={fmtNum(nK?.foodsRejected)} tone="bad" />
+            <KpiCard title="Lượt lưu thực đơn gợi ý" value={fmtNum(nK?.suggestMenuSaves)} />
           </div>
 
           <div className="db-panels-2">
             <div className="db-panel">
               <div className="db-panel-head">
                 <h4>Kcal được ghi theo thời gian</h4>
-                <span className="db-muted">({granularity})</span>
+                <span className="db-muted">({granularityLabel})</span>
               </div>
               <MiniBars data={nSeriesKcal} />
             </div>
 
-            <SimpleTopTable title={`Top foods (top ${top})`} items={topFoods} />
+            <SimpleTopTable
+              title={`Món ăn được ghi nhận nhiều nhất (${top} mục)`}
+              items={topFoods}
+            />
           </div>
         </div>
 
@@ -439,7 +510,7 @@ export default function Dashboard() {
         <div className="db-section">
           <div className="db-section-head">
             <h3>
-              <i className="fa-solid fa-dumbbell" /> Workouts
+              <i className="fa-solid fa-dumbbell" /> Luyện tập
             </h3>
             <div className="db-section-meta">
               {workoutsStats?.query?.from && workoutsStats?.query?.to ? (
@@ -454,22 +525,22 @@ export default function Dashboard() {
           </div>
 
           <div className="db-kpi-grid">
-            <KpiCard title="Workout plans tạo mới" value={fmtNum(wK?.totalPlans)} />
-            <KpiCard title="Users có plans" value={fmtNum(wK?.usersWithPlans)} />
-            <KpiCard title="Avg plans / user" value={fmtNum(wK?.avgPlansPerUser)} />
-            <KpiCard title="Saved plans" value={fmtNum(wK?.savedPlans)} tone="good" />
+            <KpiCard title="Lịch tập tạo mới" value={fmtNum(wK?.totalPlans)} />
+            <KpiCard title="Người dùng có lịch tập" value={fmtNum(wK?.usersWithPlans)} />
+            <KpiCard title="TB lịch tập / người dùng" value={fmtNum(wK?.avgPlansPerUser)} />
+            <KpiCard title="Lượt lưu lịch tập" value={fmtNum(wK?.savedPlans)} tone="good" />
 
-            <KpiCard title="Tổng exercises (trong plans)" value={fmtNum(wK?.totalExercises)} />
-            <KpiCard title="Tổng sets" value={fmtNum(wK?.totalSets)} />
-            <KpiCard title="Tổng reps" value={fmtNum(wK?.totalReps)} />
-            <KpiCard title="Avg kcal / plan" value={fmtNum(wK?.avgKcalPerPlan)} />
+            <KpiCard title="Tổng bài tập (trong lịch tập)" value={fmtNum(wK?.totalExercises)} />
+            <KpiCard title="Tổng hiệp" value={fmtNum(wK?.totalSets)} />
+            <KpiCard title="Tổng lần lặp" value={fmtNum(wK?.totalReps)} />
+            <KpiCard title="TB kcal / lịch tập" value={fmtNum(wK?.avgKcalPerPlan)} />
           </div>
 
           <div className="db-panels-2">
             <div className="db-panel">
               <div className="db-panel-head">
-                <h4>Plans tạo mới theo thời gian</h4>
-                <span className="db-muted">({granularity})</span>
+                <h4>Lịch tập tạo mới theo thời gian</h4>
+                <span className="db-muted">({granularityLabel})</span>
               </div>
               <MiniBars data={wSeriesPlans} />
             </div>
@@ -477,14 +548,17 @@ export default function Dashboard() {
             <div className="db-panel">
               <div className="db-panel-head">
                 <h4>Kcal tiêu hao (ước tính) theo thời gian</h4>
-                <span className="db-muted">({granularity})</span>
+                <span className="db-muted">({granularityLabel})</span>
               </div>
               <MiniBars data={wSeriesKcal} />
             </div>
           </div>
 
           <div className="db-panels-1">
-            <SimpleTopTable title={`Top exercises (top ${top})`} items={topExercises} />
+            <SimpleTopTable
+              title={`Bài tập được dùng nhiều nhất (${top} mục)`}
+              items={topExercises}
+            />
           </div>
         </div>
 
@@ -492,7 +566,7 @@ export default function Dashboard() {
         <div className="db-section">
           <div className="db-section-head">
             <h3>
-              <i className="fa-solid fa-people-arrows" /> Connect & Chat
+              <i className="fa-solid fa-people-arrows" /> Kết nối &amp; Tin nhắn
             </h3>
             <div className="db-section-meta">
               {connectStats?.query?.from && connectStats?.query?.to ? (
@@ -507,33 +581,45 @@ export default function Dashboard() {
           </div>
 
           <div className="db-kpi-grid">
-            <KpiCard title="Rooms tạo mới" value={fmtNum(cK?.rooms?.total)} />
-            <KpiCard title="Requests" value={fmtNum(cK?.requests?.total)} />
-            <KpiCard title="Reports" value={fmtNum(cK?.reports?.total)} tone="warn" />
-            <KpiCard title="Messages" value={fmtNum(cK?.chat?.totalMessages)} />
+            <KpiCard title="Phòng tạo mới" value={fmtNum(cK?.rooms?.total)} />
+            <KpiCard title="Yêu cầu" value={fmtNum(cK?.requests?.total)} />
+            <KpiCard title="Báo cáo" value={fmtNum(cK?.reports?.total)} tone="warn" />
+            <KpiCard title="Tin nhắn" value={fmtNum(cK?.chat?.totalMessages)} />
 
             <KpiCard
-              title="Rooms active/full/closed"
-              value={`${fmtNum(cK?.rooms?.active)} / ${fmtNum(cK?.rooms?.full)} / ${fmtNum(cK?.rooms?.closed)}`}
+              title="Phòng đang mở / đủ / đóng"
+              value={`${fmtNum(cK?.rooms?.active)} / ${fmtNum(cK?.rooms?.full)} / ${fmtNum(
+                cK?.rooms?.closed
+              )}`}
             />
-            <KpiCard title="Acceptance rate" value={fmtPct(cK?.requests?.acceptanceRate)} tone="good" />
-            <KpiCard title="Avg resolve (hours)" value={fmtNum(cK?.requests?.avgResolveHours)} />
-            <KpiCard title="Active conversations" value={fmtNum(cK?.chat?.activeConversations)} />
+            <KpiCard
+              title="Tỉ lệ chấp nhận"
+              value={fmtPct(cK?.requests?.acceptanceRate)}
+              tone="good"
+            />
+            <KpiCard
+              title="Thời gian xử lý TB (giờ)"
+              value={fmtNum(cK?.requests?.avgResolveHours)}
+            />
+            <KpiCard
+              title="Hội thoại đang hoạt động"
+              value={fmtNum(cK?.chat?.activeConversations)}
+            />
           </div>
 
           <div className="db-panels-2">
             <div className="db-panel">
               <div className="db-panel-head">
-                <h4>Rooms tạo mới</h4>
-                <span className="db-muted">({granularity})</span>
+                <h4>Phòng tạo mới</h4>
+                <span className="db-muted">({granularityLabel})</span>
               </div>
               <MiniBars data={cSeriesRooms} />
             </div>
 
             <div className="db-panel">
               <div className="db-panel-head">
-                <h4>Requests tạo mới</h4>
-                <span className="db-muted">({granularity})</span>
+                <h4>Yêu cầu tạo mới</h4>
+                <span className="db-muted">({granularityLabel})</span>
               </div>
               <MiniBars data={cSeriesReq} />
             </div>
@@ -542,30 +628,36 @@ export default function Dashboard() {
           <div className="db-panels-2">
             <div className="db-panel">
               <div className="db-panel-head">
-                <h4>Reports tạo mới</h4>
-                <span className="db-muted">({granularity})</span>
+                <h4>Báo cáo tạo mới</h4>
+                <span className="db-muted">({granularityLabel})</span>
               </div>
               <MiniBars data={cSeriesRep} />
             </div>
 
             <div className="db-panel">
               <div className="db-panel-head">
-                <h4>Messages gửi</h4>
-                <span className="db-muted">({granularity})</span>
+                <h4>Tin nhắn đã gửi</h4>
+                <span className="db-muted">({granularityLabel})</span>
               </div>
               <MiniBars data={cSeriesMsg} />
             </div>
           </div>
 
           <div className="db-panels-2">
-            <SimpleTopTable title={`Top nhóm theo members (top ${top})`} items={topGroups} />
-            <SimpleTopTable title={`Top lý do report (top ${top})`} items={topReportReasons} />
+            <SimpleTopTable
+              title={`Nhóm có nhiều thành viên nhất (${top} mục)`}
+              items={topGroups}
+            />
+            <SimpleTopTable
+              title={`Lý do báo cáo phổ biến (${top} mục)`}
+              items={topReportReasons}
+            />
           </div>
         </div>
 
         <div className="db-foot">
           <span className="db-muted">
-            * Dashboard đang dùng chung bộ lọc (q/from/to/granularity/top) cho tất cả API stats.
+            * Bảng tổng quan dùng chung bộ lọc cho tất cả dữ liệu thống kê.
           </span>
         </div>
       </div>

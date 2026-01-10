@@ -81,7 +81,7 @@ const downloadTextFile = (filename, text, mime = "text/plain;charset=utf-8") => 
     a.remove();
     URL.revokeObjectURL(url);
   } catch {
-    toast.error("Không thể export file trên trình duyệt này");
+    toast.error("Không thể xuất file trên trình duyệt này");
   }
 };
 
@@ -104,19 +104,19 @@ const toPieSeries = (input) =>
 
 const ROOM_TYPE_LABEL = (k) => {
   const s = String(k || "").toLowerCase();
-  if (s === "duo" || s === "one_to_one" || s === "1:1") return "Duo";
-  if (s === "group" || s === "team") return "Team";
-  if (s === "dm") return "DM";
+  if (s === "duo" || s === "one_to_one" || s === "1:1") return "Kết nối đôi (Duo)";
+  if (s === "group" || s === "team") return "Kết nối nhóm (Team)";
+  if (s === "dm") return "Nhắn tin riêng (DM)";
   return String(k || "—");
 };
 
 const STATUS_LABEL = (k) => {
   const s = String(k || "").toLowerCase();
-  if (s === "pending") return "Pending";
-  if (s === "accepted" || s === "approve" || s === "approved") return "Accepted";
-  if (s === "rejected" || s === "reject") return "Rejected";
-  if (s === "cancelled" || s === "canceled" || s === "cancel" || s === "cancelled") return "Cancelled";
-  if (s === "expired") return "Expired";
+  if (s === "pending") return "Đang chờ";
+  if (s === "accepted" || s === "approve" || s === "approved") return "Đã chấp nhận";
+  if (s === "rejected" || s === "reject") return "Đã từ chối";
+  if (s === "cancelled" || s === "canceled" || s === "cancel") return "Đã huỷ";
+  if (s === "expired") return "Hết hạn";
   return String(k || "—");
 };
 
@@ -229,11 +229,11 @@ export default function Stats_Connections() {
         statusRaw.length > 0
           ? statusRaw.map((x) => ({ t: STATUS_LABEL(x.key), v: x.value }))
           : [
-              { t: "Pending", v: pending },
-              { t: "Accepted", v: accepted },
-              { t: "Rejected", v: rejected },
-              { t: "Cancelled", v: cancelled },
-              { t: "Expired", v: expired },
+              { t: "Đang chờ", v: pending },
+              { t: "Đã chấp nhận", v: accepted },
+              { t: "Đã từ chối", v: rejected },
+              { t: "Đã huỷ", v: cancelled },
+              { t: "Hết hạn", v: expired },
             ].filter((x) => x.v > 0);
 
       setStatusBreakdown(statusAsBar);
@@ -256,7 +256,7 @@ export default function Stats_Connections() {
       setTopRooms(
         top.map((r, idx) => ({
           _key: r?._key || r?.id || r?._id || idx,
-          name: r?.name ?? `Room #${idx + 1}`,
+          name: r?.name ?? `Nhóm #${idx + 1}`,
           value: r?.value ?? "—",
           note: r?.note ?? "",
         }))
@@ -264,7 +264,7 @@ export default function Stats_Connections() {
 
       setLastUpdated(new Date());
 
-      if (!silent) toast.success("Làm mới thống kê kết nối");
+      if (!silent) toast.success("Đã làm mới thống kê kết nối");
     } catch (e) {
       if (!silent) toast.error("Không tải được thống kê kết nối");
     } finally {
@@ -289,53 +289,56 @@ export default function Stats_Connections() {
   const kpis = useMemo(() => {
     const s = kpi || {};
     return [
-      { label: "Match requests", value: fmtInt(s.totalRequests), sub: "Tạo mới", icon: "fa-solid fa-link" },
-      { label: "Acceptance rate", value: fmtPct(s.acceptanceRate), sub: "Tỷ lệ đồng ý", icon: "fa-solid fa-circle-check" },
-      { label: "Reject/Cancel", value: fmtInt(s.rejectCancel), sub: "Từ chối/Huỷ", icon: "fa-solid fa-circle-xmark" },
-      { label: "Rooms created", value: fmtInt(s.roomsCreated), sub: `Duo/Team/DM`, icon: "fa-solid fa-people-group" },
-      { label: "Avg resolve time", value: s.avgMinutes ? fmtDurationMinutes(s.avgMinutes) : "—", sub: "Trung bình", icon: "fa-solid fa-stopwatch" },
-      { label: "Active conversations", value: fmtInt(s.conversations), sub: "Duo/Team chat", icon: "fa-solid fa-comments" },
-      { label: "Messages sent", value: fmtInt(s.messages), sub: "Tổng tin nhắn", icon: "fa-solid fa-comment-dots" },
-      { label: "Reports", value: fmtInt(s.reports), sub: "Báo cáo", icon: "fa-solid fa-triangle-exclamation" },
+      { label: "Yêu cầu kết nối", value: fmtInt(s.totalRequests), sub: "Tạo mới", icon: "fa-solid fa-link" },
+      { label: "Tỷ lệ chấp nhận", value: fmtPct(s.acceptanceRate), sub: "Tỷ lệ đồng ý", icon: "fa-solid fa-circle-check" },
+      { label: "Từ chối / Huỷ", value: fmtInt(s.rejectCancel), sub: "Tổng số từ chối + huỷ", icon: "fa-solid fa-circle-xmark" },
+      { label: "Phòng/nhóm được tạo", value: fmtInt(s.roomsCreated), sub: "Duo / Team / DM", icon: "fa-solid fa-people-group" },
+      { label: "Thời gian xử lý TB", value: s.avgMinutes ? fmtDurationMinutes(s.avgMinutes) : "—", sub: "Trung bình", icon: "fa-solid fa-stopwatch" },
+      { label: "Cuộc trò chuyện đang hoạt động", value: fmtInt(s.conversations), sub: "Duo/Team chat", icon: "fa-solid fa-comments" },
+      { label: "Tin nhắn đã gửi", value: fmtInt(s.messages), sub: "Tổng tin nhắn", icon: "fa-solid fa-comment-dots" },
+      { label: "Báo cáo", value: fmtInt(s.reports), sub: "Tổng lượt báo cáo", icon: "fa-solid fa-triangle-exclamation" },
     ];
   }, [kpi]);
 
   const onExport = () => {
-    const s = kpi || {};
     const r = normalizeRange(from, to);
 
     const lines = [];
-    lines.push(["Từ ngày", r.from, "Đến ngày", r.to, "Chu kỳ", granularity, "Từ khóa", q].map(csvEscape).join(","));
+    lines.push(
+      ["Từ ngày", r.from, "Đến ngày", r.to, "Chu kỳ", granularity, "Từ khóa", q]
+        .map(csvEscape)
+        .join(",")
+    );
     lines.push("");
 
-    lines.push(["KPI", "Giá trị", "Ghi chú"].map(csvEscape).join(","));
+    lines.push(["Chỉ số", "Giá trị", "Ghi chú"].map(csvEscape).join(","));
     kpis.forEach((x) => lines.push([x.label, x.value, x.sub].map(csvEscape).join(",")));
 
     lines.push("");
-    lines.push(["Breakdown trạng thái", "Giá trị"].map(csvEscape).join(","));
+    lines.push(["Phân bố trạng thái", "Giá trị"].map(csvEscape).join(","));
     (statusBreakdown || []).forEach((x) => lines.push([x.t, x.v].map(csvEscape).join(",")));
 
     lines.push("");
-    lines.push(["Room type", "Giá trị"].map(csvEscape).join(","));
+    lines.push(["Loại phòng", "Giá trị"].map(csvEscape).join(","));
     (roomTypePie || []).forEach((x) => lines.push([ROOM_TYPE_LABEL(x.key), x.value].map(csvEscape).join(",")));
 
     lines.push("");
-    lines.push(["Top rooms", "Chỉ số", "Ghi chú"].map(csvEscape).join(","));
+    lines.push(["Top nhóm/phòng", "Chỉ số", "Ghi chú"].map(csvEscape).join(","));
     (topRooms || []).forEach((x) => lines.push([x.name, x.value, x.note].map(csvEscape).join(",")));
 
     lines.push("");
-    lines.push(["Series: Requests theo thời gian"].map(csvEscape).join(","));
+    lines.push(["Chuỗi thời gian: Yêu cầu kết nối"].map(csvEscape).join(","));
     lines.push(["t", "v"].map(csvEscape).join(","));
     (seriesRequests || []).forEach((x) => lines.push([x.t, x.v].map(csvEscape).join(",")));
 
     lines.push("");
-    lines.push(["Series: Messages theo thời gian"].map(csvEscape).join(","));
+    lines.push(["Chuỗi thời gian: Tin nhắn"].map(csvEscape).join(","));
     lines.push(["t", "v"].map(csvEscape).join(","));
     (seriesMessages || []).forEach((x) => lines.push([x.t, x.v].map(csvEscape).join(",")));
 
     const filename = `stats_connections_${r.from}_${r.to}.csv`;
     downloadTextFile(filename, lines.join("\n"), "text/csv;charset=utf-8");
-    toast.success("Đã export CSV");
+    toast.success("Đã xuất CSV");
   };
 
   return (
@@ -343,22 +346,27 @@ export default function Stats_Connections() {
       <StatsBreadcrumb current="Thống kê kết nối" groupLabel="Thống kê" />
 
       <StatsCard
-        title="Thống kê về kết nối"
+        title="Thống kê kết nối"
         subtitle={
           lastUpdated
-            ? `Match requests, rooms, chat, reports • Cập nhật: ${lastUpdated.toLocaleString("vi-VN")}`
-            : "Match requests, rooms, chat, reports"
+            ? `Yêu cầu kết nối, phòng/nhóm, chat, báo cáo • Cập nhật: ${lastUpdated.toLocaleString("vi-VN")}`
+            : "Yêu cầu kết nối, phòng/nhóm, chat, báo cáo"
         }
         actions={
           <>
             <SButton variant="ghost" icon="fa-solid fa-eraser" onClick={clearFilters} disabled={loading}>
               Xoá bộ lọc
             </SButton>
-            <SButton variant="ghost" icon="fa-solid fa-rotate-right" onClick={() => refresh({ silent: false })} disabled={loading}>
+            <SButton
+              variant="ghost"
+              icon="fa-solid fa-rotate-right"
+              onClick={() => refresh({ silent: false })}
+              disabled={loading}
+            >
               Làm mới
             </SButton>
             <SButton variant="primary" icon="fa-solid fa-file-export" onClick={onExport} disabled={loading}>
-              Export CSV
+              Xuất CSV
             </SButton>
           </>
         }
@@ -382,16 +390,16 @@ export default function Stats_Connections() {
         </KpiGrid>
 
         <ChartGrid>
-          <ChartCard title="Match requests theo thời gian" hint="Line chart" type="line" data={seriesRequests} />
-          <ChartCard title="Breakdown trạng thái request" hint="Bar chart" type="bar" data={statusBreakdown} />
+          <ChartCard title="Yêu cầu kết nối theo thời gian" hint="Biểu đồ đường" type="line" data={seriesRequests} />
+          <ChartCard title="Phân bố trạng thái yêu cầu" hint="Biểu đồ cột" type="bar" data={statusBreakdown} />
           <ChartCard
-            title="Tỷ trọng room type (duo/team/dm)"
-            hint="Pie chart"
+            title="Tỷ trọng loại phòng (Duo/Team/DM)"
+            hint="Biểu đồ tròn"
             type="pie"
             data={roomTypePie}
             labelFormatter={ROOM_TYPE_LABEL}
           />
-          <ChartCard title="Messages theo thời gian" hint="Line chart" type="line" data={seriesMessages} />
+          <ChartCard title="Tin nhắn theo thời gian" hint="Biểu đồ đường" type="line" data={seriesMessages} />
         </ChartGrid>
 
         <div className="st-block-title">
@@ -400,12 +408,12 @@ export default function Stats_Connections() {
 
         <SimpleTopTable
           columns={[
-            { key: "name", label: "Room", w: "1.2fr" },
+            { key: "name", label: "Nhóm/Phòng", w: "1.2fr" },
             { key: "value", label: "Chỉ số", w: "0.6fr" },
             { key: "note", label: "Ghi chú", w: "1.2fr" },
           ]}
           rows={topRooms}
-          emptyText={loading ? "Đang tải..." : "Chưa có dữ liệu top rooms"}
+          emptyText={loading ? "Đang tải..." : "Chưa có dữ liệu top nhóm/phòng"}
         />
       </StatsCard>
     </div>

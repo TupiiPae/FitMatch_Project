@@ -159,13 +159,14 @@ export function MultiSelectDropdown({
   };
 
   const displayText = useMemo(() => {
-    if (!values.length) return placeholder || label;
+    if (!values.length) return placeholder || "Chọn...";
     if (values.length === 1) {
       const v = values[0];
       return renderOptionLabel ? renderOptionLabel(v) : v;
     }
-    return `${label}: ${values.length} mục`;
-  }, [values, label, placeholder, renderOptionLabel]);
+    // tránh phụ thuộc label (vd: Goal/Sex) để không lộ tiếng Anh trên UI
+    return `Đã chọn: ${values.length} mục`;
+  }, [values, placeholder, renderOptionLabel, label]);
 
   return (
     <div className="st-ms">
@@ -240,8 +241,9 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const fmtCompact = (n) => {
   const x = Number(n);
   if (!Number.isFinite(x)) return "—";
-  if (Math.abs(x) >= 1_000_000) return (x / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-  if (Math.abs(x) >= 1_000) return (x / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  // đổi K/M sang N/Tr (nghìn/triệu) để tránh tiếng Anh trên UI
+  if (Math.abs(x) >= 1_000_000) return (x / 1_000_000).toFixed(1).replace(/\.0$/, "") + "Tr";
+  if (Math.abs(x) >= 1_000) return (x / 1_000).toFixed(1).replace(/\.0$/, "") + "N";
   return String(Math.round(x));
 };
 
@@ -322,7 +324,7 @@ function MiniLineChart({ data, height = 190 }) {
 
   return (
     <div style={{ width: "100%" }}>
-      <svg viewBox="0 0 100 50" width="100%" height={height} role="img" aria-label="Line chart">
+      <svg viewBox="0 0 100 50" width="100%" height={height} role="img" aria-label="Biểu đồ đường">
         {/* grid */}
         <line x1="6" y1="42" x2="96" y2="42" stroke="#E5E7EB" strokeWidth="0.6" />
         <line x1="6" y1="26" x2="96" y2="26" stroke="#F3F4F6" strokeWidth="0.6" />
@@ -333,13 +335,7 @@ function MiniLineChart({ data, height = 190 }) {
 
         {/* points */}
         {points.map((p, idx) => (
-          <circle
-            key={idx}
-            cx={p.x}
-            cy={p.y}
-            r="1.2"
-            fill="#008080"
-          >
+          <circle key={idx} cx={p.x} cy={p.y} r="1.2" fill="#008080">
             <title>{`${p.t}: ${p.v}`}</title>
           </circle>
         ))}
@@ -411,7 +407,7 @@ function MiniBarChart({ data, height = 190 }) {
 
   return (
     <div style={{ width: "100%" }}>
-      <svg viewBox="0 0 100 50" width="100%" height={height} role="img" aria-label="Bar chart">
+      <svg viewBox="0 0 100 50" width="100%" height={height} role="img" aria-label="Biểu đồ cột">
         <line x1="6" y1="40" x2="96" y2="40" stroke="#E5E7EB" strokeWidth="0.6" />
         <text x="6" y="7" fontSize="3.2" fill="#6B7280">
           {fmtCompact(maxV)}
@@ -439,7 +435,13 @@ function MiniBarChart({ data, height = 190 }) {
           </text>
         ) : null}
         {bars[bars.length - 1] ? (
-          <text x={clamp(bars[bars.length - 1].x + 6, 6, 96)} y="49" fontSize="3.2" fill="#6B7280" textAnchor="end">
+          <text
+            x={clamp(bars[bars.length - 1].x + 6, 6, 96)}
+            y="49"
+            fontSize="3.2"
+            fill="#6B7280"
+            textAnchor="end"
+          >
             {bars[bars.length - 1].t}
           </text>
         ) : null}
@@ -501,16 +503,18 @@ function MiniPieChart({ data, height = 190, labelFormatter }) {
 
   return (
     <div style={{ width: "100%", display: "grid", gridTemplateColumns: "180px 1fr", gap: 12, alignItems: "center" }}>
-      <svg viewBox="0 0 60 60" width="100%" height={height} role="img" aria-label="Pie chart" style={{ maxWidth: 210 }}>
+      <svg
+        viewBox="0 0 60 60"
+        width="100%"
+        height={height}
+        role="img"
+        aria-label="Biểu đồ tròn"
+        style={{ maxWidth: 210 }}
+      >
         {/* background ring */}
         <circle cx="30" cy="30" r="22" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="0.8" />
         {slices.map((s, idx) => (
-          <path
-            key={idx}
-            d={describeArc(30, 30, 22, s.start, s.end)}
-            fill={s.fill}
-            opacity="0.95"
-          >
+          <path key={idx} d={describeArc(30, 30, 22, s.start, s.end)} fill={s.fill} opacity="0.95">
             <title>{`${s.label}: ${s.value} (${Math.round(s.pct * 100)}%)`}</title>
           </path>
         ))}
@@ -530,7 +534,16 @@ function MiniPieChart({ data, height = 190, labelFormatter }) {
             <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ width: 10, height: 10, borderRadius: 3, background: s.fill, flex: "0 0 10px" }} />
               <div style={{ minWidth: 0, flex: "1 1 auto" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#111827",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   {s.label}
                 </div>
                 <div style={{ fontSize: 12, color: "#6B7280" }}>
@@ -581,7 +594,7 @@ export function ChartCard({ title, hint, type = "line", data, labelFormatter }) 
           <div className="st-chart-placeholder">
             <i className={icon} />
             <div className="st-chart-placeholder-text">
-              {type === "line" ? "Biểu đồ đường (Line)" : type === "bar" ? "Biểu đồ cột (Bar)" : "Biểu đồ tròn (Pie)"}
+              {type === "line" ? "Biểu đồ đường" : type === "bar" ? "Biểu đồ cột" : "Biểu đồ tròn"}
             </div>
             <div className="st-chart-placeholder-sub">Chưa có dữ liệu theo bộ lọc hiện tại</div>
           </div>

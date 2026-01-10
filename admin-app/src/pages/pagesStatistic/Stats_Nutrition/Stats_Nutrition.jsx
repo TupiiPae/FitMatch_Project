@@ -17,7 +17,8 @@ import {
 import { getStatsNutritionAdmin } from "../../../lib/api";
 
 const nf = new Intl.NumberFormat("vi-VN");
-const fmtInt = (n) => (Number.isFinite(Number(n)) ? nf.format(Math.round(Number(n))) : "—");
+const fmtInt = (n) =>
+  Number.isFinite(Number(n)) ? nf.format(Math.round(Number(n))) : "—";
 const fmtKcal = (n) => (Number.isFinite(Number(n)) ? `${fmtInt(n)} kcal` : "—");
 const fmtG = (n) => (Number.isFinite(Number(n)) ? `${fmtInt(n)} g` : "—");
 
@@ -82,9 +83,13 @@ export default function Stats_Nutrition() {
   const onQuickRange = (days) => setRange(computeRangeLastDays(days));
 
   const k = data?.kpis || {};
-  const kcalSeries = Array.isArray(data?.series?.kcalLogged) ? data.series.kcalLogged : [];
+  const kcalSeries = Array.isArray(data?.series?.kcalLogged)
+    ? data.series.kcalLogged
+    : [];
   const macroBars = Array.isArray(data?.macros?.bars) ? data.macros.bars : [];
-  const foodStatusPie = Array.isArray(data?.distributions?.foodStatus) ? data.distributions.foodStatus : [];
+  const foodStatusPie = Array.isArray(data?.distributions?.foodStatus)
+    ? data.distributions.foodStatus
+    : [];
 
   const topFoods = Array.isArray(data?.topFoods) ? data.topFoods : [];
   const topFoodsBar = useMemo(
@@ -99,51 +104,51 @@ export default function Stats_Nutrition() {
   const kpis = useMemo(
     () => [
       {
-        label: "Nutrition logs",
+        label: "Nhật ký dinh dưỡng",
         value: fmtInt(k.totalLogs),
         sub: "Tổng lượt ghi nhật ký trong khoảng thời gian",
         icon: "fa-solid fa-utensils",
       },
       {
-        label: "Users có log",
+        label: "Người dùng có nhật ký",
         value: fmtInt(k.usersWithLogs),
-        sub: "Unique users có phát sinh log",
+        sub: "Số người dùng duy nhất có phát sinh nhật ký",
         icon: "fa-solid fa-users",
       },
       {
-        label: "Avg calories/day",
+        label: "Trung bình calo/ngày",
         value: fmtKcal(k.avgKcalPerUserDay),
-        sub: "TB theo user-day (chỉ ngày có log)",
+        sub: "Trung bình theo người-ngày (chỉ tính ngày có nhật ký)",
         icon: "fa-solid fa-fire",
       },
       {
-        label: "Avg protein/day",
+        label: "Trung bình protein/ngày",
         value: fmtG(k.avgProteinPerUserDay),
-        sub: "TB theo user-day (chỉ ngày có log)",
+        sub: "Trung bình theo người-ngày (chỉ tính ngày có nhật ký)",
         icon: "fa-solid fa-dna",
       },
       {
-        label: "Food pending",
+        label: "Món ăn chờ duyệt",
         value: fmtInt(k.foodsPending),
-        sub: "Chờ duyệt",
+        sub: "Số món ăn đang ở trạng thái chờ duyệt",
         icon: "fa-solid fa-hourglass-half",
       },
       {
-        label: "Food approved",
+        label: "Món ăn đã duyệt",
         value: fmtInt(k.foodsApproved),
-        sub: `Rejected: ${fmtInt(k.foodsRejected)}`,
+        sub: `Bị từ chối: ${fmtInt(k.foodsRejected)}`,
         icon: "fa-solid fa-circle-check",
       },
       {
-        label: "Suggest menu saved",
+        label: "Lượt lưu thực đơn gợi ý",
         value: fmtInt(k.suggestMenuSaves),
         sub: "Tổng lượt lưu thực đơn gợi ý",
         icon: "fa-solid fa-bookmark",
       },
       {
-        label: "AI scans",
+        label: "Lượt quét AI",
         value: fmtInt(k.aiScans),
-        sub: "Nếu có tracking",
+        sub: "Nếu hệ thống có theo dõi chỉ số này",
         icon: "fa-solid fa-wand-magic-sparkles",
       },
     ],
@@ -155,11 +160,16 @@ export default function Stats_Nutrition() {
       <StatsBreadcrumb current="Thống kê dinh dưỡng" groupLabel="Thống kê" />
 
       <StatsCard
-        title="Thống kê về dinh dưỡng"
-        subtitle="Logs, calories/macros, foods, thực đơn gợi ý"
+        title="Thống kê dinh dưỡng"
+        subtitle="Nhật ký, calo/macros, món ăn, thực đơn gợi ý"
         actions={
           <>
-            <SButton variant="ghost" icon="fa-solid fa-eraser" onClick={clearFilters} disabled={loading}>
+            <SButton
+              variant="ghost"
+              icon="fa-solid fa-eraser"
+              onClick={clearFilters}
+              disabled={loading}
+            >
               Xoá bộ lọc
             </SButton>
             <SButton
@@ -173,10 +183,10 @@ export default function Stats_Nutrition() {
             <SButton
               variant="primary"
               icon="fa-solid fa-file-export"
-              onClick={() => toast.info("TODO: Export")}
+              onClick={() => toast.info("TODO: Xuất dữ liệu")}
               disabled={loading}
             >
-              Export
+              Xuất dữ liệu
             </SButton>
           </>
         }
@@ -195,25 +205,47 @@ export default function Stats_Nutrition() {
 
         <KpiGrid>
           {kpis.map((x) => (
-            <KpiCard key={x.label} label={x.label} value={x.value} sub={x.sub} icon={x.icon} />
+            <KpiCard
+              key={x.label}
+              label={x.label}
+              value={x.value}
+              sub={x.sub}
+              icon={x.icon}
+            />
           ))}
         </KpiGrid>
 
         <ChartGrid>
-          <ChartCard title="Calories logged theo thời gian" hint="Line chart" type="line" data={kcalSeries} />
-          <ChartCard title="Macro distribution (Carb/Protein/Fat)" hint="Bar chart" type="bar" data={macroBars} />
           <ChartCard
-            title="Food status (pending/approved/rejected)"
-            hint="Pie chart"
+            title="Calo được ghi theo thời gian"
+            hint="Biểu đồ đường"
+            type="line"
+            data={kcalSeries}
+          />
+          <ChartCard
+            title="Phân bổ macros (Carb/Protein/Fat)"
+            hint="Biểu đồ cột"
+            type="bar"
+            data={macroBars}
+          />
+          <ChartCard
+            title="Trạng thái món ăn (chờ duyệt/đã duyệt/từ chối)"
+            hint="Biểu đồ tròn"
             type="pie"
             data={foodStatusPie}
             labelFormatter={(key) => FOOD_STATUS_LABEL?.[key] || String(key)}
           />
-          <ChartCard title="Top foods được log nhiều nhất" hint="Bar chart" type="bar" data={topFoodsBar} />
+          <ChartCard
+            title="Món ăn được ghi nhiều nhất"
+            hint="Biểu đồ cột"
+            type="bar"
+            data={topFoodsBar}
+          />
         </ChartGrid>
 
         <div className="st-block-title">
-          <i className="fa-solid fa-list-ol" /> <span>Top foods</span>
+          <i className="fa-solid fa-list-ol" />{" "}
+          <span>Món ăn được ghi nhận nhiều nhất</span>
         </div>
 
         <SimpleTopTable
@@ -223,7 +255,7 @@ export default function Stats_Nutrition() {
             { key: "note", label: "Ghi chú", w: "1.2fr" },
           ]}
           rows={topFoods}
-          emptyText="Chưa có dữ liệu top foods"
+          emptyText="Chưa có dữ liệu món ăn nổi bật"
         />
       </StatsCard>
     </div>
