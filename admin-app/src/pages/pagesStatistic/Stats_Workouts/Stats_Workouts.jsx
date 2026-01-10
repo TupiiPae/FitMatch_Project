@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import "../_shared/StatsBase.css";
 import "./Stats_Workouts.css";
@@ -14,13 +14,28 @@ import {
   StatsCard,
   StatsFilterBar,
 } from "../_shared/StatsShared";
+import { getStatsWorkoutsAdmin } from "../../../lib/api"; // <- sửa path nếu bạn đặt khác
+
+const TYPE_LABEL = {
+  Strength: "Strength (Sức mạnh)",
+  Cardio: "Cardio",
+  Sport: "Sport",
+  unknown: "Khác",
+};
 
 export default function Stats_Workouts() {
   const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(null);
 
   const [q, setQ] = useState("");
   const [{ from, to }, setRange] = useState(() => computeRangeLastDays(30));
   const [granularity, setGranularity] = useState("day");
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const clearFilters = () => {
     setQ("");
@@ -28,47 +43,120 @@ export default function Stats_Workouts() {
     setGranularity("day");
   };
 
-  const refresh = async () => {
+  const fetchStats = async ({ showToast = false } = {}) => {
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 300));
-      toast.success("Làm mới thống kê tập luyện");
-    } catch {
-      toast.error("Không tải được thống kê tập luyện");
+      const payload = await getStatsWorkoutsAdmin({
+        from,
+        to,
+        granularity,
+        q: q?.trim() || "",
+        top: 8,
+      });
+
+      if (!mountedRef.current) return;
+      setData(payload);
+
+      if (showToast) toast.success("Đã tải thống kê tập luyện");
+    } catch (e) {
+      if (showToast) toast.error("Không tải được thống kê tập luyện");
+      // fallback silent
+      if (!showToast) console.error("[Stats_Workouts] fetch failed", e);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
+  // Auto reload khi đổi filter (debounce nhẹ cho q)
   useEffect(() => {
-    refresh();
+    const t = setTimeout(() => fetchStats({ showToast: false }), 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from, to, granularity, q]);
+
+  // initial load
+  useEffect(() => {
+    fetchStats({ showToast: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onQuickRange = (days) => setRange(computeRangeLastDays(days));
 
-  const kpis = useMemo(
-    () => [
-      { label: "Workout logs", value: "—", sub: "Số buổi tập", icon: "fa-solid fa-dumbbell" },
-      { label: "Users tập luyện", value: "—", sub: "Unique users", icon: "fa-solid fa-users" },
-      { label: "Avg workouts/user", value: "—", sub: "Theo kỳ", icon: "fa-solid fa-chart-line" },
-      { label: "Total minutes", value: "—", sub: "Nếu có duration", icon: "fa-solid fa-stopwatch" },
-      { label: "Strength", value: "—", sub: "Số buổi", icon: "fa-solid fa-dumbbell" },
-      { label: "Cardio", value: "—", sub: "Số buổi", icon: "fa-solid fa-heart-pulse" },
-      { label: "Sport", value: "—", sub: "Số buổi", icon: "fa-solid fa-person-running" },
-      { label: "Plan completion", value: "—", sub: "Nếu tracking", icon: "fa-solid fa-clipboard-check" },
-    ],
-    []
-  );
+  const k = data?.kpis || {};
+  const dist = data?.distributions || {};
+  const series = data?.series || {};
 
-  const topExercises = useMemo(
-    () => [
-      { name: "Bench press", value: "—", note: "phổ biến" },
-      { name: "Squat", value: "—", note: "phổ biến" },
-      { name: "Running", value: "—", note: "phổ biến" },
-    ],
-    []
-  );
+  const kpis = useMemo(() => {
+    return [
+      {
+        label: "Workout plans",
+        value: k.totalPlans ?? "—",
+        sub: "Số lịch tập tạo trong kỳ",
+        icon: "fa-solid fa-dumbbell",
+      },
+      {
+        label: "Users tập luyện",
+        value: k.usersWithPlans ?? "—",
+        sub: "Unique users",
+        icon: "fa-solid fa-users",
+      },
+      {
+        label: "Avg plans/user",
+        value: k.avgPlansPerUser ?? "—",
+        sub: "Theo kỳ",
+        icon: "fa-solid fa-chart-line",
+      },
+      {
+        label: "Total kcal",
+        value: k.totalKcal ?? "—",
+        sub: "Tổng kcal (ước tính)",
+        icon: "fa-solid fa-fire",
+      },
+      {
+        label: "Saved plans",
+        value: k.savedPlans ?? "—",
+        sub: "Tổng lượt lưu",
+        icon: "fa-solid fa-bookmark",
+      },
+      {
+        label: "Strength",
+        value: k.strengthCount ?? "—",
+        sub: "Số bài trong plans",
+        icon: "fa-solid fa-dumbbell",
+      },
+      {
+        label: "Cardio",
+        value: k.cardioCount ?? "—",
+        sub: "Số bài trong plans",
+        icon: "fa-solid fa-heart-pulse",
+      },
+      {
+        label: "Sport",
+        value: k.sportCount ?? "—",
+        sub: "Số bài trong plans",
+        icon: "fa-solid fa-person-running",
+      },
+    ];
+  }, [k]);
+
+  const topExercises = useMemo(() => {
+    const rows = Array.isArray(data?.topExercises) ? data.topExercises : [];
+    return rows.map((x, idx) => ({
+      _key: `${x?.name || "row"}-${idx}`,
+      name: x?.name || "(Không tên)",
+      value: x?.value ?? 0,
+      note: x?.note || "",
+    }));
+  }, [data]);
+
+  const topExercisesBar = useMemo(() => {
+    return topExercises.map((r) => ({ t: r.name, v: Number(r.value || 0) }));
+  }, [topExercises]);
+
+  const itemTypesPie = useMemo(() => {
+    // BE trả [{key,value}]
+    return Array.isArray(dist?.itemTypes) ? dist.itemTypes : [];
+  }, [dist]);
 
   return (
     <div className="st-page">
@@ -76,16 +164,26 @@ export default function Stats_Workouts() {
 
       <StatsCard
         title="Thống kê về tập luyện"
-        subtitle="Workouts, loại bài tập, mức độ hoạt động"
+        subtitle="Workout plans, phân loại bài tập, mức độ hoạt động"
         actions={
           <>
-            <SButton variant="ghost" icon="fa-solid fa-eraser" onClick={clearFilters}>
+            <SButton variant="ghost" icon="fa-solid fa-eraser" onClick={clearFilters} disabled={loading}>
               Xoá bộ lọc
             </SButton>
-            <SButton variant="ghost" icon="fa-solid fa-rotate-right" onClick={refresh} disabled={loading}>
+            <SButton
+              variant="ghost"
+              icon="fa-solid fa-rotate-right"
+              onClick={() => fetchStats({ showToast: true })}
+              disabled={loading}
+            >
               Làm mới
             </SButton>
-            <SButton variant="primary" icon="fa-solid fa-file-export" onClick={() => toast.info("TODO: Export")}>
+            <SButton
+              variant="primary"
+              icon="fa-solid fa-file-export"
+              onClick={() => toast.info("TODO: Export")}
+              disabled={loading}
+            >
               Export
             </SButton>
           </>
@@ -104,16 +202,37 @@ export default function Stats_Workouts() {
         />
 
         <KpiGrid>
-          {kpis.map((k) => (
-            <KpiCard key={k.label} label={k.label} value={k.value} sub={k.sub} icon={k.icon} />
+          {kpis.map((x) => (
+            <KpiCard key={x.label} label={x.label} value={x.value} sub={x.sub} icon={x.icon} />
           ))}
         </KpiGrid>
 
         <ChartGrid>
-          <ChartCard title="Workout logs theo thời gian" hint="Line chart" type="line" />
-          <ChartCard title="Phân loại buổi tập (Strength/Cardio/Sport)" hint="Bar chart" type="bar" />
-          <ChartCard title="Tỷ trọng loại buổi tập" hint="Pie chart" type="pie" />
-          <ChartCard title="Top exercises phổ biến" hint="Bar chart" type="bar" />
+          <ChartCard
+            title="Workout plans theo thời gian"
+            hint="Số plan được tạo trong kỳ"
+            type="line"
+            data={series?.plansCreated || []}
+          />
+          <ChartCard
+            title="Kcal đốt theo thời gian"
+            hint="Tổng kcal (ước tính) theo kỳ"
+            type="bar"
+            data={series?.kcalBurned || []}
+          />
+          <ChartCard
+            title="Tỷ trọng loại bài tập"
+            hint="Dựa theo items.type trong plans"
+            type="pie"
+            data={itemTypesPie}
+            labelFormatter={(key) => TYPE_LABEL[key] || key}
+          />
+          <ChartCard
+            title="Top exercises phổ biến"
+            hint="Dựa theo số lần xuất hiện trong plans"
+            type="bar"
+            data={topExercisesBar}
+          />
         </ChartGrid>
 
         <div className="st-block-title">

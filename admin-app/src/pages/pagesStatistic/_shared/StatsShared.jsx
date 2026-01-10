@@ -227,13 +227,344 @@ export function ChartGrid({ children }) {
   return <div className="st-chart-grid">{children}</div>;
 }
 
-export function ChartCard({ title, hint, type = "line" }) {
+/* =========================
+ * Chart helpers (SVG)
+ * ========================= */
+const num = (v, fallback = 0) => {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : fallback;
+};
+
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+const fmtCompact = (n) => {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return "—";
+  if (Math.abs(x) >= 1_000_000) return (x / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (Math.abs(x) >= 1_000) return (x / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  return String(Math.round(x));
+};
+
+const toLineSeries = (data) => {
+  const arr = Array.isArray(data) ? data : [];
+  // Expect [{t,v}] but accept common shapes
+  return arr
+    .map((d, i) => {
+      const t = d?.t ?? d?._id ?? d?.x ?? d?.date ?? i;
+      const v = d?.v ?? d?.value ?? d?.y ?? d?.count ?? 0;
+      return { t: String(t), v: num(v, 0) };
+    })
+    .filter((x) => Number.isFinite(x.v));
+};
+
+const toPieSeries = (data) => {
+  const arr = Array.isArray(data) ? data : [];
+  return arr
+    .map((d, i) => {
+      const key = d?.key ?? d?._id ?? d?.name ?? d?.label ?? `#${i + 1}`;
+      const value = d?.value ?? d?.v ?? d?.count ?? 0;
+      return { key: String(key), value: num(value, 0) };
+    })
+    .filter((x) => x.value > 0);
+};
+
+function MiniLineChart({ data, height = 190 }) {
+  const series = useMemo(() => toLineSeries(data), [data]);
+  const n = series.length;
+
+  const { minY, maxY, points } = useMemo(() => {
+    if (!n) return { minY: 0, maxY: 1, points: [] };
+    let min = Infinity;
+    let max = -Infinity;
+    for (const p of series) {
+      if (p.v < min) min = p.v;
+      if (p.v > max) max = p.v;
+    }
+    if (min === max) {
+      // tạo khoảng để nhìn thấy line
+      min = min - 1;
+      max = max + 1;
+    }
+    // viewBox
+    const VBW = 100;
+    const VBH = 50;
+    const padL = 6;
+    const padR = 4;
+    const padT = 6;
+    const padB = 8;
+
+    const innerW = VBW - padL - padR;
+    const innerH = VBH - padT - padB;
+
+    const pts = series.map((p, i) => {
+      const x = padL + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+      const y = padT + (1 - (p.v - min) / (max - min)) * innerH;
+      return { x, y, t: p.t, v: p.v };
+    });
+
+    return { minY: min, maxY: max, points: pts };
+  }, [series, n]);
+
+  const poly = points.map((p) => `${p.x},${p.y}`).join(" ");
+
+  const last = points[points.length - 1];
+  const first = points[0];
+
+  if (!n) {
+    return (
+      <div className="st-chart-placeholder">
+        <i className="fa-solid fa-chart-line" />
+        <div className="st-chart-placeholder-text">Chưa có dữ liệu</div>
+        <div className="st-chart-placeholder-sub">Hãy thay đổi bộ lọc hoặc chọn khoảng thời gian khác</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ width: "100%" }}>
+      <svg viewBox="0 0 100 50" width="100%" height={height} role="img" aria-label="Line chart">
+        {/* grid */}
+        <line x1="6" y1="42" x2="96" y2="42" stroke="#E5E7EB" strokeWidth="0.6" />
+        <line x1="6" y1="26" x2="96" y2="26" stroke="#F3F4F6" strokeWidth="0.6" />
+        <line x1="6" y1="10" x2="96" y2="10" stroke="#F3F4F6" strokeWidth="0.6" />
+
+        {/* polyline */}
+        <polyline fill="none" stroke="#008080" strokeWidth="1.4" points={poly} />
+
+        {/* points */}
+        {points.map((p, idx) => (
+          <circle
+            key={idx}
+            cx={p.x}
+            cy={p.y}
+            r="1.2"
+            fill="#008080"
+          >
+            <title>{`${p.t}: ${p.v}`}</title>
+          </circle>
+        ))}
+
+        {/* value badges (min/max label at top) */}
+        <text x="6" y="7" fontSize="3.2" fill="#6B7280">
+          {fmtCompact(maxY)}
+        </text>
+        <text x="6" y="47.5" fontSize="3.2" fill="#6B7280">
+          {fmtCompact(minY)}
+        </text>
+
+        {/* x labels (first/last) */}
+        {first ? (
+          <text x={clamp(first.x, 6, 96)} y="49" fontSize="3.2" fill="#6B7280" textAnchor="start">
+            {first.t}
+          </text>
+        ) : null}
+        {last && last !== first ? (
+          <text x={clamp(last.x, 6, 96)} y="49" fontSize="3.2" fill="#6B7280" textAnchor="end">
+            {last.t}
+          </text>
+        ) : null}
+      </svg>
+    </div>
+  );
+}
+
+function MiniBarChart({ data, height = 190 }) {
+  const series = useMemo(() => toLineSeries(data), [data]); // reuse
+  const n = series.length;
+
+  const bars = useMemo(() => {
+    if (!n) return [];
+    const max = Math.max(...series.map((p) => p.v), 1);
+    // viewBox
+    const VBW = 100;
+    const VBH = 50;
+    const padL = 6;
+    const padR = 4;
+    const padT = 6;
+    const padB = 10;
+
+    const innerW = VBW - padL - padR;
+    const innerH = VBH - padT - padB;
+
+    const gap = n > 18 ? 0.2 : 0.6;
+    const barW = innerW / n - gap;
+
+    return series.map((p, i) => {
+      const h = (p.v / max) * innerH;
+      const x = padL + i * (innerW / n) + gap / 2;
+      const y = padT + (innerH - h);
+      return { x, y, w: Math.max(0.8, barW), h, t: p.t, v: p.v };
+    });
+  }, [series, n]);
+
+  if (!n) {
+    return (
+      <div className="st-chart-placeholder">
+        <i className="fa-solid fa-chart-column" />
+        <div className="st-chart-placeholder-text">Chưa có dữ liệu</div>
+        <div className="st-chart-placeholder-sub">Hãy thay đổi bộ lọc hoặc chọn khoảng thời gian khác</div>
+      </div>
+    );
+  }
+
+  const maxV = Math.max(...series.map((x) => x.v), 0);
+
+  return (
+    <div style={{ width: "100%" }}>
+      <svg viewBox="0 0 100 50" width="100%" height={height} role="img" aria-label="Bar chart">
+        <line x1="6" y1="40" x2="96" y2="40" stroke="#E5E7EB" strokeWidth="0.6" />
+        <text x="6" y="7" fontSize="3.2" fill="#6B7280">
+          {fmtCompact(maxV)}
+        </text>
+
+        {bars.map((b, idx) => (
+          <rect
+            key={idx}
+            x={b.x}
+            y={b.y}
+            width={b.w}
+            height={b.h}
+            rx="0.8"
+            fill="#008080"
+            opacity="0.9"
+          >
+            <title>{`${b.t}: ${b.v}`}</title>
+          </rect>
+        ))}
+
+        {/* show first/last label */}
+        {bars[0] ? (
+          <text x={clamp(bars[0].x, 6, 96)} y="49" fontSize="3.2" fill="#6B7280" textAnchor="start">
+            {bars[0].t}
+          </text>
+        ) : null}
+        {bars[bars.length - 1] ? (
+          <text x={clamp(bars[bars.length - 1].x + 6, 6, 96)} y="49" fontSize="3.2" fill="#6B7280" textAnchor="end">
+            {bars[bars.length - 1].t}
+          </text>
+        ) : null}
+      </svg>
+    </div>
+  );
+}
+
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y} L ${cx} ${cy} Z`;
+}
+
+function MiniPieChart({ data, height = 190, labelFormatter }) {
+  const series = useMemo(() => toPieSeries(data), [data]);
+  const total = useMemo(() => series.reduce((s, x) => s + x.value, 0), [series]);
+
+  const slices = useMemo(() => {
+    if (!series.length || total <= 0) return [];
+    let acc = 0;
+    return series.map((s, i) => {
+      const pct = s.value / total;
+      const start = acc * 360;
+      acc += pct;
+      const end = acc * 360;
+
+      // màu theo HSL để tự động đa dạng
+      const hue = (i * 67) % 360;
+      const fill = `hsl(${hue} 70% 52%)`;
+
+      return {
+        ...s,
+        start,
+        end,
+        fill,
+        pct,
+        label: typeof labelFormatter === "function" ? labelFormatter(s.key) : s.key,
+      };
+    });
+  }, [series, total, labelFormatter]);
+
+  if (!series.length) {
+    return (
+      <div className="st-chart-placeholder">
+        <i className="fa-solid fa-chart-pie" />
+        <div className="st-chart-placeholder-text">Chưa có dữ liệu</div>
+        <div className="st-chart-placeholder-sub">Hãy thay đổi bộ lọc hoặc chọn khoảng thời gian khác</div>
+      </div>
+    );
+  }
+
+  const topLegend = slices.slice(0, 6);
+
+  return (
+    <div style={{ width: "100%", display: "grid", gridTemplateColumns: "180px 1fr", gap: 12, alignItems: "center" }}>
+      <svg viewBox="0 0 60 60" width="100%" height={height} role="img" aria-label="Pie chart" style={{ maxWidth: 210 }}>
+        {/* background ring */}
+        <circle cx="30" cy="30" r="22" fill="#F9FAFB" stroke="#E5E7EB" strokeWidth="0.8" />
+        {slices.map((s, idx) => (
+          <path
+            key={idx}
+            d={describeArc(30, 30, 22, s.start, s.end)}
+            fill={s.fill}
+            opacity="0.95"
+          >
+            <title>{`${s.label}: ${s.value} (${Math.round(s.pct * 100)}%)`}</title>
+          </path>
+        ))}
+        {/* donut hole */}
+        <circle cx="30" cy="30" r="12" fill="#fff" />
+        <text x="30" y="29.5" fontSize="4" textAnchor="middle" fill="#111827" fontWeight="800">
+          {fmtCompact(total)}
+        </text>
+        <text x="30" y="35" fontSize="2.6" textAnchor="middle" fill="#6B7280">
+          tổng
+        </text>
+      </svg>
+
+      <div style={{ width: "100%" }}>
+        <div style={{ display: "grid", gap: 6 }}>
+          {topLegend.map((s, idx) => (
+            <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: s.fill, flex: "0 0 10px" }} />
+              <div style={{ minWidth: 0, flex: "1 1 auto" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {s.label}
+                </div>
+                <div style={{ fontSize: 12, color: "#6B7280" }}>
+                  {fmtCompact(s.value)} • {Math.round(s.pct * 100)}%
+                </div>
+              </div>
+            </div>
+          ))}
+          {slices.length > topLegend.length ? (
+            <div style={{ fontSize: 12, color: "#6B7280", marginTop: 4 }}>
+              +{slices.length - topLegend.length} phân khúc khác
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ChartCard:
+ *  - type: line | bar | pie
+ *  - data: line/bar: [{t, v}] ; pie: [{key,value}] (BE trả vậy)
+ *  - labelFormatter: dùng cho pie (map key -> label)
+ */
+export function ChartCard({ title, hint, type = "line", data, labelFormatter }) {
   const icon =
     type === "line"
       ? "fa-solid fa-chart-line"
       : type === "bar"
       ? "fa-solid fa-chart-column"
       : "fa-solid fa-chart-pie";
+
+  const hasData = Array.isArray(data) && data.length > 0;
 
   return (
     <div className="st-chart-card">
@@ -245,15 +576,22 @@ export function ChartCard({ title, hint, type = "line" }) {
         <i className={"st-chart-ic " + icon} />
       </div>
 
-      {/* Placeholder (sau này thay bằng Recharts/ChartJS) */}
       <div className="st-chart-body">
-        <div className="st-chart-placeholder">
-          <i className={icon} />
-          <div className="st-chart-placeholder-text">
-            {type === "line" ? "Biểu đồ đường (Line)" : type === "bar" ? "Biểu đồ cột (Bar)" : "Biểu đồ tròn (Pie)"}
+        {!hasData ? (
+          <div className="st-chart-placeholder">
+            <i className={icon} />
+            <div className="st-chart-placeholder-text">
+              {type === "line" ? "Biểu đồ đường (Line)" : type === "bar" ? "Biểu đồ cột (Bar)" : "Biểu đồ tròn (Pie)"}
+            </div>
+            <div className="st-chart-placeholder-sub">Chưa có dữ liệu theo bộ lọc hiện tại</div>
           </div>
-          <div className="st-chart-placeholder-sub">Sẽ hiển thị dữ liệu theo bộ lọc ở trên</div>
-        </div>
+        ) : type === "pie" ? (
+          <MiniPieChart data={data} labelFormatter={labelFormatter} />
+        ) : type === "bar" ? (
+          <MiniBarChart data={data} />
+        ) : (
+          <MiniLineChart data={data} />
+        )}
       </div>
     </div>
   );

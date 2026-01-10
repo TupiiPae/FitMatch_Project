@@ -1,14 +1,19 @@
 // src/middleware/auth.js
 import jwt from "jsonwebtoken";
+import { User } from "../models/User.js"; // <-- chỉnh đúng path theo project bạn
+
+const getBearerToken = (h = "") => {
+  const m = String(h || "").match(/^Bearer\s+(.+)$/i); // case-insensitive
+  return m ? m[1].trim() : null;
+};
 
 export const auth = (req, res, next) => {
   try {
-    const h = req.headers.authorization || "";
-    const token = h.startsWith("Bearer ") ? h.slice(7) : null;
+    const token = getBearerToken(req.headers.authorization || "");
     if (!token) {
       return res.status(401).json({
         message: "Thiếu token",
-        tip: "Gửi header Authorization: Bearer <token>"
+        tip: "Gửi header Authorization: Bearer <token>",
       });
     }
 
@@ -20,38 +25,63 @@ export const auth = (req, res, next) => {
       payload?._id ||
       payload?.userId ||
       payload?.sub ||
-      (payload.user && (payload.user.id || payload.user._id)) ||
-      (payload.data && (payload.data.id || payload.data._id)) ||
+      (payload?.user && (payload.user.id || payload.user._id)) ||
+      (payload?.data && (payload.data.id || payload.data._id)) ||
       null;
 
-    let role =
+    const roleBase =
       payload?.role ||
-      (payload.user && payload.user.role) ||
-      (payload.data && payload.data.role) ||
-      null;
+      (payload?.user && payload.user.role) ||
+      (payload?.data && payload.data.role) ||
+      "user";
 
-    // LẤY LEVEL (nếu có)
-    const level =
+    const levelRaw =
       payload?.level ??
-      (payload.user && payload.user.level) ??
-      (payload.data && payload.data.level) ??
-      null;
+      (payload?.user && payload.user.level) ??
+      (payload?.data && payload.data.level) ??
+      undefined;
+
+    const levelNum = levelRaw === undefined || levelRaw === null ? undefined : Number(levelRaw);
+    const userLevel = Number.isFinite(levelNum) ? levelNum : undefined;
 
     if (!id) {
-      console.error("JWT hợp lệ nhưng không có claim id. payload.keys:", Object.keys(payload || {}));
+      console.error(
+        "JWT hợp lệ nhưng không có claim id. payload.keys:",
+        Object.keys(payload || {})
+      );
       return res.status(401).json({ message: "Token thiếu thông tin người dùng (id/_id)" });
     }
 
-    // Chuẩn hoá role cho hệ thống admin (map sang admin_lv1/admin_lv2 nếu có level)
-    // Lưu cả bản raw nếu cần debug
-    req.userRoleRaw = role;
-    req.userLevel = typeof level === "number" ? level : (level ? Number(level) : undefined);
-
-    if (role === "admin" && req.userLevel === 1) role = "admin_lv1";
-    else if (role === "admin" && req.userLevel === 2) role = "admin_lv2";
-
+    // ✅ set req.userId sớm để những đoạn dưới dùng được
     req.userId = id;
-    req.userRole = role || "user";
+
+    // Giữ role gốc để không phá chỗ khác
+    req.userRoleBase = roleBase;
+    req.userRoleRaw = roleBase;
+    req.userLevel = userLevel;
+
+    // Role chuẩn hoá (nếu bạn cần phân biệt lv1/lv2)
+    let roleNormalized = roleBase;
+    if (roleBase === "admin" && userLevel === 1) roleNormalized = "admin_lv1";
+    else if (roleBase === "admin" && userLevel === 2) roleNormalized = "admin_lv2";
+
+    req.userRole = roleNormalized;
+    req.isAdmin = roleBase === "admin";
+
+    // ✅ update lastActiveAt (không để lỗi này làm rớt 401 nữa)
+    const FIVE_MIN = 5 * 60 * 1000;
+    if (User && req.userId) {
+      User.updateOne(
+        {
+          _id: req.userId,
+          $or: [
+            { lastActiveAt: { $exists: false } },
+            { lastActiveAt: { $lt: new Date(Date.now() - FIVE_MIN) } },
+          ],
+        },
+        { $set: { lastActiveAt: new Date() } }
+      ).catch(() => {});
+    }
 
     next();
   } catch (e) {

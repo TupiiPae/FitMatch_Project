@@ -792,3 +792,26 @@ export const transferMatchRoomOwnerAdmin = async (roomId, newOwnerId) => {
   const r = await api.post(`/api/admin/match-rooms/${roomId}/transfer-owner`, { newOwnerId });
   return r.data?.data ?? r.data;
 };
+
+/* =========================
+ * STATS (ADMIN)
+ * ========================= */
+export const getStatsUsersAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/stats/users", { params });
+  return r.data?.data ?? r.data;
+};
+
+export const getStatsNutritionAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/stats/nutrition", { params });
+  return r.data?.data ?? r.data;
+};
+
+export const getStatsWorkoutsAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/stats/workouts", { params });
+  return r.data?.data ?? r.data;
+};
+
+export const getConnectStats = async (params = {}) => {
+  const r = await api.get("/api/admin/stats/connect", { params });
+  return r.data?.data ?? r.data;
+};

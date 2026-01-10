@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import "../_shared/StatsBase.css";
 import "./Stats_Connections.css";
@@ -15,6 +15,113 @@ import {
   StatsFilterBar,
 } from "../_shared/StatsShared";
 
+import { getConnectStats } from "../../../lib/api";
+
+/* ---------------- Helpers ---------------- */
+
+const safeArr = (v) => (Array.isArray(v) ? v : []);
+const num = (v, fallback = 0) => {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : fallback;
+};
+
+const fmtInt = (n) => {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return "—";
+  return x.toLocaleString("vi-VN");
+};
+
+const fmtPct = (v) => {
+  const x = Number(v);
+  if (!Number.isFinite(x)) return "—";
+  return `${Math.round(x * 10) / 10}%`;
+};
+
+const clampInt = (n, min, max) => Math.max(min, Math.min(max, n | 0));
+
+const toDateSafe = (s) => {
+  const d = new Date(String(s || ""));
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+const normalizeRange = (from, to) => {
+  const a = toDateSafe(from);
+  const b = toDateSafe(to);
+  if (!a || !b) return { from, to };
+  if (a.getTime() <= b.getTime()) return { from, to };
+  return { from: to, to: from };
+};
+
+const fmtDurationMinutes = (minutes) => {
+  const m = clampInt(num(minutes, 0), 0, 10_000_000);
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  if (h <= 0) return `${mm} phút`;
+  if (h < 24) return `${h} giờ ${mm} phút`;
+  const d = Math.floor(h / 24);
+  const hh = h % 24;
+  return `${d} ngày ${hh} giờ`;
+};
+
+const csvEscape = (v) => {
+  const s = String(v ?? "");
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+};
+
+const downloadTextFile = (filename, text, mime = "text/plain;charset=utf-8") => {
+  try {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch {
+    toast.error("Không thể export file trên trình duyệt này");
+  }
+};
+
+// BE series đã là [{t,v}] rồi, nhưng vẫn normalize để an toàn
+const toTVSeries = (input) =>
+  safeArr(input)
+    .map((d, i) => ({
+      t: String(d?.t ?? d?._id ?? d?.date ?? d?.x ?? i),
+      v: num(d?.v ?? d?.value ?? d?.count ?? d?.y ?? 0, 0),
+    }))
+    .filter((x) => Number.isFinite(x.v));
+
+const toPieSeries = (input) =>
+  safeArr(input)
+    .map((d, i) => ({
+      key: String(d?.key ?? d?._id ?? d?.name ?? d?.label ?? `#${i + 1}`),
+      value: num(d?.value ?? d?.v ?? d?.count ?? 0, 0),
+    }))
+    .filter((x) => x.value > 0);
+
+const ROOM_TYPE_LABEL = (k) => {
+  const s = String(k || "").toLowerCase();
+  if (s === "duo" || s === "one_to_one" || s === "1:1") return "Duo";
+  if (s === "group" || s === "team") return "Team";
+  if (s === "dm") return "DM";
+  return String(k || "—");
+};
+
+const STATUS_LABEL = (k) => {
+  const s = String(k || "").toLowerCase();
+  if (s === "pending") return "Pending";
+  if (s === "accepted" || s === "approve" || s === "approved") return "Accepted";
+  if (s === "rejected" || s === "reject") return "Rejected";
+  if (s === "cancelled" || s === "canceled" || s === "cancel" || s === "cancelled") return "Cancelled";
+  if (s === "expired") return "Expired";
+  return String(k || "—");
+};
+
+/* ---------------- Component ---------------- */
+
 export default function Stats_Connections() {
   const [loading, setLoading] = useState(false);
 
@@ -22,53 +129,214 @@ export default function Stats_Connections() {
   const [{ from, to }, setRange] = useState(() => computeRangeLastDays(30));
   const [granularity, setGranularity] = useState("day");
 
+  // API data
+  const [kpi, setKpi] = useState(null);
+  const [seriesRequests, setSeriesRequests] = useState([]);
+  const [seriesMessages, setSeriesMessages] = useState([]);
+  const [statusBreakdown, setStatusBreakdown] = useState([]);
+  const [roomTypePie, setRoomTypePie] = useState([]);
+  const [topRooms, setTopRooms] = useState([]);
+
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const refreshSeq = useRef(0);
+  const debounceRef = useRef(null);
+
   const clearFilters = () => {
     setQ("");
     setRange(computeRangeLastDays(30));
     setGranularity("day");
   };
 
-  const refresh = async () => {
+  const refresh = async ({ silent = false } = {}) => {
+    const seq = ++refreshSeq.current;
     setLoading(true);
+
     try {
-      await new Promise((r) => setTimeout(r, 300));
-      toast.success("Làm mới thống kê kết nối");
-    } catch {
-      toast.error("Không tải được thống kê kết nối");
+      const r = normalizeRange(from, to);
+
+      // BE dùng from/to + granularity + q + top
+      const root = await getConnectStats({
+        q,
+        from: r.from,
+        to: r.to,
+        granularity,
+        top: 8,
+        // giữ thêm để tương thích nếu sau này bạn đổi param
+        dateFrom: r.from,
+        dateTo: r.to,
+      });
+
+      if (seq !== refreshSeq.current) return;
+
+      const roomsK = root?.kpis?.rooms || {};
+      const reqK = root?.kpis?.requests || {};
+      const repK = root?.kpis?.reports || {};
+      const chatK = root?.kpis?.chat || {};
+
+      const totalRequests = num(reqK.total, 0);
+      const accepted = num(reqK.accepted, 0);
+      const rejected = num(reqK.rejected, 0);
+      const cancelled = num(reqK.cancelled, 0);
+      const pending = num(reqK.pending, 0);
+      const expired = num(reqK.expired, 0);
+
+      const acceptanceRatePct = Number.isFinite(Number(reqK.acceptanceRate))
+        ? num(reqK.acceptanceRate, 0) // BE đã trả %
+        : totalRequests > 0
+        ? (accepted / totalRequests) * 100
+        : 0;
+
+      const avgResolveMinutes = num(reqK.avgResolveHours, 0) * 60;
+
+      const roomsCreated = num(roomsK.total, 0);
+      const roomsDuo = num(roomsK.duo, 0);
+      const roomsTeam = num(roomsK.group, 0);
+      const roomsDm = num(roomsK.dm, 0);
+
+      const reports = num(repK.total, 0);
+
+      // Chat: BE trả số conversation active qua chat aggregate
+      const conversations = num(chatK.activeConversations, 0);
+      const messages = num(chatK.totalMessages, 0);
+
+      setKpi({
+        totalRequests,
+        acceptanceRate: acceptanceRatePct,
+        rejectCancel: rejected + cancelled,
+        roomsCreated,
+        roomsDuo,
+        roomsTeam,
+        roomsDm,
+        avgMinutes: avgResolveMinutes,
+        conversations,
+        messages,
+        reports,
+        accepted,
+        rejected,
+        cancelled,
+        pending,
+        expired,
+      });
+
+      // Series (đúng key BE)
+      setSeriesRequests(toTVSeries(root?.series?.requestsCreated));
+      setSeriesMessages(toTVSeries(root?.series?.messagesSent));
+
+      // Status breakdown (từ distributions.requestStatus)
+      const statusRaw = toPieSeries(root?.distributions?.requestStatus);
+      const statusAsBar =
+        statusRaw.length > 0
+          ? statusRaw.map((x) => ({ t: STATUS_LABEL(x.key), v: x.value }))
+          : [
+              { t: "Pending", v: pending },
+              { t: "Accepted", v: accepted },
+              { t: "Rejected", v: rejected },
+              { t: "Cancelled", v: cancelled },
+              { t: "Expired", v: expired },
+            ].filter((x) => x.v > 0);
+
+      setStatusBreakdown(statusAsBar);
+
+      // Room type pie (from distributions.roomType)
+      const roomPie = toPieSeries(root?.distributions?.roomType);
+      const fallbackRoomPie =
+        roomPie.length > 0
+          ? roomPie
+          : [
+              { key: "duo", value: roomsDuo },
+              { key: "group", value: roomsTeam },
+              { key: "dm", value: roomsDm },
+            ].filter((x) => x.value > 0);
+
+      setRoomTypePie(fallbackRoomPie);
+
+      // Top rooms: BE trả top.groupsByMembers
+      const top = safeArr(root?.top?.groupsByMembers);
+      setTopRooms(
+        top.map((r, idx) => ({
+          _key: r?._key || r?.id || r?._id || idx,
+          name: r?.name ?? `Room #${idx + 1}`,
+          value: r?.value ?? "—",
+          note: r?.note ?? "",
+        }))
+      );
+
+      setLastUpdated(new Date());
+
+      if (!silent) toast.success("Làm mới thống kê kết nối");
+    } catch (e) {
+      if (!silent) toast.error("Không tải được thống kê kết nối");
     } finally {
-      setLoading(false);
+      if (seq === refreshSeq.current) setLoading(false);
     }
   };
 
   useEffect(() => {
-    refresh();
+    refresh({ silent: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => refresh({ silent: true }), 400);
+    return () => debounceRef.current && clearTimeout(debounceRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, from, to, granularity]);
+
   const onQuickRange = (days) => setRange(computeRangeLastDays(days));
 
-  const kpis = useMemo(
-    () => [
-      { label: "Match requests", value: "—", sub: "Tạo mới", icon: "fa-solid fa-link" },
-      { label: "Acceptance rate", value: "—", sub: "Tỷ lệ đồng ý", icon: "fa-solid fa-circle-check" },
-      { label: "Reject/Cancel", value: "—", sub: "Từ chối/Huỷ", icon: "fa-solid fa-circle-xmark" },
-      { label: "Rooms created", value: "—", sub: "Duo/Team", icon: "fa-solid fa-people-group" },
-      { label: "Avg time-to-accept", value: "—", sub: "Nếu tracking", icon: "fa-solid fa-stopwatch" },
-      { label: "Conversations", value: "—", sub: "Số cuộc chat", icon: "fa-solid fa-comments" },
-      { label: "Messages sent", value: "—", sub: "Nếu tracking", icon: "fa-solid fa-comment-dots" },
-      { label: "Reports", value: "—", sub: "Báo cáo người dùng", icon: "fa-solid fa-triangle-exclamation" },
-    ],
-    []
-  );
+  const kpis = useMemo(() => {
+    const s = kpi || {};
+    return [
+      { label: "Match requests", value: fmtInt(s.totalRequests), sub: "Tạo mới", icon: "fa-solid fa-link" },
+      { label: "Acceptance rate", value: fmtPct(s.acceptanceRate), sub: "Tỷ lệ đồng ý", icon: "fa-solid fa-circle-check" },
+      { label: "Reject/Cancel", value: fmtInt(s.rejectCancel), sub: "Từ chối/Huỷ", icon: "fa-solid fa-circle-xmark" },
+      { label: "Rooms created", value: fmtInt(s.roomsCreated), sub: `Duo/Team/DM`, icon: "fa-solid fa-people-group" },
+      { label: "Avg resolve time", value: s.avgMinutes ? fmtDurationMinutes(s.avgMinutes) : "—", sub: "Trung bình", icon: "fa-solid fa-stopwatch" },
+      { label: "Active conversations", value: fmtInt(s.conversations), sub: "Duo/Team chat", icon: "fa-solid fa-comments" },
+      { label: "Messages sent", value: fmtInt(s.messages), sub: "Tổng tin nhắn", icon: "fa-solid fa-comment-dots" },
+      { label: "Reports", value: fmtInt(s.reports), sub: "Báo cáo", icon: "fa-solid fa-triangle-exclamation" },
+    ];
+  }, [kpi]);
 
-  const topRooms = useMemo(
-    () => [
-      { name: "Room #xxxxx", value: "—", note: "Hoạt động nhiều" },
-      { name: "Room #yyyyy", value: "—", note: "Tin nhắn cao" },
-      { name: "Room #zzzzz", value: "—", note: "Chưa hoạt động" },
-    ],
-    []
-  );
+  const onExport = () => {
+    const s = kpi || {};
+    const r = normalizeRange(from, to);
+
+    const lines = [];
+    lines.push(["Từ ngày", r.from, "Đến ngày", r.to, "Chu kỳ", granularity, "Từ khóa", q].map(csvEscape).join(","));
+    lines.push("");
+
+    lines.push(["KPI", "Giá trị", "Ghi chú"].map(csvEscape).join(","));
+    kpis.forEach((x) => lines.push([x.label, x.value, x.sub].map(csvEscape).join(",")));
+
+    lines.push("");
+    lines.push(["Breakdown trạng thái", "Giá trị"].map(csvEscape).join(","));
+    (statusBreakdown || []).forEach((x) => lines.push([x.t, x.v].map(csvEscape).join(",")));
+
+    lines.push("");
+    lines.push(["Room type", "Giá trị"].map(csvEscape).join(","));
+    (roomTypePie || []).forEach((x) => lines.push([ROOM_TYPE_LABEL(x.key), x.value].map(csvEscape).join(",")));
+
+    lines.push("");
+    lines.push(["Top rooms", "Chỉ số", "Ghi chú"].map(csvEscape).join(","));
+    (topRooms || []).forEach((x) => lines.push([x.name, x.value, x.note].map(csvEscape).join(",")));
+
+    lines.push("");
+    lines.push(["Series: Requests theo thời gian"].map(csvEscape).join(","));
+    lines.push(["t", "v"].map(csvEscape).join(","));
+    (seriesRequests || []).forEach((x) => lines.push([x.t, x.v].map(csvEscape).join(",")));
+
+    lines.push("");
+    lines.push(["Series: Messages theo thời gian"].map(csvEscape).join(","));
+    lines.push(["t", "v"].map(csvEscape).join(","));
+    (seriesMessages || []).forEach((x) => lines.push([x.t, x.v].map(csvEscape).join(",")));
+
+    const filename = `stats_connections_${r.from}_${r.to}.csv`;
+    downloadTextFile(filename, lines.join("\n"), "text/csv;charset=utf-8");
+    toast.success("Đã export CSV");
+  };
 
   return (
     <div className="st-page">
@@ -76,17 +344,21 @@ export default function Stats_Connections() {
 
       <StatsCard
         title="Thống kê về kết nối"
-        subtitle="Match requests, rooms, chat, tỷ lệ chấp nhận"
+        subtitle={
+          lastUpdated
+            ? `Match requests, rooms, chat, reports • Cập nhật: ${lastUpdated.toLocaleString("vi-VN")}`
+            : "Match requests, rooms, chat, reports"
+        }
         actions={
           <>
-            <SButton variant="ghost" icon="fa-solid fa-eraser" onClick={clearFilters}>
+            <SButton variant="ghost" icon="fa-solid fa-eraser" onClick={clearFilters} disabled={loading}>
               Xoá bộ lọc
             </SButton>
-            <SButton variant="ghost" icon="fa-solid fa-rotate-right" onClick={refresh} disabled={loading}>
+            <SButton variant="ghost" icon="fa-solid fa-rotate-right" onClick={() => refresh({ silent: false })} disabled={loading}>
               Làm mới
             </SButton>
-            <SButton variant="primary" icon="fa-solid fa-file-export" onClick={() => toast.info("TODO: Export")}>
-              Export
+            <SButton variant="primary" icon="fa-solid fa-file-export" onClick={onExport} disabled={loading}>
+              Export CSV
             </SButton>
           </>
         }
@@ -110,14 +382,20 @@ export default function Stats_Connections() {
         </KpiGrid>
 
         <ChartGrid>
-          <ChartCard title="Match requests theo thời gian" hint="Line chart" type="line" />
-          <ChartCard title="Breakdown trạng thái (pending/accepted/rejected/cancel)" hint="Bar chart" type="bar" />
-          <ChartCard title="Tỷ trọng room type (duo/team)" hint="Pie chart" type="pie" />
-          <ChartCard title="Messages/day (nếu tracking)" hint="Line chart" type="line" />
+          <ChartCard title="Match requests theo thời gian" hint="Line chart" type="line" data={seriesRequests} />
+          <ChartCard title="Breakdown trạng thái request" hint="Bar chart" type="bar" data={statusBreakdown} />
+          <ChartCard
+            title="Tỷ trọng room type (duo/team/dm)"
+            hint="Pie chart"
+            type="pie"
+            data={roomTypePie}
+            labelFormatter={ROOM_TYPE_LABEL}
+          />
+          <ChartCard title="Messages theo thời gian" hint="Line chart" type="line" data={seriesMessages} />
         </ChartGrid>
 
         <div className="st-block-title">
-          <i className="fa-solid fa-fire" /> <span>Top rooms hoạt động</span>
+          <i className="fa-solid fa-fire" /> <span>Top nhóm theo số thành viên</span>
         </div>
 
         <SimpleTopTable
@@ -127,7 +405,7 @@ export default function Stats_Connections() {
             { key: "note", label: "Ghi chú", w: "1.2fr" },
           ]}
           rows={topRooms}
-          emptyText="Chưa có dữ liệu top rooms"
+          emptyText={loading ? "Đang tải..." : "Chưa có dữ liệu top rooms"}
         />
       </StatsCard>
     </div>
