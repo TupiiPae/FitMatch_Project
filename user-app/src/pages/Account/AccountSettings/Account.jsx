@@ -702,19 +702,6 @@ export default function AccountInfo() {
                 <input
                   type="radio"
                   name="chatRequest"
-                  value="matched"
-                  checked={chatRequestSetting === "matched"}
-                  onChange={(e) => setChatRequestSetting(e.target.value)}
-                />
-                <span>Chỉ những người dùng đã ghép đôi</span>
-              </label>
-            </div>
-
-            <div className="acc-radio-block">
-              <label className="acc-radio">
-                <input
-                  type="radio"
-                  name="chatRequest"
                   value="private"
                   checked={chatRequestSetting === "private"}
                   onChange={(e) => setChatRequestSetting(e.target.value)}

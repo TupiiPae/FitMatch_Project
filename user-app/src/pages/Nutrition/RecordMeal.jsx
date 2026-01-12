@@ -309,14 +309,6 @@ export default function RecordMeal() {
             className="rm-create-btn"
             onClick={() => nav("/dinh-duong/ghi-lai/tao-mon")}
           >
-            <i className="fa-brands fa-openai"></i>&nbsp;
-            <span>Tạo món ăn với AI</span>
-          </button>
-
-          <button
-            className="rm-create-btn"
-            onClick={() => nav("/dinh-duong/ghi-lai/tao-mon")}
-          >
             <span>Tạo món ăn</span>
           </button>
         </div>

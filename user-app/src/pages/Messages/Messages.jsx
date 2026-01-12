@@ -349,7 +349,7 @@ export default function Messages() {
         setActivePeer(null);
       }
 
-      toast.success("Đã xóa đoạn chat");
+      toast.success("Đã xóa đoạn lịch sử tin nhắn");
       closeDelete();
     } catch (e) {
       console.error(e);
@@ -1176,7 +1176,7 @@ export default function Messages() {
               {isDelAi ? (
                 <>Bạn sẽ xóa toàn bộ nội dung trò chuyện với <b>{AI_TITLE}</b>. Thao tác này không thể hoàn tác.</>
               ) : (
-                <>Bạn sẽ xóa toàn bộ tin nhắn với <b>{getName(delConv?.peer)}</b>. Thao tác này không thể hoàn tác.</>
+                <>Bạn sẽ xóa lịch sử tin nhắn với <b>{getName(delConv?.peer)}</b>. Thao tác này không thể hoàn tác.</>
               )}
             </div>
 

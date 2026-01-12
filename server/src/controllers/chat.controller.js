@@ -172,8 +172,8 @@ export async function getConversationSummary(req, res, next) {
       .select("_id senderId content attachments createdAt deletedAt")
       .lean();
 
-    const lastMessage = buildLastMessageFromMsg(lastVisible) || conv?.lastMessage || null;
-    const lastMessageAt = lastVisible?.createdAt || conv?.lastMessageAt || conv?.lastMessage?.createdAt || null;
+    const lastMessage = buildLastMessageFromMsg(lastVisible) || null;
+    const lastMessageAt = lastVisible?.createdAt || null;
 
     const unread = getUnreadOf(conv, uid);
 
@@ -453,11 +453,8 @@ export async function getSharedTeam(req, res, next) {
   }
 }
 
-// ===================================================
 // DM: DELETE /api/chat/dm/conversations/:id
-// - Xóa toàn bộ tin nhắn của conversation (duo)
-// - Xóa ChatConversation để sidebar không còn preview/unread
-// ===================================================
+// => chỉ xóa ở phía tôi bằng cách hidden all messages for me
 export async function deleteDmConversation(req, res, next) {
   try {
     const uid = uidFromReq(req);
@@ -470,15 +467,28 @@ export async function deleteDmConversation(req, res, next) {
 
     const room = await ensureMember(conversationId, uid);
 
-    // chỉ cho xóa trong DM/duo
+    // chỉ cho DM
     if (String(room?.type || "") !== "dm") {
       throw Object.assign(new Error("Chỉ hỗ trợ xóa đoạn chat DM."), { status: 400 });
     }
 
-    await ChatMessage.deleteMany({ conversationId: cid });
-    await ChatConversation.deleteOne({ _id: cid });
+    // ✅ 1) Ẩn toàn bộ message trong conversation đối với user hiện tại
+    await ChatMessage.updateMany(
+      { conversationId: cid },
+      { $addToSet: { hiddenFor: uidOid } }
+    );
 
-    return responseOk(res, { deleted: true, conversationId });
+    // ✅ 2) Reset unread của user về 0 (để không còn badge)
+    await ChatConversation.updateOne(
+      { _id: cid },
+      { $set: { [`unreadBy.${String(uidOid)}`]: 0 } }
+    );
+
+    // Không xóa ChatConversation, không xóa DB messages
+    return responseOk(res, {
+      deletedForMe: true,
+      conversationId,
+    });
   } catch (e) {
     next(e);
   }
