@@ -1180,11 +1180,98 @@
 }
 
 @media (max-width: 640px) {
+  .cn-page {
+    padding: 16px 12px 24px;
+  }
+
+  .cn-sidebar {
+    width: 100%;
+  }
+
+  .cn-filters {
+    padding: 12px 12px 14px;
+  }
+
+  .cn-side-profile {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .cn-side-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .cn-side-nickname {
+    font-size: 14px;
+  }
+
+  .cn-side-discover-label {
+    font-size: 11px;
+  }
+
   .cn-card-list--grid {
     grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
 
   .cn-card--list {
     grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .cn-card {
+    padding: 12px;
+  }
+
+  .cn-card-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .cn-card-name {
+    font-size: 15px;
+  }
+
+  .cn-card-sub {
+    font-size: 12px;
+  }
+
+  .cn-main-toolbar {
+    padding: 12px;
+  }
+
+  .cn-request-card {
+    padding: 12px;
+  }
+
+  .cn-request-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cn-request-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .cn-page {
+    padding: 12px 8px 20px;
+  }
+
+  .cn-filters {
+    padding: 10px;
+  }
+
+  .cn-card-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cn-card-name {
+    font-size: 14px;
   }
 }

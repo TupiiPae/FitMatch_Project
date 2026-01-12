@@ -388,6 +388,7 @@
 .wc-sets td{
   padding:8px 100px 0 0;
   vertical-align:middle;
+  box-sizing: border-box;
 }
 .wc-sets span{ color:#008080; }
 .wc-sets .set-no{
@@ -500,6 +501,183 @@
 @media (max-width:980px){
   .wc-divider{ margin:12px 0; }
 }
-@media (max-width:1200px){
-  .wc-sets input{ width:120px; }
+@media (max-width: 1200px) {
+  .wc-sets input {
+    width: 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .wc-wrap {
+    padding: 16px 12px;
+  }
+
+  .wc-frame {
+    padding: 16px;
+  }
+
+  .wc-top {
+    gap: 16px;
+  }
+
+  .wc-title-input {
+    height: 50px;
+    font-size: 14px;
+  }
+
+  .wc-note-input {
+    height: 120px;
+    font-size: 14px;
+  }
+
+  .wc-overview {
+    padding: 16px 12px 32px;
+  }
+
+  .ov-icon {
+    font-size: 36px;
+  }
+
+  .ov-kcal {
+    font-size: 22px;
+  }
+
+  .ov-num {
+    font-size: 16px;
+  }
+
+  .ov-lab {
+    font-size: 12px;
+  }
+
+  .wc-sets input {
+    width: 100px;
+  }
+
+  .wc-sets td {
+    padding: 8px 60px 0 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .wc-wrap {
+    padding: 12px 8px;
+  }
+
+  .wc-frame {
+    padding: 12px;
+  }
+
+  .wc-title-input {
+    height: 44px;
+    padding: 0 10px;
+  }
+
+  .wc-note-input {
+    height: 100px;
+    padding: 8px 10px;
+  }
+
+  .ov-icon {
+    font-size: 32px;
+  }
+
+  .ov-kcal {
+    font-size: 20px;
+  }
+
+  .ov-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .ov-col + .ov-col {
+    border-left: none;
+    border-top: 1px solid #1f2937;
+  }
+
+  .wc-sets {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+  }
+
+  .wc-sets table {
+    width: 100%;
+    min-width: 300px;
+  }
+
+  .wc-sets input {
+    width: 80px;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .wc-sets td {
+    padding: 8px 12px 0 0;
+    white-space: nowrap;
+  }
+
+  .wc-sets th {
+    padding: 0 12px 4px 0;
+    white-space: nowrap;
+  }
+
+  .wc-exbox .wc-name {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wc-wrap {
+    padding: 10px 6px;
+  }
+
+  .wc-frame {
+    padding: 10px;
+  }
+
+  .wc-title-input {
+    font-size: 13px;
+    padding: 0 8px;
+  }
+
+  .wc-note-input {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+
+  .ov-kcal {
+    font-size: 18px;
+  }
+
+  .wc-sets {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+  }
+
+  .wc-sets table {
+    min-width: 280px;
+  }
+
+  .wc-sets input {
+    width: 60px;
+    font-size: 13px;
+    padding: 0 6px;
+  }
+
+  .wc-sets td {
+    padding: 8px 8px 0 0;
+  }
+
+  .wc-sets th {
+    padding: 0 8px 4px 0;
+    font-size: 13px;
+  }
+
+  .wc-sets .set-no {
+    width: 40px;
+    font-size: 13px;
+  }
 }

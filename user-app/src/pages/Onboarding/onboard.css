@@ -48,3 +48,94 @@
   border:1px solid #dbe7fd; border-radius:12px; padding:18px; color:#0f172a;
 }
 .cheer-box h3 { margin-bottom:8px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .onb-wrap {
+    margin: 20px auto;
+    padding: 0 12px;
+  }
+
+  .onb-card {
+    padding: 20px;
+  }
+
+  .onb-title {
+    font-size: 1.3rem;
+  }
+
+  .onb-sub {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .onb-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .onb-box {
+    padding: 12px;
+  }
+
+  .onb-img {
+    height: 100px;
+    margin-bottom: 10px;
+  }
+
+  .onb-box h4 {
+    font-size: 15px;
+  }
+
+  .onb-box p {
+    font-size: 13px;
+  }
+
+  .goal-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .goal-card {
+    padding: 14px;
+  }
+
+  .onb-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .onb-wrap {
+    margin: 16px auto;
+    padding: 0 8px;
+  }
+
+  .onb-card {
+    padding: 16px;
+  }
+
+  .onb-title {
+    font-size: 1.2rem;
+  }
+
+  .onb-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .onb-img {
+    height: 90px;
+  }
+
+  .goal-card {
+    padding: 12px;
+    gap: 10px;
+  }
+}

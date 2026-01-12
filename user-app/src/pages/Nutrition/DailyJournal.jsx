@@ -267,10 +267,11 @@ export default function DailyJournal() {
                     placeholder: "DD/MM/YYYY",
                     size: "small",
                     sx: {
-                      width: 150,
+                      width: { xs: "100%", sm: 150 },
+                      maxWidth: { xs: "100%", sm: 150 },
                       // Root của OutlinedInput
                       "& .MuiOutlinedInput-root": {
-                        height: 34,
+                        height: { xs: 40, sm: 34 },
                         borderRadius: "999px",
                         backgroundColor: "#020617",
                         "& fieldset": {
@@ -286,13 +287,14 @@ export default function DailyJournal() {
                       },
                       // Input text
                       "& .MuiInputBase-input": {
-                        padding: "6px 12px",
-                        fontSize: 14,
+                        padding: { xs: "8px 12px", sm: "6px 12px" },
+                        fontSize: { xs: 13, sm: 14 },
                         color: "#f9fafb",
                       },
                       // Icon lịch
                       "& .MuiSvgIcon-root": {
                         color: "#f9fafb",
+                        fontSize: { xs: "1.2rem", sm: "1.5rem" },
                       },
                     },
                   },

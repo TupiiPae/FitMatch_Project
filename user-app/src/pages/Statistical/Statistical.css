@@ -1211,6 +1211,60 @@
   .st-cal-grid{ grid-template-columns: minmax(0, 1fr); }
 }
 
-@media (max-width:640px){
-  .st-macro-page{ gap:10px; }
+@media (max-width: 640px) {
+  .st-macro-page {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .st-page {
+    padding: 12px 8px;
+  }
+
+  .st-header {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .st-header-title {
+    font-size: 20px;
+  }
+
+  .st-card {
+    padding: 12px;
+  }
+
+  .st-card-title {
+    font-size: 14px;
+  }
+
+  .st-card-title.lg {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .st-page {
+    padding: 10px 6px;
+  }
+
+  .st-header {
+    padding: 10px;
+  }
+
+  .st-header-title {
+    font-size: 18px;
+  }
+
+  .st-card {
+    padding: 10px;
+  }
+
+  .st-card-title {
+    font-size: 13px;
+  }
+
+  .st-card-title.lg {
+    font-size: 16px;
+  }
 }

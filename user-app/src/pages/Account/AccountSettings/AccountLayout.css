@@ -341,7 +341,85 @@
   }
 }
 @media (max-width: 640px) {
+  .acc-page.pf-wrap {
+    margin: 20px auto 0 auto;
+    padding: 0 12px;
+  }
+
+  .acc-page .pf-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .acc-page .pf-user {
+    width: 100%;
+    gap: 12px;
+  }
+
+  .acc-page .pf-avatar {
+    width: 56px;
+    height: 56px;
+  }
+
+  .acc-page .pf-name {
+    font-size: 16px;
+  }
+
+  .acc-page .pf-join {
+    font-size: 12px;
+  }
+
+  .acc-page .pf-side {
+    margin-bottom: 16px;
+  }
+
+  .acc-page .pf-side-item {
+    font-size: 14px;
+    padding: 10px 0 10px 12px;
+  }
+
+  .acc-page .pf-content {
+    gap: 12px;
+  }
+
   .acc-page .pf-form-5 {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .acc-page .logout-dialog {
+    padding: 18px;
+    width: min(90vw, 420px);
+  }
+
+  .acc-page .logout-title {
+    font-size: 18px;
+  }
+
+  .acc-page .logout-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .acc-page .logout-actions .btn-secondary,
+  .acc-page .logout-actions .btn-danger {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .acc-page.pf-wrap {
+    padding: 0 8px;
+  }
+
+  .acc-page .pf-head {
+    margin-bottom: 16px;
+  }
+
+  .acc-page .pf-avatar {
+    width: 48px;
+    height: 48px;
   }
 }

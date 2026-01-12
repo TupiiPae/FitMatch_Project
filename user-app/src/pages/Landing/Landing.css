@@ -176,6 +176,29 @@
   width: 100%;
 }
 
+/* Hamburger menu button */
+.lm-header-burger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: transparent;
+  border: 0;
+  padding: 8px;
+  cursor: pointer;
+  z-index: 35;
+}
+
+.lm-header-burger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #000;
+  transition: all 0.3s ease;
+}
+
+.lm-header-burger:hover span {
+  background: #ef4444;
+}
 
 /* HERO VIDEO */
 
@@ -756,6 +779,82 @@ flex: 1;
 }
 
 @media (max-width: 768px) {
+  .lm-header {
+    padding: 8px 16px;
+  }
+
+  .lm-header-burger {
+    display: flex;
+  }
+
+  .lm-header-site-title {
+    font-size: 16px;
+  }
+
+  .lm-header-logo-circle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lm-header-right {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+    gap: 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 31;
+  }
+
+  .lm-header-right.is-open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .lm-header-nav {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lm-header-nav:last-child {
+    border-bottom: none;
+  }
+
+  .lm-header-nav::after {
+    display: none;
+  }
+
+  .lm-header-user {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .lm-header-username {
+    font-size: 14px;
+  }
+
+  .lm-header-dropdown {
+    position: static;
+    box-shadow: none;
+    border: none;
+    margin-top: 8px;
+    width: 100%;
+  }
+
   .lm-hero {
     min-height: 90vh;
   }
@@ -796,5 +895,69 @@ flex: 1;
 
   .lm-benefit-grid {
     grid-template-columns: 1fr;
+  }
+
+  .lm-benefit-card-mid {
+    width: 100%;
+  }
+
+  .lm-benefit-img {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .lm-header {
+    padding: 6px 12px;
+  }
+
+  .lm-header-site-title {
+    font-size: 14px;
+  }
+
+  .lm-header-logo-circle {
+    width: 36px;
+    height: 36px;
+  }
+
+  .lm-header-right {
+    top: 50px;
+  }
+
+  .lm-hero-logo {
+    height: 60px;
+  }
+
+  .lm-hero-slogan {
+    font-size: 24px;
+  }
+
+  .lm-box-title {
+    font-size: 24px;
+  }
+
+  .lm-main-hero-title {
+    font-size: 1.6rem;
+  }
+
+  .lm-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .lm-section-intro h2 {
+    font-size: 28px;
+  }
+
+  .lm-section-intro p {
+    font-size: 16px;
+  }
+
+  .lm-feature-card h3 {
+    font-size: 1rem;
+  }
+
+  .lm-benefit-body h3 {
+    font-size: 1.2rem;
   }
 }

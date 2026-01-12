@@ -113,14 +113,62 @@
     align-items: center;
     text-align: center;
     gap: 14px;
+    padding: 16px 20px;
   }
 
   .fm-foot-left {
     align-items: center;
   }
 
+  .fm-foot-nav {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .fm-foot-nav a {
+    font-size: 14px;
+  }
+
   .fm-foot-right {
     justify-content: center;
     width: 100%;
+  }
+
+  .fm-foot-social {
+    justify-content: center;
+  }
+
+  .fm-foot-logo-img {
+    height: 36px;
+  }
+
+  .fm-foot-copy {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fm-foot-container {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .fm-foot-nav {
+    gap: 10px;
+  }
+
+  .fm-foot-nav a {
+    font-size: 13px;
+  }
+
+  .fm-foot-social a {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .fm-foot-logo-img {
+    height: 32px;
   }
 }

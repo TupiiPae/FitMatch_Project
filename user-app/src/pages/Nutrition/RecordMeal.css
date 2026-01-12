@@ -57,6 +57,88 @@
   background-color: #fff;
 }
 
+/* Responsive */
+@media (max-width: 768px) {
+  .nm-wrap {
+    padding: 0 12px;
+  }
+
+  .nm-head {
+    gap: 12px;
+  }
+
+  .nm-head-btn {
+    padding: 16px 0;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .scan,
+  .rm-create-btn {
+    font-size: 14px;
+    height: 36px;
+    padding: 0 12px;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .nm-list-title {
+    font-size: 24px;
+    padding-top: 20px;
+    margin-top: 8px;
+  }
+
+  .nm-list-desc {
+    font-size: 14px;
+  }
+
+  .nm-head-row {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .nm-wrap {
+    padding: 0 8px;
+  }
+
+  .nm-head-btn {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scan,
+  .rm-create-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nm-list-title {
+    font-size: 22px;
+    padding-top: 16px;
+  }
+
+  .nm-list-desc {
+    font-size: 13px;
+  }
+
+  .nm-head-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nm-head-row.search-row .search {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .nm-list-title {
+    font-size: 20px;
+  }
+}
+
 .rm-line {
   border: 0;
   border-top: 1px solid #9ca3af;

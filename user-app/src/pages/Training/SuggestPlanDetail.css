@@ -293,4 +293,50 @@
   .spd-wrap {
     padding: 18px 14px 14px 14px;
   }
+
+  .spd-layout {
+    gap: 16px;
+  }
+
+  .spd-title {
+    font-size: 24px;
+  }
+
+  .spd-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .spd-wrap {
+    padding: 16px 12px;
+  }
+
+  .spd-title {
+    font-size: 22px;
+  }
+
+  .spd-content {
+    gap: 12px;
+  }
+
+  .spd-card {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .spd-wrap {
+    padding: 12px 8px;
+  }
+
+  .spd-title {
+    font-size: 20px;
+  }
+
+  .spd-card {
+    padding: 10px;
+  }
 }

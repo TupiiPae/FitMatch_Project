@@ -351,6 +351,9 @@
     background: #111827;
     color: var(--menu-hover-text);
   }
+.fm-link .fa-caret-down {
+  margin-left: 4px;
+}
   .fm-menu__item.is-active-parent > .fm-link {
     background: #111827;
     color: var(--menu-hover-text);
@@ -409,6 +412,74 @@
   /* Ẩn lời chào trên mobile cho gọn */
   .fm-hello { display: none; }
   .fm-avatar { width: 44px; height: 44px; }
+}
+
+@media (max-width: 640px) {
+  .fm-nav {
+    padding: 0 12px;
+  }
+
+  .fm-logo {
+    height: 26px;
+  }
+
+  .fm-burger {
+    padding: 4px;
+  }
+
+  .fm-burger span {
+    width: 20px;
+  }
+
+  .fm-menu {
+    padding: 8px 8px 12px;
+  }
+
+  .fm-link {
+    padding: 10px;
+    font-size: 14px;
+  }
+  /* Ẩn caret trong text trên mobile để tránh trùng với nút toggle */
+  .fm-link .fa-caret-down {
+    display: none;
+  }
+
+  .fm-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .acc-pop {
+    width: 240px;
+    right: -8px;
+  }
+
+  .acc-pop::after {
+    right: 20px;
+  }
+
+  .logout-dialog {
+    width: min(90vw, 420px);
+    padding: 18px;
+  }
+
+  .logout-title {
+    font-size: 18px;
+  }
+
+  .logout-desc {
+    font-size: 14px;
+  }
+
+  .logout-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .logout-actions .btn-secondary,
+  .logout-actions .btn-danger {
+    width: 100%;
+  }
 }
 
 /* ================= Account Dropdown ================= */

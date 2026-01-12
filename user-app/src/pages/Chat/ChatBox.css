@@ -72,7 +72,7 @@
 .fm-chat-replybar{width:3px;border-radius:999px;background:rgba(255,255,255,.18)}
 .fm-chat-replymeta{min-width:0}
 .fm-chat-replyname{font-weight:500;font-size:12px;opacity:.9}
-.fm-chat-replytext{font-size:12px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
+.fm-chat-replytext{font-size:12px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(520px, calc(100% - 20px))}
 
 /* =========================
     Media attachments
@@ -98,6 +98,120 @@
 .fm-chat-reactcorner{position:absolute;right:8px;bottom:-14px;display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.18);color:inherit;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(4px);transition:.12s;font-size:13px}
 .fm-chat-bubble.is-mine .fm-chat-reactcorner{left:8px;right:auto}
 .fm-chat-row:hover .fm-chat-reactcorner{opacity:1;pointer-events:auto;transform:translateY(0)}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .fm-chat-list {
+    padding: 12px;
+  }
+
+  .fm-chat-main {
+    max-width: min(85%, 100%);
+  }
+
+  .fm-chat-main.is-mine {
+    max-width: min(85%, 100%);
+  }
+
+  .fm-chat-bubble:not(.is-media) {
+    max-width: min(85%, 100%);
+  }
+
+  .fm-chat-bubble.is-media {
+    width: min(85%, 100%);
+  }
+
+  .fm-chat-img {
+    width: 180px;
+  }
+
+  .fm-chat-ava {
+    width: 28px;
+    height: 28px;
+  }
+
+  .fm-chat-ava-spacer {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fm-chat-list {
+    padding: 10px 8px;
+  }
+
+  .fm-chat-main {
+    max-width: min(80%, 100%);
+    gap: 6px;
+  }
+
+  .fm-chat-main.is-mine {
+    max-width: min(80%, 100%);
+  }
+
+  .fm-chat-bubble {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  .fm-chat-bubble:not(.is-media) {
+    max-width: min(80%, 100%);
+  }
+
+  .fm-chat-bubble.is-media {
+    width: min(80%, 100%);
+  }
+
+  .fm-chat-img {
+    width: 160px;
+    max-width: 100%;
+  }
+
+  .fm-chat-atts.cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .fm-chat-atts.cols-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .fm-chat-ava {
+    width: 24px;
+    height: 24px;
+  }
+
+  .fm-chat-ava-spacer {
+    width: 24px;
+    height: 24px;
+  }
+
+  .fm-chat-text {
+    font-size: 14px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .fm-chat-time {
+    font-size: 10px;
+  }
+
+  .fm-chat-reactmodal-box {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    height: min(500px, calc(100vh - 100px));
+    max-height: calc(100vh - 100px);
+  }
+
+  .fm-chat-replytext {
+    max-width: 100%;
+  }
+
+  .fm-chat-imgview-box {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 100px);
+  }
+}
 .fm-chat-reactcorner.is-has{opacity:1;pointer-events:auto;transform:none}
 .fm-chat-reactcorner.is-hide{opacity:0;pointer-events:none}
 .fm-chat-reactcorner .ct{font-size:11px;opacity:.75;font-weight:500}
@@ -194,7 +308,7 @@
 .fm-chat-emoji-pop.is-input em-emoji-picker{width:100%;height:360px}
 
 .fm-chat-reactmodal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9998;padding:16px}
-.fm-chat-reactmodal-box{width: 500px;;height:500px;overflow:hidden;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:#020617;box-shadow:0 10px 30px rgba(0,0,0,.45);display:flex;flex-direction:column}
+.fm-chat-reactmodal-box{width: min(500px, calc(100vw - 32px));max-width: 500px;height:min(500px, calc(100vh - 120px));max-height:500px;overflow:hidden;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:#020617;box-shadow:0 10px 30px rgba(0,0,0,.45);display:flex;flex-direction:column}
 .fm-chat-reactmodal-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.10)}
 .fm-chat-reactmodal-title{font-weight:600}
 .fm-chat-reactmodal-x{width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center; font-size: 11px;}

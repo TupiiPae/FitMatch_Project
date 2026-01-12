@@ -146,6 +146,42 @@
 .auth-container .signup-link p{ font-size: 13px; color:#6b7280; }
 
 /* Mobile */
-@media (max-width: 480px){
-  .auth-container .auth-form { padding: 0 24px; }
+@media (max-width: 768px) {
+  .auth-container .auth-form h1 {
+    font-size: 24px;
+  }
+
+  .auth-container .auth-form {
+    padding: 0 20px;
+  }
+
+  .auth-container .auth-input {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-container .auth-form {
+    padding: 0 16px;
+  }
+
+  .auth-container .auth-form h1 {
+    font-size: 22px;
+  }
+
+  .auth-container .auth-form > span,
+  .auth-container .auth-form > p {
+    font-size: 12px;
+  }
+
+  .auth-container .auth-input {
+    padding: 10px 14px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .auth-container .material-btn {
+    padding: 12px 32px;
+    font-size: 11px;
+  }
 }

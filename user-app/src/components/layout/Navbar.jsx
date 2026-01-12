@@ -247,6 +247,17 @@ export default function Navbar({
   const toggleAccount = () => setAccountOpen(v => !v);
   const closeAccount = () => setAccountOpen(false);
 
+  // Đóng toàn bộ menu mobile + dropdown
+  const closeMobileMenu = () => {
+    setMobileOpen(false);
+    setOpenDropdown(null);
+  };
+
+  // Tự đóng khi chuyển route (phòng trường hợp NavLink không bắt onClick)
+  useEffect(() => {
+    closeMobileMenu();
+  }, [location.pathname]);
+
   // Logic click outside (KHÔNG THAY ĐỔI)
   useEffect(() => {
     const onDocClick = (e) => {
@@ -326,11 +337,11 @@ export default function Navbar({
           <nav className={`fm-menu ${mobileOpen ? "is-open" : ""}`} aria-label="Chính">
             <ul className="fm-menu__list">
               <li className="fm-menu__item">
-                <NavLink to="/home" className="fm-link">Trang chủ</NavLink>
+                <NavLink to="/home" className="fm-link" onClick={closeMobileMenu}>Trang chủ</NavLink>
               </li>
               {/* DINH DƯỠNG (Mega-menu) */}
               <li className={`fm-menu__item has-dropdown ${isDinhDuongActive ? 'is-active-parent' : ''}`}>
-                <NavLink to="/dinh-duong/nhat-ky" className="fm-link">
+                <NavLink to="/dinh-duong/nhat-ky" className="fm-link" onClick={closeMobileMenu}>
                   Dinh dưỡng<i className="fa-solid fa-caret-down"></i>
                 </NavLink>
                 <button
@@ -348,21 +359,21 @@ export default function Navbar({
                       <img src="/images/dropd1.png" alt="Dinh dưỡng" />
                     </div> */}
                     <div className="fm-megamenu-links">
-                      <NavLink to="/dinh-duong/nhat-ky" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/dinh-duong/nhat-ky" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faBookOpen} />
                         <div>
                           <strong>Nhật ký dinh dưỡng</strong>
                           <span>Theo dõi bữa ăn hàng ngày của bạn</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/dinh-duong/ghi-lai/tao-mon" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/dinh-duong/ghi-lai/tao-mon" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faAppleAlt} />
                         <div>
                           <strong>Tạo món ăn</strong>
                           <span>Lưu lại công thức món ăn của riêng bạn</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/dinh-duong/ghi-lai" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/dinh-duong/ghi-lai" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faUtensils} />
                         <div>
                           <strong>Ghi lại bữa ăn</strong>
@@ -376,14 +387,14 @@ export default function Navbar({
                           <span>Để AI tính toán công thức món ăn cho bạn</span>
                         </div>
                       </NavLink> */}
-                      <NavLink to="/dinh-duong/thuc-don-goi-y" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/dinh-duong/thuc-don-goi-y" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faLightbulb} />
                         <div>
                           <strong>Thực đơn gợi ý</strong>
                           <span>Khám phá các thực đơn lành mạnh</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/dinh-duong/tinh-calo-ai" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/dinh-duong/tinh-calo-ai" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faCalculator} />
                         <div>
                           <strong>Tính toán Calorie với AI</strong>
@@ -397,7 +408,7 @@ export default function Navbar({
 
               {/* TẬP LUYỆN (Mega-menu) */}
               <li className={`fm-menu__item has-dropdown ${isTapLuyenActive ? 'is-active-parent' : ''}`}>
-                <NavLink to="/tap-luyen/lich-cua-ban" className="fm-link">
+                <NavLink to="/tap-luyen/lich-cua-ban" className="fm-link" onClick={closeMobileMenu}>
                   Tập luyện<i className="fa-solid fa-caret-down"></i>
                 </NavLink>
                 <button
@@ -415,42 +426,42 @@ export default function Navbar({
                       <img src="/images/dropd2.png" alt="Tập luyện" />
                     </div> */}
                     <div className="fm-megamenu-links">
-                      <NavLink to="/tap-luyen/lich-cua-ban" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/tap-luyen/lich-cua-ban" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faCalendar} />
                         <div>
                           <strong>Lịch tập của bạn</strong>
                           <span>Xem kế hoạch tập luyện của bạn</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/tap-luyen/bai-tap/khang-luc" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/tap-luyen/bai-tap/khang-luc" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faDumbbell} />
                         <div>
                           <strong>Các bài tập kháng lực</strong>
                           <span>Danh sách bài tập xây dựng và phát triển cơ bắp</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/tap-luyen/lich-cua-ban/tao" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/tap-luyen/lich-cua-ban/tao" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faClipboardList} />
                         <div>
                           <strong>Tạo lịch tập của bạn</strong>
                           <span>Xây dựng kế hoạch tập luyện của bạn</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/tap-luyen/bai-tap/cardio" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/tap-luyen/bai-tap/cardio" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faHeartPulse} />
                         <div>
                           <strong>Các bài tập cardio</strong>
                           <span>Danh sách bài tập tăng cường sức bền tim mạch</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/tap-luyen/goi-y" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/tap-luyen/goi-y" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faLightbulb} />
                         <div>
                           <strong>Lịch tập gợi ý</strong>
                           <span>Các kế hoạch tập luyện mẫu</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/tap-luyen/bai-tap/the-thao" className="fm-megamenu-link" role="menuitem">
+                      <NavLink to="/tap-luyen/bai-tap/the-thao" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faVolleyball} />
                         <div>
                           <strong>Các môn thể thao</strong>
@@ -462,10 +473,10 @@ export default function Navbar({
                 </div>
               </li>
               <li className="fm-menu__item">
-                <NavLink to="/ket-noi" className="fm-link">Kết nối</NavLink>
+                <NavLink to="/ket-noi" className="fm-link" onClick={closeMobileMenu}>Kết nối</NavLink>
               </li>
               <li className="fm-menu__item">
-                <NavLink to="/thong-ke" className="fm-link">Thống kê</NavLink>
+                <NavLink to="/thong-ke" className="fm-link" onClick={closeMobileMenu}>Thống kê</NavLink>
               </li>
               {/* <li className="fm-menu__item">
                 <NavLink to="/ung-dung" className="fm-link">Ứng dụng</NavLink>

@@ -9,6 +9,7 @@ export default function Landing() {
 
   const [user, setUser] = useState(null);      // { username }
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Scroll theo hash (#main-content, ...)
   useEffect(() => {
@@ -97,14 +98,36 @@ export default function Landing() {
           <span className="lm-header-site-title">FITMATCH</span>
         </div>
 
-        <nav className="lm-header-right">
+        <button 
+          className="lm-header-burger" 
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Mở menu"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <nav className={`lm-header-right ${mobileMenuOpen ? "is-open" : ""}`}>
           {isLoggedIn && (
-            <span className="lm-header-nav" onClick={handleGoHome}>
+            <span 
+              className="lm-header-nav" 
+              onClick={() => {
+                handleGoHome();
+                setMobileMenuOpen(false);
+              }}
+            >
               Quay lại trang chủ
             </span>
           )}
 
-          <span className="lm-header-nav" onClick={handleScrollToMain}>
+          <span 
+            className="lm-header-nav" 
+            onClick={() => {
+              handleScrollToMain();
+              setMobileMenuOpen(false);
+            }}
+          >
             Về FitMatch
           </span>
 
@@ -129,7 +152,10 @@ export default function Landing() {
                 >
                   <div
                     className="lm-header-dropdown-item lm-header-dropdown-logout"
-                    onClick={handleLogout}
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
                   >
                     Đăng xuất
                   </div>
@@ -139,7 +165,10 @@ export default function Landing() {
           ) : (
             <div
               className="lm-header-nav"
-              onClick={() => nav("/login")}
+              onClick={() => {
+                nav("/login");
+                setMobileMenuOpen(false);
+              }}
             >
               <i className="fa-solid fa-arrow-right-to-bracket" />
               <span className="lm-header-nav-text">Đăng nhập</span>
