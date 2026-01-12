@@ -1547,10 +1547,26 @@ export async function manageGroupMembers(req, res, next) {
     for (const removedId of removedIds) {
       const removedName = removedNameMap.get(String(removedId)) || "Một thành viên";
 
+      // (b) ✅ Thông báo cho CHÍNH người bị kick
+      await notifySafe({
+        to: String(removedId),
+        from: String(userId),
+        type: "group_member_kicked", // dùng lại type đang có để chắc chắn FE hiển thị
+        title: "Đã bị mời ra khỏi nhóm",
+        body: `${actorName} đã mời bạn ra khỏi nhóm "${roomName}".`,
+        data: {
+          screen: "Connect",
+          tab: "team",
+          mode: "group",
+          roomId: String(room._id),
+          action: "kicked_self",
+          kickedUserId: String(removedId),
+        },
+      });
+
+      // (c) Thông báo cho các thành viên còn lại
       for (const toId of remainIds) {
-        // không notify cho người thực hiện và người bị remove
-        if (String(toId) === String(userId)) continue;
-        if (String(toId) === String(removedId)) continue;
+        if (String(toId) === String(userId)) continue; // không notify cho người kick
 
         await notifySafe({
           to: String(toId),
