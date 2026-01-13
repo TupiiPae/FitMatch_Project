@@ -180,6 +180,7 @@ const userSchema = new mongoose.Schema(
       default: undefined,
     },
     blockedAt: { type: Date, default: undefined },
+    blockedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", default: null },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     onboarded: { type: Boolean, default: false },
 

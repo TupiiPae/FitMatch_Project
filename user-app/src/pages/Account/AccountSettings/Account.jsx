@@ -640,7 +640,7 @@ export default function AccountInfo() {
 
           {/* Hiển thị hồ sơ */}
           <section className="acc-section">
-            <h2 className="acc-title-sub">Hiển thị hồ sơ</h2>
+            <h2 className="acc-title-sub">Cài đặt hiển thị hồ sơ</h2>
 
             <div className="acc-radio-block">
               <label className="acc-radio">
@@ -654,9 +654,8 @@ export default function AccountInfo() {
                 <span>Mọi người ( hồ sơ công khai )</span>
               </label>
               <p className="acc-radio-desc">
-                Bất kỳ ai trên Internet có liên kết đến trang cá nhân của bạn đều có thể xem được. Thông tin bạn
-                chia sẻ trên trang cá nhân (chẳng hạn như tên và họ, thông tin mạng xã hội, ảnh công khai) sẽ hiển
-                thị trên trang cá nhân, trong phần trò chuyện hoặc diễn đàn cộng đồng.
+                Bất kỳ ai nhấp vào hồ sơ của bạn đều có thể xem tất cả thông tin bạn đã cung cấp, bao gồm ảnh đại diện, tên,
+                ngày sinh, giới tính, địa chỉ, mục tiêu và bio.
               </p>
             </div>
 
@@ -672,8 +671,7 @@ export default function AccountInfo() {
                 <span>Chỉ mình tôi ( hồ sơ riêng tư )</span>
               </label>
               <p className="acc-radio-desc">
-                ONLY your profile photo, first name and username is visible on your profile, and within chat or the
-                community forums.
+                Thông tin của bạn sẽ được ẩn. Riêng tên và địa vẫn công khai nếu bạn mở chức năng kết nối.
               </p>
             </div>
           </section>

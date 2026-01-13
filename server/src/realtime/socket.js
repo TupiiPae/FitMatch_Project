@@ -262,7 +262,7 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
   });
   setIO(io);
 
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     try {
       const raw =
         socket.handshake.auth?.token ||
@@ -275,6 +275,9 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const uid = uidFromDecoded(decoded);
       if (!uid) return next(new Error("UNAUTHORIZED"));
+
+      const u = await User.findById(uid).select("blocked blockedReason").lean().catch(() => null);
+        if (u?.blocked) return next(new Error("BLOCKED"));
 
       socket.user = { _id: uid, role: decoded?.role, level: decoded?.level };
       next();

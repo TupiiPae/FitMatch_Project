@@ -345,6 +345,7 @@ export async function listNearby(req, res, next) {
         _id: { $ne: userId },
         role: "user",
         connectDiscoverable: true,
+        blocked: false,
       })
         .limit(100)
         .lean();

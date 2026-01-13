@@ -1,13 +1,13 @@
-// src/middleware/auth.js
+// server/src/middleware/auth.js
 import jwt from "jsonwebtoken";
-import { User } from "../models/User.js"; // <-- chỉnh đúng path theo project bạn
+import { User } from "../models/User.js";
 
 const getBearerToken = (h = "") => {
-  const m = String(h || "").match(/^Bearer\s+(.+)$/i); // case-insensitive
+  const m = String(h || "").match(/^Bearer\s+(.+)$/i);
   return m ? m[1].trim() : null;
 };
 
-export const auth = (req, res, next) => {
+export const auth = async (req, res, next) => {
   try {
     const token = getBearerToken(req.headers.authorization || "");
     if (!token) {
@@ -41,18 +41,16 @@ export const auth = (req, res, next) => {
       (payload?.data && payload.data.level) ??
       undefined;
 
-    const levelNum = levelRaw === undefined || levelRaw === null ? undefined : Number(levelRaw);
+    const levelNum =
+      levelRaw === undefined || levelRaw === null ? undefined : Number(levelRaw);
     const userLevel = Number.isFinite(levelNum) ? levelNum : undefined;
 
     if (!id) {
-      console.error(
-        "JWT hợp lệ nhưng không có claim id. payload.keys:",
-        Object.keys(payload || {})
-      );
+      console.error("JWT hợp lệ nhưng không có claim id. payload.keys:", Object.keys(payload || {}));
       return res.status(401).json({ message: "Token thiếu thông tin người dùng (id/_id)" });
     }
 
-    // ✅ set req.userId sớm để những đoạn dưới dùng được
+    // ✅ set req.userId sớm
     req.userId = id;
 
     // Giữ role gốc để không phá chỗ khác
@@ -60,7 +58,7 @@ export const auth = (req, res, next) => {
     req.userRoleRaw = roleBase;
     req.userLevel = userLevel;
 
-    // Role chuẩn hoá (nếu bạn cần phân biệt lv1/lv2)
+    // Role chuẩn hoá
     let roleNormalized = roleBase;
     if (roleBase === "admin" && userLevel === 1) roleNormalized = "admin_lv1";
     else if (roleBase === "admin" && userLevel === 2) roleNormalized = "admin_lv2";
@@ -68,7 +66,21 @@ export const auth = (req, res, next) => {
     req.userRole = roleNormalized;
     req.isAdmin = roleBase === "admin";
 
-    // ✅ update lastActiveAt (không để lỗi này làm rớt 401 nữa)
+    // ✅ CHỐNG USER BỊ KHÓA (nếu user tồn tại trong collection User)
+    // (Tránh làm gãy trường hợp admin nằm model khác => nếu không tìm thấy thì bỏ qua check này)
+    const u = await User.findById(req.userId)
+      .select("blocked blockedReason")
+      .lean()
+      .catch(() => null);
+
+    if (u?.blocked && !req.isAdmin) {
+      return res.status(403).json({
+        message: "Tài khoản đã bị khóa",
+        reason: u?.blockedReason || "Vi phạm tiêu chuẩn cộng đồng",
+      });
+    }
+
+    // ✅ update lastActiveAt (không để lỗi này làm rớt request)
     const FIVE_MIN = 5 * 60 * 1000;
     if (User && req.userId) {
       User.updateOne(
