@@ -146,7 +146,7 @@
   background: #1e1e1e;
   border-radius: 4px;
   padding: 18px 16px 16px;
-  border: 1px solid #fff;
+  border: 1px solid rgba(255,255,255,0.06); /* softer on dark bg */
   width: 100%;
   box-sizing: border-box;
   overflow-x: auto;
@@ -290,8 +290,12 @@
   background: #1e1e1e;
   border-radius: 4px;
   padding: 16px;
-  border: 1px solid #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-sizing: border-box;
+  min-width: 0; /* allow shrinking on narrow viewports */
 }
+
+.dj-side .panel { width: 100%; }
 
 /* Macro panel */
 
@@ -741,6 +745,9 @@
     height: 110px;
   }
 
+  /* prevent sidebar panels or contents from causing horizontal overflow */
+  .dj-side, .dj-side .panel, .dj-side .panel * { box-sizing: border-box; min-width: 0; }
+
   .cal-center .cc-label {
     font-size: 12px;
   }
@@ -896,6 +903,16 @@
     width: 100px;
     height: 100px;
   }
+
+  /* tighter paddings and smaller ring on very small phones */
+  .panel { padding: 10px; }
+  .cal-ring { width: 90px; height: 90px; }
+  .cal-center .cc-val { font-size: 14px; }
+  .cal-center .cc-label { font-size: 11px; }
+
+  /* ensure water controls don't overflow */
+  .panel.water .wctl { gap: 8px; }
+  .panel.water .wctl input { width: 80px; max-width: 40%; }
 
   .cal-center .cc-label {
     font-size: 11px;

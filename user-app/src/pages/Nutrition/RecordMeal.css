@@ -25,8 +25,8 @@
 
 .nm-head-btn {
   display: flex;
-  align-items: stretch;
-  justify-content: right;
+  align-items: center;
+  justify-content: flex-end;
   position: relative;
   padding: 20px 0 20px 0;
   z-index: 5;
@@ -35,8 +35,9 @@
 
 /* allow header buttons to shrink and wrap without causing overflow */
 .nm-head-btn > button {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 120px;
   box-sizing: border-box;
 }
 
@@ -59,7 +60,9 @@
   font-size: 16px;
   height: 40px;
   display: flex;
+  text-align: center;
   align-items: center;
+  justify-content: center;
   border-radius: 4px;
   color: #fff;
   background-color: #f00519;
@@ -369,7 +372,7 @@
   max-height: 72vh; /* viewport-based so it fits mobile */
   overflow-y: auto;
   cursor: grab;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   box-sizing: border-box;
 }
 .nm-list-frame.dragging {
