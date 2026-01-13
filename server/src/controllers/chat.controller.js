@@ -114,7 +114,34 @@ export async function uploadChatImage(req, res, next) {
   try {
     const uid = uidFromReq(req);
     const { id } = req.params;
-    await ensureMember(id, uid);
+    const room = await ensureMember(id, uid);
+
+    // ✅ chặn upload ảnh nếu DM private và chưa có message nào
+    if (String(room?.type || "") === "dm") {
+      const members = (room.members || [])
+        .map((m) => String(m?.user?._id || m?.user || ""))
+        .filter(Boolean);
+
+      const otherId = members.find((x) => x !== String(uid));
+      if (otherId) {
+        const other = await User.findById(otherId)
+          .select("profile.chatRequest")
+          .lean()
+          .catch(() => null);
+
+        const setting = String(other?.profile?.chatRequest || "all").toLowerCase();
+        if (setting === "private") {
+          const hasAnyMessage = await ChatMessage.exists({ conversationId: room._id });
+          if (!hasAnyMessage) {
+            return res.status(403).json({
+              success: false,
+              message: "Người này hiện không nhận tin nhắn từ người lạ",
+              lockReason: "private_stranger",
+            });
+          }
+        }
+      }
+    }
 
     const file = req.file;
     if (!file) return res.status(400).json({ success: false, message: "Không có ảnh" });
@@ -270,7 +297,7 @@ export async function listDmConversations(req, res, next) {
     ];
 
     const peers = await User.find({ _id: { $in: peerIds.map(asOid).filter(Boolean) } })
-      .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address")
+      .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address profile.chatRequest")
       .lean();
     const peerMap = new Map(peers.map((u) => [String(u._id), u]));
 
@@ -333,7 +360,7 @@ export async function createOrGetDmConversation(req, res, next) {
 
     // ✅ lấy peer info luôn để FE render header ngay
     const target = await User.findById(targetOid)
-      .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address")
+      .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address profile.chatRequest")
       .lean();
     if (!target) return res.status(404).json({ success: false, message: "User not found" });
 
@@ -372,7 +399,25 @@ export async function createOrGetDmConversation(req, res, next) {
       { upsert: true }
     );
 
-    return responseOk(res, { _id: room._id, id: room._id, type: "dm", peer: target });
+    // ✅ DM privacy check: nếu peer bật private thì chỉ cho nhắn khi conversation đã từng có message
+    const peerSetting = String(target?.profile?.chatRequest || "all"); // default all
+    let canSend = true;
+    let lockReason = null;
+
+    if (peerSetting === "private") {
+      const hasAnyMessage = await ChatMessage.exists({ conversationId: room._id });
+      canSend = !!hasAnyMessage;
+      if (!canSend) lockReason = "private_stranger";
+    }
+
+    return responseOk(res, {
+      _id: room._id,
+      id: room._id,
+      type: "dm",
+      peer: target,
+      canSend,
+      lockReason,
+    });
   } catch (e) {
     if (e?.name === "ValidationError") {
       return res.status(400).json({
@@ -406,7 +451,7 @@ export async function searchDmUsers(req, res, next) {
       _id: { $ne: uidOid },
       $or: [{ "profile.nickname": rx }, { email: rx }],
     })
-      .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address")
+      .select("_id email profile.nickname profile.avatarUrl profile.avatar profile.address profile.chatRequest")
       .limit(20)
       .lean();
 

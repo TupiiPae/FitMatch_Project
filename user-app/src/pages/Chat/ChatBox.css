@@ -253,7 +253,6 @@
 .fm-chat-inputwrap{position:relative;flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
 .fm-chat-input{width:100%;border-radius:22px;border:1px solid rgba(255,255,255,.16);background:transparent;color:inherit;padding:10px 14px;outline:none;min-width:0}
 .fm-chat-textarea{resize:none;line-height:1.35;overflow:auto; max-height:140px; overflow: hidden;}
-
 .fm-chat-attach,.fm-chat-input-emoji{width:42px;height:42px;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .fm-chat-attach:hover{background:rgba(255,255,255,.08);border-radius:999px}
 .fm-chat-input-emoji:hover{background:rgba(255,255,255,.08);border-radius:999px}

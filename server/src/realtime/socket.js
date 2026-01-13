@@ -30,6 +30,16 @@ const asOid = (v) => {
   }
 };
 
+const roomMemberOids = (room) =>
+  safeArr(room?.members)
+    .map((m) => m?.user?._id || m?.user || m?._id || m)
+    .filter(Boolean);
+
+const roomMemberIds = (room) =>
+  safeArr(room?.members)
+    .map((m) => String(m?.user?._id || m?.user || m?._id || m || ""))
+    .filter(Boolean)
+
 const roomUserIds = (roomName) => {
   const out = new Set();
   try {
@@ -85,11 +95,20 @@ const lastTextFrom = (text, attachments) => {
   return "[Tệp]";
 };
 
+const convTypeFromRoom = (room) => {
+  const t = String(room?.type || room?.roomType || room?.kind || "").toLowerCase();
+  if (t === "dm" || t === "direct" || t === "direct_message" || t === "direct-message")
+    return "dm";
+  if (t === "group" || t === "team") return "group";
+  if (t === "duo" || t === "one_to_one" || t === "one-to-one" || t === "1:1") return "duo";
+  return "duo";
+};
+
 async function ensureMember(conversationId, uid) {
   const room = await MatchRoom.findById(conversationId).lean();
   if (!room) throw Object.assign(new Error("Room not found"), { status: 404 });
 
-  const members = (room.members || []).map((m) => String(m?.user?._id || m?.user || ""));
+  const members = roomMemberIds(room);
   if (!members.includes(String(uid))) throw Object.assign(new Error("Forbidden"), { status: 403 });
 
   return room;
@@ -114,7 +133,6 @@ async function getLastVisibleForUser(conversationId, uidOid) {
   };
 }
 
-// ✅ FIX CONFLICT: KHÔNG setOnInsert unreadBy:{}
 async function upsertConversationFromRoom(
   room,
   { lastText, lastSenderId, lastAt, incUnreadFor = [] } = {}
@@ -122,8 +140,8 @@ async function upsertConversationFromRoom(
   if (!room?._id) return;
 
   const convId = room._id;
-  const type = room.type === "group" ? "group" : room.type === "dm"    ? "dm" : "duo";
-  const members = (room.members || []).map((m) => m?.user?._id || m?.user).filter(Boolean);
+  const type = convTypeFromRoom(room);
+  const members = roomMemberIds(room).map(asOid).filter(Boolean);
 
   const $set = {
     type,
@@ -145,7 +163,6 @@ async function upsertConversationFromRoom(
     {
       $set,
       ...(Object.keys($inc).length ? { $inc } : {}),
-      // ✅ chỉ set field KHÔNG đụng unreadBy root
       $setOnInsert: { createdAt: new Date() },
     },
     { upsert: true }
@@ -184,6 +201,8 @@ async function emitConversationUpdateToAll(room, conversationId, senderUidStr, p
     .map((m) => String(m?.user?._id || m?.user || ""))
     .filter(Boolean);
 
+  const convType = convTypeFromRoom(room); // ✅ FIX: tính convType ở đây
+
   const conv = await ChatConversation.findById(conversationId)
     .select("unreadBy lastMessage lastMessageAt")
     .lean()
@@ -191,11 +210,49 @@ async function emitConversationUpdateToAll(room, conversationId, senderUidStr, p
 
   for (const mId of memberIds) {
     io.to(`user:${mId}`).emit("chat:conversation_update", {
+      type: convType, // ✅ giờ chắc chắn có giá trị "dm" | "duo" | "group"
       conversationId: String(conversationId),
       lastMessage: payload.lastMessage ?? conv?.lastMessage ?? null,
       lastMessageAt: payload.lastMessageAt ?? conv?.lastMessageAt ?? null,
       unread: String(mId) === String(senderUidStr) ? 0 : getUnreadOf(conv, mId),
     });
+  }
+}
+
+async function ensureDmPrivacyCanSend(room, senderUidOid) {
+  try {
+    if (String(room?.type || "") !== "dm") return { ok: true };
+
+    const memberIds = roomMemberIds(room).map(String).filter(Boolean);
+    if (memberIds.length !== 2) return { ok: true };
+
+    const otherId = memberIds.find((x) => x !== String(senderUidOid));
+    if (!otherId) return { ok: true };
+
+    const other = await User.findById(otherId)
+      .select("profile.chatRequest")
+      .lean()
+      .catch(() => null);
+
+    const setting = String(other?.profile?.chatRequest || "all").toLowerCase();
+    if (setting !== "private") return { ok: true };
+
+    // private => chỉ cho gửi nếu conversation đã từng có message
+    const hasAnyMessage = await ChatMessage.exists({ conversationId: room._id });
+    if (hasAnyMessage) return { ok: true };
+
+    return {
+      ok: false,
+      lockReason: "private_stranger",
+      message: "Người này hiện không nhận tin nhắn từ người lạ",
+    };
+  } catch {
+    // nếu có lỗi DB thì đừng “mở khóa” nhầm -> chặn an toàn
+    return {
+      ok: false,
+      lockReason: "private_stranger",
+      message: "Người này hiện không nhận tin nhắn từ người lạ",
+    };
   }
 }
 
@@ -274,6 +331,12 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
 
         const room = await ensureMember(conversationId, uid);
 
+        const allow = await ensureDmPrivacyCanSend(room, uidOid);
+        if (!allow.ok) {
+          ack?.({ ok: false, message: allow.message, lockReason: allow.lockReason });
+          return;
+        }
+
         if (clientMsgId) {
           const existed = await ChatMessage.findOne({ conversationId, senderId: uidOid, clientMsgId }).lean();
           if (existed) { ack?.({ ok: true, message: existed, duplicated: true }); return; }
@@ -322,9 +385,7 @@ export function initSocket(httpServer, { corsOrigin } = {}) {
 
         const plain = msg.toObject();
 
-        const otherIds = (room.members || [])
-          .map((m) => String(m?.user?._id || m?.user || ""))
-          .filter((x) => x && x !== String(uid));
+        const otherIds = roomMemberIds(room).filter((x) => x && x !== String(uid));
 
         const lastText = lastTextFrom(text, at);
 

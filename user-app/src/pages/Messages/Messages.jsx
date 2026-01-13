@@ -176,6 +176,16 @@ export default function Messages() {
   const [activeConvId, setActiveConvId] = useState("");
   const [activePeer, setActivePeer] = useState(null);
 
+  const [dmLock, setDmLock] = useState({ locked: false, text: "" });
+
+  const resetDmLock = () => setDmLock({ locked: false, text: "" });
+
+  const lockDm = (msg) =>
+    setDmLock({
+      locked: true,
+      text: msg || "Người này hiện không nhận tin nhắn từ người lạ",
+    });
+
   // ===== AI preview (for sidebar) =====
   const [aiPreview, setAiPreview] = useState({
     lastText: "Nhắn để bắt đầu…",
@@ -557,12 +567,15 @@ export default function Messages() {
       }
 
       try {
-        const conv = await createOrGetDmConversation(qUserId);
-        const cid = String(conv?._id || "");
-        if (cid) {
-          setActiveConvId(cid);
-          if (conv?.peer) setActivePeer(conv.peer);
-        }
+      const conv = await createOrGetDmConversation(qUserId);
+      const cid = String(conv?._id || "");
+      if (cid) {
+        setActiveConvId(cid);
+        if (conv?.peer) setActivePeer(conv.peer);
+
+        if (conv?.canSend === false) lockDm("Người này hiện không nhận tin nhắn từ người lạ");
+        else resetDmLock();
+      }
       } catch (e) {
         console.error(e);
         toast.error("Không thể mở đoạn chat");
@@ -607,6 +620,7 @@ export default function Messages() {
     if (!cid) return;
     setActiveConvId(cid);
     setActivePeer(c?.peer || null);
+    resetDmLock();
   };
 
   const openDmWithUser = async (userId) => {
@@ -623,12 +637,19 @@ export default function Messages() {
     }
 
     try {
-      const conv = await createOrGetDmConversation(uid);
-      const cid = String(conv?._id || "");
-      if (!cid) throw new Error("No conversationId");
-
+    const conv = await createOrGetDmConversation(uid);
+    const cid = String(conv?._id || "");
+    if (cid) {
       setActiveConvId(cid);
       if (conv?.peer) setActivePeer(conv.peer);
+
+      // ✅ lock input nếu bị chặn
+      if (conv?.canSend === false) {
+        lockDm("Người này hiện không nhận tin nhắn từ người lạ");
+      } else {
+        resetDmLock();
+      }
+    }
 
       setSearchText("");
       setSearchGlobal([]);
@@ -1145,14 +1166,22 @@ export default function Messages() {
                 </div>
 
                 <div className="msg-chat">
-                  <ChatBox
-                    conversationId={activeConvId}
-                    meId={String(me?._id || "")}
-                    members={chatMembers}
-                    height={"100%"}
-                    onOpenUser={(u) => openUser(u)}
-                    emptyText={"Chưa có tin nhắn nào giữa 2 bạn."}
-                  />
+                  {dmLock.locked ? (
+                    <div className="msg-dm-locked">
+                      <div className="msg-dm-locked-txt">
+                        {dmLock.text || "Người này hiện không nhận tin nhắn từ người lạ"}
+                      </div>
+                    </div>
+                  ) : (
+                    <ChatBox
+                      conversationId={activeConvId}
+                      meId={String(me?._id || "")}
+                      members={chatMembers}
+                      height={"100%"}
+                      onOpenUser={(u) => openUser(u)}
+                      emptyText={"Chưa có tin nhắn nào giữa 2 bạn."}
+                    />
+                  )}
                 </div>
               </div>
             )}

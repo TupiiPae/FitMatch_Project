@@ -901,6 +901,7 @@ export default function ChatBox({
 
     setSending(true);
     setText("");
+
     setPickerOpen(false);
 
     setItems((prev) => uniq([...prev, tmp]));
@@ -950,6 +951,11 @@ export default function ChatBox({
         setReplyTo(null);
         if (!ack?.ok) {
           toast.error(ack?.message || "Gửi thất bại");
+          setItems((prev) =>
+            prev.filter((x) => String(x?._id || "") !== String(tmp._id || ""))
+          );
+          setText(content);
+
           setSendMark(null);
           return;
         }

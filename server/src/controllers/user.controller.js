@@ -162,7 +162,8 @@ export const updateAccount = async (req,res)=>{
       "profile.calorieTarget","profile.macroProtein","profile.macroCarb","profile.macroFat",
       "profile.heightCm","profile.weightKg","profile.bodyFat","profile.avatarUrl",
       "profile.address.country","profile.address.countryCode","profile.address.city","profile.address.regionCode",
-      "profile.address.district","profile.address.districtCode","profile.address.ward","profile.address.wardCode"
+      "profile.address.district","profile.address.districtCode","profile.address.ward","profile.address.wardCode",
+      "profile.visibility","profile.chatRequest"
     ];
     const forbidden = ["profile.bmi","profile.bmr","profile.tdee","password","role","username"];
 

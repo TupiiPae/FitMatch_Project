@@ -105,6 +105,17 @@ const profileSchema = new mongoose.Schema(
         },
       },
     },
+    visibility: {
+      type: String,
+      enum: ["public", "private"],
+      default: "private",
+    },
+
+    chatRequest: {
+      type: String,
+      enum: ["all", "private"],
+      default: "all", 
+    },
   },
   { _id: false }
 );

@@ -56,7 +56,7 @@ export default function AccountInfo() {
   const [wards, setWards] = useState([]);
 
   const [profileVisibility, setProfileVisibility] = useState("private"); // "public" | "private"
-  const [chatRequestSetting, setChatRequestSetting] = useState("private"); // "all" | "matched" | "private"
+  const [chatRequestSetting, setChatRequestSetting] = useState("all");
 
   const [avatarPreview, setAvatarPreview] = useState("/images/avatar.png");
   const fileRef = useRef(null);
@@ -109,7 +109,7 @@ export default function AccountInfo() {
     setAvatarPreview(p.avatarUrl ? toAbs(p.avatarUrl) : "/images/avatar.png");
 
     setProfileVisibility(p.visibility || "private");
-    setChatRequestSetting(p.chatRequest || "private");
+    setChatRequestSetting(p.chatRequest || "all");
 
     setErrs({ nickname: "", email: "", phone: "" });
   }, [user]);
@@ -329,7 +329,7 @@ export default function AccountInfo() {
 
     const samePref =
       (profileVisibility || "private") === (p.visibility || "private") &&
-      (chatRequestSetting || "private") === (p.chatRequest || "private");
+      (chatRequestSetting || "all") === (p.chatRequest || "all");
 
     setDirty(!(sameForm && sameAddr && samePref));
   }, [form, addr, profileVisibility, chatRequestSetting, user]);
@@ -358,7 +358,7 @@ export default function AccountInfo() {
       wardCode: a.wardCode || "",
     });
     setProfileVisibility(p.visibility || "private");
-    setChatRequestSetting(p.chatRequest || "private");
+    setChatRequestSetting(p.chatRequest || "all");
     setGeo(a.regionCode && regionCenters[a.regionCode] ? regionCenters[a.regionCode] : null);
     setErrs({ nickname: "", email: "", phone: "" });
   };
@@ -695,6 +695,9 @@ export default function AccountInfo() {
                 />
                 <span>Tất cả mọi người</span>
               </label>
+              <p className="acc-radio-desc">
+                Bất kỳ ai cũng có thể bắt đầu cuộc trò chuyện với bạn.
+              </p>
             </div>
 
             <div className="acc-radio-block">
@@ -708,6 +711,9 @@ export default function AccountInfo() {
                 />
                 <span>Riêng tư</span>
               </label>
+              <p className="acc-radio-desc">
+                Chỉ những người dùng bạn đã và đang trò chuyện mới có thể trò chuyện được với bạn. Bạn vẫn có thể bắt đầu cuộc trò chuyện với người dùng khác.
+              </p>
             </div>
           </section>
         </div>
