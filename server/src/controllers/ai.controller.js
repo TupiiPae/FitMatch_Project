@@ -72,6 +72,11 @@ function fmtNum(n) {
   return Number.isInteger(x) ? String(x) : String(round1(x));
 }
 
+function clipText(str, max = 420) {
+  const t = String(str || "").replace(/\s+/g, " ").trim();
+  return t.length > max ? t.slice(0, max - 1) + "…" : t;
+}
+
 /* =========================
  * USER GOAL LABELS
  * ========================= */
@@ -242,15 +247,15 @@ async function findSuggestMenusForUser({ userId, goalKey, targetKcal, userText =
 
 function formatMenuRecommendReply({ goalLabel, targetKcal, range, items }) {
   const lines = [];
-  if (goalLabel) lines.push(`Mục tiêu hiện tại của bạn: **${goalLabel}**.`);
-  if (Number.isFinite(targetKcal)) lines.push(`Calo mục tiêu: **${Math.round(targetKcal)} kcal/ngày**.`);
-  if (range) lines.push(`Mình sẽ gợi ý thực đơn trong khoảng **${range.min}–${range.max} kcal/ngày**.`);
+  if (goalLabel) lines.push(`Mục tiêu hiện tại của bạn: (${goalLabel}).`);
+  if (Number.isFinite(targetKcal)) lines.push(`Calo mục tiêu: (${Math.round(targetKcal)} kcal/ngày).`);
+  if (range) lines.push(`Mình sẽ gợi ý thực đơn trong khoảng (${range.min}–${range.max} kcal/ngày).`);
 
   if (!items?.length) {
     lines.push("");
-    lines.push("Hiện tại mình **chưa tìm thấy** thực đơn phù hợp trong FitMatch.");
-    lines.push("Bạn có muốn mình **tạo một bộ thực đơn mới** (không lưu vào FitMatch) không?");
-    lines.push("👉 Gõ: **tạo thực đơn mới**");
+    lines.push("Hiện tại mình chưa tìm thấy thực đơn phù hợp trong FitMatch.");
+    lines.push("Bạn có muốn mình tạo một bộ thực đơn mới (không lưu vào FitMatch) không?");
+    lines.push("👉 Gõ: tạo thực đơn mới");
     return lines.join("\n");
   }
 
@@ -260,7 +265,7 @@ function formatMenuRecommendReply({ goalLabel, targetKcal, range, items }) {
     const kcal = Number(m?.kcalPerDay) || 0;
     const days = Number(m?.numDays) || 1;
     const cate = m?.category ? ` · ${m.category}` : "";
-    lines.push(`${idx + 1}. ${m?.name || "Thực đơn"} — **${kcal} kcal/ngày** · ${days} ngày${cate}`);
+    lines.push(`${idx + 1}. ${m?.name || "Thực đơn"} — ${kcal} kcal/ngày · ${days} ngày${cate}`);
   });
 
   return lines.join("\n");
@@ -459,13 +464,13 @@ async function findSuggestPlansForUser({ userId, goalKey, userText = "", limit =
 
 function explainPlanReason(goalKey, preferred) {
   const lvl = preferred?.level
-    ? `Mức độ mình ưu tiên: **${preferred.level}** (dựa trên cường độ tập bạn đã thiết lập).`
+    ? `Mức độ mình ưu tiên: (${preferred.level}) (dựa trên cường độ tập bạn đã thiết lập).`
     : "";
 
   if (GOAL_LOSS.has(goalKey)) {
     return [
-      "Vì bạn đang hướng tới **giảm cân/giảm mỡ**, mình ưu tiên lịch tập giúp **tăng tiêu hao năng lượng** nhưng vẫn giữ nền tảng sức mạnh.",
-      "Các lịch kiểu **Cardio/HIIT** hoặc **Bodyweight** thường phù hợp vì dễ tăng nhịp tim, đốt calo tốt.",
+      "Vì bạn đang hướng tới (giảm cân/giảm mỡ), mình ưu tiên lịch tập giúp (tăng tiêu hao năng lượng) nhưng vẫn giữ nền tảng sức mạnh.",
+      "Các lịch kiểu (Cardio/HIIT) hoặc (Bodyweight) thường phù hợp vì dễ tăng nhịp tim, đốt calo tốt.",
       lvl,
     ]
       .filter(Boolean)
@@ -474,8 +479,8 @@ function explainPlanReason(goalKey, preferred) {
 
   if (goalKey === "tang_co" || goalKey === "tang_can") {
     return [
-      "Vì bạn đang hướng tới **tăng cơ/tăng cân**, mình ưu tiên lịch tập thiên về **Strength/kháng lực** để tạo kích thích cơ bắp.",
-      "Các lịch **tại gym** hoặc **chỉ tạ đơn** thường phù hợp vì dễ kiểm soát mức tạ và tiến bộ theo thời gian.",
+      "Vì bạn đang hướng tới (tăng cơ/tăng cân), mình ưu tiên lịch tập thiên về (Strength/kháng lực) để tạo kích thích cơ bắp.",
+      "Các lịch (tại gym) hoặc (chỉ tạ đơn) thường phù hợp vì dễ kiểm soát mức tạ và tiến bộ theo thời gian.",
       lvl,
     ]
       .filter(Boolean)
@@ -484,7 +489,7 @@ function explainPlanReason(goalKey, preferred) {
 
   if (GOAL_MAINTAIN.has(goalKey)) {
     return [
-      "Vì bạn đang ở mục tiêu **duy trì**, mình ưu tiên lịch tập **cân bằng**: vừa có kháng lực để giữ cơ, vừa có cardio nhẹ để giữ thể lực.",
+      "Vì bạn đang ở mục tiêu (duy trì), mình ưu tiên lịch tập (cân bằng): vừa có kháng lực để giữ cơ, vừa có cardio nhẹ để giữ thể lực.",
       lvl,
     ]
       .filter(Boolean)
@@ -498,29 +503,29 @@ function explainPlanReason(goalKey, preferred) {
 
 function formatPlanRecommendReply({ goalLabel, items, goalKey, preferred }) {
   const lines = [];
-  if (goalLabel) lines.push(`Mục tiêu hiện tại của bạn (theo hồ sơ): **${goalLabel}**.`);
+  if (goalLabel) lines.push(`Mục tiêu hiện tại của bạn (theo hồ sơ): ${goalLabel}.`);
   lines.push(explainPlanReason(goalKey, preferred));
 
   if (!items?.length) {
     lines.push("");
-    lines.push("Hiện tại mình **chưa tìm thấy** lịch tập gợi ý phù hợp trong FitMatch.");
-    lines.push("Bạn có muốn mình **tạo một lịch tập mới** (không lưu vào FitMatch) không?");
-    lines.push("👉 Gõ: **tạo lịch tập mới**");
+    lines.push("Hiện tại mình chưa tìm thấy lịch tập gợi ý phù hợp trong FitMatch.");
+    lines.push("Bạn có muốn mình tạo một lịch tập mới (không lưu vào FitMatch) không?");
+    lines.push("👉 Gõ: tạo lịch tập mới");
     return lines.join("\n");
   }
 
   lines.push("");
-  lines.push("Dưới đây là một vài **lịch tập gợi ý** phù hợp:");
+  lines.push("Dưới đây là một vài lịch tập gợi ý phù hợp:");
   items.slice(0, 6).forEach((p, idx) => {
     const sessions = Number(p?.sessionsCount) || 0;
     const cate = p?.category ? ` · ${p.category}` : "";
     const lv = p?.level ? ` · ${p.level}` : "";
     const gl = p?.goal ? ` · ${p.goal}` : "";
-    lines.push(`${idx + 1}. ${p?.name || "Lịch tập"} — **${sessions} buổi**${cate}${lv}${gl}`);
+    lines.push(`${idx + 1}. ${p?.name || "Lịch tập"} — ${sessions} buổi${cate}${lv}${gl}`);
   });
 
   lines.push("");
-  lines.push("Bạn có thể vào **Tập luyện → Lịch tập gợi ý** để xem chi tiết và bấm **Lưu** lịch tập phù hợp.");
+  lines.push("Bạn có thể vào *Tập luyện → Lịch tập gợi ý* để xem chi tiết và bấm **Lưu** lịch tập phù hợp.");
   return lines.join("\n");
 }
 
@@ -597,26 +602,64 @@ function inferIntent(text, imageUrls) {
   return "general";
 }
 
-function formatMealScanReply({ parsedReply, foodDraft, similarFoods }) {
+function formatMealScanReply({ parsedReply, foodDraft, similarFoods, notes = [] }) {
   const name = s(foodDraft?.name) || "món ăn trong ảnh";
   const portionLine = `${s(foodDraft?.portionName) || "1 phần"} (${fmtNum(foodDraft?.massG)}${foodDraft?.unit || "g"})`;
 
   const lines = [];
-  const p = s(parsedReply);
-  if (p) {
-    const firstSentence = p.split(/\n+/)[0].trim();
-    lines.push(firstSentence);
+
+  // 1) Mô tả món ăn (lấy từ AI reply)
+  const desc = clipText(parsedReply, 520);
+  if (desc) {
+    lines.push(`Mô tả món ăn (ước tính): ${desc}`);
   } else {
-    lines.push(`Món ăn trong hình là ${name}.`);
+    lines.push(`Món ăn trong hình: ${name}.`);
   }
 
+  lines.push("");
   lines.push(`Khẩu phần ước tính: ${portionLine}`);
-  lines.push(`  - Ước tính năng lượng: ${foodDraft?.kcal != null ? `${fmtNum(foodDraft.kcal)} kcal` : "-"}.`);
-  lines.push(`  - Đạm (Protein): ${foodDraft?.proteinG != null ? `${fmtNum(foodDraft.proteinG)} g` : "-"}.`);
-  lines.push(`  - Đường bột (Carb): ${foodDraft?.carbG != null ? `${fmtNum(foodDraft.carbG)} g` : "-"}.`);
-  lines.push(`  - Chất béo (Fat): ${foodDraft?.fatG != null ? `${fmtNum(foodDraft.fatG)} g` : "-"}.`);
-  lines.push(`Giá trị dinh dưỡng có thể thay đổi tuỳ theo cách chế biến và khẩu phần thực tế.`);
 
+  // 3) Macro & kcal
+  const kcal = foodDraft?.kcal;
+  const p = numLoose(foodDraft?.proteinG);
+  const c = numLoose(foodDraft?.carbG);
+  const f = numLoose(foodDraft?.fatG);
+
+  lines.push(`- Năng lượng: ${kcal != null ? `${fmtNum(kcal)} kcal` : "-"}`);
+  lines.push(`- Protein: ${p != null ? `${fmtNum(p)} g` : "-"}`);
+  lines.push(`- Carb: ${c != null ? `${fmtNum(c)} g` : "-"}`);
+  lines.push(`- Fat: ${f != null ? `${fmtNum(f)} g` : "-"}`);
+
+  // 4) Phân tích nhanh: tỷ lệ năng lượng theo macro (nếu đủ dữ liệu)
+  const kcalFromMacros =
+    (Number.isFinite(p) ? p * 4 : 0) + (Number.isFinite(c) ? c * 4 : 0) + (Number.isFinite(f) ? f * 9 : 0);
+
+  const kcalBase = Number.isFinite(Number(kcal)) && Number(kcal) > 0 ? Number(kcal) : kcalFromMacros;
+
+  if (kcalBase > 0 && kcalFromMacros > 0 && (p != null || c != null || f != null)) {
+    const pp = Math.round(((p * 4) / kcalFromMacros) * 100);
+    const cc = Math.round(((c * 4) / kcalFromMacros) * 100);
+    const ff = Math.round(((f * 9) / kcalFromMacros) * 100);
+
+    lines.push(`- Tỷ lệ năng lượng (ước tính): Protein ${pp}% · Carb ${cc}% · Fat ${ff}%`);
+
+    // nhận xét gọn
+    const remarks = [];
+    if (ff >= 40) remarks.push("khá nhiều chất béo (có thể do dầu/chiên/xào/sốt)");
+    if (cc >= 55) remarks.push("thiên về tinh bột");
+    if (pp >= 25) remarks.push("đạm tương đối tốt");
+    if (remarks.length) lines.push(`- *Nhận xét nhanh: ${remarks.join(", ")}.`);
+  }
+
+  // 5) Notes/giả định (từ AI)
+  const noteArr = safeArr(notes).map((x) => s(x)).filter(Boolean);
+  if (noteArr.length) {
+    lines.push("");
+    lines.push("Giả định & điểm có thể làm lệch số liệu:");
+    noteArr.slice(0, 6).forEach((n) => lines.push(`- ${n}`));
+  }
+
+  // 6) Similar foods + CTA tạo món
   const hasSimilar = safeArr(similarFoods).length > 0;
   lines.push("");
   lines.push(
@@ -624,7 +667,7 @@ function formatMealScanReply({ parsedReply, foodDraft, similarFoods }) {
       ? `FitMatch đã có ${similarFoods.length} món tương tự trong danh sách.`
       : `Chưa thấy món tương tự trong danh sách món ăn của FitMatch.`
   );
-  lines.push(`Bạn có muốn tạo món ăn mới với các chỉ số mình vừa ước lượng không? (Trả lời “Có” hoặc bấm “Tạo món”)`);
+  lines.push(`Bạn có muốn (tạo món ăn mới) với các chỉ số mình vừa ước lượng không? (Trả lời “Có” hoặc bấm “Tạo món”)`);
 
   return lines.join("\n");
 }
@@ -860,7 +903,7 @@ async function callOpenAIResponses({ systemText, historyItems, temperature = 0.4
   return text;
 }
 
-async function callOpenAIChatFallback({ systemText, historyItems }) {
+async function callOpenAIChatFallback({ systemText, historyItems, maxOutputTokens }) {
   const messages = [
     { role: "system", content: systemText },
     ...historyItems.map((m) => {
@@ -876,13 +919,87 @@ async function callOpenAIChatFallback({ systemText, historyItems }) {
     }),
   ];
 
-  const payload = { model: OPENAI_MODEL, messages, temperature: 0.4 };
+  const payload = {
+    model: OPENAI_MODEL,
+    messages,
+    temperature: 0.4,
+    ...(Number.isFinite(maxOutputTokens) ? { max_tokens: maxOutputTokens } : {}),
+  };
 
   const json = await postJsonNode(`${OPENAI_BASE}/v1/chat/completions`, payload, {
     Authorization: `Bearer ${OPENAI_KEY}`,
   });
 
   return s(json?.choices?.[0]?.message?.content) || "";
+}
+
+/* =========================
+ * OUTPUT BUDGET + OUTRO
+ * ========================= */
+
+const MAX_OUT_TOKENS = {
+  router: 220,
+
+  meal_scan: 800,        // JSON + hệ thống format lại -> đủ dùng
+  nutrition: 900,        // đầy đủ hơn cho dinh dưỡng
+  general: 850,          // đủ chi tiết nhưng không lan man
+
+  menu_generate: 1200,   // 3 ngày, 3 bữa/ngày
+  plan_generate: 1400,   // nhiều buổi nên cho cao hơn
+
+  menu_recommend: 520,   // trả list DB -> gọn
+  plan_recommend: 600,   // trả list DB + lý do -> vừa
+};
+
+function getMaxOutTokensByIntent(intent) {
+  return MAX_OUT_TOKENS[intent] ?? 850;
+}
+
+// câu chốt theo yêu cầu của bạn
+const OUTRO_LONG =
+  "\n\n—\n*Lưu ý:* Các gợi ý trên chỉ mang tính tham khảo và có thể chưa hoàn hảo 100%, vì mỗi người có một thể trạng và đáp ứng khác nhau. Nếu bạn thực hiện tốt theo kế hoạch và điều chỉnh dần theo cơ thể, bạn sẽ có cơ hội đạt kết quả gần với mong muốn nhất.\nChúc bạn kiên trì và sớm đạt được mục tiêu nhé! 💪✨";
+
+const OUTRO_SHORT =
+  "\n\n—\n*Lưu ý:* Gợi ý chỉ mang tính tham khảo (mỗi người khác nhau). Chúc bạn sớm đạt mục tiêu! 💪";
+
+const HEALTH_Q_RE =
+  /(dinh\s*dưỡng|dinh\s*duong|calo|kcal|macro|protein|carb|fat|giảm\s*cân|tăng\s*cân|tăng\s*cơ|giảm\s*mỡ|lịch\s*tập|workout|tập\s*luyện|tập\s*gì|gym|cardio|hiit)/i;
+
+function shouldAppendOutroIntent(intent, userText = "") {
+  // các intent “chắc chắn” thuộc dinh dưỡng/tập luyện
+  if (
+    intent === "nutrition" ||
+    intent === "meal_scan" ||
+    intent === "menu_generate" ||
+    intent === "plan_generate" ||
+    intent === "menu_recommend" ||
+    intent === "plan_recommend"
+  ) {
+    return true;
+  }
+  // nếu intent = general nhưng câu hỏi vẫn là dinh dưỡng/tập luyện => vẫn chốt
+  if (intent === "general" && HEALTH_Q_RE.test(s(userText))) return true;
+  return false;
+}
+
+function appendOutroSmart(reply, intent, userText = "") {
+  const r = s(reply);
+  if (!r) return r;
+  if (!shouldAppendOutroIntent(intent, userText)) return r;
+
+  // tránh lặp disclaimer
+  const already =
+    /mang\s*tính\s*tham\s*khảo|không\s*hoàn\s*hảo|mỗi\s*người\s*khác\s*nhau/i.test(r);
+
+  if (already) {
+    // vẫn thêm câu chúc nếu chưa có
+    if (!/chúc\s*bạn/i.test(r)) return r + "\nChúc bạn sớm đạt được mục tiêu nhé! 💪✨";
+    return r;
+  }
+
+  // nếu reply dài => outro ngắn
+  if (r.length >= 2600) return r + OUTRO_SHORT;
+  return r + OUTRO_LONG;
 }
 
 function tryParseJsonLoose(text) {
@@ -951,13 +1068,13 @@ async function routeByLLM({ text, lastMeta }) {
       systemText: sys,
       historyItems: [{ role: "user", text: ctx, imageUrls: [] }],
       temperature: 0,
-      maxOutputTokens: 220,
+      maxOutputTokens: getMaxOutTokensByIntent("router"),
     });
   } catch (e) {
-    // fallback sang chat.completions nếu cần
     out = await callOpenAIChatFallback({
       systemText: sys,
       historyItems: [{ role: "user", text: ctx, imageUrls: [] }],
+      maxOutputTokens: getMaxOutTokensByIntent("router"),
     });
   }
 
@@ -974,15 +1091,12 @@ async function routeByLLM({ text, lastMeta }) {
   };
 }
 
-
 /* =========================
  * BUILD SUGGESTIONS (đã làm sạch)
  * - KHÔNG tự ý gợi ý plan nếu user không hỏi
  * ========================= */
 async function buildSuggestions({ userId, userText, detectedFoodName, intent }) {
   const out = { foods: [], menus: [], plans: [] };
-
-  const t = s(userText);
 
   const allowMenus = intent === "menu_recommend" || intent === "menu_generate";
   const allowPlans = intent === "plan_recommend" || intent === "plan_generate";
@@ -1028,11 +1142,13 @@ async function buildSuggestions({ userId, userText, detectedFoodName, intent }) 
     const { goalKey, targetKcal } = await getUserGoalAndTargetKcal(userId);
     if (targetKcal) {
       const rec = await findSuggestMenusForUser({ userId, goalKey, targetKcal, userText, limit: 3 });
-      out.menus = safeArr(rec.items).slice(0, 3).map((m) => ({
-        ...m,
-        kcalRange: rec.range ? { min: rec.range.min, max: rec.range.max } : undefined,
-        goalKey: goalKey || undefined,
-      }));
+      out.menus = safeArr(rec.items)
+        .slice(0, 3)
+        .map((m) => ({
+          ...m,
+          kcalRange: rec.range ? { min: rec.range.min, max: rec.range.max } : undefined,
+          goalKey: goalKey || undefined,
+        }));
     }
   }
 
@@ -1202,54 +1318,45 @@ export async function sendAiChat(req, res) {
       });
     }
 
-    // ===== SMART ROUTING (giảm hard-code câu chữ) =====
+    // ===== SMART ROUTING =====
     let smart = null;
     if (!imageUrls.length) {
-      // lấy message assistant gần nhất làm context cho router (nhẹ)
       const lastAssistant = await AiMessage.findOne({ user: userId, role: "assistant" })
         .sort({ createdAt: -1 })
         .lean()
         .catch(() => null);
 
-      // chỉ gọi router khi inferIntent đang là general (đỡ tốn token)
       const ruleIntent = inferIntent(text, imageUrls);
       const needRouter =
         ruleIntent === "general" ||
         /(khác|thêm|tùy\s*chỉnh|không\s*ưng|không\s*hợp|đổi|thay)/i.test(text);
 
-      if (needRouter) {
-        smart = await routeByLLM({ text, lastMeta: lastAssistant?.meta });
-      }
+      if (needRouter) smart = await routeByLLM({ text, lastMeta: lastAssistant?.meta });
     }
 
-    // ưu tiên explicit commands bạn đã có
+    // ưu tiên explicit commands
     let intentFinal = inferIntent(text, imageUrls);
     if (GEN_MENU_RE.test(text)) intentFinal = "menu_generate";
     if (GEN_PLAN_RE.test(text)) intentFinal = "plan_generate";
 
-    // nếu router có kết quả và đủ tin cậy → override
-    if (smart?.intent && (smart.confidence >= 0.55)) {
+    if (smart?.intent && smart.confidence >= 0.55) {
       intentFinal = smart.intent;
     }
-    await AiMessage.updateOne(
-      { _id: userMessage._id },
-      { $set: { "meta.intent": intentFinal } }
-    ).catch(() => null);
 
-    const intentForOpenAI = intentFinal;
+    await AiMessage.updateOne({ _id: userMessage._id }, { $set: { "meta.intent": intentFinal } }).catch(() => null);
 
     // =========================
-    // MENU RECOMMEND (DB-first)
+    // MENU RECOMMEND / GENERATE
     // =========================
     if (!imageUrls.length && (intentFinal === "menu_recommend" || intentFinal === "menu_generate")) {
       const { goalKey, goalLabel, targetKcal } = await getUserGoalAndTargetKcal(userId);
 
-      // user yêu cầu tạo thực đơn mới => OpenAI generate (không lưu DB)
       if (intentFinal === "menu_generate") {
         const sys = [
           "Bạn là FitMatch AI Coach.",
           "Hãy tạo một bộ THỰC ĐƠN GỢI Ý MỚI (không lưu DB) cho người dùng.",
-          "Ngôn ngữ: Tiếng Việt, ngắn gọn, rõ ràng.",
+          "Ngôn ngữ: Tiếng Việt, rõ ràng, đủ ý nhưng không lan man.",
+          "Nếu gần hết giới hạn nội dung, hãy rút gọn bằng cách giảm số món mỗi bữa (vẫn giữ đủ 3 ngày).",
           "Yêu cầu:",
           `- Mục tiêu: ${goalLabel || (goalKey || "duy_tri")}`,
           `- Calo mục tiêu: ${targetKcal ? Math.round(targetKcal) : "không rõ"} kcal/ngày`,
@@ -1263,13 +1370,17 @@ export async function sendAiChat(req, res) {
           genText = await callOpenAIResponses({
             systemText: sys,
             historyItems: [{ role: "user", text, imageUrls: [] }],
+            maxOutputTokens: getMaxOutTokensByIntent("menu_generate"),
           });
         } catch (e) {
           genText = await callOpenAIChatFallback({
             systemText: sys,
             historyItems: [{ role: "user", text, imageUrls: [] }],
+            maxOutputTokens: getMaxOutTokensByIntent("menu_generate"),
           });
         }
+
+        genText = appendOutroSmart(genText, "menu_generate", text);
 
         const assistantMessage = await AiMessage.create({
           user: userId,
@@ -1293,8 +1404,8 @@ export async function sendAiChat(req, res) {
 
       if (!targetKcal) {
         const replyMissing =
-          "Mình chưa thấy **Calo mục tiêu** trong hồ sơ của bạn.\n" +
-          "Bạn vào **Tài khoản → Hồ sơ** (hoặc Onboarding) để cập nhật, rồi quay lại nhắn: “Gợi ý thực đơn cho mình” nhé.";
+          "Mình chưa thấy (Calo mục tiêu) trong hồ sơ của bạn.\n" +
+          "Bạn vào *Tài khoản → Hồ sơ* (hoặc Onboarding) để cập nhật, rồi quay lại nhắn: “Gợi ý thực đơn cho mình” nhé.";
 
         const assistantMessage = await AiMessage.create({
           user: userId,
@@ -1319,12 +1430,14 @@ export async function sendAiChat(req, res) {
         limit: 6,
       });
 
-      const reply = formatMenuRecommendReply({
+      let reply = formatMenuRecommendReply({
         goalLabel,
         targetKcal,
         range: rec.range,
-        items: rec.items,
+        items: rec.items, 
       });
+
+      reply = appendOutroSmart(reply, "menu_recommend", text);
 
       const assistantMessage = await AiMessage.create({
         user: userId,
@@ -1354,15 +1467,15 @@ export async function sendAiChat(req, res) {
     }
 
     // =========================
-    // PLAN RECOMMEND (DB-first)
+    // PLAN RECOMMEND / GENERATE
     // =========================
     if (!imageUrls.length && (intentFinal === "plan_recommend" || intentFinal === "plan_generate")) {
       const { goalKey, goalLabel } = await getUserGoalAndTargetKcal(userId);
 
       if (!goalKey) {
         const replyMissing =
-          "Mình chưa thấy **Mục tiêu luyện tập** trong hồ sơ của bạn.\n" +
-          "Bạn vào **Tài khoản → Hồ sơ** (hoặc Onboarding) để cập nhật mục tiêu, rồi nhắn lại: “Gợi ý lịch tập cho mình” nhé.";
+          "Mình chưa thấy (Mục tiêu luyện tập) trong hồ sơ của bạn.\n" +
+          "Bạn vào *Tài khoản → Hồ sơ* (hoặc Onboarding) để cập nhật mục tiêu, rồi nhắn lại: “Gợi ý lịch tập cho mình” nhé.";
 
         const assistantMessage = await AiMessage.create({
           user: userId,
@@ -1379,7 +1492,6 @@ export async function sendAiChat(req, res) {
         });
       }
 
-      // user yêu cầu tạo lịch tập mới => OpenAI generate (không lưu DB)
       if (intentFinal === "plan_generate") {
         const intensity = await getUserTrainingIntensity(userId);
         const level = parsePlanLevelFromIntensity(intensity, text) || "Cơ bản";
@@ -1388,7 +1500,8 @@ export async function sendAiChat(req, res) {
         const sys = [
           "Bạn là FitMatch AI Coach.",
           "Hãy tạo một LỊCH TẬP GỢI Ý MỚI (không lưu DB) cho người dùng.",
-          "Ngôn ngữ: Tiếng Việt, ngắn gọn, rõ ràng.",
+          "Ngôn ngữ: Tiếng Việt, rõ ràng, đủ ý nhưng không lan man.",
+          "Nếu gần hết giới hạn nội dung, hãy rút gọn bằng cách giảm số bài mỗi buổi (vẫn giữ cấu trúc buổi).",
           "Yêu cầu:",
           `- Mục tiêu (theo hồ sơ): ${goalLabel || goalKey}`,
           `- Mức độ: ${level}`,
@@ -1404,13 +1517,17 @@ export async function sendAiChat(req, res) {
           genText = await callOpenAIResponses({
             systemText: sys,
             historyItems: [{ role: "user", text, imageUrls: [] }],
+            maxOutputTokens: getMaxOutTokensByIntent("plan_generate"),
           });
         } catch (e) {
           genText = await callOpenAIChatFallback({
             systemText: sys,
             historyItems: [{ role: "user", text, imageUrls: [] }],
+            maxOutputTokens: getMaxOutTokensByIntent("plan_generate"),
           });
         }
+
+        genText = appendOutroSmart(genText, "plan_generate", text);
 
         const assistantMessage = await AiMessage.create({
           user: userId,
@@ -1433,7 +1550,6 @@ export async function sendAiChat(req, res) {
         });
       }
 
-      // DB recommend
       const rec = await findSuggestPlansForUser({
         userId,
         goalKey,
@@ -1441,12 +1557,14 @@ export async function sendAiChat(req, res) {
         limit: 6,
       });
 
-      const reply = formatPlanRecommendReply({
+      let reply = formatPlanRecommendReply({
         goalLabel,
         goalKey,
         items: rec.items,
         preferred: rec.preferred,
       });
+
+      reply = appendOutroSmart(reply, "plan_recommend", text);
 
       const assistantMessage = await AiMessage.create({
         user: userId,
@@ -1475,11 +1593,7 @@ export async function sendAiChat(req, res) {
     }
 
     // ===== FAST PATH: Router đã tạo reply cho nutrition/general =====
-    if (
-      !imageUrls.length &&
-      (intentFinal === "nutrition" || intentFinal === "general") &&
-      s(smart?.reply)
-    ) {
+    if (!imageUrls.length && (intentFinal === "nutrition" || intentFinal === "general") && s(smart?.reply)) {
       const suggestions = await buildSuggestions({
         userId,
         userText: text,
@@ -1487,10 +1601,12 @@ export async function sendAiChat(req, res) {
         intent: intentFinal,
       });
 
+      const reply = appendOutroSmart(smart.reply, intentFinal, text);
+
       const assistantMessage = await AiMessage.create({
         user: userId,
         role: "assistant",
-        text: s(smart.reply),
+        text: reply,
         imageUrls: [],
         meta: {
           intent: intentFinal,
@@ -1518,8 +1634,11 @@ export async function sendAiChat(req, res) {
 
     const historyChrono = history.reverse();
 
+    // runtimeIntent: nếu có ảnh => meal_scan; nếu không => theo router/intentFinal
+    const runtimeIntent = imageUrls.length ? "meal_scan" : intentFinal;
+
     const systemText =
-      intent === "meal_scan"
+      runtimeIntent === "meal_scan"
         ? [
             "Bạn là FitMatch AI Coach.",
             "Người dùng gửi ẢNH MÓN ĂN. Nhiệm vụ: ước lượng dinh dưỡng dựa trên món TRONG ẢNH.",
@@ -1527,9 +1646,8 @@ export async function sendAiChat(req, res) {
             "",
             "CHỈ trả về JSON thuần (không markdown), đúng schema:",
             "{",
-            '  "reply": "mô tả ngắn gọn 1-2 câu (KHÔNG cần dài)",',
+            '  "reply": "mô tả rõ hơn (3-6 câu): món gồm thành phần gì, cách chế biến (nếu đoán được), yếu tố nào làm thay đổi kcal nhiều (dầu/sốt/đường...), và giả định khẩu phần",',
             '  "detectedFoodName": "tên món trong ảnh (không cần chính xác 100%)",',
-            '  "confidence": "low|medium|high",',
             '  "foodDraft": {',
             '     "name": string,',
             '     "portionName": string,',
@@ -1542,9 +1660,9 @@ export async function sendAiChat(req, res) {
             '     "saltG": number|null,',
             '     "sugarG": number|null,',
             '     "fiberG": number|null,',
-            '     "description": string',
+            '     "description": "mô tả món + thành phần chính + cách chế biến (nếu đoán được), viết gọn 1-3 câu"',
             "  },",
-            '  "notes": [string]',
+            '  "notes": ["gạch đầu dòng 3-6 ý: giả định khẩu phần, dầu/sốt/đường, phần không chắc trong ảnh..."]',
             "}",
           ].join("\n")
         : [
@@ -1552,6 +1670,11 @@ export async function sendAiChat(req, res) {
             "Nhiệm vụ: hỗ trợ dinh dưỡng & luyện tập an toàn, thực tế.",
             "Không chẩn đoán bệnh. Nếu có vấn đề y tế, khuyên người dùng gặp bác sĩ.",
             "QUY TẮC: Không tự ý gợi ý lịch tập/plan nếu người dùng chưa hỏi. Chỉ trả lịch tập khi user yêu cầu rõ ràng.",
+            "",
+            "YÊU CẦU TRẢ LỜI: đầy đủ hơn nhưng không lan man.",
+            "- Trả lời theo cấu trúc: (1) Tóm tắt 1-2 câu, (2) Gợi ý hành động 4-8 gạch đầu dòng, (3) Lưu ý an toàn/nguyên tắc.",
+            "- Nếu thiếu dữ liệu (tuổi, chiều cao, cân nặng, mức vận động...), hãy đưa giả định hợp lý và hỏi 1 câu ngắn để bổ sung.",
+            "- Ưu tiên đưa khoảng/ước lượng thay vì khẳng định tuyệt đối.",
             "",
             "CHỈ trả về JSON thuần (không markdown) theo format:",
             "{",
@@ -1561,25 +1684,39 @@ export async function sendAiChat(req, res) {
             "}",
           ].join("\n");
 
-    // ✅ Meal scan: dùng context tối giản (tránh model bị nhiễu JSON do history cũ)
     const modelHistory =
-      intent === "meal_scan"
+      runtimeIntent === "meal_scan"
         ? [{ role: "user", text, imageUrls }]
         : historyChrono.map((m) => ({ role: m.role, text: m.text, imageUrls: m.imageUrls }));
 
+    const budgetIntent =
+      runtimeIntent === "meal_scan" ? "meal_scan" : runtimeIntent === "nutrition" ? "nutrition" : "general";
+
     let outText = "";
     try {
-      outText = await callOpenAIResponses({ systemText, historyItems: modelHistory });
+      outText = await callOpenAIResponses({
+        systemText,
+        historyItems: modelHistory,
+        maxOutputTokens: getMaxOutTokensByIntent(budgetIntent),
+      });
     } catch (e) {
       console.warn("[ai.openai.responses] fallback ->", e?.message || e);
-      outText = await callOpenAIChatFallback({ systemText, historyItems: modelHistory });
+      outText = await callOpenAIChatFallback({
+        systemText,
+        historyItems: modelHistory,
+        maxOutputTokens: getMaxOutTokensByIntent(budgetIntent),
+      });
     }
 
     const parsed = tryParseJsonLoose(outText);
     const detectedFoodName = s(parsed?.detectedFoodName) || "";
 
-    // ✅ suggestions đã được làm sạch: không tự trả plan nếu user không hỏi
-    const suggestions = await buildSuggestions({ userId, userText: text, detectedFoodName, intent });
+    const suggestions = await buildSuggestions({
+      userId,
+      userText: text,
+      detectedFoodName,
+      intent: runtimeIntent,
+    });
 
     let reply = s(parsed?.reply) || s(outText) || "Mình chưa nhận được nội dung trả lời từ AI.";
 
@@ -1587,8 +1724,7 @@ export async function sendAiChat(req, res) {
     let similarFoods = [];
     let hasSimilar = false;
 
-    if (intent === "meal_scan") {
-      // ✅ không fallbackName = text nữa (tránh "Giúp tôi phân tích..." thành tên món)
+    if (runtimeIntent === "meal_scan") {
       foodDraft = buildFoodDraftFromParsed({
         parsed,
         imageUrls,
@@ -1599,14 +1735,19 @@ export async function sendAiChat(req, res) {
       similarFoods = await findSimilarFoods({ userId, query: queryName, limit: 5 });
       hasSimilar = similarFoods.length > 0;
 
-      // ✅ nếu AI trả thiếu kcal/macro -> fallback từ món tương tự hoặc tính từ macro
       foodDraft = fillDraftFromSimilar(foodDraft, similarFoods);
 
       reply = formatMealScanReply({
         parsedReply: s(parsed?.reply),
         foodDraft,
         similarFoods,
+        notes: parsed?.notes,
       });
+    }
+
+    // ✅ chốt theo yêu cầu (smart dài/ngắn)
+    if (budgetIntent !== "meal_scan") {
+      reply = appendOutroSmart(reply, budgetIntent, text);
     }
 
     const assistantMessage = await AiMessage.create({
@@ -1615,12 +1756,12 @@ export async function sendAiChat(req, res) {
       text: reply,
       imageUrls: [],
       meta: {
-        intent,
+        intent: runtimeIntent,
         detectedFoodName: detectedFoodName || undefined,
         estimated: parsed?.estimated || undefined,
         suggestions,
 
-        offerCreateFood: intent === "meal_scan",
+        offerCreateFood: runtimeIntent === "meal_scan",
         foodDraft: foodDraft || undefined,
         similarFoods: similarFoods || [],
         hasSimilar,
