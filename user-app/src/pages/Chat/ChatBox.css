@@ -47,11 +47,15 @@
 
 /* Bubble ẢNH: bạn muốn nó rộng hơn text thì set width riêng ở đây */
 .fm-chat-bubble.is-media{
-  display:block;
-  width:min(540px,100%);
-  padding:0px;
+  display:inline-block;            /* shrink theo nội dung */
+  width:fit-content;
+  max-width:min(540px,100%);
+  padding:0;
   border-radius:4px;
-  background: #020617;
+  background:#020617;
+}
+.fm-chat-bubblewrap.is-mine .fm-chat-bubble.is-media{
+  margin-left:auto;
 }
 
 .fm-chat-bubble{position:relative;padding:6px 12px;border-radius:16px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.08);min-width:0;max-width:100%}
@@ -84,7 +88,27 @@
   background: rgba(255,255,255,.04);
 }
 .fm-chat-bubble.is-media .fm-chat-atts{margin-top:0;}
-.fm-chat-atts{display:grid;max-width:100%}
+.fm-chat-atts{
+  display:grid;
+  max-width:100%;
+  gap:8px;
+  justify-items:start;
+  justify-content:start;
+}
+.fm-chat-bubblewrap.is-mine .fm-chat-atts{
+  justify-items:end;
+  justify-content:end;
+}
+
+/* FIX: tránh bị rule global (button{width:100%}) kéo giãn */
+.fm-chat-atts .fm-chat-img{
+  width:220px;
+  max-width:100%;
+  justify-self:start;
+}
+.fm-chat-bubblewrap.is-mine .fm-chat-img{
+  justify-self:end;
+}
 .fm-chat-atts.cols-1{grid-template-columns:1fr}
 .fm-chat-atts.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .fm-chat-atts.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -101,6 +125,7 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .fm-chat-atts .fm-chat-img{ width:180px; }
   .fm-chat-list {
     padding: 12px;
   }
@@ -137,6 +162,7 @@
 }
 
 @media (max-width: 480px) {
+  .fm-chat-atts .fm-chat-img{ width:160px; }
   .fm-chat-list {
     padding: 10px 8px;
   }

@@ -222,6 +222,89 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
   const removeFile = (idx) => setFiles((prev) => prev.filter((_, i) => i !== idx));
 
+  // ===== Paste image helpers (giống ChatBox) =====
+  const dataUrlToFile = (dataUrl, filename = "pasted.png") => {
+    try {
+      const m = String(dataUrl || "").match(
+        /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/
+      );
+      if (!m) return null;
+      const mime = m[1],
+        b64 = m[2];
+      const bin = atob(b64);
+      const len = bin.length;
+      const u8 = new Uint8Array(len);
+      for (let i = 0; i < len; i++) u8[i] = bin.charCodeAt(i);
+      return new File([u8], filename, { type: mime });
+    } catch {
+      return null;
+    }
+  };
+
+  const pickDataImgFromHtml = (html = "") => {
+    const s = String(html || "");
+    const m = s.match(/<img[^>]+src=["'](data:image\/[^"']+)["']/i);
+    return m?.[1] || "";
+  };
+
+  const onInputDrop = (e) => {
+    try {
+      const dt = e.dataTransfer;
+      if (dt?.files && dt.files.length) {
+        e.preventDefault();
+        e.stopPropagation();
+        pushFiles([...dt.files]);
+      }
+    } catch {}
+  };
+
+  const onInputPaste = (e) => {
+    try {
+      if (uploading || sending) return;
+
+      const dt = e.clipboardData;
+      if (!dt) return;
+
+      // 1) Ưu tiên: ảnh dạng file trong clipboard
+      const items = Array.from(dt.items || []);
+      const imgFiles = [];
+      for (const it of items) {
+        if (it?.kind === "file" && String(it.type || "").startsWith("image/")) {
+          const f = it.getAsFile?.();
+          if (f) imgFiles.push(f);
+        }
+      }
+
+      if (imgFiles.length) {
+        pushFiles(imgFiles);
+
+        // nếu chỉ paste ảnh (không có text) thì chặn default để không dán ký tự rác
+        const hasText = !!String(dt.getData?.("text/plain") || "").trim();
+        if (!hasText) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        return;
+      }
+
+      // 2) Fallback: ảnh dạng data:image/... trong HTML clipboard
+      const html = dt.getData?.("text/html") || "";
+      const dataImg = pickDataImgFromHtml(html);
+      if (dataImg) {
+        const f = dataUrlToFile(dataImg, `pasted_${Date.now()}.png`);
+        if (f) {
+          pushFiles([f]);
+
+          const hasText = !!String(dt.getData?.("text/plain") || "").trim();
+          if (!hasText) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      }
+    } catch {}
+  };
+
   const goCreateFood = (draft) => {
     if (!draft) return;
     try {
@@ -817,6 +900,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
           const m = row.m;
           const mine = String(m?.role || "") === "user";
+          const aiPlain = !mine ? " is-ai-plain" : "";
 
           const imgs = safeArr(m?.attachments).filter(isImg);
           const hasImgs = imgs.length > 0;
@@ -824,8 +908,8 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
           const cols = Math.min(3, Math.max(1, imgs.length));
 
           const timeAt = row.timeAt;
-          const timeNode = timeAt ? (
-            <div className={"fm-chat-time" + (mine ? " is-mine" : "")}>
+          const timeNode = mine && timeAt ? (
+            <div className="fm-chat-time is-mine">
               {dayjs(timeAt).isValid() ? dayjs(timeAt).format("HH:mm") : ""}
             </div>
           ) : null;
@@ -873,35 +957,22 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
           );
 
           return (
-            <div key={row.k} className={"fm-chat-row" + (mine ? " is-mine" : "")}>
-              {!mine ? (
-                <div className="fm-chat-ava" title="FitMatch AI" style={{ cursor: "default" }}>
-                  <img
-                    src="/images/ai-avatar.png"
-                    alt="FitMatch AI"
-                    onError={(e) => {
-                      e.currentTarget.src = "/images/avatar.png";
-                    }}
-                  />
-                </div>
-              ) : null}
+            <div key={row.k} className={"fm-chat-row" + (mine ? " is-mine" : " is-ai")}>
 
               <div className={"fm-chat-main" + (mine ? " is-mine" : "")}>
                 <div className={"fm-chat-bubblewrap" + (mine ? " is-mine" : "")}>
-                  {(hasText || !hasImgs) && (
-                    <div className={"fm-chat-bubble" + (mine ? " is-mine" : "")}>
-                      {hasText ? (
-                        <div className="fm-chat-text" style={{ whiteSpace: "pre-wrap" }}>
-                          {m.content ?? m.text}
-                        </div>
-                      ) : null}
+                  {hasText && (
+                    <div className={"fm-chat-bubble" + (mine ? " is-mine" : aiPlain)}>
+                      <div className="fm-chat-text" style={{ whiteSpace: "pre-wrap" }}>
+                        {m.content ?? m.text}
+                      </div>
                       {timeNode}
                     </div>
                   )}
 
                   {/* Image bubble (KHÔNG render time) */}
                   {hasImgs && (
-                    <div className={"fm-chat-bubble is-media" + (mine ? " is-mine" : "")}>
+                    <div className={"fm-chat-bubble is-media" + (mine ? " is-mine" : aiPlain)}>
                       <div className={"fm-chat-atts cols-" + cols}>
                         {imgs.map((a, idx) => {
                           const abs = toAbs(a.url);
@@ -1247,6 +1318,12 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                     e.stopPropagation();
                     send();
                   }
+                }}
+                onDrop={onInputDrop}
+                onPaste={onInputPaste}
+                onDragOver={(e) => {
+                  const dt = e.dataTransfer;
+                  if (dt?.files && dt.files.length) e.preventDefault();
                 }}
                 placeholder={uploading ? "Đang tải ảnh…" : "Nhập câu hỏi cho AI…"}
                 className="fm-chat-input fm-chat-textarea"

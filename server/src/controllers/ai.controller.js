@@ -525,7 +525,7 @@ function formatPlanRecommendReply({ goalLabel, items, goalKey, preferred }) {
   });
 
   lines.push("");
-  lines.push("Bạn có thể vào *Tập luyện → Lịch tập gợi ý* để xem chi tiết và bấm **Lưu** lịch tập phù hợp.");
+  lines.push("Bạn có thể vào *Tập luyện → Lịch tập gợi ý* để xem chi tiết và bấm *Lưu* lịch tập phù hợp.");
   return lines.join("\n");
 }
 

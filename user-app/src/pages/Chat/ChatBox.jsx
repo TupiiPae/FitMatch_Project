@@ -721,6 +721,67 @@ export default function ChatBox({
     });
   };
 
+  const canCopyImage = () =>
+    window.isSecureContext &&
+    !!navigator.clipboard?.write &&
+    typeof window.ClipboardItem !== "undefined";
+
+  const blobToPng = async (blob) => {
+    try {
+      // convert bất kể jpeg/webp -> png (để ClipboardItem key ổn định)
+      if (blob.type === "image/png") return blob;
+
+      // createImageBitmap nhanh & không taint vì nguồn là blob local
+      if (typeof createImageBitmap === "function") {
+        const bmp = await createImageBitmap(blob);
+        const canvas = document.createElement("canvas");
+        canvas.width = bmp.width;
+        canvas.height = bmp.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(bmp, 0, 0);
+
+        const out = await new Promise((resolve) =>
+          canvas.toBlob((b) => resolve(b), "image/png")
+        );
+        return out || blob;
+      }
+
+      // fallback: không convert được thì trả lại blob gốc
+      return blob;
+    } catch {
+      return blob;
+    }
+  };
+
+  const copyImageFromUrl = async (url) => {
+    try {
+      if (!canCopyImage()) return { ok: false, reason: "unsupported" };
+      if (!url) return { ok: false, reason: "no_url" };
+
+      // QUAN TRỌNG: tạo promise fetch -> blob -> png
+      const pngPromise = fetch(url, {
+        mode: "cors",
+        cache: "no-cache",
+        credentials: "omit",
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("fetch_failed_" + res.status);
+          return res.blob();
+        })
+        .then(blobToPng);
+
+      // QUAN TRỌNG: clipboard.write gọi NGAY (giữ user gesture)
+      const item = new window.ClipboardItem({ "image/png": pngPromise });
+      await navigator.clipboard.write([item]);
+
+      return { ok: true };
+    } catch (e) {
+      // để debug rõ hơn
+      console.warn("[copyImageFromUrl] failed:", e);
+      return { ok: false, reason: e?.name || "exception", error: e };
+    }
+  };
+
   // ===== Copy =====
   const copyText = async (txt) => {
     const s = String(txt || "");
@@ -747,25 +808,66 @@ export default function ChatBox({
     }
   };
 
-  const copyMessage = async (m) => {
+  const copyMessage = async (m, mode = "auto") => {
     if (!m) return;
     if (m?.deletedAt) {
       toast.info("Tin nhắn đã thu hồi");
       return;
     }
+
     const imgs = safeArr(m?.attachments).filter(isImg);
     const hasText = !!String(m?.content || "").trim();
-    const payload = hasText
-      ? String(m.content || "")
-      : imgs.length
-      ? imgs.map((x) => x.url).filter(Boolean).join("\n")
-      : "";
-    if (!payload) {
-      toast.info("Không có nội dung để copy");
-      return;
-    }
-    const ok = await copyText(payload);
-    ok ? toast.success("Đã copy") : toast.error("Copy thất bại");
+
+    // ========== Copy TEXT ==========
+    const doCopyText = async () => {
+      const payload = String(m?.content || "").trim();
+      if (!payload) {
+        toast.info("Không có nội dung để copy");
+        return;
+      }
+      const ok = await copyText(payload);
+      ok ? toast.success("Đã copy") : toast.error("Copy thất bại");
+    };
+
+    // ========== Copy IMAGE ==========
+    const doCopyImage = async () => {
+      if (!imgs.length) {
+        toast.info("Không có hình ảnh để copy");
+        return;
+      }
+
+      // Clipboard thường chỉ ổn định với 1 ảnh/lần → copy ảnh đầu tiên
+      const firstUrl = imgs[0]?.url;
+      if (!firstUrl) {
+        toast.info("Không có hình ảnh để copy");
+        return;
+      }
+
+      const r = await copyImageFromUrl(firstUrl);
+      if (r.ok) {
+        toast.success(imgs.length > 1 ? "Đã copy hình ảnh (ảnh đầu tiên)" : "Đã copy hình ảnh");
+        return;
+      }
+
+      // fallback: nếu browser/CORS không cho → copy link như phương án dự phòng
+      const fallback = imgs.map((x) => x.url).filter(Boolean).join("\n");
+      if (!fallback) {
+        toast.error("Copy hình ảnh thất bại");
+        return;
+      }
+      const ok = await copyText(fallback);
+      ok
+        ? toast.info("Không copy được ảnh trực tiếp, đã copy link ảnh")
+        : toast.error("Copy thất bại");
+    };
+
+    // mode
+    if (mode === "text") return doCopyText();
+    if (mode === "image") return doCopyImage();
+
+    // auto: nếu có text → copy text, còn không → copy ảnh
+    if (hasText) return doCopyText();
+    return doCopyImage();
   };
 
   // ===== Emoji insert =====
@@ -1383,16 +1485,31 @@ export default function ChatBox({
                   zIndex: 2600,
                 }}
               >
-                <button
-                  type="button"
-                  className="fm-chat-menuit"
-                  onClick={() => {
-                    setMenuFor(null);
-                    copyMessage(m);
-                  }}
-                >
-                  <i className="fa-regular fa-copy" /> {copyLabel}
-                </button>
+                {hasText ? (
+                  <button
+                    type="button"
+                    className="fm-chat-menuit"
+                    onClick={() => {
+                      setMenuFor(null);
+                      copyMessage(m, "text");
+                    }}
+                  >
+                    <i className="fa-regular fa-copy" /> Copy tin nhắn
+                  </button>
+                ) : null}
+
+                {hasImgs ? (
+                  <button
+                    type="button"
+                    className="fm-chat-menuit"
+                    onClick={() => {
+                      setMenuFor(null);
+                      copyMessage(m, "image");
+                    }}
+                  >
+                    <i className="fa-regular fa-copy" /> Copy hình ảnh
+                  </button>
+                ) : null}
 
                 {mine && !isTmp ? (
                   <>

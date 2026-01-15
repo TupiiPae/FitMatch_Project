@@ -12,8 +12,6 @@
 
 /* date chip */
 .fm-ai-chat .fm-chat-date span{
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
   color: rgba(229,231,235,.80);
 }
 
@@ -22,6 +20,43 @@
   background: rgba(255,255,255,.06);
   border: 1px solid rgba(255,255,255,.12);
   color:#e5e7eb;
+}
+
+.fm-ai-chat .fm-chat-bubble.is-ai-plain{
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+  max-width: min(720px, 100%);
+}
+
+/* text của AI nhìn như “in trực tiếp lên nền” */
+.fm-ai-chat .fm-chat-bubble.is-ai-plain .fm-chat-text{
+  padding: 2px 0;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: rgba(229,231,235,.92);
+}
+
+/* time của AI nhỏ + nhẹ */
+.fm-ai-chat .fm-chat-bubble.is-ai-plain .fm-chat-time{
+  margin-top: 6px;
+  padding: 0;
+  color: rgba(229,231,235,.45);
+}
+
+/* Ảnh của AI: bỏ “khung bubble”, chỉ còn grid ảnh */
+.fm-ai-chat .fm-chat-bubble.is-media.is-ai-plain{
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* Ảnh vẫn nên có viền nhẹ để nổi trên nền */
+.fm-ai-chat .fm-chat-bubble.is-ai-plain .fm-chat-img img{
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
 }
 
 /* bubble của tôi */
@@ -356,4 +391,93 @@
 .fm-ai-planinfo{
   min-width:0;
   flex:1 1 auto;
+}
+
+/* AI: khoảng cách giữa các message đỡ giống bubble chat */
+.fm-ai-chat .fm-chat-row:not(.is-mine) .fm-chat-bubblewrap{
+  gap: 6px;
+}
+
+/* AI: canh nội dung sát avatar hơn một chút (tùy chat CSS gốc của bạn) */
+.fm-ai-chat .fm-chat-row:not(.is-mine) .fm-chat-main{
+  padding-top: 2px;
+}
+
+/* =========================
+   ChatGPT-like layout (AI only)
+   ========================= */
+
+/* Nới padding list một chút cho giống ChatGPT */
+.fm-ai-chat .fm-chat-list{
+  padding: 18px 16px; /* override padding:14px từ ChatBox.css */
+}
+
+/* AI row: thoáng hơn + căn top */
+.fm-ai-chat .fm-chat-row.is-ai{
+  align-items: flex-start;
+  margin: 14px 30px; /* ChatGPT có khoảng thở lớn hơn */
+}
+
+/* AI main: cho phép full width, nhưng nội dung đọc giới hạn */
+.fm-ai-chat .fm-chat-row.is-ai .fm-chat-main{
+  width: 100%;
+  max-width: 100%;  /* override max-width: 78% */
+  gap: 0;
+}
+
+/* AI bubblewrap: cột nội dung giống ChatGPT (giới hạn 720px) */
+.fm-ai-chat .fm-chat-row.is-ai .fm-chat-bubblewrap{
+  width: 100%;
+  max-width: 720px;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* AI plain bubble: không viền, không nền, không padding */
+.fm-ai-chat .fm-chat-row.is-ai .fm-chat-bubble.is-ai-plain{
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+  max-width: 100%;
+}
+
+/* Text AI giống ChatGPT hơn */
+.fm-ai-chat .fm-chat-row.is-ai .fm-chat-bubble.is-ai-plain .fm-chat-text{
+  padding: 0;
+  font-size: 15px;
+  line-height: 1.72;
+  color: rgba(229,231,235,.92);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* AI media: bỏ khung bubble */
+.fm-ai-chat .fm-chat-row.is-ai .fm-chat-bubble.is-media.is-ai-plain{
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* AI image: bo góc mềm hơn + viền nhẹ như ChatGPT */
+.fm-ai-chat .fm-chat-row.is-ai .fm-chat-img{
+  border-radius: 12px;
+}
+.fm-ai-chat .fm-chat-row.is-ai .fm-chat-img img{
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* Card (Food/Menu/Plan): căn theo cùng cột 720px cho “gọn như ChatGPT” */
+.fm-ai-chat .fm-chat-row.is-ai .fm-ai-card{
+  max-width: 720px;
+}
+
+/* Mobile: giảm max-width chút */
+@media (max-width: 768px){
+  .fm-ai-chat .fm-chat-row.is-ai .fm-chat-bubblewrap,
+  .fm-ai-chat .fm-chat-row.is-ai .fm-ai-card{
+    max-width: 100%;
+  }
 }
