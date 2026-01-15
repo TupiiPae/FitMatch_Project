@@ -415,7 +415,7 @@
 /* AI row: thoáng hơn + căn top */
 .fm-ai-chat .fm-chat-row.is-ai{
   align-items: flex-start;
-  margin: 14px 30px; /* ChatGPT có khoảng thở lớn hơn */
+  margin: 50px 30px 8px 30px; /* ChatGPT có khoảng thở lớn hơn */
 }
 
 /* AI main: cho phép full width, nhưng nội dung đọc giới hạn */
@@ -428,7 +428,7 @@
 /* AI bubblewrap: cột nội dung giống ChatGPT (giới hạn 720px) */
 .fm-ai-chat .fm-chat-row.is-ai .fm-chat-bubblewrap{
   width: 100%;
-  max-width: 720px;
+  max-width: 1200px;
   align-items: flex-start;
   gap: 10px;
 }
@@ -447,7 +447,6 @@
 .fm-ai-chat .fm-chat-row.is-ai .fm-chat-bubble.is-ai-plain .fm-chat-text{
   padding: 0;
   font-size: 15px;
-  line-height: 1.72;
   color: rgba(229,231,235,.92);
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -480,4 +479,73 @@
   .fm-ai-chat .fm-chat-row.is-ai .fm-ai-card{
     max-width: 100%;
   }
+}
+
+/* ===== Rich emphasis (AI only) ===== */
+.fm-ai-chat .fm-ai-rich{
+  font-size: 15px;
+  color: rgba(229,231,235,.92);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.fm-ai-chat .fm-ai-strong{
+  font-weight: 800;
+  color: #fff;
+}
+
+.fm-ai-chat .fm-ai-mark{
+  background: rgba(26,115,232,.20);
+  border: 1px solid rgba(26,115,232,.32);
+  color: rgba(255,255,255,.96);
+  padding: 0 5px;
+  border-radius: 8px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.fm-ai-chat .fm-ai-mark .fm-ai-strong{
+  color: #fff;
+}
+
+/* ===== AI typing indicator ===== */
+.fm-ai-chat .fm-ai-typing .fm-chat-main{
+  width: 100%;
+  max-width: 100%;
+}
+
+.fm-ai-chat .fm-ai-typing .fm-chat-bubblewrap{
+  width: 100%;
+  max-width: 720px;
+}
+
+.fm-ai-chat .fm-ai-typingline{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+  color: rgba(229,231,235,.55);
+  font-size: 13.5px;
+}
+
+.fm-ai-chat .fm-ai-typingdots{
+  display: inline-flex;
+  gap: 4px;
+}
+
+.fm-ai-chat .fm-ai-typingdots i{
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(229,231,235,.55);
+  display: inline-block;
+  animation: fmAiTypingDot 1.2s infinite ease-in-out;
+}
+
+.fm-ai-chat .fm-ai-typingdots i:nth-child(2){ animation-delay: .15s; }
+.fm-ai-chat .fm-ai-typingdots i:nth-child(3){ animation-delay: .3s; }
+
+@keyframes fmAiTypingDot{
+  0%, 80%, 100% { transform: translateY(0); opacity: .45; }
+  40% { transform: translateY(-3px); opacity: 1; }
 }

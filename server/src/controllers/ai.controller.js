@@ -1033,6 +1033,10 @@ async function routeByLLM({ text, lastMeta }) {
     "Bạn là FitMatch AI Router.",
     "Nhiệm vụ: phân loại ý định của người dùng để hệ thống quyết định chạy logic nội bộ hay để AI trả lời tự do.",
     "",
+    "ĐỊNH DẠNG NHẤN MẠNH (tùy chọn trong field reply):",
+    "- Dùng **...** để in đậm, và ==...== để tô nền những chỗ quan trọng (số kcal, macro, bước hành động).",
+    "- Không dùng HTML, không dùng markdown khác (không headings, không code block).",
+    "",
     "CHỈ TRẢ JSON THUẦN (không markdown) theo schema:",
     "{",
     '  "intent": "menu_recommend|menu_generate|plan_recommend|plan_generate|nutrition|general",',
@@ -1052,6 +1056,7 @@ async function routeByLLM({ text, lastMeta }) {
     "RÀNG BUỘC AN TOÀN:",
     "- KHÔNG tự ý chọn plan_* nếu user không hỏi tập luyện.",
     "- Nếu intent là menu_* hoặc plan_* thì reply bắt buộc là chuỗi rỗng.",
+    
   ].join("\n");
 
   const ctx = [
@@ -1363,6 +1368,8 @@ export async function sendAiChat(req, res) {
           "- Tạo 3 ngày (Ngày 1-3), mỗi ngày 3 bữa (Sáng/Trưa/Tối).",
           "- Mỗi bữa liệt kê 2-4 món, ước tính kcal từng món và tổng kcal/ngày xấp xỉ mục tiêu.",
           "- Không cần nói về DB FitMatch.",
+          "- Có thể dùng **...** để in đậm và ==...== để tô nền chỗ quan trọng (kcal, mục tiêu, bước làm).",
+          "- Không dùng HTML, không dùng code block.",
         ].join("\n");
 
         let genText = "";
@@ -1510,6 +1517,8 @@ export async function sendAiChat(req, res) {
           "- Mỗi buổi gồm: khởi động 5-10p, 5-8 bài tập (ghi set x reps hoặc thời gian), nghỉ giữa set, giãn cơ.",
           "- Ưu tiên an toàn: nhắc kỹ thuật cơ bản, không đưa lời khuyên y khoa.",
           "- Không cần nhắc DB FitMatch.",
+          "- Có thể dùng **...** để in đậm và ==...== để tô nền chỗ quan trọng (kcal, mục tiêu, bước làm).",
+          "- Không dùng HTML, không dùng code block.",
         ].join("\n");
 
         let genText = "";
@@ -1644,6 +1653,9 @@ export async function sendAiChat(req, res) {
             "Người dùng gửi ẢNH MÓN ĂN. Nhiệm vụ: ước lượng dinh dưỡng dựa trên món TRONG ẢNH.",
             "Không nói 'tra mạng' hay trích nguồn web. Nếu khẩu phần không rõ, ước lượng hợp lý và ghi chú.",
             "",
+            "ĐỊNH DẠNG NHẤN MẠNH (tùy chọn trong các string): dùng **...** và ==...==.",
+            "Ví dụ: \"==520 kcal==\", \"**Protein**\". Không dùng HTML.",
+            "",
             "CHỈ trả về JSON thuần (không markdown), đúng schema:",
             "{",
             '  "reply": "mô tả rõ hơn (3-6 câu): món gồm thành phần gì, cách chế biến (nếu đoán được), yếu tố nào làm thay đổi kcal nhiều (dầu/sốt/đường...), và giả định khẩu phần",',
@@ -1669,6 +1681,9 @@ export async function sendAiChat(req, res) {
             "Bạn là FitMatch AI Coach.",
             "Nhiệm vụ: hỗ trợ dinh dưỡng & luyện tập an toàn, thực tế.",
             "Không chẩn đoán bệnh. Nếu có vấn đề y tế, khuyên người dùng gặp bác sĩ.",
+            "ĐỊNH DẠNG NHẤN MẠNH (tùy chọn trong reply): dùng **...** và ==...== để nhấn mạnh.",
+            "Không dùng HTML, không dùng markdown khác.",
+            "",
             "QUY TẮC: Không tự ý gợi ý lịch tập/plan nếu người dùng chưa hỏi. Chỉ trả lịch tập khi user yêu cầu rõ ràng.",
             "",
             "YÊU CẦU TRẢ LỜI: đầy đủ hơn nhưng không lan man.",

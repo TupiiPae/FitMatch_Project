@@ -45,6 +45,85 @@ const fmt = (v) => {
 
 const pick = (...v) => v.find((x) => x !== undefined && x !== null && x !== "");
 
+// ===== Rich text for AI: **bold** and ==highlight== (NO HTML) =====
+const tokenizeRich = (input) => {
+  const str = String(input || "");
+  const out = [];
+  let i = 0;
+
+  const nextIdx = (s, from) => {
+    const b = s.indexOf("**", from);
+    const m = s.indexOf("==", from);
+    if (b === -1 && m === -1) return { idx: -1, type: null };
+    if (b !== -1 && (m === -1 || b < m)) return { idx: b, type: "bold" };
+    return { idx: m, type: "mark" };
+  };
+
+  while (i < str.length) {
+    const { idx, type } = nextIdx(str, i);
+    if (idx === -1) {
+      out.push({ t: "text", v: str.slice(i) });
+      break;
+    }
+    if (idx > i) out.push({ t: "text", v: str.slice(i, idx) });
+
+    if (type === "bold") {
+      const end = str.indexOf("**", idx + 2);
+      if (end === -1) {
+        out.push({ t: "text", v: str.slice(idx) });
+        break;
+      }
+      out.push({ t: "bold", v: str.slice(idx + 2, end) });
+      i = end + 2;
+      continue;
+    }
+
+    if (type === "mark") {
+      const end = str.indexOf("==", idx + 2);
+      if (end === -1) {
+        out.push({ t: "text", v: str.slice(idx) });
+        break;
+      }
+      out.push({ t: "mark", v: str.slice(idx + 2, end) });
+      i = end + 2;
+      continue;
+    }
+  }
+
+  return out;
+};
+
+const renderRichInline = (text, keyPrefix = "t") => {
+  const tokens = tokenizeRich(text);
+  return tokens.map((x, idx) => {
+    const k = `${keyPrefix}_${idx}`;
+    if (x.t === "text") return <span key={k}>{x.v}</span>;
+    if (x.t === "bold")
+      return (
+        <strong key={k} className="fm-ai-strong">
+          {renderRichInline(x.v, `${k}b`)}
+        </strong>
+      );
+    if (x.t === "mark")
+      return (
+        <mark key={k} className="fm-ai-mark">
+          {renderRichInline(x.v, `${k}m`)}
+        </mark>
+      );
+    return null;
+  });
+};
+
+const renderRichText = (text) => {
+  const lines = String(text || "").split("\n");
+  return lines.map((line, i) => (
+    <span key={`l_${i}`}>
+      {renderRichInline(line, `l_${i}`)}
+      {i < lines.length - 1 ? <br /> : null}
+    </span>
+  ));
+};
+
 export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) {
   const nav = useNavigate();
   const myId = String(meId || "");
@@ -54,6 +133,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [aiTyping, setAiTyping] = useState(false);
 
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -804,6 +884,8 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
     }
 
     try {
+      setAiTyping(true);
+      scrollBottom(true);
       const res = await sendAiChat({ text: content, imageUrls });
 
       const userServer = res?.userMessage || res?.data?.userMessage || null;
@@ -845,6 +927,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       console.error(e);
       toast.error(e?.response?.data?.message || "Không thể gửi đến AI");
     } finally {
+      setAiTyping(false);
       setSending(false);
       requestAnimationFrame(() => inputRef.current?.focus?.());
     }
@@ -963,9 +1046,15 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                 <div className={"fm-chat-bubblewrap" + (mine ? " is-mine" : "")}>
                   {hasText && (
                     <div className={"fm-chat-bubble" + (mine ? " is-mine" : aiPlain)}>
-                      <div className="fm-chat-text" style={{ whiteSpace: "pre-wrap" }}>
-                        {m.content ?? m.text}
-                      </div>
+                      {mine ? (
+                        <div className="fm-chat-text" style={{ whiteSpace: "pre-wrap" }}>
+                          {m.content ?? m.text}
+                        </div>
+                      ) : (
+                        <div className="fm-chat-text fm-ai-rich">
+                          {renderRichText(m.content ?? m.text)}
+                        </div>
+                      )}
                       {timeNode}
                     </div>
                   )}
@@ -1265,7 +1354,22 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
             </div>
           );
         })}
-
+          {aiTyping ? (
+          <div className="fm-chat-row is-ai fm-ai-typing">
+            <div className="fm-chat-main">
+              <div className="fm-chat-bubblewrap">
+                <div className="fm-ai-typingline">
+                  <span className="fm-ai-typinglabel">Đang trả lời</span>
+                  <span className="fm-ai-typingdots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div />
       </div>
 
