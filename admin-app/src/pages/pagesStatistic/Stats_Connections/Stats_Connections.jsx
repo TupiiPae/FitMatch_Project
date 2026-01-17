@@ -17,8 +17,6 @@ import {
 
 import { getConnectStats } from "../../../lib/api";
 
-/* ---------------- Helpers ---------------- */
-
 const safeArr = (v) => (Array.isArray(v) ? v : []);
 const num = (v, fallback = 0) => {
   const x = Number(v);
@@ -85,7 +83,6 @@ const downloadTextFile = (filename, text, mime = "text/plain;charset=utf-8") => 
   }
 };
 
-// BE series đã là [{t,v}] rồi, nhưng vẫn normalize để an toàn
 const toTVSeries = (input) =>
   safeArr(input)
     .map((d, i) => ({
@@ -120,8 +117,6 @@ const STATUS_LABEL = (k) => {
   return String(k || "—");
 };
 
-/* ---------------- Component ---------------- */
-
 export default function Stats_Connections() {
   const [loading, setLoading] = useState(false);
 
@@ -129,7 +124,6 @@ export default function Stats_Connections() {
   const [{ from, to }, setRange] = useState(() => computeRangeLastDays(30));
   const [granularity, setGranularity] = useState("day");
 
-  // API data
   const [kpi, setKpi] = useState(null);
   const [seriesRequests, setSeriesRequests] = useState([]);
   const [seriesMessages, setSeriesMessages] = useState([]);
@@ -155,14 +149,12 @@ export default function Stats_Connections() {
     try {
       const r = normalizeRange(from, to);
 
-      // BE dùng from/to + granularity + q + top
       const root = await getConnectStats({
         q,
         from: r.from,
         to: r.to,
         granularity,
         top: 8,
-        // giữ thêm để tương thích nếu sau này bạn đổi param
         dateFrom: r.from,
         dateTo: r.to,
       });
@@ -182,7 +174,7 @@ export default function Stats_Connections() {
       const expired = num(reqK.expired, 0);
 
       const acceptanceRatePct = Number.isFinite(Number(reqK.acceptanceRate))
-        ? num(reqK.acceptanceRate, 0) // BE đã trả %
+        ? num(reqK.acceptanceRate, 0)
         : totalRequests > 0
         ? (accepted / totalRequests) * 100
         : 0;
@@ -196,7 +188,6 @@ export default function Stats_Connections() {
 
       const reports = num(repK.total, 0);
 
-      // Chat: BE trả số conversation active qua chat aggregate
       const conversations = num(chatK.activeConversations, 0);
       const messages = num(chatK.totalMessages, 0);
 
@@ -219,11 +210,9 @@ export default function Stats_Connections() {
         expired,
       });
 
-      // Series (đúng key BE)
       setSeriesRequests(toTVSeries(root?.series?.requestsCreated));
       setSeriesMessages(toTVSeries(root?.series?.messagesSent));
 
-      // Status breakdown (từ distributions.requestStatus)
       const statusRaw = toPieSeries(root?.distributions?.requestStatus);
       const statusAsBar =
         statusRaw.length > 0
@@ -238,7 +227,6 @@ export default function Stats_Connections() {
 
       setStatusBreakdown(statusAsBar);
 
-      // Room type pie (from distributions.roomType)
       const roomPie = toPieSeries(root?.distributions?.roomType);
       const fallbackRoomPie =
         roomPie.length > 0
@@ -251,7 +239,6 @@ export default function Stats_Connections() {
 
       setRoomTypePie(fallbackRoomPie);
 
-      // Top rooms: BE trả top.groupsByMembers
       const top = safeArr(root?.top?.groupsByMembers);
       setTopRooms(
         top.map((r, idx) => ({
@@ -274,14 +261,12 @@ export default function Stats_Connections() {
 
   useEffect(() => {
     refresh({ silent: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => refresh({ silent: true }), 400);
     return () => debounceRef.current && clearTimeout(debounceRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, from, to, granularity]);
 
   const onQuickRange = (days) => setRange(computeRangeLastDays(days));
@@ -289,14 +274,14 @@ export default function Stats_Connections() {
   const kpis = useMemo(() => {
     const s = kpi || {};
     return [
-      { label: "Yêu cầu kết nối", value: fmtInt(s.totalRequests), sub: "Tạo mới", icon: "fa-solid fa-link" },
-      { label: "Tỷ lệ chấp nhận", value: fmtPct(s.acceptanceRate), sub: "Tỷ lệ đồng ý", icon: "fa-solid fa-circle-check" },
-      { label: "Từ chối / Huỷ", value: fmtInt(s.rejectCancel), sub: "Tổng số từ chối + huỷ", icon: "fa-solid fa-circle-xmark" },
-      { label: "Phòng/nhóm được tạo", value: fmtInt(s.roomsCreated), sub: "Duo / Team / DM", icon: "fa-solid fa-people-group" },
-      { label: "Thời gian xử lý TB", value: s.avgMinutes ? fmtDurationMinutes(s.avgMinutes) : "—", sub: "Trung bình", icon: "fa-solid fa-stopwatch" },
-      { label: "Cuộc trò chuyện đang hoạt động", value: fmtInt(s.conversations), sub: "Duo/Team chat", icon: "fa-solid fa-comments" },
-      { label: "Tin nhắn đã gửi", value: fmtInt(s.messages), sub: "Tổng tin nhắn", icon: "fa-solid fa-comment-dots" },
-      { label: "Báo cáo", value: fmtInt(s.reports), sub: "Tổng lượt báo cáo", icon: "fa-solid fa-triangle-exclamation" },
+      { label: "Yêu cầu kết nối", value: fmtInt(s.totalRequests), sub: "Tạo mới trong kỳ", icon: "fa-solid fa-link" },
+      { label: "Tỷ lệ chấp nhận", value: fmtPct(s.acceptanceRate), sub: "Trên tổng yêu cầu", icon: "fa-solid fa-circle-check" },
+      { label: "Từ chối / Huỷ", value: fmtInt(s.rejectCancel), sub: "Yêu cầu thất bại", icon: "fa-solid fa-circle-xmark" },
+      { label: "Phòng được tạo", value: fmtInt(s.roomsCreated), sub: "Duo / Team / DM", icon: "fa-solid fa-people-group" },
+      { label: "Thời gian xử lý TB", value: s.avgMinutes ? fmtDurationMinutes(s.avgMinutes) : "—", sub: "Phản hồi yêu cầu", icon: "fa-solid fa-stopwatch" },
+      { label: "Hội thoại active", value: fmtInt(s.conversations), sub: "Có tin nhắn mới", icon: "fa-solid fa-comments" },
+      { label: "Tin nhắn đã gửi", value: fmtInt(s.messages), sub: "Tổng lượng tin nhắn", icon: "fa-solid fa-comment-dots" },
+      { label: "Báo cáo", value: fmtInt(s.reports), sub: "Vi phạm cộng đồng", icon: "fa-solid fa-triangle-exclamation" },
     ];
   }, [kpi]);
 
@@ -390,26 +375,33 @@ export default function Stats_Connections() {
         </KpiGrid>
 
         <ChartGrid>
-          <ChartCard title="Yêu cầu kết nối theo thời gian" hint="Biểu đồ đường" type="line" data={seriesRequests} />
-          <ChartCard title="Phân bố trạng thái yêu cầu" hint="Biểu đồ cột" type="bar" data={statusBreakdown} />
+          <ChartCard title="Yêu cầu kết nối" hint="Số lượng yêu cầu theo thời gian" type="line" data={seriesRequests} />
+          <ChartCard title="Phân bố trạng thái" hint="Tỷ lệ trạng thái yêu cầu" type="bar" data={statusBreakdown} />
           <ChartCard
-            title="Tỷ trọng loại phòng (Duo/Team/DM)"
-            hint="Biểu đồ tròn"
+            title="Tỷ trọng loại phòng"
+            hint="Phân bố Duo, Team, DM"
             type="pie"
             data={roomTypePie}
             labelFormatter={ROOM_TYPE_LABEL}
           />
-          <ChartCard title="Tin nhắn theo thời gian" hint="Biểu đồ đường" type="line" data={seriesMessages} />
+          <ChartCard title="Tin nhắn" hint="Số lượng tin nhắn theo thời gian" type="line" data={seriesMessages} />
         </ChartGrid>
 
+        <div className="st-connections-note">
+          <i className="fa-solid fa-circle-info" />
+          <span>
+             Các chỉ số về phòng/nhóm và tin nhắn phản ánh mức độ tương tác thời gian thực. Tỷ lệ chấp nhận yêu cầu cho thấy độ hiệu quả của việc kết nối.
+          </span>
+        </div>
+
         <div className="st-block-title">
-          <i className="fa-solid fa-fire" /> <span>Top nhóm theo số thành viên</span>
+          <i className="fa-solid fa-fire" /> <span>Top nhóm hoạt động sôi nổi</span>
         </div>
 
         <SimpleTopTable
           columns={[
             { key: "name", label: "Nhóm/Phòng", w: "1.2fr" },
-            { key: "value", label: "Chỉ số", w: "0.6fr" },
+            { key: "value", label: "Thành viên", w: "0.6fr" },
             { key: "note", label: "Ghi chú", w: "1.2fr" },
           ]}
           rows={topRooms}

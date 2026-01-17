@@ -39,14 +39,12 @@ const fmtNum = (n) => {
 export default function Stats_Users() {
   const [loading, setLoading] = useState(false);
 
-  // filters
   const [q, setQ] = useState("");
   const [{ from, to }, setRange] = useState(() => computeRangeLastDays(30));
   const [granularity, setGranularity] = useState("day");
   const [filterGoals, setFilterGoals] = useState([]);
   const [filterSex, setFilterSex] = useState([]);
 
-  // data
   const [data, setData] = useState(null);
 
   const clearFilters = () => {
@@ -80,13 +78,10 @@ export default function Stats_Users() {
     }
   };
 
-  // load lần đầu
   useEffect(() => {
     refresh(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // debounce khi gõ search + đổi filter
   const debounceRef = useRef(null);
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -94,12 +89,10 @@ export default function Stats_Users() {
       refresh(true);
     }, 350);
     return () => clearTimeout(debounceRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, from, to, granularity, filterGoals, filterSex]);
 
   const onQuickRange = (days) => setRange(computeRangeLastDays(days));
 
-  // ===== MAPPING KPIs từ BE =====
   const kpis = useMemo(() => {
     const k = data?.kpis;
     const dist = data?.distributions;
@@ -166,9 +159,7 @@ export default function Stats_Users() {
     ];
   }, [data]);
 
-  // ===== Top segments table =====
   const topSegments = useMemo(() => {
-    // BE đã trả topSegments dạng {name,value,note}
     const rows = data?.topSegments;
     if (Array.isArray(rows) && rows.length) {
       return rows.map((r) => ({
@@ -261,19 +252,19 @@ export default function Stats_Users() {
             title="Người dùng mới theo thời gian"
             hint={`Số điểm: ${data?.series?.newUsers?.length || 0}`}
             type="line"
-            data={data?.series?.newUsers || []} // [{t,v}]
+            data={data?.series?.newUsers || []}
           />
           <ChartCard
             title="Người dùng hoạt động theo chu kỳ"
             hint={`Số điểm: ${data?.series?.activeUsers?.length || 0}`}
             type="bar"
-            data={data?.series?.activeUsers || []} // [{t,v}]
+            data={data?.series?.activeUsers || []}
           />
           <ChartCard
             title="Phân bố mục tiêu"
             hint={`Số nhóm: ${data?.distributions?.goalNew?.length || 0}`}
             type="pie"
-            data={data?.distributions?.goalNew || []} // [{key,value}]
+            data={data?.distributions?.goalNew || []}
             labelFormatter={(k) =>
               GOAL_LABEL?.[k] ? `Mục tiêu: ${GOAL_LABEL[k]}` : `Mục tiêu: ${k}`
             }
@@ -282,7 +273,7 @@ export default function Stats_Users() {
             title="Phân bố giới tính"
             hint={`Số nhóm: ${data?.distributions?.sexNew?.length || 0}`}
             type="pie"
-            data={data?.distributions?.sexNew || []} // [{key,value}]
+            data={data?.distributions?.sexNew || []}
             labelFormatter={(k) =>
               SEX_LABEL?.[k] ? `Giới tính: ${SEX_LABEL[k]}` : `Giới tính: ${k}`
             }
@@ -292,7 +283,7 @@ export default function Stats_Users() {
         <div className="st-users-note">
           <i className="fa-solid fa-circle-info" />
           <span>
-            Dữ liệu biểu đồ đã có sẵn (chuỗi thời gian + phân bố). Chỉ cần nối vào thư viện biểu đồ là hiển thị.
+            Dữ liệu biểu đồ hiển thị theo bộ lọc thời gian và từ khóa. Hãy thử thay đổi chu kỳ để xem chi tiết hơn.
           </span>
         </div>
 

@@ -1,8 +1,19 @@
-// admin-app/src/pages/Dashboard/Dashboard.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+} from "recharts";
 import {
   getStatsUsersAdmin,
   getStatsNutritionAdmin,
@@ -11,9 +22,6 @@ import {
 } from "../../lib/api";
 import "./Dashboard.css";
 
-/* =========================
- * Helpers
- * ========================= */
 const safeArr = (v) => (Array.isArray(v) ? v : []);
 const fmtNum = (v) => {
   const n = Number(v);
@@ -26,27 +34,152 @@ const fmtPct = (v) => {
   return `${n}%`;
 };
 
-function MiniBars({ data = [], height = 54, emptyText = "Chưa có dữ liệu" }) {
-  const arr = safeArr(data);
-  const max = Math.max(1, ...arr.map((x) => Number(x?.v || 0)));
-  if (!arr.length) return <div className="db-chart-empty">{emptyText}</div>;
+function SafeResponsive({ height = 250, children }) {
+  const ref = useRef(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const check = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) setReady(true);
+    };
+
+    check();
+
+    let ro;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(check);
+      ro.observe(el);
+    } else {
+      window.addEventListener("resize", check);
+    }
+
+    return () => {
+      if (ro) ro.disconnect();
+      else window.removeEventListener("resize", check);
+    };
+  }, []);
 
   return (
-    <div className="db-bars" style={{ height }}>
-      {arr.map((x, idx) => {
-        const v = Number(x?.v || 0);
-        const h = Math.max(2, Math.round((v / max) * height));
-        const label = String(x?.t || "");
-        return (
-          <div
-            key={label || idx}
-            className="db-bar-wrap"
-            title={`${label}: ${fmtNum(v)}`}
-          >
-            <div className="db-bar" style={{ height: h }} />
-          </div>
-        );
-      })}
+    <div ref={ref} style={{ width: "100%", minWidth: 0, height, minHeight: height }}>
+      {ready ? children : null}
+    </div>
+  );
+}
+
+const sanitizeId = (s) => String(s || "").replace(/[^a-zA-Z0-9_-]/g, "");
+
+
+function ModernChart({ data = [], color = "#008080", height = 250, emptyText = "Chưa có dữ liệu" }) {
+  const arr = safeArr(data);
+
+  // id gradient: tránh trùng + tránh ký tự # gây lỗi url(#...)
+  const uidRef = useRef(Math.random().toString(36).slice(2, 10));
+  const gradientId = useMemo(
+    () => `db-grad-${uidRef.current}-${sanitizeId(color)}`,
+    [color]
+  );
+
+  if (!arr.length) {
+    return (
+      <div className="db-chart-empty" style={{ height }}>
+        {emptyText}
+      </div>
+    );
+  }
+
+  return (
+    <SafeResponsive height={height}>
+      <ResponsiveContainer width="100%" height={height} minWidth={0}>
+        <AreaChart data={arr} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.2} />
+              <stop offset="95%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+
+          <XAxis
+            dataKey="t"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: "#6B7280", fontSize: 12 }}
+            dy={10}
+            tickFormatter={(str) => {
+              const s = String(str || "");
+              if (s.length > 5) return dayjs(s).format("DD/MM");
+              return s;
+            }}
+          />
+
+          <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6B7280", fontSize: 12 }} />
+
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "#fff",
+              borderRadius: "8px",
+              border: "1px solid #E5E7EB",
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+              fontSize: "13px",
+            }}
+            formatter={(value) => [fmtNum(value), "Giá trị"]}
+            labelStyle={{ color: "#374151", fontWeight: 600, marginBottom: "4px" }}
+          />
+
+          <Area
+            type="monotone"
+            dataKey="v"
+            stroke={color}
+            strokeWidth={2}
+            fillOpacity={1}
+            fill={`url(#${gradientId})`}
+            activeDot={{ r: 6, strokeWidth: 0 }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </SafeResponsive>
+  );
+}
+
+function ModernRankingList({ title, items = [], emptyText = "Chưa có dữ liệu", color = "#008080" }) {
+  const arr = safeArr(items);
+  const maxValue = Math.max(...arr.map((i) => Number(i.value) || 0), 1);
+
+  return (
+    <div className="db-panel">
+      <div className="db-panel-head">
+        <h4>{title}</h4>
+      </div>
+      {arr.length === 0 ? (
+        <div className="db-panel-empty">{emptyText}</div>
+      ) : (
+        <div className="db-ranking-list">
+          {arr.map((item, idx) => {
+            const val = Number(item.value) || 0;
+            const percent = (val / maxValue) * 100;
+            return (
+              <div key={idx} className="db-ranking-item">
+                <div className="db-ranking-info">
+                  <span className="db-ranking-name">{item.name}</span>
+                  <span className="db-ranking-val">{fmtNum(val)}</span>
+                </div>
+                <div className="db-progress-bg">
+                  <div
+                    className="db-progress-fill"
+                    style={{ width: `${percent}%`, backgroundColor: color }}
+                  />
+                </div>
+                {item.note && <div className="db-ranking-note">{item.note}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -56,61 +189,18 @@ function KpiCard({ title, value, sub, tone = "default" }) {
     <div className={`db-kpi db-kpi--${tone}`}>
       <div className="db-kpi-title">{title}</div>
       <div className="db-kpi-value">{value}</div>
-      {sub ? (
-        <div className="db-kpi-sub">{sub}</div>
-      ) : (
-        <div className="db-kpi-sub"> </div>
-      )}
-    </div>
-  );
-}
-
-function SimpleTopTable({ title, items = [], emptyText = "Chưa có dữ liệu" }) {
-  const arr = safeArr(items);
-  return (
-    <div className="db-panel">
-      <div className="db-panel-head">
-        <h4>{title}</h4>
-      </div>
-
-      {arr.length === 0 ? (
-        <div className="db-panel-empty">{emptyText}</div>
-      ) : (
-        <div className="db-top-table">
-          <div className="db-top-thead">
-            <div className="cell name">Tên</div>
-            <div className="cell value">Giá trị</div>
-            <div className="cell note">Ghi chú</div>
-          </div>
-          {arr.map((x, i) => (
-            <div key={`${x?.name || "row"}-${i}`} className="db-top-trow">
-              <div className="cell name">{x?.name || "—"}</div>
-              <div className="cell value">{x?.value ?? "—"}</div>
-              <div className="cell note">{x?.note || "—"}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      {sub ? <div className="db-kpi-sub">{sub}</div> : <div className="db-kpi-sub"> </div>}
     </div>
   );
 }
 
 export default function Dashboard() {
-  /* =========================
-   * Defaults
-   * ========================= */
   const today = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
-  const defaultFrom = useMemo(
-    () => dayjs().subtract(29, "day").format("YYYY-MM-DD"),
-    []
-  );
+  const defaultFrom = useMemo(() => dayjs().subtract(29, "day").format("YYYY-MM-DD"), []);
 
-  /* =========================
-   * Filters
-   * ========================= */
   const [dateFrom, setDateFrom] = useState(defaultFrom);
   const [dateTo, setDateTo] = useState(today);
-  const [granularity, setGranularity] = useState("day"); // day|week|month
+  const [granularity, setGranularity] = useState("day");
   const [q, setQ] = useState("");
   const [top, setTop] = useState(8);
 
@@ -121,9 +211,6 @@ export default function Dashboard() {
     return "—";
   }, [granularity]);
 
-  /* =========================
-   * Data
-   * ========================= */
   const [loading, setLoading] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
 
@@ -165,7 +252,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clearFilters = () => {
@@ -191,9 +277,6 @@ export default function Dashboard() {
     });
   };
 
-  /* =========================
-   * Derived UI data
-   * ========================= */
   const uK = usersStats?.kpis || {};
   const nK = nutritionStats?.kpis || {};
   const wK = workoutsStats?.kpis || {};
@@ -215,70 +298,60 @@ export default function Dashboard() {
   const topSegments = safeArr(usersStats?.topSegments).map((x) => ({
     name: x?.name || "—",
     value: x?.value ?? "—",
-    note: x?.note || "—",
+    note: x?.note || "",
   }));
 
   const topFoods = safeArr(nutritionStats?.topFoods).map((x) => ({
     name: x?.name || "—",
     value: x?.value ?? "—",
-    note: x?.note || "—",
+    note: x?.note || "",
   }));
 
   const topExercises = safeArr(workoutsStats?.topExercises).map((x) => ({
     name: x?.name || "—",
     value: x?.value ?? "—",
-    note: x?.note || "—",
+    note: x?.note || "",
   }));
 
   const topGroups = safeArr(connectStats?.top?.groupsByMembers).map((x) => ({
     name: x?.name || "—",
     value: x?.value ?? "—",
-    note: x?.note || "—",
+    note: x?.note || "",
   }));
 
-  const topReportReasons = safeArr(connectStats?.top?.reportReasonsTop).map(
-    (x) => ({
-      name: x?.key || x?.name || "—",
-      value: x?.value ?? "—",
-      note: "Lý do báo cáo",
-    })
-  );
+  const topReportReasons = safeArr(connectStats?.top?.reportReasonsTop).map((x) => ({
+    name: x?.key || x?.name || "—",
+    value: x?.value ?? "—",
+    note: "Lý do báo cáo",
+  }));
 
   return (
     <div className="al-page db-page">
-      {/* breadcrumb (đồng bộ Audit_Log) */}
       <nav className="al-breadcrumb" aria-label="breadcrumb">
         <Link to="/dashboard">
           <i className="fa-solid fa-house" /> <span>Trang chủ</span>
         </Link>
         <span className="sep">/</span>
         <span className="grp">
-          <i className="fa-solid fa-chart-line" />{" "}
-          <span>Thống kê</span>
+          <i className="fa-solid fa-chart-line" /> <span>Thống kê</span>
         </span>
         <span className="sep">/</span>
         <span className="cur">
-          <i className="fa-solid fa-gauge-high" />{" "}
-          <span>Tổng quan</span>
+          <i className="fa-solid fa-gauge-high" /> <span>Tổng quan</span>
         </span>
       </nav>
 
       <div className="al-card db-card">
-        {/* Header (đồng bộ Audit_Log) */}
         <div className="al-head db-head">
           <div className="db-head-left">
             <h2>
-              Bảng tổng quan{" "}
-              {loading ? <span className="db-muted">(Đang tải...)</span> : null}
+              Bảng tổng quan {loading ? <span className="db-muted">(Đang tải...)</span> : null}
             </h2>
-
             <div className="db-subline">
               {lastUpdatedAt ? (
                 <>
                   Cập nhật lúc{" "}
-                  <strong>
-                    {new Date(lastUpdatedAt).toLocaleString("vi-VN")}
-                  </strong>
+                  <strong>{new Date(lastUpdatedAt).toLocaleString("vi-VN")}</strong>
                 </>
               ) : (
                 <span className="db-muted">Chưa có dữ liệu</span>
@@ -291,7 +364,6 @@ export default function Dashboard() {
               <i className="fa-solid fa-eraser" />
               <span>Xoá bộ lọc</span>
             </button>
-
             <button type="button" className="btn ghost" onClick={() => load()}>
               <i className="fa-solid fa-rotate-right" />
               <span>Làm mới</span>
@@ -299,7 +371,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Filters (đồng bộ Audit_Log) */}
         <div className="al-filters db-filters">
           <div className="al-search">
             <i className="fa-solid fa-magnifying-glass" />
@@ -367,7 +438,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ========================= USERS ========================= */}
         <div className="db-section">
           <div className="db-section-head">
             <h3>
@@ -400,11 +470,10 @@ export default function Dashboard() {
               tone="good"
             />
             <KpiCard
-              title="Người dùng bị khoá (theo bộ lọc)"
+              title="Người dùng bị khoá"
               value={fmtNum(uK?.blockedFiltered)}
               tone="warn"
             />
-
             <KpiCard
               title="Hoàn tất onboarding"
               value={fmtNum(uK?.onboardedFiltered)}
@@ -416,14 +485,12 @@ export default function Dashboard() {
               sub={`Tỉ lệ: ${fmtPct(uK?.profileCompleteRate)}`}
             />
             <KpiCard
-              title="Người dùng hoạt động trong ngày"
+              title="Người dùng hoạt động (1 ngày)"
               value={fmtNum(uK?.active?.dau)}
-              sub="Trong 1 ngày gần nhất"
             />
             <KpiCard
               title="Hoạt động 7 ngày / 30 ngày"
               value={`${fmtNum(uK?.active?.wau)} / ${fmtNum(uK?.active?.mau)}`}
-              sub="Trong 7 ngày & 30 ngày"
             />
           </div>
 
@@ -433,7 +500,7 @@ export default function Dashboard() {
                 <h4>Người dùng mới theo thời gian</h4>
                 <span className="db-muted">({granularityLabel})</span>
               </div>
-              <MiniBars data={uSeriesNew} />
+              <ModernChart data={uSeriesNew} color="#008080" />
             </div>
 
             <div className="db-panel">
@@ -441,19 +508,19 @@ export default function Dashboard() {
                 <h4>Người dùng hoạt động theo thời gian</h4>
                 <span className="db-muted">({granularityLabel})</span>
               </div>
-              <MiniBars data={uSeriesActive} />
+              <ModernChart data={uSeriesActive} color="#2A9D8F" />
             </div>
           </div>
 
           <div className="db-panels-1">
-            <SimpleTopTable
+            <ModernRankingList
               title="Phân khúc nổi bật (theo bộ lọc)"
               items={topSegments}
+              color="#008080"
             />
           </div>
         </div>
 
-        {/* ========================= NUTRITION ========================= */}
         <div className="db-section">
           <div className="db-section-head">
             <h3>
@@ -483,7 +550,6 @@ export default function Dashboard() {
               title="TB đạm / người / ngày"
               value={fmtNum(nK?.avgProteinPerUserDay)}
             />
-
             <KpiCard title="Món ăn chờ duyệt" value={fmtNum(nK?.foodsPending)} tone="warn" />
             <KpiCard title="Món ăn đã duyệt" value={fmtNum(nK?.foodsApproved)} tone="good" />
             <KpiCard title="Món ăn bị từ chối" value={fmtNum(nK?.foodsRejected)} tone="bad" />
@@ -496,17 +562,17 @@ export default function Dashboard() {
                 <h4>Kcal được ghi theo thời gian</h4>
                 <span className="db-muted">({granularityLabel})</span>
               </div>
-              <MiniBars data={nSeriesKcal} />
+              <ModernChart data={nSeriesKcal} color="#E76F51" />
             </div>
 
-            <SimpleTopTable
+            <ModernRankingList
               title={`Món ăn được ghi nhận nhiều nhất (${top} mục)`}
               items={topFoods}
+              color="#E76F51"
             />
           </div>
         </div>
 
-        {/* ========================= WORKOUTS ========================= */}
         <div className="db-section">
           <div className="db-section-head">
             <h3>
@@ -529,8 +595,7 @@ export default function Dashboard() {
             <KpiCard title="Người dùng có lịch tập" value={fmtNum(wK?.usersWithPlans)} />
             <KpiCard title="TB lịch tập / người dùng" value={fmtNum(wK?.avgPlansPerUser)} />
             <KpiCard title="Lượt lưu lịch tập" value={fmtNum(wK?.savedPlans)} tone="good" />
-
-            <KpiCard title="Tổng bài tập (trong lịch tập)" value={fmtNum(wK?.totalExercises)} />
+            <KpiCard title="Tổng bài tập (trong lịch)" value={fmtNum(wK?.totalExercises)} />
             <KpiCard title="Tổng hiệp" value={fmtNum(wK?.totalSets)} />
             <KpiCard title="Tổng lần lặp" value={fmtNum(wK?.totalReps)} />
             <KpiCard title="TB kcal / lịch tập" value={fmtNum(wK?.avgKcalPerPlan)} />
@@ -542,27 +607,27 @@ export default function Dashboard() {
                 <h4>Lịch tập tạo mới theo thời gian</h4>
                 <span className="db-muted">({granularityLabel})</span>
               </div>
-              <MiniBars data={wSeriesPlans} />
+              <ModernChart data={wSeriesPlans} color="#264653" />
             </div>
 
             <div className="db-panel">
               <div className="db-panel-head">
-                <h4>Kcal tiêu hao (ước tính) theo thời gian</h4>
+                <h4>Kcal tiêu hao (ước tính)</h4>
                 <span className="db-muted">({granularityLabel})</span>
               </div>
-              <MiniBars data={wSeriesKcal} />
+              <ModernChart data={wSeriesKcal} color="#264653" />
             </div>
           </div>
 
           <div className="db-panels-1">
-            <SimpleTopTable
+            <ModernRankingList
               title={`Bài tập được dùng nhiều nhất (${top} mục)`}
               items={topExercises}
+              color="#264653"
             />
           </div>
         </div>
 
-        {/* ========================= CONNECT ========================= */}
         <div className="db-section">
           <div className="db-section-head">
             <h3>
@@ -585,9 +650,8 @@ export default function Dashboard() {
             <KpiCard title="Yêu cầu" value={fmtNum(cK?.requests?.total)} />
             <KpiCard title="Báo cáo" value={fmtNum(cK?.reports?.total)} tone="warn" />
             <KpiCard title="Tin nhắn" value={fmtNum(cK?.chat?.totalMessages)} />
-
             <KpiCard
-              title="Phòng đang mở / đủ / đóng"
+              title="Phòng mở / đủ / đóng"
               value={`${fmtNum(cK?.rooms?.active)} / ${fmtNum(cK?.rooms?.full)} / ${fmtNum(
                 cK?.rooms?.closed
               )}`}
@@ -602,7 +666,7 @@ export default function Dashboard() {
               value={fmtNum(cK?.requests?.avgResolveHours)}
             />
             <KpiCard
-              title="Hội thoại đang hoạt động"
+              title="Hội thoại hoạt động"
               value={fmtNum(cK?.chat?.activeConversations)}
             />
           </div>
@@ -613,7 +677,7 @@ export default function Dashboard() {
                 <h4>Phòng tạo mới</h4>
                 <span className="db-muted">({granularityLabel})</span>
               </div>
-              <MiniBars data={cSeriesRooms} />
+              <ModernChart data={cSeriesRooms} color="#E9C46A" />
             </div>
 
             <div className="db-panel">
@@ -621,7 +685,7 @@ export default function Dashboard() {
                 <h4>Yêu cầu tạo mới</h4>
                 <span className="db-muted">({granularityLabel})</span>
               </div>
-              <MiniBars data={cSeriesReq} />
+              <ModernChart data={cSeriesReq} color="#E9C46A" />
             </div>
           </div>
 
@@ -631,7 +695,7 @@ export default function Dashboard() {
                 <h4>Báo cáo tạo mới</h4>
                 <span className="db-muted">({granularityLabel})</span>
               </div>
-              <MiniBars data={cSeriesRep} />
+              <ModernChart data={cSeriesRep} color="#F4A261" />
             </div>
 
             <div className="db-panel">
@@ -639,18 +703,20 @@ export default function Dashboard() {
                 <h4>Tin nhắn đã gửi</h4>
                 <span className="db-muted">({granularityLabel})</span>
               </div>
-              <MiniBars data={cSeriesMsg} />
+              <ModernChart data={cSeriesMsg} color="#F4A261" />
             </div>
           </div>
 
           <div className="db-panels-2">
-            <SimpleTopTable
+            <ModernRankingList
               title={`Nhóm có nhiều thành viên nhất (${top} mục)`}
               items={topGroups}
+              color="#E9C46A"
             />
-            <SimpleTopTable
+            <ModernRankingList
               title={`Lý do báo cáo phổ biến (${top} mục)`}
               items={topReportReasons}
+              color="#F4A261"
             />
           </div>
         </div>

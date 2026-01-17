@@ -35,7 +35,7 @@ export default function Stats_Nutrition() {
   const [{ from, to }, setRange] = useState(() => computeRangeLastDays(30));
   const [granularity, setGranularity] = useState("day");
 
-  const [data, setData] = useState(null); // data object trả về từ BE (đã .data)
+  const [data, setData] = useState(null);
   const firstLoadRef = useRef(true);
 
   const clearFilters = () => {
@@ -64,20 +64,16 @@ export default function Stats_Nutrition() {
     }
   };
 
-  // load lần đầu (silent)
   useEffect(() => {
     fetchStats({ silent: true }).finally(() => {
       firstLoadRef.current = false;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // auto reload khi đổi filter (debounce, silent)
   useEffect(() => {
     if (firstLoadRef.current) return;
     const t = setTimeout(() => fetchStats({ silent: true }), 350);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [from, to, granularity, q]);
 
   const onQuickRange = (days) => setRange(computeRangeLastDays(days));
@@ -106,31 +102,31 @@ export default function Stats_Nutrition() {
       {
         label: "Nhật ký dinh dưỡng",
         value: fmtInt(k.totalLogs),
-        sub: "Tổng lượt ghi nhật ký trong khoảng thời gian",
+        sub: "Tổng lượt ghi nhật ký",
         icon: "fa-solid fa-utensils",
       },
       {
         label: "Người dùng có nhật ký",
         value: fmtInt(k.usersWithLogs),
-        sub: "Số người dùng duy nhất có phát sinh nhật ký",
+        sub: "Người dùng duy nhất",
         icon: "fa-solid fa-users",
       },
       {
         label: "Trung bình calo/ngày",
         value: fmtKcal(k.avgKcalPerUserDay),
-        sub: "Trung bình theo người-ngày (chỉ tính ngày có nhật ký)",
+        sub: "Chỉ tính ngày có nhật ký",
         icon: "fa-solid fa-fire",
       },
       {
         label: "Trung bình protein/ngày",
         value: fmtG(k.avgProteinPerUserDay),
-        sub: "Trung bình theo người-ngày (chỉ tính ngày có nhật ký)",
+        sub: "Chỉ tính ngày có nhật ký",
         icon: "fa-solid fa-dna",
       },
       {
         label: "Món ăn chờ duyệt",
         value: fmtInt(k.foodsPending),
-        sub: "Số món ăn đang ở trạng thái chờ duyệt",
+        sub: "Cần admin xử lý",
         icon: "fa-solid fa-hourglass-half",
       },
       {
@@ -140,15 +136,15 @@ export default function Stats_Nutrition() {
         icon: "fa-solid fa-circle-check",
       },
       {
-        label: "Lượt lưu thực đơn gợi ý",
+        label: "Lượt lưu thực đơn",
         value: fmtInt(k.suggestMenuSaves),
-        sub: "Tổng lượt lưu thực đơn gợi ý",
+        sub: "Thực đơn gợi ý",
         icon: "fa-solid fa-bookmark",
       },
       {
         label: "Lượt quét AI",
         value: fmtInt(k.aiScans),
-        sub: "Nếu hệ thống có theo dõi chỉ số này",
+        sub: "Tính năng AI Scan",
         icon: "fa-solid fa-wand-magic-sparkles",
       },
     ],
@@ -218,40 +214,47 @@ export default function Stats_Nutrition() {
         <ChartGrid>
           <ChartCard
             title="Calo được ghi theo thời gian"
-            hint="Biểu đồ đường"
+            hint={`Số điểm: ${kcalSeries.length}`}
             type="line"
             data={kcalSeries}
           />
           <ChartCard
             title="Phân bổ macros (Carb/Protein/Fat)"
-            hint="Biểu đồ cột"
+            hint="Tổng hợp theo thời gian"
             type="bar"
             data={macroBars}
           />
           <ChartCard
-            title="Trạng thái món ăn (chờ duyệt/đã duyệt/từ chối)"
-            hint="Biểu đồ tròn"
+            title="Trạng thái món ăn"
+            hint="Tỷ lệ duyệt món ăn"
             type="pie"
             data={foodStatusPie}
             labelFormatter={(key) => FOOD_STATUS_LABEL?.[key] || String(key)}
           />
           <ChartCard
-            title="Món ăn được ghi nhiều nhất"
-            hint="Biểu đồ cột"
+            title="Top món ăn được ghi nhiều nhất"
+            hint="So sánh số lượng"
             type="bar"
             data={topFoodsBar}
           />
         </ChartGrid>
 
+        <div className="st-nutrition-note">
+          <i className="fa-solid fa-circle-info" />
+          <span>
+            Dữ liệu biểu đồ phản ánh xu hướng dinh dưỡng của người dùng. Các chỉ số Calories và Macros được tính trung bình dựa trên nhật ký đã ghi.
+          </span>
+        </div>
+
         <div className="st-block-title">
-          <i className="fa-solid fa-list-ol" />{" "}
-          <span>Món ăn được ghi nhận nhiều nhất</span>
+          <i className="fa-solid fa-list-ol" />
+          <span>Chi tiết món ăn phổ biến</span>
         </div>
 
         <SimpleTopTable
           columns={[
             { key: "name", label: "Món ăn", w: "1.2fr" },
-            { key: "value", label: "Số lượt", w: "0.6fr" },
+            { key: "value", label: "Số lượt ghi", w: "0.6fr" },
             { key: "note", label: "Ghi chú", w: "1.2fr" },
           ]}
           rows={topFoods}

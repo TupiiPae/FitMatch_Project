@@ -14,7 +14,7 @@ import {
   StatsCard,
   StatsFilterBar,
 } from "../_shared/StatsShared";
-import { getStatsWorkoutsAdmin } from "../../../lib/api"; // <- sửa path nếu bạn đặt khác
+import { getStatsWorkoutsAdmin } from "../../../lib/api";
 
 const TYPE_LABEL = {
   Strength: "Sức mạnh (Strength)",
@@ -62,24 +62,19 @@ export default function Stats_Workouts() {
       if (showToast) toast.success("Đã tải thống kê tập luyện");
     } catch (e) {
       if (showToast) toast.error("Không tải được thống kê tập luyện");
-      // fallback silent
       if (!showToast) console.error("[Stats_Workouts] fetch failed", e);
     } finally {
       if (mountedRef.current) setLoading(false);
     }
   };
 
-  // Auto reload khi đổi filter (debounce nhẹ cho q)
   useEffect(() => {
     const t = setTimeout(() => fetchStats({ showToast: false }), 250);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [from, to, granularity, q]);
 
-  // initial load
   useEffect(() => {
     fetchStats({ showToast: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onQuickRange = (days) => setRange(computeRangeLastDays(days));
@@ -93,49 +88,49 @@ export default function Stats_Workouts() {
       {
         label: "Lịch tập (tạo mới)",
         value: k.totalPlans ?? "—",
-        sub: "Số lịch tập được tạo trong kỳ",
+        sub: "Số lịch tập được tạo",
         icon: "fa-solid fa-dumbbell",
       },
       {
         label: "Người dùng có lịch tập",
         value: k.usersWithPlans ?? "—",
-        sub: "Số người dùng phát sinh lịch tập",
+        sub: "Người dùng tham gia tập luyện",
         icon: "fa-solid fa-users",
       },
       {
         label: "TB lịch tập/người dùng",
         value: k.avgPlansPerUser ?? "—",
-        sub: "Trung bình theo kỳ",
+        sub: "Mức độ tích cực trung bình",
         icon: "fa-solid fa-chart-line",
       },
       {
         label: "Tổng kcal ước tính",
         value: k.totalKcal ?? "—",
-        sub: "Tổng kcal tiêu hao (ước tính)",
+        sub: "Tiêu hao qua các bài tập",
         icon: "fa-solid fa-fire",
       },
       {
         label: "Lượt lưu lịch tập",
         value: k.savedPlans ?? "—",
-        sub: "Tổng lượt lưu",
+        sub: "Được người dùng khác lưu",
         icon: "fa-solid fa-bookmark",
       },
       {
         label: "Bài tập sức mạnh",
         value: k.strengthCount ?? "—",
-        sub: "Số bài trong các lịch tập",
-        icon: "fa-solid fa-dumbbell",
+        sub: "Trong các lịch tập",
+        icon: "fa-solid fa-hand-fist",
       },
       {
         label: "Bài tập cardio",
         value: k.cardioCount ?? "—",
-        sub: "Số bài trong các lịch tập",
+        sub: "Trong các lịch tập",
         icon: "fa-solid fa-heart-pulse",
       },
       {
         label: "Bài tập thể thao",
         value: k.sportCount ?? "—",
-        sub: "Số bài trong các lịch tập",
+        sub: "Trong các lịch tập",
         icon: "fa-solid fa-person-running",
       },
     ];
@@ -156,7 +151,6 @@ export default function Stats_Workouts() {
   }, [topExercises]);
 
   const itemTypesPie = useMemo(() => {
-    // BE trả [{key,value}]
     return Array.isArray(dist?.itemTypes) ? dist.itemTypes : [];
   }, [dist]);
 
@@ -237,27 +231,34 @@ export default function Stats_Workouts() {
           />
           <ChartCard
             title="Tỷ trọng loại bài tập"
-            hint="Dựa theo loại bài tập trong lịch tập"
+            hint="Phân bố Strength, Cardio, Sport"
             type="pie"
             data={itemTypesPie}
             labelFormatter={(key) => TYPE_LABEL[key] || String(key)}
           />
           <ChartCard
             title="Top bài tập phổ biến"
-            hint="Dựa theo số lần xuất hiện trong lịch tập"
+            hint="So sánh tần suất sử dụng"
             type="bar"
             data={topExercisesBar}
           />
         </ChartGrid>
 
+        <div className="st-workouts-note">
+          <i className="fa-solid fa-circle-info" />
+          <span>
+            Các chỉ số Kcal là giá trị ước tính dựa trên dữ liệu bài tập trong hệ thống. Tần suất bài tập phản ánh xu hướng tập luyện của cộng đồng.
+          </span>
+        </div>
+
         <div className="st-block-title">
-          <i className="fa-solid fa-medal" /> <span>Top bài tập</span>
+          <i className="fa-solid fa-medal" /> <span>Bảng xếp hạng bài tập</span>
         </div>
 
         <SimpleTopTable
           columns={[
             { key: "name", label: "Bài tập", w: "1.2fr" },
-            { key: "value", label: "Số lượt", w: "0.6fr" },
+            { key: "value", label: "Số lượt dùng", w: "0.6fr" },
             { key: "note", label: "Ghi chú", w: "1.2fr" },
           ]}
           rows={topExercises}

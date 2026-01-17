@@ -1,15 +1,13 @@
-/* admin-app/src/pages/Dashboard/Dashboard.css */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
-/* =========================
-   Shared base (match Audit_Log)
-========================= */
 .al-page{
   padding: 30px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   font-family: "Roboto", sans-serif;
+  background-color: #f9fafb;
+  min-height: 100vh;
 }
 
 .al-breadcrumb{
@@ -45,27 +43,27 @@
   background: #fff;
   border: 1px solid #E5E7EB;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 12px;
+  padding: 20px;
 }
 
-/* Header */
 .al-head{
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 4px 12px 12px;
+  padding-bottom: 16px;
   border-bottom: 1px solid #f3f4f6;
 }
 .al-head h2{
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: #0f172a;
   margin: 0;
+  line-height: 1.2;
 }
 
 .al-actions{
@@ -75,31 +73,31 @@
   flex-wrap:wrap;
 }
 
-/* Buttons */
 .btn{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 10px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
   border: 1px solid #E5E7EB;
   background: #fff;
-  color: #111827;
+  color: #374151;
   cursor: pointer;
-  transition: box-shadow .15s ease, transform .1s ease, background .15s ease;
+  transition: all .2s ease;
   text-decoration: none;
   font-size: 14px;
+  font-weight: 500;
   user-select:none;
 }
-.btn:hover{ background: #f9fafb; }
+.btn:hover{ background: #f3f4f6; }
 .btn.primary{
   background: #008080;
   border-color: #008080;
   color: #fff;
 }
 .btn.primary:hover{
-  filter: brightness(0.98);
+  background: #006666;
 }
 .btn.ghost{ background:#fff; }
 .btn:active{ transform: translateY(1px); }
@@ -108,27 +106,30 @@
   cursor: not-allowed;
 }
 
-/* Filters */
 .al-filters{
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .al-search{
   display:flex;
   align-items:center;
-  gap:8px;
-  border:1px solid #E5E7EB;
-  border-radius: 10px;
-  padding: 0 10px;
-  height: 38px;
-  max-width: 680px;
+  gap:10px;
+  border:1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0 12px;
+  height: 40px;
+  max-width: 100%;
   background:#fff;
 }
 .al-search i{
-  color:#6b7280;
-  font-size:14px;
+  color:#94a3b8;
+  font-size:16px;
 }
 .al-search input{
   border:none;
@@ -136,7 +137,7 @@
   background:transparent;
   width:100%;
   font-size:14px;
-  color:#111827;
+  color:#1e293b;
   padding: 8px 0;
 }
 
@@ -145,275 +146,249 @@
   align-items:flex-end;
   justify-content:flex-start;
   flex-wrap:wrap;
-  gap:12px;
+  gap:16px;
 }
 .al-filter-group{
   display:flex;
   flex-direction:column;
-  gap:4px;
+  gap:6px;
   min-width:180px;
 }
 .al-filter-label{
   font-size:12px;
   font-weight:600;
-  color:#4b5563;
-  margin-left: 4px;
+  color:#64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* select + date style (match Audit_Log) */
 .al-filter-group select{
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid #E5E7EB;
-  padding: 0 10px;
-  font-size: 13px;
-  color: #111827;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #1e293b;
   background:#fff;
   outline:none;
+  cursor: pointer;
 }
 .al-filter-group select:focus{
   border-color:#008080;
+  box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.1);
 }
 
-.al-date-range{ min-width: 220px; }
+.al-date-range{ min-width: 250px; }
 .al-date-row{
   display:flex;
   align-items:center;
-  gap:6px;
+  gap:8px;
 }
 .al-date-row input[type="date"]{
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid #E5E7EB;
-  padding: 0 8px;
-  font-size: 13px;
-  color: #111827;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  padding: 0 10px;
+  font-size: 14px;
+  color: #1e293b;
+  flex: 1;
 }
 .al-date-row input[type="date"]:focus{
   outline:none;
   border-color:#008080;
+  box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.1);
 }
 .al-date-sep{
-  font-size: 12px;
-  color: #6b7280;
+  font-size: 13px;
+  color: #64748b;
 }
 
-/* =========================
-   Dashboard-specific tweaks (more Audit_Log-like)
-========================= */
-.db-head-left{ display:flex; flex-direction:column; gap:6px; }
+.db-head-left{ display:flex; flex-direction:column; gap:4px; }
 .db-subline{
-  font-size: 13px;
-  color: #4b5563;
+  font-size: 14px;
+  color: #64748b;
 }
 .db-muted{
-  color:#6b7280;
+  color:#94a3b8;
   font-weight:500;
 }
 
-/* ---- Make each section a sub-card (Audit_Log table/card vibe) ---- */
 .db-section{
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   background: #fff;
-  padding: 12px;
-  margin: 0 12px;
-}
-.db-section:last-of-type{
-  margin-bottom: 4px;
+  padding: 20px;
+  margin-top: 10px;
 }
 
-/* Section head */
 .db-section-head{
   display:flex;
   justify-content:space-between;
-  align-items:flex-end;
+  align-items:center;
   gap: 12px;
-  padding: 2px 2px 10px;
-  border-bottom: 1px solid #f3f4f6;
-  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 16px;
 }
 .db-section-head h3{
   margin:0;
-  font-size:16px;
-  color:#0f172a;
+  font-size:18px;
+  color:#1e293b;
   display:flex;
   align-items:center;
   gap:10px;
+  font-weight: 700;
+}
+.db-section-head h3 i {
+  color: #008080;
+  background: rgba(0, 128, 128, 0.1);
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 16px;
 }
 .db-section-meta{
   font-size:13px;
-  color:#4b5563;
+  color:#64748b;
+  background: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-/* KPI grid */
 .db-kpi-grid{
   display:grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
-/* KPI cards look like Audit_Log small blocks */
 .db-kpi{
-  border: 1px solid #E5E7EB;
-  border-radius: 12px;
-  padding: 12px 12px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
   background: #fff;
-  box-shadow: 0 2px 12px rgba(0,0,0,.04);
-  transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 .db-kpi:hover{
-  background:#f9fafb;
-  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 .db-kpi-title{
-  font-size:12px;
-  color:#6b7280;
-  font-weight:700;
+  font-size:13px;
+  color:#64748b;
+  font-weight:600;
+  margin-bottom: 8px;
 }
 .db-kpi-value{
-  margin-top:6px;
-  font-size:22px;
+  font-size:24px;
   color:#0f172a;
-  font-weight:800;
-  letter-spacing: .2px;
+  font-weight:700;
+  letter-spacing: -0.5px;
 }
 .db-kpi-sub{
-  margin-top:6px;
+  margin-top:4px;
   font-size:12px;
-  color:#4b5563;
+  color:#64748b;
   min-height: 16px;
 }
 
-/* Tone colors: keep very subtle (Audit_Log style is subtle) */
-.db-kpi--good{
-  border-color: rgba(16,185,129,.25);
-  background: rgba(16,185,129,.04);
-}
-.db-kpi--warn{
-  border-color: rgba(245,158,11,.25);
-  background: rgba(245,158,11,.04);
-}
-.db-kpi--bad{
-  border-color: rgba(239,68,68,.22);
-  background: rgba(239,68,68,.035);
-}
+.db-kpi--good{ border-left: 4px solid #10b981; }
+.db-kpi--warn{ border-left: 4px solid #f59e0b; }
+.db-kpi--bad{ border-left: 4px solid #ef4444; }
 
-/* Panels layout */
 .db-panels-2{
-  margin-top: 12px;
+  margin-top: 20px;
   display:grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 20px;
 }
-.db-panels-1{ margin-top: 12px; }
+.db-panels-1{ margin-top: 20px; }
 
-/* Panels mimic Audit_Log “table blocks” */
 .db-panel{
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   background:#fff;
   overflow:hidden;
-  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  padding: 16px;
 }
 .db-panel-head{
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:10px;
-  padding: 12px 12px 10px;
-  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 16px;
 }
 .db-panel-head h4{
   margin:0;
+  font-size:15px;
+  color:#1e293b;
+  font-weight: 600;
+}
+.db-panel-empty, .db-chart-empty{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color:#94a3b8;
   font-size:14px;
-  color:#0f172a;
-}
-.db-panel-empty{
-  padding: 14px 12px;
-  color:#6b7280;
-  font-size:13px;
+  min-height: 100px;
 }
 
-/* Mini chart: switch to Audit_Log accent (teal) */
-.db-bars{
-  display:flex;
-  align-items:flex-end;
-  gap:6px;
-  padding: 12px;
+/* Ranking List (Progress Bars) */
+.db-ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.db-bar-wrap{
-  flex: 1;
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
+.db-ranking-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.db-bar{
+.db-ranking-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+}
+.db-ranking-val {
+  font-weight: 700;
+  color: #0f172a;
+}
+.db-progress-bg {
   width: 100%;
-  border-radius: 10px 10px 6px 6px;
-  background: rgba(0,128,128,.88);
-  box-shadow: 0 10px 14px rgba(15,23,42,0.10);
-  min-height: 2px;
-  transition: filter .12s ease, transform .12s ease;
+  height: 8px;
+  background-color: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
 }
-.db-bar-wrap:hover .db-bar{
-  filter: brightness(1.03);
-  transform: translateY(-1px);
+.db-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
 }
-.db-chart-empty{
-  padding: 14px 12px;
-  font-size:13px;
-  color:#6b7280;
+.db-ranking-note {
+  font-size: 11px;
+  color: #94a3b8;
 }
 
-/* Top table */
-.db-top-table{ padding: 10px 12px 12px; }
-.db-top-thead,
-.db-top-trow{
-  display:grid;
-  grid-template-columns: 1.5fr .6fr 1fr;
-  gap: 10px;
-  align-items:center;
-}
-.db-top-thead{
-  font-size:12px;
-  color:#6b7280;
-  font-weight:800;
-  padding-bottom: 8px;
-  border-bottom: 1px dashed #e5e7eb;
-}
-.db-top-trow{
-  padding: 10px 0;
-  border-bottom: 1px solid #f3f4f6;
-  font-size:13px;
-  color:#111827;
-}
-.db-top-trow:last-child{ border-bottom:none; }
-.db-top-trow .cell.value{
-  font-weight:800;
-  color:#111827;
-}
-.db-top-trow .cell.note{ color:#4b5563; }
-
-/* Footer: look like Audit_Log pagination bar */
 .db-foot{
   margin: 0 12px;
-  padding: 10px 12px;
-  background: #F9FAFB;
-  border: 1px solid #E5E7EB;
-  border-radius: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  text-align: center;
 }
 
-/* Responsive */
 @media (max-width: 1100px){
   .db-kpi-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .db-panels-2{ grid-template-columns: 1fr; }
 }
 @media (max-width: 760px){
-  .al-page{ padding: 20px; }
+  .al-page{ padding: 16px; }
   .al-head{ flex-direction: column; align-items: stretch; }
   .db-kpi-grid{ grid-template-columns: 1fr; }
-  .db-section{ margin: 0 6px; }
-  .db-foot{ margin: 0 6px; }
+  .db-section{ margin: 0; padding: 16px; }
+  .al-filter-row { flex-direction: column; align-items: stretch; }
+  .al-filter-group { min-width: 100%; }
 }
