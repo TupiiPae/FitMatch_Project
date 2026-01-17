@@ -34,3 +34,42 @@
   border-radius: 6px;
   font-size: 14px;
 }
+
+/* Khung list: scroll + chỉ hiển thị ~10 dòng */
+.st-nutrition-topfoods{
+  /* 1) chính wrapper sẽ là scroll container */
+  max-height: 480px;          /* rõ ràng hơn 520 */
+  overflow: auto;
+  border-radius: 12px;
+}
+
+/* 2) bỏ margin-top mặc định của .st-table để wrapper ôm sát */
+.st-nutrition-topfoods .st-table{
+  margin: 0 !important;
+}
+
+/* 3) sticky header hoạt động theo scroll container (wrapper) */
+.st-nutrition-topfoods .st-thead{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f8fafc;
+}
+
+/* 4) giữ mỗi dòng ổn định -> dễ “đúng 10 dòng” */
+.st-nutrition-topfoods .st-trow .cell,
+.st-nutrition-topfoods .st-thead .cell{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* scrollbar gọn */
+.st-nutrition-topfoods::-webkit-scrollbar{ width: 8px; }
+.st-nutrition-topfoods::-webkit-scrollbar-thumb{
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.st-nutrition-topfoods::-webkit-scrollbar-thumb:hover{
+  background: #94a3b8;
+}

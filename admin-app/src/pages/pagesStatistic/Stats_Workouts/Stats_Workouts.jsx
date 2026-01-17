@@ -23,6 +23,9 @@ const TYPE_LABEL = {
   unknown: "Khác",
 };
 
+const TOP_EXERCISES_TABLE_LIMIT = 50;
+const TOP_EXERCISES_CHART_LIMIT = 10;
+
 export default function Stats_Workouts() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
@@ -53,7 +56,7 @@ export default function Stats_Workouts() {
         to,
         granularity,
         q: q?.trim() || "",
-        top: 8,
+        top: TOP_EXERCISES_TABLE_LIMIT,
       });
 
       if (!mountedRef.current) return;
@@ -136,7 +139,7 @@ export default function Stats_Workouts() {
     ];
   }, [k]);
 
-  const topExercises = useMemo(() => {
+  const topExercisesRaw = useMemo(() => {
     const rows = Array.isArray(data?.topExercises) ? data.topExercises : [];
     return rows.map((x, idx) => ({
       _key: `${x?.name || "row"}-${idx}`,
@@ -146,9 +149,19 @@ export default function Stats_Workouts() {
     }));
   }, [data]);
 
-  const topExercisesBar = useMemo(() => {
-    return topExercises.map((r) => ({ t: r.name, v: Number(r.value || 0) }));
-  }, [topExercises]);
+  const topExercisesTable = useMemo(
+    () => topExercisesRaw.slice(0, TOP_EXERCISES_TABLE_LIMIT),
+    [topExercisesRaw]
+  );
+
+  const topExercisesBar = useMemo(
+    () =>
+      topExercisesTable.slice(0, TOP_EXERCISES_CHART_LIMIT).map((r) => ({
+        t: r.name,
+        v: Number(r.value || 0),
+      })),
+    [topExercisesTable]
+  );
 
   const itemTypesPie = useMemo(() => {
     return Array.isArray(dist?.itemTypes) ? dist.itemTypes : [];
@@ -255,15 +268,17 @@ export default function Stats_Workouts() {
           <i className="fa-solid fa-medal" /> <span>Bảng xếp hạng bài tập</span>
         </div>
 
-        <SimpleTopTable
-          columns={[
-            { key: "name", label: "Bài tập", w: "1.2fr" },
-            { key: "value", label: "Số lượt dùng", w: "0.6fr" },
-            { key: "note", label: "Ghi chú", w: "1.2fr" },
-          ]}
-          rows={topExercises}
-          emptyText="Chưa có dữ liệu top bài tập"
-        />
+        <div className="st-workouts-toplist">
+          <SimpleTopTable
+            columns={[
+              { key: "name", label: "Bài tập", w: "1.2fr" },
+              { key: "value", label: "Số lượt dùng", w: "0.6fr" },
+              { key: "note", label: "Ghi chú", w: "1.2fr" },
+            ]}
+            rows={topExercisesTable}
+            emptyText="Chưa có dữ liệu top bài tập"
+          />
+        </div>
       </StatsCard>
     </div>
   );

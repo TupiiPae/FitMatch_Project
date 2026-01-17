@@ -34,3 +34,54 @@
   border-radius: 6px;
   font-size: 14px;
 }
+
+/* Top nhóm: hiển thị ~10 dòng + scroll */
+.st-connections-toplist{
+  --st-row-h: 44px; /* gần đúng 1 dòng của st-table (thead/trow) */
+  max-height: calc(var(--st-row-h) * 11 + 2px); /* header + 10 rows */
+  overflow: auto;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+/* bỏ style mặc định để wrapper quản lý border/overflow */
+.st-connections-toplist .st-table{
+  margin: 0 !important;
+  border: none;
+  border-radius: 0;
+  overflow: visible; /* tránh làm sticky header bị lỗi */
+}
+
+/* sticky header */
+.st-connections-toplist .st-thead{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f8fafc;
+}
+
+/* cố định chiều cao gần đúng để “nhìn thấy 10 dòng” rõ ràng */
+.st-connections-toplist .st-thead,
+.st-connections-toplist .st-trow{
+  min-height: var(--st-row-h);
+}
+
+/* chống tràn chữ */
+.st-connections-toplist .st-trow .cell,
+.st-connections-toplist .st-thead .cell{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* scrollbar gọn */
+.st-connections-toplist::-webkit-scrollbar{ width: 8px; }
+.st-connections-toplist::-webkit-scrollbar-thumb{
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.st-connections-toplist::-webkit-scrollbar-thumb:hover{
+  background: #94a3b8;
+}

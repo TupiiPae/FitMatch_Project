@@ -117,6 +117,9 @@ const STATUS_LABEL = (k) => {
   return String(k || "—");
 };
 
+const TOP_ROOMS_TABLE_LIMIT = 50;   // tối đa 50 dòng
+const TOP_ROOMS_MIN_MEMBERS = 1;    // chỉ lấy nhóm còn thành viên
+
 export default function Stats_Connections() {
   const [loading, setLoading] = useState(false);
 
@@ -150,11 +153,11 @@ export default function Stats_Connections() {
       const r = normalizeRange(from, to);
 
       const root = await getConnectStats({
-        q,
+        q: String(q || "").trim(),
         from: r.from,
         to: r.to,
         granularity,
-        top: 8,
+        top: TOP_ROOMS_TABLE_LIMIT,
         dateFrom: r.from,
         dateTo: r.to,
       });
@@ -240,14 +243,30 @@ export default function Stats_Connections() {
       setRoomTypePie(fallbackRoomPie);
 
       const top = safeArr(root?.top?.groupsByMembers);
-      setTopRooms(
-        top.map((r, idx) => ({
-          _key: r?._key || r?.id || r?._id || idx,
-          name: r?.name ?? `Nhóm #${idx + 1}`,
-          value: r?.value ?? "—",
-          note: r?.note ?? "",
-        }))
-      );
+
+      const mapped = top
+        .map((r, idx) => {
+          // cố gắng đọc số thành viên từ nhiều key khác nhau cho chắc
+          const members = num(
+            r?.members ?? r?.memberCount ?? r?.count ?? r?.value ?? 0,
+            0
+          );
+
+          return {
+            _key: r?._key || r?.id || r?._id || idx,
+            name: r?.name ?? `Nhóm #${idx + 1}`,
+            value: members,          // luôn là số
+            note: r?.note ?? "",
+          };
+        })
+        // loại nhóm đã đóng / không còn thành viên
+        .filter((x) => num(x.value, 0) >= TOP_ROOMS_MIN_MEMBERS)
+        // đảm bảo đúng "top" theo số thành viên
+        .sort((a, b) => num(b.value, 0) - num(a.value, 0))
+        // giới hạn tối đa 50
+        .slice(0, TOP_ROOMS_TABLE_LIMIT);
+
+      setTopRooms(mapped);
 
       setLastUpdated(new Date());
 
@@ -395,18 +414,20 @@ export default function Stats_Connections() {
         </div>
 
         <div className="st-block-title">
-          <i className="fa-solid fa-fire" /> <span>Top nhóm hoạt động sôi nổi</span>
+          <i className="fa-solid fa-fire" /> <span>Top nhóm đang hoạt động sôi nổi</span>
         </div>
 
-        <SimpleTopTable
-          columns={[
-            { key: "name", label: "Nhóm/Phòng", w: "1.2fr" },
-            { key: "value", label: "Thành viên", w: "0.6fr" },
-            { key: "note", label: "Ghi chú", w: "1.2fr" },
-          ]}
-          rows={topRooms}
-          emptyText={loading ? "Đang tải..." : "Chưa có dữ liệu top nhóm/phòng"}
-        />
+        <div className="st-connections-toplist">
+          <SimpleTopTable
+            columns={[
+              { key: "name", label: "Nhóm/Phòng", w: "1.2fr" },
+              { key: "value", label: "Thành viên", w: "0.6fr", render: (r) => fmtInt(r?.value) },
+              { key: "note", label: "Ghi chú", w: "1.2fr" },
+            ]}
+            rows={topRooms}
+            emptyText={loading ? "Đang tải..." : "Chưa có dữ liệu top nhóm/phòng"}
+          />
+        </div>
       </StatsCard>
     </div>
   );

@@ -28,6 +28,9 @@ const FOOD_STATUS_LABEL = {
   rejected: "Từ chối",
 };
 
+const TOP_FOODS_TABLE_LIMIT = 50; // tối đa 50 món cho danh sách
+const TOP_FOODS_CHART_LIMIT = 10; // biểu đồ chỉ vẽ 10 món cho đẹp
+
 export default function Stats_Nutrition() {
   const [loading, setLoading] = useState(false);
 
@@ -52,7 +55,7 @@ export default function Stats_Nutrition() {
         to,
         granularity,
         q: String(q || "").trim(),
-        top: 8,
+        top: TOP_FOODS_TABLE_LIMIT,
       });
       setData(res);
       if (!silent) toast.success("Đã tải thống kê dinh dưỡng");
@@ -87,14 +90,20 @@ export default function Stats_Nutrition() {
     ? data.distributions.foodStatus
     : [];
 
-  const topFoods = Array.isArray(data?.topFoods) ? data.topFoods : [];
+  const topFoodsRaw = Array.isArray(data?.topFoods) ? data.topFoods : [];
+
+  const topFoodsTable = useMemo(
+    () => topFoodsRaw.slice(0, TOP_FOODS_TABLE_LIMIT),
+    [topFoodsRaw]
+  );
+
   const topFoodsBar = useMemo(
     () =>
-      topFoods.map((x, i) => ({
+      topFoodsTable.slice(0, TOP_FOODS_CHART_LIMIT).map((x, i) => ({
         t: String(x?.name || `#${i + 1}`),
         v: Number(x?.value || 0),
       })),
-    [topFoods]
+    [topFoodsTable]
   );
 
   const kpis = useMemo(
@@ -251,15 +260,17 @@ export default function Stats_Nutrition() {
           <span>Chi tiết món ăn phổ biến</span>
         </div>
 
-        <SimpleTopTable
-          columns={[
-            { key: "name", label: "Món ăn", w: "1.2fr" },
-            { key: "value", label: "Số lượt ghi", w: "0.6fr" },
-            { key: "note", label: "Ghi chú", w: "1.2fr" },
-          ]}
-          rows={topFoods}
-          emptyText="Chưa có dữ liệu món ăn nổi bật"
-        />
+        <div className="st-nutrition-topfoods">
+          <SimpleTopTable
+            columns={[
+              { key: "name", label: "Món ăn", w: "1.2fr" },
+              { key: "value", label: "Số lượt ghi", w: "0.6fr" },
+              { key: "note", label: "Ghi chú", w: "1.2fr" },
+            ]}
+            rows={topFoodsTable}
+            emptyText="Chưa có dữ liệu món ăn nổi bật"
+          />
+        </div>
       </StatsCard>
     </div>
   );

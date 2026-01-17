@@ -34,6 +34,11 @@ const fmtPct = (v) => {
   return `${n}%`;
 };
 
+const num = (v, fallback = 0) => {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : fallback;
+};
+
 function SafeResponsive({ height = 250, children }) {
   const ref = useRef(null);
   const [ready, setReady] = useState(false);
@@ -313,11 +318,20 @@ export default function Dashboard() {
     note: x?.note || "",
   }));
 
-  const topGroups = safeArr(connectStats?.top?.groupsByMembers).map((x) => ({
-    name: x?.name || "—",
-    value: x?.value ?? "—",
-    note: x?.note || "",
-  }));
+  const topGroups = safeArr(connectStats?.top?.groupsByMembers)
+    .map((x, idx) => {
+      const members = num(
+        x?.members ?? x?.memberCount ?? x?.count ?? x?.value ?? 0,
+        0
+      );
+      return {
+        name: x?.name || `Nhóm #${idx + 1}`,
+        value: members, // luôn là số
+        note: x?.note || "",
+      };
+    })
+    .filter((x) => num(x.value, 0) >= 1)          // loại nhóm đã đóng (0 thành viên)
+    .sort((a, b) => num(b.value, 0) - num(a.value, 0)); // đảm bảo top đúng theo thành viên
 
   const topReportReasons = safeArr(connectStats?.top?.reportReasonsTop).map((x) => ({
     name: x?.key || x?.name || "—",
@@ -377,7 +391,7 @@ export default function Dashboard() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Tìm nhanh (tuỳ API): tên người dùng, món ăn, lịch tập, phòng nhóm..."
+              placeholder="Tìm nhanh: người dùng, món ăn, lịch tập, phòng nhóm..."
             />
           </div>
 
@@ -485,7 +499,7 @@ export default function Dashboard() {
               sub={`Tỉ lệ: ${fmtPct(uK?.profileCompleteRate)}`}
             />
             <KpiCard
-              title="Người dùng hoạt động (1 ngày)"
+              title="Người dùng hoạt động (hôm nay)"
               value={fmtNum(uK?.active?.dau)}
             />
             <KpiCard

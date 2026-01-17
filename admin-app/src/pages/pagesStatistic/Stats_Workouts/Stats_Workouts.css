@@ -34,3 +34,41 @@
   border-radius: 6px;
   font-size: 14px;
 }
+
+/* Bảng xếp hạng bài tập: hiển thị ~10 dòng + scroll */
+.st-workouts-toplist{
+  max-height: 480px;
+  overflow: auto;
+  border-radius: 12px;
+}
+
+/* Bỏ margin-top mặc định của .st-table để wrapper ôm sát */
+.st-workouts-toplist .st-table{
+  margin: 0 !important;
+}
+
+/* Sticky header khi scroll */
+.st-workouts-toplist .st-thead{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f8fafc;
+}
+
+/* Chống vỡ layout khi text dài */
+.st-workouts-toplist .st-trow .cell,
+.st-workouts-toplist .st-thead .cell{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Scrollbar gọn */
+.st-workouts-toplist::-webkit-scrollbar{ width: 8px; }
+.st-workouts-toplist::-webkit-scrollbar-thumb{
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.st-workouts-toplist::-webkit-scrollbar-thumb:hover{
+  background: #94a3b8;
+}
