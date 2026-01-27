@@ -166,7 +166,7 @@ export default function ChatBell() {
         aria-haspopup="menu"
         aria-expanded={open ? "true" : "false"}
       >
-        <i className="fa-solid fa-message" />
+        <i className="fa-brands fa-facebook-messenger"></i>
         {unreadTotal > 0 ? (
           <span className="cnb-badge">{unreadTotal > 99 ? "99+" : unreadTotal}</span>
         ) : null}

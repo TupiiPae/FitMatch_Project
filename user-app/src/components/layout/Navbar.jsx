@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-// Import thêm useLocation
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -8,7 +7,7 @@ import {
   faShieldHalved, faCamera, faChartLine, faUserFriends, faMobileAlt,
   faAppleAlt, faUtensils, faBrain, faCalculator, faBookOpen,
   faHeartPulse, faPersonRunning, faDumbbell, faVolleyball,
-  faClipboard,faClipboardList,faClipboardCheck,faBell,
+  faClipboard, faClipboardList, faClipboardCheck, faBell,
 } from "@fortawesome/free-solid-svg-icons";
 import { getMe } from "../../api/account";
 import api from "../../lib/api";
@@ -21,7 +20,6 @@ const logoHref =
   (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") +
   "images/fm-logo-name.png";
 
-// Helpers (KHÔNG THAY ĐỔI)
 const fmtDate = (iso) => {
   if (!iso) return "xx/xx/xxxx";
   const d = new Date(iso);
@@ -46,7 +44,6 @@ const calcAge = (dob) => {
 const apiBase = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE) || api.defaults?.baseURL || "";
 const toAbs = (u) => (u ? new URL(u, apiBase).toString() : u);
 const withBust = (u) => (u ? `${u}${u.includes("?") ? "&" : "?"}t=${Date.now()}` : u);
-// (HẾT Helpers)
 
 export default function Navbar({
   nickname: nicknameProp = "Bạn",
@@ -57,11 +54,10 @@ export default function Navbar({
   weightKg: weightProp = "xx",
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState(null); // Giữ cho mobile
+  const [openDropdown, setOpenDropdown] = useState(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [openLogout, setOpenLogout] = useState(false);
 
-    // ================= NOTIFICATIONS =================
   const nav = useNavigate();
 
   const [notiOpen, setNotiOpen] = useState(false);
@@ -72,7 +68,6 @@ export default function Navbar({
   const safeArr = (v) => (Array.isArray(v) ? v : []);
 
   const parseNotiList = (res) => {
-    // hỗ trợ nhiều kiểu responseOk/res.data
     const d = res?.data ?? res;
     const data = d?.data ?? d;
     const items =
@@ -86,21 +81,14 @@ export default function Navbar({
   const fetchNotifications = async ({ silent = false } = {}) => {
     try {
       if (!silent) setNotiLoading(true);
-
-      // ✅ bạn có thể tạo endpoint này trên BE:
-      // GET /api/notifications?limit=20
       const r = await api.get("/api/notifications", { params: { limit: 20 } });
       const items = parseNotiList(r);
-
       setNotiItems(items);
 
-      // nếu API trả kèm unread -> dùng luôn, không thì tính tạm
-      const unread =
-        Number(r?.data?.data?.unread ?? r?.data?.unread ?? NaN);
+      const unread = Number(r?.data?.data?.unread ?? r?.data?.unread ?? NaN);
       if (Number.isFinite(unread)) setUnreadCount(unread);
       else setUnreadCount(items.filter((x) => !x?.readAt).length);
     } catch (e) {
-      // nếu bạn chưa làm API, phần realtime vẫn chạy
     } finally {
       if (!silent) setNotiLoading(false);
     }
@@ -108,7 +96,6 @@ export default function Navbar({
 
   const markRead = async (id) => {
     if (!id) return;
-    // PATCH /api/notifications/:id/read
     try {
       await api.patch(`/api/notifications/${id}/read`);
     } catch {}
@@ -121,7 +108,6 @@ export default function Navbar({
   };
 
   const markAllRead = async () => {
-    // PATCH /api/notifications/read-all
     try {
       await api.patch("/api/notifications/read-all");
     } catch {}
@@ -140,7 +126,6 @@ export default function Navbar({
 
     setNotiOpen(false);
 
-    // map route theo type (bạn có thể mở rộng thêm)
     if (type === "chat_message" && data?.conversationId) {
       nav(`/tin-nhan?conversationId=${encodeURIComponent(String(data.conversationId))}`, {
         state: { conversationId: String(data.conversationId) },
@@ -148,13 +133,11 @@ export default function Navbar({
       return;
     }
 
-    // match request / accept / reject => về trang kết nối
     if (type.startsWith("match_") || type.includes("group_") || type.includes("duo")) {
       nav("/ket-noi");
       return;
     }
 
-    // fallback
     nav("/home");
   };
 
@@ -162,9 +145,8 @@ export default function Navbar({
   const [loading, setLoading] = useState(true);
 
   const accRef = useRef(null);
-  const location = useLocation(); // Thêm hook location
+  const location = useLocation();
 
-  // Logic fetch /api/user/me (KHÔNG THAY ĐỔI)
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -183,7 +165,6 @@ export default function Navbar({
     return () => { mounted = false; };
   }, []);
 
-    // Realtime notifications
   useEffect(() => {
     const token =
       localStorage.getItem("token") ||
@@ -192,7 +173,6 @@ export default function Navbar({
 
     if (!token) return;
 
-    // load lần đầu (nếu bạn đã có API)
     fetchNotifications({ silent: true });
 
     const s = getSocket?.();
@@ -201,14 +181,12 @@ export default function Navbar({
     const onNew = (n) => {
       if (!n) return;
 
-      // prepend item
       setNotiItems((prev) => {
         const id = String(n?._id || "");
         if (id && prev.some((x) => String(x?._id) === id)) return prev;
         return [n, ...prev].slice(0, 30);
       });
 
-      // tăng badge (server cũng sẽ bắn noti:count)
       if (!n?.readAt) setUnreadCount((c) => Number(c || 0) + 1);
     };
 
@@ -226,7 +204,6 @@ export default function Navbar({
     };
   }, []);
 
-  // Logic xử lý props (KHÔNG THAY ĐỔI)
   const p = me?.profile || {};
   const displayNickname = p.nickname || me?.username || nicknameProp || "Bạn";
   const displayJoinDate = fmtDate(me?.createdAt) || joinDateProp;
@@ -241,34 +218,29 @@ export default function Navbar({
 
   const displayAvatar = avatarFromDb || avatarProp || "/images/avatar.png";
 
-  // Logic toggles (KHÔNG THAY ĐỔI)
   const toggleMobile = () => setMobileOpen(v => !v);
   const dropdownToggle = key => setOpenDropdown(prev => (prev === key ? null : key));
   const toggleAccount = () => setAccountOpen(v => !v);
   const closeAccount = () => setAccountOpen(false);
 
-  // Đóng toàn bộ menu mobile + dropdown
   const closeMobileMenu = () => {
     setMobileOpen(false);
     setOpenDropdown(null);
   };
 
-  // Tự đóng khi chuyển route (phòng trường hợp NavLink không bắt onClick)
   useEffect(() => {
     closeMobileMenu();
   }, [location.pathname]);
 
-  // Logic click outside (KHÔNG THAY ĐỔI)
   useEffect(() => {
     const onDocClick = (e) => {
       if (!accRef.current) return;
-      if (!accRef.current.contains(e.target)) {setAccountOpen(false); setNotiOpen(false);}
+      if (!accRef.current.contains(e.target)) { setAccountOpen(false); setNotiOpen(false); }
     };
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  // Logic Esc close modal (KHÔNG THAY ĐỔI)
   useEffect(() => {
     if (!openLogout) return;
     const onKey = (e) => { if (e.key === "Escape") setOpenLogout(false); };
@@ -276,7 +248,6 @@ export default function Navbar({
     return () => document.removeEventListener("keydown", onKey);
   }, [openLogout]);
 
-  // Logic upload avatar (KHÔNG THAY ĐỔI)
   const uploadAvatarQuick = async (file) => {
     try {
       if (!file) return;
@@ -303,7 +274,6 @@ export default function Navbar({
     }
   };
 
-  // Logic đăng xuất (KHÔNG THAY ĐỔI)
   const handleLogout = async () => {
     try {
       localStorage.removeItem("token");
@@ -314,15 +284,12 @@ export default function Navbar({
     }
   };
 
-  // Biến kiểm tra active cho menu cha
-  const isDinhDuongActive = location.pathname.startsWith('/dinh-duong');
-  const isTapLuyenActive = location.pathname.startsWith('/tap-luyen');
+  const isDinhDuongActive = location.pathname.startsWith("/dinh-duong");
+  const isTapLuyenActive = location.pathname.startsWith("/tap-luyen");
 
   return (
     <header className="fm-header" role="banner">
-      {/* Cấu trúc layout mới: flex, space-between */}
       <div className="fm-nav">
-        {/* NHÓM TRÁI: Logo + Menu */}
         <div className="fm-nav-left-group">
           <div className="fm-left">
             <button className="fm-burger" aria-label="Mở menu" onClick={toggleMobile}>
@@ -333,14 +300,13 @@ export default function Navbar({
             </NavLink>
           </div>
 
-          {/* CENTER: MENU (Đã cập nhật) */}
           <nav className={`fm-menu ${mobileOpen ? "is-open" : ""}`} aria-label="Chính">
             <ul className="fm-menu__list">
               <li className="fm-menu__item">
                 <NavLink to="/home" className="fm-link" onClick={closeMobileMenu}>Trang chủ</NavLink>
               </li>
-              {/* DINH DƯỠNG (Mega-menu) */}
-              <li className={`fm-menu__item has-dropdown ${isDinhDuongActive ? 'is-active-parent' : ''}`}>
+
+              <li className={`fm-menu__item has-dropdown ${isDinhDuongActive ? "is-active-parent" : ""}`}>
                 <NavLink to="/dinh-duong/nhat-ky" className="fm-link" onClick={closeMobileMenu}>
                   Dinh dưỡng<i className="fa-solid fa-caret-down"></i>
                 </NavLink>
@@ -353,11 +319,8 @@ export default function Navbar({
                   <FontAwesomeIcon icon={faCaretDown} />
                 </button>
 
-                <div className={`fm-dropdown fm-megamenu ${openDropdown === "dd" ? "is-open" : ""}`} role="menu" aria-haspopup="true">
+                <div className={`fm-dropdown fm-megamenu fm-dropdown--stack ${openDropdown === "dd" ? "is-open" : ""}`} role="menu" aria-haspopup="true">
                   <div className="fm-megamenu-content">
-                    {/* <div className="fm-megamenu-image">
-                      <img src="/images/dropd1.png" alt="Dinh dưỡng" />
-                    </div> */}
                     <div className="fm-megamenu-links">
                       <NavLink to="/dinh-duong/nhat-ky" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faBookOpen} />
@@ -380,13 +343,6 @@ export default function Navbar({
                           <span>Thêm nhanh các bữa ăn sáng, trưa, tối</span>
                         </div>
                       </NavLink>
-                      {/* <NavLink to="/dinh-duong/tao-mon-an-ai" className="fm-megamenu-link" role="menuitem">
-                        <FontAwesomeIcon icon={faBrain} />
-                        <div>
-                          <strong>Tạo món ăn với AI</strong>
-                          <span>Để AI tính toán công thức món ăn cho bạn</span>
-                        </div>
-                      </NavLink> */}
                       <NavLink to="/dinh-duong/thuc-don-goi-y" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faLightbulb} />
                         <div>
@@ -406,8 +362,7 @@ export default function Navbar({
                 </div>
               </li>
 
-              {/* TẬP LUYỆN (Mega-menu) */}
-              <li className={`fm-menu__item has-dropdown ${isTapLuyenActive ? 'is-active-parent' : ''}`}>
+              <li className={`fm-menu__item has-dropdown ${isTapLuyenActive ? "is-active-parent" : ""}`}>
                 <NavLink to="/tap-luyen/lich-cua-ban" className="fm-link" onClick={closeMobileMenu}>
                   Tập luyện<i className="fa-solid fa-caret-down"></i>
                 </NavLink>
@@ -420,24 +375,14 @@ export default function Navbar({
                   <FontAwesomeIcon icon={faCaretDown} />
                 </button>
 
-                <div className={`fm-dropdown fm-megamenu ${openDropdown === "tl" ? "is-open" : ""}`} role="menu" aria-haspopup="true">
+                <div className={`fm-dropdown fm-megamenu fm-dropdown--stack ${openDropdown === "tl" ? "is-open" : ""}`} role="menu" aria-haspopup="true">
                   <div className="fm-megamenu-content">
-                    {/* <div className="fm-megamenu-image">
-                      <img src="/images/dropd2.png" alt="Tập luyện" />
-                    </div> */}
                     <div className="fm-megamenu-links">
                       <NavLink to="/tap-luyen/lich-cua-ban" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faCalendar} />
                         <div>
                           <strong>Lịch tập của bạn</strong>
                           <span>Xem kế hoạch tập luyện của bạn</span>
-                        </div>
-                      </NavLink>
-                      <NavLink to="/tap-luyen/bai-tap/khang-luc" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
-                        <FontAwesomeIcon icon={faDumbbell} />
-                        <div>
-                          <strong>Các bài tập kháng lực</strong>
-                          <span>Danh sách bài tập xây dựng và phát triển cơ bắp</span>
                         </div>
                       </NavLink>
                       <NavLink to="/tap-luyen/lich-cua-ban/tao" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
@@ -447,11 +392,26 @@ export default function Navbar({
                           <span>Xây dựng kế hoạch tập luyện của bạn</span>
                         </div>
                       </NavLink>
+                      <NavLink to="/tap-luyen/bai-tap/khang-luc" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
+                        <FontAwesomeIcon icon={faDumbbell} />
+                        <div>
+                          <strong>Các bài tập kháng lực</strong>
+                          <span>Danh sách bài tập phát triển cơ bắp</span>
+                        </div>
+                      </NavLink>
+
                       <NavLink to="/tap-luyen/bai-tap/cardio" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faHeartPulse} />
                         <div>
                           <strong>Các bài tập cardio</strong>
-                          <span>Danh sách bài tập tăng cường sức bền tim mạch</span>
+                          <span>Danh sách bài tập tăng cường sức bền</span>
+                        </div>
+                      </NavLink>
+                      <NavLink to="/tap-luyen/bai-tap/the-thao" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
+                        <FontAwesomeIcon icon={faVolleyball} />
+                        <div>
+                          <strong>Các môn thể thao</strong>
+                          <span>Danh sách các môn thể thao</span>
                         </div>
                       </NavLink>
                       <NavLink to="/tap-luyen/goi-y" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
@@ -461,33 +421,23 @@ export default function Navbar({
                           <span>Các kế hoạch tập luyện mẫu</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/tap-luyen/bai-tap/the-thao" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
-                        <FontAwesomeIcon icon={faVolleyball} />
-                        <div>
-                          <strong>Các môn thể thao</strong>
-                          <span>Danh sách các môn thể thao </span>
-                        </div>
-                      </NavLink>                     
                     </div>
                   </div>
                 </div>
               </li>
+
               <li className="fm-menu__item">
                 <NavLink to="/ket-noi" className="fm-link" onClick={closeMobileMenu}>Kết nối</NavLink>
               </li>
               <li className="fm-menu__item">
                 <NavLink to="/thong-ke" className="fm-link" onClick={closeMobileMenu}>Thống kê</NavLink>
               </li>
-              {/* <li className="fm-menu__item">
-                <NavLink to="/ung-dung" className="fm-link">Ứng dụng</NavLink>
-              </li> */}
             </ul>
           </nav>
         </div>
 
-        {/* RIGHT: HELLO + AVATAR + ACCOUNT DROPDOWN (KHÔNG THAY ĐỔI) */}
         <div className="fm-right" ref={accRef}>
-          <ChatBell/>
+          <ChatBell />
           <NotificationBell />
           <span className="fm-hello">
             Xin chào, <strong>{displayNickname}</strong>
@@ -512,7 +462,6 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* Modal xác nhận Đăng xuất (KHÔNG THAY ĐỔI) */}
       {openLogout && (
         <div className="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
           <div className="logout-backdrop" onClick={() => setOpenLogout(false)} />
@@ -530,8 +479,6 @@ export default function Navbar({
   );
 }
 
-/* ================= Account Dropdown Component (KHÔNG THAY ĐỔI) ================= */
-// ... (Giữ nguyên toàn bộ component AccountDropdown)
 function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, weightKg, avatarUrl, onUploadAvatar, onAskLogout }) {
   const [preview, setPreview] = useState(null);
   const fileRef = useRef(null);
@@ -588,7 +535,6 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
         <NavLink to="/tai-khoan/tai-khoan" className="acc-item"><FontAwesomeIcon icon={faGear} />Tài khoản</NavLink>
         <div className="acc-sep" />
         <NavLink to="/tin-nhan" className="acc-item"><FontAwesomeIcon icon={faMessage} />Tin nhắn</NavLink>
-        <div className="acc-sep" />
       </div>
       <button className="acc-logout" type="button" onClick={onAskLogout}>
         <FontAwesomeIcon icon={faRightFromBracket} /> Đăng xuất

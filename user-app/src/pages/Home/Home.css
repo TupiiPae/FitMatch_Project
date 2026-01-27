@@ -1,51 +1,244 @@
-/* Container chính, đồng bộ 1700px với các trang khác */
-.home-container-fill {
-    min-height: 100%;
-    margin-top: -16px;
-    margin-bottom: -150px;
-    max-width: 100%;
-    box-sizing: border-box;
-    overflow-x: hidden;
+:root {
+  --primary-red: #E31C25;
+  --bg-black: #050505;
+  --text-white: #FFFFFF;
+  --text-gray: #B0B0B0;
+  --dot-inactive: #444444;
 }
 
-/* Card chứa ảnh banner, đồng bộ style */
-.home-image-banner {
-  background: #fff;
-  /* Quan trọng: Cho phép ảnh fill */
-  line-height: 0; /* Bỏ khoảng trống dưới ảnh */
-  overflow: hidden; /* Đảm bảo ảnh bo góc */
-  border-bottom: 1px solid #9ca3af;
+.hero-section {
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  height: calc(100vh - 80px);
+  min-height: 600px;
+  background-color: var(--bg-black);
+  display: flex;
+  overflow: hidden;
 }
 
-.home-image-banner img {
-  width: 100%; /* Fill 100% chiều rộng card */
-  height: auto; /* Giữ tỷ lệ */
-  display: block; /* Bỏ khoảng trống dưới ảnh */
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 55%;
+  height: 100%;
+  z-index: 0;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .home-container-fill {
-    margin-top: 0;
-    margin-bottom: -100px;
-    padding: 0;
-  }
+.image-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
 
-  .home-image-banner {
-    margin: 0;
-    border-radius: 0;
-  }
+.image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  filter: grayscale(30%) contrast(1.1);
+}
 
-  .home-image-banner img {
+.fade-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(to right, rgba(5,5,5,0) 40%, var(--bg-black) 90%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 50px;
+  height: 100%;
+}
+
+/* ✅ QUAN TRỌNG: content-wrapper làm "mốc" để arrows căn theo text (tránh lệch như ảnh) */
+.content-wrapper {
+  width: 50%;
+  padding-left: 40px;
+  position: relative;    
+  height: 100%;
+  padding-bottom: 140px;  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.text-container {
+  width: 100%;
+  padding-left: 0;
+  padding-bottom: 0;
+  transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+}
+
+.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-out {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.typography-box {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.typography-box h1 {
+  font-family: 'Oswald', 'Teko', sans-serif;
+  font-size: 85px;
+  font-weight: 700;
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--text-white);
+  margin: 0;
+  letter-spacing: -1px;
+}
+
+.text-red {
+  color: var(--primary-red);
+}
+
+.hero-desc {
+  font-size: 16px;
+  color: var(--text-gray);
+  margin-bottom: 0;
+  max-width: 90%;
+  line-height: 1.6;
+  font-style: italic;
+  border-left: 3px solid var(--primary-red);
+  padding-left: 15px;
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+}
+
+/* ✅ DOTS: nằm dưới text, tách hẳn khỏi arrows */
+.hero-dots {
+  margin-top: 30px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.dots-container {
+  display: flex;
+  gap: 10px;
+  padding-left: 0;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--dot-inactive);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.dot.active {
+  background-color: var(--primary-red);
+  transform: scale(1.4);
+  box-shadow: 0 0 10px rgba(227, 28, 37, 0.6);
+}
+
+.dot::after {
+  content: '';
+  position: absolute;
+  top: -10px; right: -10px; bottom: -10px; left: -10px;
+}
+
+.hero-arrows {
+  position: absolute;
+  bottom: clamp(35px, 14vh, 100px);
+  z-index: 10;
+}
+
+.arrows-container {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-btn {
+  width: 50px;
+  height: 50px;
+  background: transparent;
+  border: 1px solid #333;
+  color: var(--text-white);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+  border-color: var(--primary-red);
+  color: var(--primary-red);
+  background-color: rgba(227, 28, 37, 0.1);
+}
+
+@media (max-width: 1024px) {
+  .hero-background {
     width: 100%;
-    height: auto;
-    display: block;
+    opacity: 0.4;
+  }
+
+  .fade-overlay {
+    background: linear-gradient(to top, var(--bg-black) 20%, rgba(5,5,5,0.7) 100%);
+  }
+
+  .hero-content {
+    justify-content: center;
+  }
+
+  .content-wrapper {
+    width: 100%;
+    padding-left: 0;
+    align-items: center;
+    text-align: center;
+    padding-bottom: 150px;
+  }
+
+  .hero-desc {
+    justify-content: center;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .typography-box h1 {
+    font-size: 60px;
+  }
+
+  /* center dots + arrows trên tablet/mobile */
+  .hero-dots {
+    justify-content: center;
+  }
+
+  .hero-arrows {
+    left: 50%;
+    transform: translateX(-50%);
   }
 }
 
 @media (max-width: 480px) {
-  .home-container-fill {
-    margin-top: 0;
-    margin-bottom: -80px;
+  .typography-box h1 {
+    font-size: 42px;
   }
 }

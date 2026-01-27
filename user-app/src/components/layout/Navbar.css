@@ -1,27 +1,30 @@
 :root {
-  /* ===== KÍCH THƯỚC / SPACING ===== */
-  --nav-size: 100px;
+  --primary-red: #E31C25;
+  --bg-black: #050505;
+  --text-white: #FFFFFF;
+  --text-gray: #B0B0B0;
+
+  --nav-size: 80px;
   --nav-size-mb: 68px;
   --nav-x-pad: 0;
   --nav-max-width: 1400px;
-  --nav-gap: 72px;        /* gap mặc định nhỏ lại cho gọn */
+  --nav-gap: 72px;
   --menu-gap: 12px;
 
-  /* ===== MÀU SẮC CHUNG ===== */
-  --fm-ring: #1f2937;
-  --fm-text: #e5e7eb;
-  --fm-muted: #9ca3af;
+  --fm-ring: rgba(255, 255, 255, 0.12);
+  --fm-text: #f5f5f5;
+  --fm-muted: var(--text-gray);
 
-  /* ===== PALETTE NAVBAR ĐEN – ĐỎ ===== */
-  --nav-bg: #020617;
-  --nav-bg-soft: #020617;
-  --nav-text: #fff;
-  --nav-accent: #d30016;          /* đỏ chính */
-  --nav-accent-soft: rgba(239, 68, 68, 0.15);
-  --menu-hover-text: #fff;     /* đỏ nhạt hover */
+  --nav-bg: var(--bg-black);
+  --nav-bg-soft: rgba(5, 5, 5, 0.92);
+  --nav-text: var(--text-white);
+  --nav-accent: var(--primary-red);
+  --nav-accent-soft: rgba(227, 28, 37, 0.40);
+  --menu-hover-text: var(--primary-red);
+  --fm-panel: rgba(255, 255, 255, 0.06);
+  --fm-border: rgba(255, 255, 255, 0.30);
 }
 
-/* Giảm gap khi màn hình nhỏ dần (nhưng vẫn còn desktop) */
 @media (max-width: 1280px) {
   :root { --nav-gap: 48px; }
 }
@@ -35,20 +38,21 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #121212;
+  background: var(--bg-black);
   color: var(--fm-text);
 }
 
-.fm-main { flex: 1; 
-  width: 100%; padding: 16px 0 0 0}
+.fm-main {
+  flex: 1;
+  width: 100%;
+}
 
-/* ================= HEADER / NAV ================= */
 .fm-header {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: #121212;
-  border-bottom: 1px solid #9ca3af;
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--fm-border);
 }
 
 .fm-nav {
@@ -60,16 +64,15 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--nav-gap);
+  font-size: 16px;
 }
 
-/* NHÓM TRÁI: Logo + Menu */
 .fm-nav-left-group {
   display: flex;
   align-items: center;
   gap: var(--nav-gap);
 }
 
-/* LEFT */
 .fm-left { display: flex; align-items: center; gap: var(--nav-gap); }
 
 .fm-burger {
@@ -101,8 +104,6 @@
   object-fit: contain;
 }
 
-/* CENTER (menu) */
-
 .fm-menu__list {
   list-style: none;
   margin: 0;
@@ -110,54 +111,83 @@
   display: flex;
   align-items: center;
   gap: var(--menu-gap);
+  flex-wrap: nowrap;
 }
 
-.fm-menu__item { position: relative; }
+.fm-menu__item {
+  position: relative;
+  flex: 0 0 auto;
+}
 
-/* Link menu chính */
 .fm-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 8px;
   text-decoration: none;
   color: var(--nav-text);
-  font-weight: 500;
+  font-weight: 700;
   text-transform: uppercase;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  white-space: nowrap;
+  transition: color 0.18s ease, background-color 0.18s ease;
+  position: relative;
 }
+
 .fm-link:hover {
   background: transparent;
   color: var(--menu-hover-text);
 }
-/* Active trực tiếp */
-.fm-link.active {
+
+.fm-link.active,
+.fm-link[aria-current="page"] {
   background: transparent;
   color: var(--nav-accent);
   font-weight: 700;
 }
-/* Active theo menu cha (vào trang con) */
+
+.fm-link::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 2px;
+  background: var(--nav-accent);
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.18s ease;
+  opacity: 0.95;
+}
+
+.fm-link:hover::after,
+.fm-link.active::after,
+.fm-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
 .fm-menu__item.is-active-parent > .fm-link {
   color: var(--nav-accent);
   font-weight: 700;
 }
+.fm-menu__item.is-active-parent > .fm-link::after {
+  transform: scaleX(1);
+}
 
-/* Caret */
 .fm-caret {
   margin-left: 2px;
   font-size: 0.9em;
-  color: var(--nav-text);
-  transition: transform 0.2s ease, color 0.2s ease;
+  color: var(--text-gray);
+  transition: transform 0.18s ease, color 0.18s ease;
 }
 .fm-link:hover .fm-caret {
-  color: var(--menu-hover-text);
+  color: var(--nav-accent);
 }
 .has-dropdown:hover > .fm-link .fm-caret {
   transform: rotate(180deg);
 }
 
-/* Toggle dropdown mobile */
 .has-dropdown .fm-dd-toggle {
   display: none;
   margin-left: -6px;
@@ -168,24 +198,29 @@
   color: var(--nav-text);
 }
 
-/* ================= DROPDOWN (Mega-menu) ================= */
 .fm-dropdown {
   position: absolute;
-  top: 100%;
+  top: 120%;
   left: 0;
   transform: none;
   width: 750px;
   max-width: calc(100vw - 24px);
-  background: radial-gradient(circle at top left, #111827, #020617 70%);
-  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: var(--bg-black);
+  border: 1px solid var(--fm-border);
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 0;
   display: none;
   z-index: 15;
 }
 
-/* vùng đệm hover */
+.fm-dropdown--stack {
+  width: clamp(280px, 26vw, 320px);
+  max-width: calc(100vw - 24px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .fm-dropdown::after {
   content: "";
   position: absolute;
@@ -203,11 +238,16 @@
   background: transparent;
 }
 
-/* Nội dung Mega-menu */
 .fm-megamenu-content {
   display: flex;
   padding: 12px 16px;
   gap: 24px;
+}
+
+.fm-dropdown--stack .fm-megamenu-content {
+  display: block;
+  padding: 10px 12px;
+  gap: 0;
 }
 
 .fm-megamenu-image {
@@ -222,7 +262,6 @@
   border-radius: 12px;
 }
 
-/* Links bên phải */
 .fm-megamenu-links {
   flex-basis: 100%;
   display: grid;
@@ -230,24 +269,38 @@
   gap: 12px;
 }
 
+.fm-dropdown--stack .fm-megamenu-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .fm-megamenu-link {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: 8px;
   text-decoration: none;
   color: var(--fm-text);
-  transition: background 0.18s ease, transform 0.18s ease;
+  transition: background 0.18s ease, transform 0.18s ease, color 0.18s ease;
 }
+
+.fm-dropdown--stack .fm-megamenu-link {
+  width: 100%;
+}
+
 .fm-megamenu-link:hover {
   background: var(--nav-accent-soft);
   transform: translateY(-1px);
 }
-.fm-megamenu-link.active {
+
+.fm-megamenu-link.active,
+.fm-megamenu-link[aria-current="page"] {
   background: var(--nav-accent-soft);
   color: var(--nav-accent);
 }
+
 .fm-megamenu-link svg {
   width: 20px;
   height: 20px;
@@ -256,32 +309,30 @@
   color: var(--nav-accent);
   flex-shrink: 0;
 }
+
 .fm-megamenu-link strong {
   display: block;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 15px;
-  color: #f9fafb;
+  color: var(--text-white);
 }
 .fm-megamenu-link span {
   display: block;
   font-size: 13px;
-  color: var(--fm-muted);
+  color: var(--text-gray);
   margin-top: 2px;
 }
 
-/* Ẩn các style cũ không dùng */
 .fm-dd-group,
 .fm-dd-sub,
 .fm-dd-sublink {
   display: none;
 }
 
-/* Hover trên desktop mở dropdown */
 @media (hover: hover) and (pointer: fine) {
   .has-dropdown:hover > .fm-dropdown { display: block; }
 }
 
-/* ================= RIGHT: hello + avatar ================= */
 .fm-right {
   position: relative;
   display: flex;
@@ -291,11 +342,11 @@
 
 .fm-hello {
   font-size: 14px;
-  color: #e5e7eb; 
+  color: var(--text-gray);
 }
-
 .fm-hello strong {
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--text-white);
 }
 
 .fm-avatar {
@@ -305,10 +356,10 @@
   overflow: hidden;
   cursor: pointer;
   border: 2px solid var(--nav-accent);
-  background: #020617;
+  background: var(--bg-black);
   display: grid;
   place-items: center;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.75);
 }
 .fm-avatar img {
   width: 100%;
@@ -316,7 +367,6 @@
   object-fit: cover;
 }
 
-/* ================= MOBILE ================= */
 @media (max-width: 980px) {
   :root { --nav-size: var(--nav-size-mb); }
 
@@ -327,8 +377,8 @@
   .fm-menu {
     position: fixed;
     inset: var(--nav-size) 0 auto 0;
-    background: #020617;
-    border-top: 1px solid #111827;
+    background: var(--bg-black);
+    border-top: 1px solid var(--fm-border);
     display: none;
     padding: 8px 12px 16px;
     z-index: 40;
@@ -339,27 +389,39 @@
     flex-direction: column;
     align-items: stretch;
     gap: 4px;
+    flex-wrap: nowrap;
   }
 
   .fm-link {
     padding: 12px;
     border-radius: 12px;
-    color: #e5e7eb;
-  }
-  .fm-link:hover,
-  .fm-link.active {
-    background: #111827;
-    color: var(--menu-hover-text);
-  }
-.fm-link .fa-caret-down {
-  margin-left: 4px;
-}
-  .fm-menu__item.is-active-parent > .fm-link {
-    background: #111827;
-    color: var(--menu-hover-text);
+    color: var(--text-white);
+    white-space: normal;
   }
 
-  .fm-caret { color: #e5e7eb; }
+  .fm-link:hover,
+  .fm-link.active,
+  .fm-link[aria-current="page"] {
+    background: rgba(227, 28, 37, 0.10);
+    color: var(--text-white);
+  }
+
+  .fm-link:hover::after,
+  .fm-link.active::after,
+  .fm-link[aria-current="page"]::after {
+    transform: scaleX(0);
+  }
+
+  .fm-link .fa-caret-down {
+    margin-left: 4px;
+  }
+
+  .fm-menu__item.is-active-parent > .fm-link {
+    background: rgba(227, 28, 37, 0.10);
+    color: var(--text-white);
+  }
+
+  .fm-caret { color: var(--text-gray); }
 
   .has-dropdown .fm-dd-toggle {
     display: inline-flex;
@@ -371,8 +433,11 @@
     border-radius: 6px;
     color: #e5e7eb;
   }
+  .has-dropdown .fm-dd-toggle:hover {
+    border-color: rgba(227, 28, 37, 0.35);
+    color: var(--nav-accent);
+  }
 
-  /* Mega-menu trên mobile: chuyển thành “sublist” */
   .fm-dropdown {
     position: static;
     display: none;
@@ -387,6 +452,13 @@
     background: transparent;
   }
   .fm-dropdown.is-open { display: block; }
+
+  .fm-dropdown--stack {
+    width: auto;
+    max-width: none;
+    left: 0;
+    transform: none;
+  }
 
   .fm-megamenu-content {
     flex-direction: column;
@@ -403,13 +475,11 @@
     border-radius: 10px;
     background: transparent;
   }
-
   .fm-megamenu-link:hover {
-    background: #111827;
+    background: rgba(255,255,255,0.06);
     transform: none;
   }
 
-  /* Ẩn lời chào trên mobile cho gọn */
   .fm-hello { display: none; }
   .fm-avatar { width: 44px; height: 44px; }
 }
@@ -439,7 +509,7 @@
     padding: 10px;
     font-size: 14px;
   }
-  /* Ẩn caret trong text trên mobile để tránh trùng với nút toggle */
+
   .fm-link .fa-caret-down {
     display: none;
   }
@@ -482,16 +552,15 @@
   }
 }
 
-/* ================= Account Dropdown ================= */
 .acc-pop {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
   width: 260px;
-  background: #020617;
-  border: 1px solid var(--fm-ring);
+  background: var(--bg-black);
+  border: 1px solid var(--fm-border);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px 10px 12px;
   display: none;
   z-index: 60;
@@ -567,7 +636,7 @@
   border-radius: 50%;
   background: var(--nav-accent);
   color: #fff;
-  border: 2px solid #020617;
+  border: 2px solid var(--bg-black);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -579,13 +648,13 @@
 .acc-file { display: none; }
 
 .acc-name {
-  font-weight: 700;
+  font-weight: 800;
   font-size: 14px;
-  color: #f9fafb;
+  color: var(--text-white);
 }
 .acc-join {
   font-size: 12px;
-  color: var(--fm-muted);
+  color: var(--text-gray);
 }
 
 .acc-metrics {
@@ -594,28 +663,28 @@
   display: grid;
   grid-template-columns: 1fr 1px 1fr 1px 1fr;
   align-items: center;
-  background: #020617;
-  border: 1px solid #1f2937;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--fm-border);
   border-radius: 6px;
   overflow: hidden;
 }
 .acc-divider {
   width: 1px;
   height: 100%;
-  background: #1f2937;
+  background: var(--fm-border);
 }
 .acc-metric {
   text-align: center;
   padding: 6px 4px;
 }
 .acc-metric__value {
-  font-weight: 700;
+  font-weight: 800;
   font-size: 14px;
-  color: #f9fafb;
+  color: var(--text-white);
 }
 .acc-metric__label {
   font-size: 12px;
-  color: var(--fm-muted);
+  color: var(--text-gray);
 }
 
 .acc-menu {
@@ -629,13 +698,13 @@
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 6px;
-  color: #e5e7eb;
+  border-radius: 8px;
+  color: var(--fm-text);
   text-decoration: none;
   font-size: 14px;
 }
 .acc-item:hover {
-  background: #111827;
+  background: rgba(255,255,255,0.06);
 }
 .acc-item svg {
   width: 16px;
@@ -643,7 +712,7 @@
 }
 .acc-sep {
   height: 1px;
-  background: #111827;
+  background: var(--fm-border);
   margin: 0 2px;
 }
 
@@ -652,19 +721,19 @@
   width: 100%;
   padding: 8px 10px;
   border: 0;
-  background: #fee2e2;
-  color: #b91c1c;
-  border-radius: 6px;
-  font-weight: 600;
+  background: var(--nav-accent-soft);
+  color: var(--text-white);
+  border-radius: 8px;
+  font-weight: 700;
   cursor: pointer;
+  font-size: 15px;
 }
 .acc-logout:hover {
-  background: #fecaca;
+  background: var(--primary-red);
 }
 
 .fm-right:hover .acc-pop.is-open { display: block; }
 
-/* ================= Modal Đăng xuất ================= */
 .logout-modal {
   position: fixed;
   inset: 0;
@@ -673,8 +742,8 @@
 .logout-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: saturate(120%) blur(1px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: saturate(120%) blur(2px);
 }
 .logout-dialog {
   position: absolute;
@@ -682,22 +751,22 @@
   top: 50%;
   transform: translate(-50%, -50%);
   width: min(520px, calc(100% - 24px));
-  border: 1px solid var(--fm-ring);
+  border: 1px solid var(--fm-border);
   border-radius: 12px;
-  background: #020617;
+  background: rgba(255,255,255,0.06);
   padding: 20px;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.85);
 }
 .logout-title {
-  font-weight: 800;
+  font-weight: 900;
   font-size: 20px;
   text-align: center;
   margin-bottom: 8px;
-  color: #f9fafb;
+  color: var(--text-white);
 }
 .logout-desc {
   text-align: center;
-  color: var(--fm-muted);
+  color: var(--text-gray);
   margin: 0 0 18px;
 }
 .logout-actions {
@@ -706,15 +775,15 @@
   gap: 12px;
 }
 .logout-actions .btn-secondary {
-  background: #111827;
-  color: #e5e7eb;
-  border: 0;
+  background: rgba(255,255,255,0.06);
+  color: var(--fm-text);
+  border: 1px solid var(--fm-border);
   border-radius: 10px;
   padding: 10px 16px;
   cursor: pointer;
 }
 .logout-actions .btn-secondary:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.06);
 }
 .logout-actions .btn-danger {
   background: var(--nav-accent);
@@ -723,49 +792,8 @@
   border-radius: 10px;
   padding: 10px 16px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 800;
 }
 .logout-actions .btn-danger:hover {
   filter: brightness(1.05);
-}
-
-/* ================= NOTIFICATIONS ================= */
-.fm-noti {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.fm-noti-btn {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  border: 1px solid #1f2937;
-  background: #020617;
-  color: #e5e7eb;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-
-.fm-noti-btn:hover {
-  background: #111827;
-}
-
-.fm-noti-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--nav-accent);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 18px;
-  text-align: center;
-  border: 2px solid #020617;
 }
