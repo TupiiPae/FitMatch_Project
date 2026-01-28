@@ -62,7 +62,7 @@
 /* ===== THANH DJ-BAR ===== */
 
 .dj-bar {
-  max-width: 1400px;
+  max-width: 700px;
   margin: 0 auto 20px auto;
   display: flex;
   align-items: center;
@@ -70,7 +70,7 @@
   gap: 12px;
   padding: 10px 18px;
   border-radius: 8px;
-  background-color: #1e1e1e;
+  background-color: #1d1d1d;
   border: 1px solid #ef4444;
   width: 100%;
   box-sizing: border-box;
@@ -81,6 +81,63 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+/* ===== Date input custom (icon right overlay) ===== */
+.dj-date {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* input style đồng bộ theme */
+.dj-date-input {
+  width: 150px;
+  height: 40px;
+  border-radius: 999px;
+  background: #050505;
+  border: 1px solid #ef4444;
+  color: #f9fafb;
+  padding: 6px 44px 6px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  box-sizing: border-box;
+  color-scheme: dark;
+  position: relative; 
+}
+
+.dj-date-input:hover {
+  border-color: #f97373;
+}
+
+.dj-date-input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #f97373;
+}
+
+.dj-date-ico {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #f9fafb;
+  font-size: 15px;
+  pointer-events: none; 
+}
+
+.dj-date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0;
+  width: 44px;   
+  height: 100%;
+  opacity: 0;    
+  cursor: pointer;
+}
+
+.dj-date-input::-webkit-clear-button,
+.dj-date-input::-webkit-inner-spin-button {
+  display: none;
 }
 
 .dj-bar .week {
@@ -95,12 +152,12 @@
   min-width: 48px;
   padding: 0 12px;
   border-radius: 6px;
-  border: 1px solid #111827;
+  border: 1px solid rgba(255, 255, 255, 0.30);
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
   color: #e5e7eb;
-  background: #020617;
+  background: #050505;
   transition: all 0.16s ease;
 }
 .wbtn:hover {
@@ -143,8 +200,8 @@
 /* ===== MAIN TIMELINE BÊN TRÁI ===== */
 
 .dj-main {
-  background: #1e1e1e;
-  border-radius: 4px;
+  background: #1d1d1d;
+  border-radius: 8px;
   padding: 18px 16px 16px;
   border: 1px solid rgba(255,255,255,0.06); /* softer on dark bg */
   width: 100%;
@@ -206,9 +263,9 @@
   grid-template-columns: 40px 1fr auto;
   gap: 8px;
   align-items: center;
-  border: 3px solid #1f2937;
-  background: #111827;
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background: rgba(148,163,184,.10);
+  border-radius:8px;
   padding: 6px 8px;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
@@ -287,8 +344,8 @@
 }
 
 .panel {
-  background: #1e1e1e;
-  border-radius: 4px;
+  background: #1d1d1d;
+  border-radius: 8px;
   padding: 16px;
   border: 1px solid rgba(255,255,255,0.06);
   box-sizing: border-box;
@@ -318,7 +375,7 @@
   display: block;
 }
 .cal-ring .ring-bg {
-  stroke: #111827;
+  stroke: rgba(148,163,184,.22);
 }
 .cal-ring .ring-fg {
   stroke: #00BBFE;
@@ -383,7 +440,7 @@
   height: 8px;
   border-radius: 999px;
   overflow: hidden;
-  background: #111827;
+  background: rgba(148,163,184,.22);
   border: 1px solid #1f2937;
 }
 .mbar > span {
@@ -474,9 +531,8 @@
   width: 120px;
   height: 36px;
   border-radius: 8px;
-  border: 1px solid #111827;
   padding: 0 10px;
-  background: #020617;
+  background: #050505;
   font-size: 16px;
   font-weight: 500;
   text-align: center;

@@ -1,9 +1,4 @@
 import React from "react";
-import dayjs from "dayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import api from "../../../../lib/api";
 import "./AddModal.css";
 
@@ -96,49 +91,16 @@ export default function AddModal({
             <div className="am-when-item">
               <div className="am-field">
                 <label>Ngày <i className="fa-regular fa-calendar"></i></label>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-  <DatePicker
-    format="DD/MM/YYYY"
-    value={date ? dayjs(date) : null}
-    onChange={(newValue) => {
-      const newDateString = newValue
-        ? newValue.format("YYYY-MM-DD")
-        : "";
-      onChangeDate(newDateString);
-    }}
-    slotProps={{
-      textField: {
-        placeholder: "DD/MM/YYYY",
-        size: "small",
-        sx: {
-          width: "100%",
-          "& .MuiOutlinedInput-root": {
-            borderRadius: 12,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            "& fieldset": {
-              borderColor: "rgba(255,255,255,0.2)",
-            },
-            "&:hover fieldset": {
-              borderColor: "#ffffff",
-            },
-            "&.Mui-focused fieldset": {
-              borderColor: "#ffffff",
-              boxShadow: "0 0 0 1px rgba(255,255,255,0.5)",
-            },
-          },
-          "& .MuiInputBase-input": {
-            padding: "10px 12px",
-            color: "#ffffff",
-            fontSize: 14,
-          },
-          "& .MuiSvgIcon-root": {
-            color: "rgba(255,255,255,0.7)",
-          },
-        },
-      },
-    }}
-  />
-</LocalizationProvider>
+                <div className="am-date">
+                  <input
+                    className="am-date-input"
+                    type="date"
+                    value={date || ""}               // date đang là YYYY-MM-DD
+                    onChange={(e) => onChangeDate(e.target.value)}
+                    aria-label="Chọn ngày"
+                  />
+                  <i className="fa-regular fa-calendar am-date-ico" />
+                </div>
               </div>
             </div>
 

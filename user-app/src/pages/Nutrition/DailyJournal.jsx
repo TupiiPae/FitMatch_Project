@@ -12,11 +12,6 @@ import "./DailyJournal.css";
 import { toast } from "react-toastify";
 import api from "../../lib/api";
 
-// === Imports cho MUI Date Picker ===
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-
 // Import logic thêm món ăn (dùng cho Edit)
 import { addLog } from "../../api/foods";
 
@@ -252,55 +247,16 @@ export default function DailyJournal() {
 
           <div className="dj-bar">
           <div className="left">
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                format="DD/MM/YYYY"
-                value={date ? dayjs(date) : null}
-                onChange={(newValue) => {
-                  const newDateString = newValue
-                    ? newValue.format("YYYY-MM-DD")
-                    : "";
-                  onTopDateHiddenChange({ target: { value: newDateString } });
-                }}
-                slotProps={{
-                  textField: {
-                    placeholder: "DD/MM/YYYY",
-                    size: "small",
-                    sx: {
-                      width: { xs: "100%", sm: 150 },
-                      maxWidth: { xs: "100%", sm: 150 },
-                      // Root của OutlinedInput
-                      "& .MuiOutlinedInput-root": {
-                        height: { xs: 40, sm: 34 },
-                        borderRadius: "999px",
-                        backgroundColor: "#020617",
-                        "& fieldset": {
-                          borderColor: "#ef4444",
-                        },
-                        "&:hover fieldset": {
-                          borderColor: "#f97373",
-                        },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#ef4444",
-                          boxShadow: "0 0 0 1px #f97373",
-                        },
-                      },
-                      // Input text
-                      "& .MuiInputBase-input": {
-                        padding: { xs: "8px 12px", sm: "6px 12px" },
-                        fontSize: { xs: 13, sm: 14 },
-                        color: "#f9fafb",
-                      },
-                      // Icon lịch
-                      "& .MuiSvgIcon-root": {
-                        color: "#f9fafb",
-                        fontSize: { xs: "1.2rem", sm: "1.5rem" },
-                      },
-                    },
-                  },
-                }}
+            <div className="dj-date">
+              <input
+              className="dj-date-input"
+              type="date"
+              value={date} // date đang là "YYYY-MM-DD" OK
+              onChange={onTopDateHiddenChange}
+              aria-label="Chọn ngày"
               />
-            </LocalizationProvider>
+              <i className="fa-regular fa-calendar dj-date-ico" />
+            </div>
           </div>
           <div className="week">
             {weekDays.map((d, i) => (

@@ -1,0 +1,84 @@
+.stb {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1200;
+
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+
+  border: 1px solid #ef4444;
+  background: #f00519;
+  color: #fff;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease;
+}
+
+.stb.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.stb:hover {
+  background: #d30016;
+}
+
+.stb:active {
+  transform: translateY(0) scale(0.96);
+}
+
+/* Nếu bạn có iPhone notch */
+@supports (padding: max(0px)) {
+  .stb {
+    bottom: max(18px, env(safe-area-inset-bottom));
+    right: max(18px, env(safe-area-inset-right));
+  }
+}
+
+/* ===== Responsive: mobile ===== */
+@media (max-width: 768px) {
+  .stb {
+    width: 42px;
+    height: 42px;
+    right: 14px;
+    bottom: 14px;
+  }
+  .stb i {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stb {
+    width: 40px;
+    height: 40px;
+    right: 12px;
+    /* nâng lên chút để không bị dính sát mép + dễ bấm hơn */
+    bottom: 72px;
+  }
+  .stb i {
+    font-size: 13px;
+  }
+}
+
+/* iPhone notch safe-area (ưu tiên nếu có) */
+@supports (padding: max(0px)) {
+  @media (max-width: 480px) {
+    .stb {
+      bottom: max(72px, calc(env(safe-area-inset-bottom) + 72px));
+      right: max(12px, env(safe-area-inset-right));
+    }
+  }
+}

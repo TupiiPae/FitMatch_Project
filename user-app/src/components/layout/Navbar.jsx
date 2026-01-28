@@ -329,18 +329,18 @@ export default function Navbar({
                           <span>Theo dõi bữa ăn hàng ngày của bạn</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/dinh-duong/ghi-lai/tao-mon" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
-                        <FontAwesomeIcon icon={faAppleAlt} />
-                        <div>
-                          <strong>Tạo món ăn</strong>
-                          <span>Lưu lại công thức món ăn của riêng bạn</span>
-                        </div>
-                      </NavLink>
                       <NavLink to="/dinh-duong/ghi-lai" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faUtensils} />
                         <div>
                           <strong>Ghi lại bữa ăn</strong>
                           <span>Thêm nhanh các bữa ăn sáng, trưa, tối</span>
+                        </div>
+                      </NavLink>
+                      <NavLink to="/dinh-duong/ghi-lai/tao-mon" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
+                        <FontAwesomeIcon icon={faAppleAlt} />
+                        <div>
+                          <strong>Tạo món ăn</strong>
+                          <span>Lưu lại công thức món ăn của riêng bạn</span>
                         </div>
                       </NavLink>
                       <NavLink to="/dinh-duong/thuc-don-goi-y" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>

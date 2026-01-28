@@ -138,26 +138,66 @@
   padding: 0 12px;
 }
 
-/* Tuỳ biến MUI DatePicker cho hợp tone */
-.am-field .MuiInputBase-root {
+/* ===== Native date input (match modal theme) ===== */
+.am-date {
+  position: relative;
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+}
+
+.am-date-input {
+  width: 100%;
+  height: 44px;
   border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(0, 0, 0, 0.3);
   color: #ffffff;
   font-size: 14px;
+  padding: 0 44px 0 12px; /* chừa chỗ icon bên phải */
+  box-sizing: border-box;
+  outline: none;
+
+  /* giúp popup native theo theme tối (nếu browser hỗ trợ) */
+  color-scheme: dark;
 }
 
-.am-field .MuiOutlinedInput-notchedOutline {
-  border-color: rgb(255, 255, 255);
+.am-date-input:hover {
+  border-color: rgba(255, 255, 255, 0.85);
 }
 
-.am-field .MuiInputBase-input {
-  padding: 10px 12px;
-  color: #ffffff; /* chữ trắng rõ trên nền tối */
+.am-date-input:focus {
+  border-color: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
-.am-field .MuiSvgIcon-root {
+/* Icon calendar nằm phải, đè lên input nhưng không chặn click */
+.am-date-ico {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: rgba(255, 255, 255, 0.7);
+  font-size: 15px;
+  pointer-events: none; /* quan trọng */
 }
+
+/* Ẩn icon lịch mặc định của browser nhưng vẫn giữ vùng click mở datepicker */
+.am-date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0;
+  width: 44px;   /* đúng vùng icon bên phải */
+  height: 100%;
+  opacity: 0;    /* ẩn nhưng vẫn click được */
+  cursor: pointer;
+}
+
+/* optional */
+.am-date-input::-webkit-clear-button,
+.am-date-input::-webkit-inner-spin-button {
+  display: none;
+}
+
 /* Khối lượng khẩu phần */
 .am-portion-block {
   display: flex;
