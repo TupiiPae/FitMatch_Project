@@ -11,7 +11,6 @@
   overflow-x: hidden;
 }
 
-/* HEADER MỚI */
 .nm-head {
   display: flex;
   flex-direction: column;
@@ -28,7 +27,7 @@
   align-items: center;
   justify-content: flex-end;
   position: relative;
-  padding: 20px 0 20px 0;
+  padding: 36px 0 20px 0;
   z-index: 5;
   gap: 16px;
 }
@@ -150,7 +149,7 @@
     align-items: stretch;
   }
 
-  .nm-head-row.search-row .search {
+  .nm-head-row.search-row .rm-search {
     width: 100%;
   }
 }
@@ -164,7 +163,7 @@
     gap: 8px;
     align-items: center;
   }
-  .nm-toolbar .search { grid-column: 1 / -1; width: 100%; }
+  .nm-toolbar .rm-search { grid-column: 1 / -1; width: 100%; }
   .nm-toolbar .rm-tabs { grid-column: 1; }
   .nm-toolbar .rm-view-toggle { grid-column: 2; justify-self: end; }
 }
@@ -193,7 +192,7 @@
   gap: 16px;
 }
 
-.nm-head-row.search-row .search {
+.nm-head-row.search-row .rm-search {
   flex: 1;
 }
 
@@ -250,10 +249,10 @@
   flex-wrap: wrap;
 }
 
-.search,
+.rm-search,
 .rm-tabs,
 .rm-view-toggle {
-  background-color: #333333; /* Màu nền xám của box chứa */
+  background-color: #1C1C1E; /* Màu nền xám của box chứa */
   height: 44px; /* Chiều cao cố định để bằng nhau tăm tắp */
   border-radius: 8px; /* Bo góc cả khối */
   display: flex;
@@ -264,17 +263,17 @@
 }
 
 /* --- 1. THANH TÌM KIẾM (.search) --- */
-.search {
+.rm-search {
   flex: 1 1 60%; /* Giãn hết cỡ khoảng trống còn lại but allow wrap */
   padding: 0 16px;
   color: #aaa;
 }
-.search i {
+.rm-search i {
   color: #aaa;
   font-size: 14px;
   margin-right: 10px;
 }
-.search input {
+.rm-search input {
   background: transparent;
   border: none;
   outline: none;
@@ -282,7 +281,7 @@
   width: 100%;
   font-size: 14px;
 }
-.search input::placeholder {
+.rm-search input::placeholder {
   color: #888;
 }
 
@@ -308,7 +307,7 @@
 
 /* Trạng thái Active của Tab Filter */
 .rm-tab.on {
-  background-color: #121212; /* Màu đen (hoặc rất tối) giống hình */
+  background-color: rgba(255, 255, 255, 0.30); /* Màu đen (hoặc rất tối) giống hình */
   color: #fff; /* Chữ trắng */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Tạo độ nổi nhẹ */
 }
@@ -349,7 +348,7 @@
 
 /* Trạng thái Active của View Mode */
 .view-btn.on {
-  background-color: #121212; /* Màu đen active */
+  background-color: rgba(255, 255, 255, 0.30); /* Màu đen active */
   color: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
@@ -360,16 +359,16 @@
 /* Khung list */
 .nm-list-frame {
   border: 1px solid rgba(255,255,255,0.06);
-  background: #1e1e1e;
-  border-radius: 8px;
-  padding: 12px 10px; /* slightly tighter on mobile */
-  margin-top: 14px;
+  background: #1C1C1E;
+  border-radius: 4px;
+  padding: 12px 20px; 
+  margin: 14px 0 20px 0;
   width: 100%;
   max-width: 100%;
-  min-height: 220px; /* allow it to shrink on mobile */
+  min-height: 220px; 
   margin-left: auto;
   margin-right: auto;
-  max-height: 72vh; /* viewport-based so it fits mobile */
+  max-height: 80vh; 
   overflow-y: auto;
   cursor: grab;
   scrollbar-width: none;
@@ -387,40 +386,60 @@
 .nm-list.is-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-}
-.nm-list.is-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
 }
+
+.nm-list.is-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+
+/* Nếu màn hình hẹp hơn desktop */
+@media (max-width: 1024px) {
+.nm-list.is-grid {
+grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+}
+
+
+/* Tablet */
+@media (max-width: 768px) {
+.nm-list.is-grid {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+
+
+
 
 /* ITEM LIST */
 .nm-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 3px solid rgba(31,41,55,0.6);
+  border: 1px solid rgba(255, 255, 255, 0.30);
   box-shadow: 0 2px 8px rgba(2,6,23,0.28);
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 8px;
+  padding: 8px 10px;
   cursor: pointer;
-  background: #1e1e1e;
-  flex-wrap: nowrap; /* keep action buttons on same line */
+  background: rgba(148,163,184,.10);
+  flex-wrap: nowrap; 
 }
 .nm-item:hover {
   border-color: #f00519;
 }
 .nm-item img {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   border-radius: 8px;
   object-fit: cover;
   flex: 0 0 auto;
 }
 .nm-item .info {
   flex: 1 1 auto;
-  min-width: 0; /* allow text truncation instead of overflow */
+  min-width: 0;
   overflow: hidden;
 }
 .nm-item .title {
@@ -511,9 +530,9 @@
 
 /* GRID CARD */
 .nm-card {
-  background: linear-gradient(180deg,#221010 0%, #201616 100%);
-  border-radius: 12px;
-  border: 3px solid rgba(31,41,55,0.6);
+  background: rgba(148,163,184,.10);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.30);
   box-shadow: 0 6px 18px rgba(2,6,23,0.28);
   cursor: pointer;
   display: flex;
@@ -527,10 +546,10 @@
 .nm-card-thumb {
   position: relative;
   width: 100%;
-  height: 180px; /* slightly smaller for narrow screens */
+  height: 200px; /* slightly smaller for narrow screens */
   overflow: hidden;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 }
 .nm-card-thumb img {
   width: 100%;
@@ -752,16 +771,15 @@
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(2px);
   display: grid;
   place-items: center;
-  z-index: 1100; /* cao hơn .modal cũ để chắc chắn không xung đột */
+  z-index: 1100; 
   padding: 16px;
 }
 .ur-modal {
   width: min(520px, 94vw);
-  background: #1a1a1a;
-  border: 1px solid #fff;
+  background: #1C1C1E;
+  border: 1px solid rgba(255, 255, 255, 0.30);
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(2, 6, 23, 0.18);
   animation: ur-pop 0.16s ease-out;
@@ -838,6 +856,13 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 16px 16px 16px;
+  padding: 12px 16px 12px 16px;
   border-top: 1px dashed #e5e7eb;
 }
+
+.btn.primary {
+  background: #E31C25;
+  color: #fff;
+  border: none;
+}
+

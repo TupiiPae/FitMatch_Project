@@ -327,7 +327,7 @@ export default function RecordMeal() {
         {/* Toolbar chứa Search - Filter - View */}
         <div className="nm-toolbar">
           {/* 1. Thanh tìm kiếm */}
-          <div className="search">
+          <div className="rm-search">
             <i className="fa-solid fa-magnifying-glass"></i>
             <input
               placeholder="Tìm kiếm món ăn theo tên..."

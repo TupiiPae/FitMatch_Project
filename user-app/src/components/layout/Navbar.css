@@ -792,7 +792,7 @@
   border-radius: 10px;
   padding: 10px 16px;
   cursor: pointer;
-  font-weight: 800;
+  font-weight: 700;
 }
 .logout-actions .btn-danger:hover {
   filter: brightness(1.05);
