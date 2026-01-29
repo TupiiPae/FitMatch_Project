@@ -1,28 +1,25 @@
-/* ===== Khung trang – đồng bộ với WorkoutCreate (.wc-wrap) ===== */
 .ff-wrap {
   margin: 0 auto;
-  max-width: 1400px;
+  max-width: 1000px;
   padding: 0 0 24px 0;
 }
 
-/* ===== Toolbar (header bar giống wc-head) ===== */
 .ff-toolbar {
   padding: 0;
 }
 
 .ff-toolbox {
   display: grid;
-  grid-template-columns: 1fr auto 1fr; /* trái – giữa – phải */
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   position: relative;
-  padding: 20px 0 36px 0;
+  padding: 20px 0 20px 0;
   z-index: 5;
   gap: 16px;
   width: 100%;
   margin: 0 auto;
 }
 
-/* Nút quay lại bên trái */
 .tool-left {
   justify-self: start;
   border: none;
@@ -45,7 +42,6 @@
   color: #ffffff;
 }
 
-/* Tiêu đề giữa */
 .tool-mid {
   justify-self: center;
   font-weight: 700;
@@ -55,7 +51,6 @@
   white-space: nowrap;
 }
 
-/* Nhóm nút bên phải */
 .tool-right {
   justify-self: end;
   display: flex;
@@ -64,7 +59,6 @@
   margin-left: 0;
 }
 
-/* Buttons chính/phụ – đồng bộ với wc-head .create */
 .ff-wrap .ff-btn {
   height: 40px;
   padding: 0 24px;
@@ -82,6 +76,7 @@
 .ff-btn:hover {
   background: #d30016;
 }
+
 .ff-wrap .ff-delete-btn {
   border: none;
   background: transparent;
@@ -97,110 +92,208 @@
   color: #fecaca;
 }
 
-/* Line ngăn toolbar & nội dung */
 .ff-line {
   border: 0;
-  border-top: 1px solid #9ca3af;
+  border-top: 1px solid rgba(255, 255, 255, 0.30);
 }
 
-/* ===== FRAME / CARD chính – giống .wc-frame ===== */
 .ff-grid-card {
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(280px, 200px) minmax(0, 1fr);
   gap: 0;
-  padding: 20px;
+  padding: 18px 12px;
   width: 100%;
-  max-width: 1700px;
-  background: #111827;
-  border: 1px solid #1f2937;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.55);
-  margin: 24px auto 18px auto;
+  max-width: 1400px;
+  margin: 18px auto 18px auto;
   color: #e5e7eb;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .ff-image-col {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  border-right: 1px solid #1f2937;
-  padding-right: 24px;
+  gap: 14px;
 }
 
 .ff-fields-col {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-left: 24px;
+  gap: 14px;
 }
 
-/* ===== Tiêu đề nhóm – copy style từ WorkoutCreate ===== */
-.ff-section-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #e5e7eb;
-  margin: 0 0 10px 0;
-  position: relative;
-  padding-left: 14px;
-}
-.ff-section-title::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 18px;
-  background: #f7444e;
-  border-radius: 2px;
+.ff-image-col {
+  padding-right: 25px;
+  border-right: 1px solid rgba(255, 255, 255, 0.20);
 }
 
-/* Divider mảnh giữa các nhóm */
-.ff-divider {
+.ff-fields-col {
+  padding-left: 25px;
+}
+
+.ff-card {
+  background: transparent;
   border: none;
-  border-top: 1px solid #1f2937;
-  margin: 12px 0;
+  border-radius: 0;
+  padding: 0;
 }
 
-/* ===== Box xem trước ảnh – phối màu với .wc-overview ===== */
+.ff-fields-col > .ff-card + .ff-card {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.20);
+}
+
+.ff-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.ff-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.ff-card-title span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ff-card-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
 .ff-image-box {
   width: 100%;
   aspect-ratio: 1 / 1;
-  border: 1px dashed #002c3e;
-  border-radius: 4px;
+  border: 1px dashed rgba(255, 255, 255, 0.55);
+  border-radius: 8px;
   background: #020617;
   padding: 8px;
   display: grid;
   place-items: center;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 .ff-image-box:hover {
-  border-color: #f97373;
-  background: #020617;
+  border-color: rgba(240, 5, 25, 0.75);
+  transform: translateY(-1px);
 }
 .ff-image-box img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 8px;
 }
+
 .ff-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: #9ca3af;
   text-align: center;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
 }
 .ff-placeholder i {
-  font-size: 42px;
+  font-size: 40px;
+}
+.ff-placeholder-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-/* ===== TextField dạng bình thường – giống WorkoutCreate ===== */
+.ff-summary {
+  background: rgba(2, 6, 23, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.ff-summary-name {
+  font-weight: 700;
+  color: #fff;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ff-summary-meta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ff-summary-kcal {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(240, 5, 25, 0.08);
+  border: 1px solid rgba(240, 5, 25, 0.25);
+}
+
+.ff-summary-kcal-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+.ff-summary-kcal-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #f00519;
+  letter-spacing: 0.3px;
+}
+.ff-summary-kcal-unit {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 600;
+}
+
+.ff-summary-macros {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.ff-macro-pill {
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 12px;
+  padding: 10px 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ff-macro-pill .k {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+.ff-macro-pill .v {
+  font-weight: 600;
+  color: #ffffff;
+}
+.ff-macro-pill .u {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 700;
+}
+
 .ff-field {
   display: flex;
   flex-direction: column;
@@ -210,103 +303,171 @@
 .ff-label {
   font-weight: 500;
   font-size: 14px;
-  color: #e5e7eb;
-  margin-bottom: 4px;
-}
-.ff-label .req {
-  color: #ef4444;
+  margin-bottom: 6px;
+  color: #f9fafb;
 }
 
-/* Input / textarea box */
+.ff-label-url {
+  padding-top: 14px;
+}
+
+.ff-label .req {
+  color: #f97316;
+}
+
 .ff-field .ff-ipt,
 .ff-field .ff-textarea {
   width: 100%;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #4b5563;
   background: #020617;
-  color: #e5e7eb;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  color: #f9fafb;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
 .ff-field .ff-ipt {
-  height: 56px;
-  padding: 0 12px;
+  height: 40px;
 }
 
 .ff-field .ff-textarea {
   min-height: 120px;
-  padding: 10px 12px;
   resize: vertical;
 }
 
-/* Placeholder giống WorkoutCreate */
 .ff-field .ff-ipt::placeholder,
 .ff-field .ff-textarea::placeholder {
-  color: #64748b;
+  color: #9ca3af;
 }
 
-/* Focus state */
+.ff-field .ff-ipt:hover,
+.ff-field .ff-textarea:hover {
+  border-color: #ef4444;
+}
+
 .ff-field .ff-ipt:focus,
 .ff-field .ff-textarea:focus {
-  border-color: #f97373;
-  box-shadow: 0 0 0 1px rgba(0, 128, 128, 0.45);
-  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
 }
 
-/* Select field */
 .ff-field-select .ff-ipt {
-  height: 56px;
+  height: 40px;
+  max-height: 40px;
   padding-right: 32px;
 }
 
-/* Validation error */
 .ff-field.is-invalid .ff-ipt,
 .ff-field.is-invalid .ff-textarea {
-  border-color: #dc2626;
+  border-color: #ef4444;
 }
-.ff-field.is-invalid .ff-label {
-  color: #dc2626;
-}
+
 .ff-field .error-stack {
   min-height: 16px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
+
 .ff-field .error-item {
-  color: #dc2626;
+  color: #f97373;
   font-size: 12px;
 }
 
-/* Lưới các trường */
 .ff-fields-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
+
 .ff-fields-grid-3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-}
-.ff-grid-span-2 {
-  grid-column: 1 / -1;
+  gap: 12px;
 }
 
-/* ===== Responsive ===== */
+.ff-adv {
+  margin-top: 6px;
+  border-radius: 4px;
+  border: 1px dashed rgba(255, 255, 255, 0.55);
+  background: rgba(2, 6, 23, 0.25);
+  overflow: hidden;
+}
+
+.ff-adv-sum {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  user-select: none;
+  background-color: #221010;
+}
+.ff-adv-sum::-webkit-details-marker {
+  display: none;
+}
+
+.ff-adv-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ff-adv-title {
+  font-weight: 900;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.ff-adv-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ff-adv-ico {
+  color: rgba(255, 255, 255, 0.75);
+  transition: transform 0.18s ease;
+  flex: 0 0 auto;
+}
+
+.ff-adv-sum:hover {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.ff-adv[open] .ff-adv-sum {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.ff-adv[open] .ff-adv-ico {
+  transform: rotate(180deg);
+}
+
+.ff-adv-body {
+  padding: 12px;
+}
+
+.ff-sticky-actions {
+  display: none;
+}
+
 @media (max-width: 1080px) {
   .ff-grid-card {
     grid-template-columns: 1fr;
-    padding: 16px;
+    max-width: 700px;
   }
   .ff-image-col {
-    border-right: none;
     padding-right: 0;
-    border-bottom: 1px solid #1f2937;
-    padding-bottom: 24px;
+    border-right: none;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.20);
   }
   .ff-fields-col {
     padding-left: 0;
-    padding-top: 12px;
+    padding-top: 14px;
   }
 }
 
@@ -315,111 +476,121 @@
     padding: 0 16px 18px;
     max-width: 100%;
     box-sizing: border-box;
+    padding-bottom: 110px;
   }
 
   .ff-toolbox {
     grid-template-columns: auto;
-    gap: 8px 10px;
-    padding-bottom: 20px;
+    gap: 10px;
+    padding-bottom: 16px;
   }
+
   .tool-mid {
     justify-self: flex-start;
     text-align: left;
+    font-size: 22px;
   }
+
   .tool-right {
     justify-self: flex-end;
   }
 
   .ff-grid-card {
     grid-template-columns: 1fr;
-    padding: 16px;
+    padding: 10px 0;
     margin: 16px auto 12px;
     max-width: 100%;
     box-sizing: border-box;
   }
-  .ff-image-col {
-    border-right: none;
-    padding-right: 0;
-    border-bottom: 1px solid #1f2937;
-    padding-bottom: 24px;
-  }
-  .ff-fields-col {
-    padding-left: 0;
-    padding-top: 12px;
+
+  .ff-fields-grid-2 {
+    grid-template-columns: 1fr;
   }
 
-  .ff-fields-grid-2,
   .ff-fields-grid-3 {
     grid-template-columns: 1fr;
   }
-  .ff-grid-span-2 {
-    grid-column: auto;
+
+  .ff-summary-macros {
+    grid-template-columns: 1fr 1fr 1fr;
   }
 
-  .ff-field .ff-ipt {
-    height: 48px;
-    padding: 0 10px;
-    font-size: 14px;
+  .ff-sticky-actions {
+    display: flex;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 80;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+    background: rgba(2, 6, 23, 0.88);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    backdrop-filter: blur(8px);
   }
 
-  .ff-field .ff-textarea {
-    min-height: 100px;
-    padding: 8px 10px;
+  .ff-sticky-back,
+  .ff-sticky-del {
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.55);
+    color: #e5e7eb;
+    border-radius: 12px;
+    height: 46px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .ff-sticky-back i,
+  .ff-sticky-del i {
     font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .ff-sticky-main {
+    flex: 1 1 auto;
+    height: 46px;
+    border-radius: 12px;
+    border: none;
+    background: #f00519;
+    color: #ffffff;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .ff-sticky-main:hover {
+    background: #d30016;
   }
 }
 
 @media (max-width: 480px) {
   .ff-wrap {
     padding: 0 12px 16px;
+    padding-bottom: 110px;
   }
 
   .ff-grid-card {
-    padding: 12px;
+    padding: 8px 0;
     margin: 12px auto 10px;
   }
 
-  .ff-image-col {
-    padding-bottom: 16px;
+  .ff-summary-macros {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
   }
 
-  .ff-fields-col {
-    padding-top: 10px;
-  }
-
-  .ff-section-title {
-    font-size: 16px;
-    margin-bottom: 8px;
-  }
-
-  .ff-field .ff-ipt {
-    height: 44px;
-    padding: 0 8px;
-    font-size: 13px;
-  }
-
-  .ff-field .ff-textarea {
-    min-height: 90px;
-    padding: 6px 8px;
-    font-size: 13px;
-  }
-
-  .ff-label {
-    font-size: 13px;
-  }
-
-  .ff-wrap .modal-card {
-    width: calc(100vw - 24px);
-    max-width: calc(100vw - 24px);
-  }
-
-  .confirm-modal {
-    width: calc(100vw - 24px);
-    max-width: calc(100vw - 24px);
+  .ff-sticky-back span,
+  .ff-sticky-del span {
+    display: none;
   }
 }
 
-/* ===== Modal xác nhận / popup (giữ tông sáng để dễ đọc) ===== */
 .ff-wrap .modal {
   position: fixed;
   inset: 0;
@@ -429,35 +600,18 @@
   justify-content: center;
   z-index: 40;
 }
+
 .ff-wrap .modal-card {
   width: min(520px, 92%);
   background: #ffffff;
   border-radius: 4px;
   border: 1px solid #e5e7eb;
 }
-.ff-wrap .modal-card.small {
-  width: min(420px, 92%);
-}
-.ff-wrap .modal-head {
-  padding: 14px;
-  border-bottom: 1px solid #e5e7eb;
-}
-.ff-wrap .modal-body {
-  padding: 14px;
-}
-.ff-wrap .modal-foot {
-  padding: 12px;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
 
 .ff-wrap .muted {
   color: #9ca3af;
 }
 
-/* ===== Confirm Delete Modal (match RecordMeal) ===== */
 .confirm-modal {
   width: min(440px, 92vw);
   padding: 0;
@@ -500,7 +654,6 @@
   gap: 10px;
 }
 
-/* Nút “Xóa” tông đỏ (dùng chung nếu chưa có) */
 .btn.bad {
   background: #fef2f2;
   color: #b91c1c;
