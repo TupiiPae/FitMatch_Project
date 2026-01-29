@@ -220,7 +220,7 @@ export default function SuggestMenuList() {
   };
 
   return (
-    <div className="nm-wrap">
+    <div className="smu-wrap">
       {/* ===== HEAD ===== */}
       <div className="ex-head">
         <div className="ex-head-text">
@@ -285,7 +285,6 @@ export default function SuggestMenuList() {
                   className="smu-card"
                   onClick={() => openDetail(m._id)}
                 >
-                  {/* Ảnh to trên cùng (giống nm-card-thumb) */}
                   <div className="smu-card-img">
                     {m.imageUrl ? (
                       <img src={toAbs(m.imageUrl)} alt={m.name} />

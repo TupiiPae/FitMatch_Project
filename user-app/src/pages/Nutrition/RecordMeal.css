@@ -168,6 +168,69 @@
   .nm-toolbar .rm-view-toggle { grid-column: 2; justify-self: end; }
 }
 
+/* Mobile: prevent list item data from dropping to new lines
+   Allow title to wrap, make macro row wrap neatly and keep action button aligned */
+@media (max-width: 640px) {
+  /* keep items single-line on narrow screens: truncate overflow */
+  .nm-list-frame { padding: 8px 10px; }
+
+  .nm-item {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    min-height: 64px;
+  }
+
+  .nm-item img {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    flex: 0 0 48px;
+    margin-right: 8px;
+  }
+
+  .nm-item .info {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Force title and meta to truncate instead of wrapping */
+  .nm-item .title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+
+  .nm-item .sub {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    color: #e5e7eb;
+  }
+
+  /* Keep macro numbers inline and truncated if needed */
+  .nm-item .macro {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .nm-item .act {
+    flex: 0 0 auto;
+    margin-left: 12px;
+  }
+}
+
 @media (max-width: 480px) {
   .nm-list-title {
     font-size: 20px;
@@ -358,7 +421,6 @@
 
 /* Khung list */
 .nm-list-frame {
-  border: 1px solid rgba(255,255,255,0.06);
   background: #1C1C1E;
   border-radius: 4px;
   padding: 12px 20px; 
@@ -420,7 +482,6 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
   gap: 12px;
   border: 1px solid rgba(255, 255, 255, 0.30);
-  box-shadow: 0 2px 8px rgba(2,6,23,0.28);
   border-radius: 8px;
   padding: 8px 10px;
   cursor: pointer;
@@ -584,6 +645,34 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* Ensure grid cards have uniform height regardless of title length */
+.nm-list.is-grid .nm-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.nm-list.is-grid .nm-card-thumb {
+  height: 240px; /* fixed thumbnail height for consistent cards */
+  min-height: 140px;
+}
+
+.nm-list.is-grid .nm-card-body {
+  flex: 1 1 auto; /* body takes remaining space */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Clamp title to 2 lines to avoid varying card heights */
+.nm-list.is-grid .nm-card-body .title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .nm-card-title-row {
   display: flex;

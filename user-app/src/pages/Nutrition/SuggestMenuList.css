@@ -1,19 +1,27 @@
+.smu-wrap {
+  min-height: 100%;
+  margin: 0 auto;
+  max-width: 1400px;
+  padding-bottom: 40px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+
 .smu-frame {
-  background: #1e1e1e;
-  border-radius: 4px;
-  border: 1px solid #fff;
-  padding: 20px;
+  background: #1C1C1E;
+  border-radius: 8px;
+  padding: 14px;
   margin-top: 16px;
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.5);
+  padding-bottom: 1px;
 }
-
-
 
 .smu-search {
   flex: 1 1 auto;
+  background-color: #1C1C1E;
 }
 
 .smu-search input {
@@ -36,9 +44,9 @@
 .smu-chip {
   font-size: 12px;
   border-radius: 999px;
-  border: 1px solid #4b5563;
+  border: 1px solid rgba(255, 255, 255, 0.30);
   padding: 6px 12px;
-  background: #1f2937;
+  background: #1C1C1E;
   color: #e5e7eb;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -69,6 +77,8 @@
   gap: 20px;
   overflow-x: auto;
   cursor: grab;
+  padding-bottom: 14px;
+  align-items: flex-start;
 }
 
 .smu-card-row.dragging {
@@ -79,21 +89,19 @@
   height: 6px;
 }
 .smu-card-row::-webkit-scrollbar-track {
-  background: #030712;
+  background: transparent;
 }
 .smu-card-row::-webkit-scrollbar-thumb {
   background: #4b5563;
   border-radius: 999px;
 }
 
-/* Một card thực đơn – giống nm-card grid food */
 .smu-card {
   flex: 0 0 340px;
   height: 480px;
-  background: #221010;
+  background: rgba(148,163,184,.10);
   border-radius: 8px;
-  border: 4px solid #1f2937;
-  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.30);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -167,7 +175,7 @@
   margin-top: 2px;
   font-size: 16px;
   font-weight: 700;
-  color: #f97373;
+  color: #E31C25;
 }
 
 .smu-card-macros {
@@ -177,23 +185,22 @@
   gap: 2px;
 }
 
-/* Footer buttons – giống phong cách nút RecordMeal */
 .smu-card-footer {
   padding: 10px 14px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border-top: 1px solid #1f2937;
+  border-top: 1px solid rgba(255, 255, 255, 0.30);
   margin-top: auto;
 }
 
 .smu-btn-detail {
-    width: 100%;
+  width: 100%;
   height: 34px;
   padding: 0 18px;
   border-radius: 8px;
-  border: 1px solid #4b5563;
+  border: 1px solid rgba(255, 255, 255, 0.30);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -208,32 +215,26 @@
 
 /* Icon lưu (bookmark) thay cho nút chữ */
 .smu-save-icon {
-  width: 40px;
-  height: 34px;
-  border-radius: 8px;
   border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #f00519;
   color: #fff;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .smu-save-icon i {
-  font-size: 18px;
+  font-size: 28px;
 }
 
 .smu-save-icon:hover {
-  background: #f97373;
   transform: translateY(-1px);
+  color: #f97373;
 }
 
 .smu-save-icon.saved {
-  background: #111827;
   color: #f97373;
-  border: 1px solid #f97373;
 }
 
 .smu-save-icon.saved:hover {
@@ -282,10 +283,9 @@
   gap: 16px;
   padding: 10px;
   border-radius: 8px;
-  background: #1e1e1e;
-  border: 4px solid #1f2937;
+  background: rgba(148,163,184,.10);
+  border: 1px solid rgba(255, 255, 255, 0.30);
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
   transition: all 0.15s ease;
 }
 
@@ -393,7 +393,7 @@
 }
 
 .smu-saved-unsave:hover {
-  background: rgba(248, 113, 113, 0.12);
+  transform: translateY(-1px);
 }
 
 /* ===== Modal xác nhận bỏ lưu ===== */
@@ -414,7 +414,6 @@
   padding: 16px 18px 14px;
   border: 1px solid #4b5563;
   color: #e5e7eb;
-  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.7);
 }
 
 .smu-modal-title {
@@ -463,7 +462,22 @@
   background: #f97373;
 }
 
-/* Responsive */
+.smu-card-row {
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.smu-card {
+  scroll-snap-align: start;
+}
+
+@media (pointer: coarse) {
+  .smu-card-row,
+  .smu-card-row.dragging {
+    cursor: auto;
+  }
+}
+
 @media (max-width: 900px) {
   .smu-card {
     flex: 0 0 280px;
@@ -471,7 +485,164 @@
 }
 
 @media (max-width: 768px) {
+  .smu-wrap {
+    padding: 0 12px 32px;
+  }
+
   .smu-frame {
-    padding: 16px 12px 14px;
+    padding: 12px;
+    padding-bottom: 1px;
+  }
+
+  .smu-filter-label {
+    font-size: 16px;
+  }
+
+  .smu-card-row {
+    gap: 14px;
+    padding-bottom: 12px;
+  }
+
+  .smu-card {
+    height: 460px;
+  }
+
+  .smu-card-img {
+    max-height: 300px;
+  }
+
+  .smu-card-title {
+    font-size: 16px;
+  }
+
+  .smu-card-body {
+    padding: 10px 12px 8px;
+  }
+
+  .smu-btn-detail {
+    height: 32px;
+    padding: 0 14px;
+  }
+
+  .smu-save-icon i {
+    font-size: 26px;
+  }
+
+  .smu-saved-title {
+    font-size: 24px;
+    padding-top: 18px;
+  }
+
+  .smu-saved-desc {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .smu-wrap {
+    padding: 0 10px 28px;
+  }
+
+  .smu-chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+  }
+
+  .smu-chip {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .smu-card {
+    flex: 0 0 min(82vw, 320px);
+    height: 440px;
+  }
+
+  .smu-card-img {
+    max-height: 280px;
+  }
+
+  .smu-card-macros {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .smu-card-footer {
+    padding: 10px 12px 12px;
+  }
+
+  .smu-btn-detail {
+    height: 34px;
+  }
+
+  .smu-saved-item {
+    gap: 12px;
+    padding: 10px;
+  }
+
+  .smu-saved-img {
+    flex: 0 0 76px;
+  }
+
+  .smu-saved-img img {
+    width: 76px;
+    height: 76px;
+  }
+
+  .smu-saved-name {
+    font-size: 16px;
+  }
+
+  .smu-saved-unsave {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .smu-wrap {
+    padding: 0 8px 24px;
+  }
+
+  .smu-frame {
+    padding: 10px;
+    padding-bottom: 1px;
+  }
+
+  .smu-filter-label {
+    font-size: 15px;
+  }
+
+  .smu-chip {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .smu-card {
+    flex: 0 0 86vw;
+    height: 420px;
+  }
+
+  .smu-card-img {
+    max-height: 200px;
+  }
+
+  .smu-saved-title {
+    font-size: 22px;
+  }
+
+  .smu-saved-desc {
+    font-size: 13px;
+  }
+
+  .smu-saved-macros {
+    font-size: 11px;
+    gap: 10px;
+  }
+
+  .smu-modal {
+    max-width: 92vw;
+    padding: 14px;
   }
 }
