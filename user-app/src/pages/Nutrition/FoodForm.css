@@ -21,22 +21,18 @@
 }
 
 .tool-left {
-  justify-self: start;
   border: none;
   background: transparent;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  color: #9ca3af;
+  gap: 6px;
+  font-size: 14px;
+  color: #e5e7eb;
   cursor: pointer;
   padding: 4px 0;
-  margin: 0;
-  font-weight: 500;
-  transition: color 0.2s;
 }
 .tool-left i {
-  font-size: 14px;
+  font-size: 12px;
 }
 .tool-left:hover {
   color: #ffffff;
@@ -397,7 +393,7 @@
 .ff-adv-sum {
   list-style: none;
   cursor: pointer;
-  padding: 12px 12px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -417,8 +413,8 @@
 }
 
 .ff-adv-title {
-  font-weight: 900;
-  color: #ffffff;
+  font-weight: 700;
+  color: #e5e7eb;
   font-size: 13px;
 }
 

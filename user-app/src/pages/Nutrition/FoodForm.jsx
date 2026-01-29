@@ -332,9 +332,9 @@ export default function FoodForm() {
       <div className="ff-toolbar">
         <div className="ff-toolbox">
           <button type="button" className="tool-left" onClick={() => nav(-1)}>
-            <i className="fa-solid fa-chevron-left"></i> Quay lại
+            <i className="fa-solid fa-arrow-left-long"></i> Quay lại 
           </button>
-          <div className="tool-mid">{isEdit ? "Chỉnh sửa món ăn" : "Tạo món ăn"}</div>
+          <div className="tool-mid">{isEdit ? "Chỉnh sửa món" : "Tạo món ăn"}</div>
           <div className="tool-right">
             {isEdit && (
               <button type="button" className="ff-delete-btn" onClick={openConfirmDelete}>
@@ -711,7 +711,7 @@ export default function FoodForm() {
 
       <div className="ff-sticky-actions" aria-hidden="false">
         <button type="button" className="ff-sticky-back" onClick={() => nav(-1)}>
-          <i className="fa-solid fa-chevron-left"></i>
+          <i className="fa-solid fa-arrow-left-long"></i>
           <span>Quay lại</span>
         </button>
 

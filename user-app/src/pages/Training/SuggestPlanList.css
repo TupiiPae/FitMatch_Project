@@ -9,12 +9,11 @@
 
 /* ===== LIST FRAME (DARK MODE) ===== */
 .spl-list-frame {
-  background: #1e1e1e; /* Nền tối */
-  border: 1px solid #fff;
+  background: rgba(148,163,184,.10); /* Nền tối */
   border-radius: 4px;
   padding: 20px;
   width: 100%;
-  max-width: 1700px;
+  max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
   margin-top: 14px;
@@ -32,13 +31,12 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  border: 4px solid #1f2937; /* Viền đậm giống Exercise Card */
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.50); 
+  border-radius: 8px;
   padding: 12px 18px;
-  background: #221010; /* Nền card tối */
+  background: #1c1c1e;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
 }
 
 .spl-item + .spl-item {
@@ -46,9 +44,8 @@
 }
 
 .spl-item:hover {
-  background: #221010;
-  border-color: #f00519; /* Hover đỏ */
-  transform: translateY(-2px);
+  border-color: #f00519; 
+  transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(240, 5, 25, 0.15);
 }
 
@@ -87,7 +84,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .spl-plan-title {
@@ -104,7 +101,7 @@
 
 .spl-plan-meta {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
@@ -112,10 +109,9 @@
    nhưng nếu cần đè thì viết lại ở đây */
 .spl-plan-meta .ex-chip {
   font-size: 11px;
-  padding: 4px 8px;
-  background: #374151;
+  padding: 6px 10px;
+  background: #ef4444;
   color: #e5e7eb;
-  border: 1px solid #4b5563;
   border-radius: 999px;
 }
 
@@ -152,7 +148,7 @@
   border: 1px solid #f20d0d;
 }
 .spl-save-btn.saved:hover {
-  background: #4b5563;
+  background: rgba(255, 255, 255, 0.30);
   color: #fff;
 }
 
