@@ -1,8 +1,8 @@
 .nm-wrap {
   min-height: 100%;
   margin: 0 auto;
-  max-width: 1100px; /* narrower for better readability on desktop */
-  padding: 0 10px;
+  max-width: 1400px; /* narrower for better readability on desktop */
+  padding-bottom: 10px;
   box-sizing: border-box;
 }
 
@@ -183,10 +183,10 @@
   }
 
   .nm-item img {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 6px;
-    flex: 0 0 48px;
+    flex: 0 0 44px;
     margin-right: 8px;
   }
 
@@ -196,12 +196,12 @@
     overflow: hidden;
   }
 
-  /* Force title and meta to truncate instead of wrapping */
+  /* Force title and meta to truncate instead of wrapping, slightly smaller */
   .nm-item .title {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 15px;
+    font-size: 14px;
     margin-bottom: 2px;
   }
 
@@ -214,15 +214,29 @@
   }
 
   /* Keep macro numbers inline and truncated if needed */
+  /* For narrow screens, reduce macro font-size and tighten spacing so they fit horizontally
+     Prefer keeping macros on one line; if necessary they may wrap but font-size is reduced. */
   .nm-item .macro {
-    display: inline-flex;
-    gap: 8px;
+    display: flex;
+    gap: 6px;
     align-items: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 12px;
+    flex-wrap: nowrap;
+    font-size: 11px;
     margin-top: 4px;
+    min-width: 0;
+  }
+
+  /* Keep each macro chip content together */
+  .nm-item .macro span,
+  .nm-item .macro i {
+    white-space: nowrap;
+  }
+
+  /* Reduce action button size slightly to free space */
+  .nm-item .act .add.add-round {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
   }
 
   .nm-item .act {
@@ -237,9 +251,9 @@
   }
 }
 
-.rm-line {
+.rm-divide {
   border: 0;
-  border-top: 1px solid #9ca3af;
+  border-top: 1px solid rgba(255, 255, 255, 0.30);
 }
 
 .nm-head-top {
@@ -421,7 +435,7 @@
 
 /* Khung list */
 .nm-list-frame {
-  background: #1C1C1E;
+  background: rgba(148,163,184,.10);;
   border-radius: 4px;
   padding: 12px 20px; 
   margin: 14px 0 20px 0;
@@ -481,15 +495,17 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.30);
+  border: 1px solid rgba(255, 255, 255, 0.50);
   border-radius: 8px;
   padding: 8px 10px;
   cursor: pointer;
-  background: rgba(148,163,184,.10);
+  background: #1C1C1E;
   flex-wrap: nowrap; 
 }
 .nm-item:hover {
   border-color: #f00519;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(240, 5, 25, 0.15);
 }
 .nm-item img {
   width: 80px;
@@ -520,7 +536,7 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
   font-size: 13px;
 }
 .nm-item .macro i {
-  margin-right: 6px;
+  margin-right: 1px;
 }
 
 .nm-item .act {
@@ -591,10 +607,9 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
 
 /* GRID CARD */
 .nm-card {
-  background: rgba(148,163,184,.10);
+  background: #1C1C1E;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.30);
-  box-shadow: 0 6px 18px rgba(2,6,23,0.28);
+  border: 1px solid rgba(255, 255, 255, 0.50);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -603,6 +618,8 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .nm-card:hover {
   border-color: #f00519;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(240, 5, 25, 0.15);
 }
 .nm-card-thumb {
   position: relative;
@@ -669,7 +686,6 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
 /* Clamp title to 2 lines to avoid varying card heights */
 .nm-list.is-grid .nm-card-body .title {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;

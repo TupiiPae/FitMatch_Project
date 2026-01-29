@@ -106,7 +106,7 @@
   max-width: 1400px;
   margin: 18px auto 18px auto;
   color: #e5e7eb;
-  background: transparent;
+  /* background: rgba(148,163,184,.10); */
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -304,7 +304,7 @@
   font-weight: 500;
   font-size: 14px;
   margin-bottom: 6px;
-  color: #f9fafb;
+  color: #e5e7eb;
 }
 
 .ff-label-url {
@@ -479,20 +479,34 @@
     padding-bottom: 110px;
   }
 
+  /* Keep the three toolbox items on a single row on mobile.
+     Use auto 1fr auto so the center title can shrink and truncate. */
   .ff-toolbox {
-    grid-template-columns: auto;
-    gap: 10px;
-    padding-bottom: 16px;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    padding-bottom: 12px;
+    align-items: center;
+    width: 100%;
   }
 
   .tool-mid {
-    justify-self: flex-start;
-    text-align: left;
-    font-size: 22px;
+    justify-self: center;
+    text-align: center;
+    font-size: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 140px); /* reserve space for left/right controls */
   }
 
   .tool-right {
-    justify-self: flex-end;
+    justify-self: end;
+  }
+
+  .tool-left,
+  .tool-right {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .ff-grid-card {
@@ -588,6 +602,27 @@
   .ff-sticky-back span,
   .ff-sticky-del span {
     display: none;
+  }
+
+  /* Make the header title smaller and allow more room on narrow phones */
+  .ff-toolbox {
+    gap: 6px;
+  }
+
+  .tool-mid {
+    font-size: 16px;
+    max-width: calc(100% - 110px);
+  }
+
+  /* Reduce primary button padding so right-side fits */
+  .ff-wrap .ff-btn {
+    padding: 0 12px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .tool-left {
+    font-size: 14px;
   }
 }
 

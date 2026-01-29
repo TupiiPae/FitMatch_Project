@@ -1,6 +1,7 @@
 .wl-wrap {
   min-height: 100%;
   margin: 0 auto;
+  padding-bottom: 20px;
   max-width: 1400px;
 }
 
@@ -12,7 +13,7 @@
   padding-bottom: 12px;
   z-index: 5;
   width: 100%;
-  margin: 20px auto 20px auto;
+  margin: 36px auto 20px auto;
 }
 
 /* Search trong WorkoutList: đồng bộ với RecordMeal .search */
@@ -20,7 +21,7 @@
   flex: 1;
   display: flex;
   align-items: center;
-  background-color: #333333;
+  background-color: #1C1C1E;
   height: 44px;
   border-radius: 8px;
   padding: 0 16px;
@@ -65,10 +66,9 @@
 
 .wl-linee {
   border: 0;
-  border-top: 1px solid #9ca3af;
+  border-top: 1px solid rgba(255, 255, 255, 0.30)
 }
 
-/* ===== Frame danh sách – đồng bộ với nm-list-frame ===== */
 .wl-list-title {
   color: #d30016;
   font-size: 30px;
@@ -84,14 +84,11 @@
 }
 
 .wl-list-frame {
-  border: 1px solid #ffffff;
-  background: #1e1e1e;
+  background: rgba(148,163,184,.10);
   border-radius: 4px;
   padding: 20px;
   width: 100%;
   margin-top: 20px;
-
-  /* cho phép scroll trong frame khi dài */
   max-height: 480px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -220,7 +217,7 @@
 .wl-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 18px;
   cursor: grab;
 }
 .wl-list.dragging {
@@ -241,16 +238,17 @@
 
 /* ===== ITEM CARD – đồng bộ palette như nm-item ===== */
 .wl-item {
-  border: 2px solid #1f2937;
+  border: 1px solid rgba(255, 255, 255, 0.50);
   border-radius: 8px;
   padding: 14px 14px 10px;
-  background: #1e1e1e;
+  background: #1C1C1E;
   cursor: pointer;
   transition: border-color 0.12s ease, background-color 0.12s ease;
-  box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
 }
 .wl-item:hover {
   border-color: #f00519;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(240, 5, 25, 0.15);
 }
 
 /* TOP ROW: title + note + menu */
@@ -361,7 +359,7 @@
   color: #e5e7eb;
 }
 .wl-metrics .calo {
-  color: #f00519;
+  color: #E31C25;
 }
 
 /* ===== Modal (backdrop dùng chung) ===== */

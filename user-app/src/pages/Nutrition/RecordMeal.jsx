@@ -313,7 +313,7 @@ export default function RecordMeal() {
           </button>
         </div>
 
-        <hr className="rm-line" />
+        <hr className="rm-divide" />
 
         <div className="nm-head-top">
           <div className="nm-head-text">
