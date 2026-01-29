@@ -166,8 +166,10 @@
 }
 
 .smu-card-tags .ex-chip {
-  background: #111827;
-  border-color: #4b5563;
+  border: 1px solid #ef4444;
+  background: #1f2937;
+  color: #e5e7eb;
+  font-weight: 500;
   color: #e5e7eb;
   font-size: 13px;
   padding: 4px 10px;
@@ -177,7 +179,7 @@
   margin-top: 2px;
   font-size: 16px;
   font-weight: 700;
-  color: #E31C25;
+  color: #f97373;
 }
 
 .smu-card-macros {
@@ -217,7 +219,6 @@
 
 /* Icon lưu (bookmark) thay cho nút chữ */
 .smu-save-icon {
-  border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -341,11 +342,14 @@
 }
 
 .smu-saved-tags .ex-chip {
-  background: #111827;
-  border-color: #4b5563;
-  color: #e5e7eb;
   font-size: 11px;
-  padding: 2px 7px;
+  line-height: 1.2;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid #ef4444;
+  background: #1f2937;
+  color: #e5e7eb;
+  font-weight: 500;
 }
 
 .smu-saved-kcal {
@@ -384,7 +388,6 @@
 /* Nút bỏ lưu (bookmark) bên phải */
 .smu-saved-unsave {
   flex: 0 0 auto;
-  border: none;
   background: transparent;
   color: #f97373;
   cursor: pointer;
@@ -533,7 +536,7 @@
   }
 
   .smu-saved-title {
-    font-size: 24px;
+
     padding-top: 18px;
   }
 
@@ -606,7 +609,7 @@
 
 @media (max-width: 480px) {
   .smu-wrap {
-    padding: 0 8px 24px;
+    padding: 0 8px 30px;
   }
 
   .smu-frame {
@@ -630,10 +633,6 @@
 
   .smu-card-img {
     max-height: 200px;
-  }
-
-  .smu-saved-title {
-    font-size: 22px;
   }
 
   .smu-saved-desc {

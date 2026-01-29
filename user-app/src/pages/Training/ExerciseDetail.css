@@ -20,7 +20,6 @@
 /* ===== BACK BUTTON ===== */
 
 .exd-back {
-  border: none;
   background: transparent;
   display: inline-flex;
   align-items: center;
@@ -129,8 +128,10 @@
 
 .exd-tabs {
   display: flex;
-  gap: 24px;
-  border-bottom: 1px solid #27272f;
+  flex-wrap: wrap;
+  gap: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.30);
+  padding-left: 12px;
 }
 
 .exd-tab {
@@ -142,6 +143,10 @@
   font-weight: 500;
   color: #9ca3af;
   cursor: pointer;
+}
+
+.exd-tab:hover {
+  color: #e5e7eb;
 }
 
 .exd-tab.active {
@@ -166,7 +171,6 @@
   padding: 0;
   border-radius: 0;
   background: transparent;
-  border: none;
 }
 
 .exd-empty {
