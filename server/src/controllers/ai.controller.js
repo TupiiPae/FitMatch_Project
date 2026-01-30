@@ -37,7 +37,76 @@ const CREATE_FOOD_RE = /^(tạo|tao)\s*(món|mon)\b/i;
 const GEN_MENU_RE = /(tạo|tao).*(thực\s*đơn|menu).*(mới|new)/i; // user chủ động yêu cầu tạo menu mới
 const GEN_PLAN_RE = /(tạo|tao).*(lịch\s*tập|workout|kế\s*hoạch\s*tập|plan).*(mới|new)/i; // user chủ động yêu cầu tạo plan mới
 
+// user chủ động muốn "tạo/lập/xây" thực đơn (không cần chữ "mới")
+const WANT_CREATE_MENU_RE =
+  /(tạo|tao|lên|len|xây|xay|lập|lap|soạn|soan).*(thực\s*đơn|menu|meal\s*plan|diet)\b/i;
+
+const WANT_CREATE_PLAN_RE =
+  /(tạo|tao|lên|len|xây|xay|lập|lap|soạn|soan).*(lịch\s*tập|workout|plan|kế\s*hoạch\s*tập)\b/i;
+
 const escapeRegex = (x) => String(x || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const GOAL_LABEL = {
+  giam_can: "Giảm cân",
+  duy_tri: "Duy trì",
+  tang_can: "Tăng cân",
+  giam_mo: "Giảm mỡ",
+  tang_co: "Tăng cơ",
+};
+
+const stripVN = (s) =>
+  String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
+
+function detectGoalOverride(text) {
+  const t = stripVN(text);
+
+  if (/\b(tang\s*co|xay\s*co|len\s*co|lean\s*bulk)\b/.test(t)) return "tang_co";
+  if (/\b(tang\s*can|bulk)\b/.test(t)) return "tang_can";
+  if (/\b(giam\s*mo|dot\s*mo|siet)\b/.test(t)) return "giam_mo";
+  if (/\b(giam\s*can|cat\s*can)\b/.test(t)) return "giam_can";
+  if (/\b(duy\s*tri|giu\s*can|maintain)\b/.test(t)) return "duy_tri";
+
+  return null;
+}
+
+function parseMenuDaysFromText(text) {
+  const t = stripVN(text);
+  if (/\b(1|mot)\s*tuan\b/.test(t)) return 7;
+
+  const mWeek = t.match(/\b(\d{1,2})\s*tuan\b/);
+  if (mWeek) return Math.min(7, Math.max(1, Number(mWeek[1]) * 7));
+
+  const mDay = t.match(/\b(\d{1,2})\s*ngay\b/);
+  if (mDay) return Math.min(7, Math.max(1, Number(mDay[1])));
+
+  return null;
+}
+
+function parseMealsPerDayFromText(text) {
+  const t = stripVN(text);
+  const m = t.match(/\b(\d)\s*bua\b/);
+  if (m) return Math.min(5, Math.max(2, Number(m[1])));
+  if (/\bbua\s*phu\b/.test(t)) return 4;
+  return null;
+}
+
+function mealSlotsByCount(n) {
+  if (n === 2) return ["Sáng", "Tối"];
+  if (n === 3) return ["Sáng", "Trưa", "Tối"];
+  if (n === 4) return ["Sáng", "Trưa", "Xế", "Tối"];
+  if (n === 5) return ["Sáng", "Phụ 1", "Trưa", "Phụ 2", "Tối"];
+  return ["Sáng", "Trưa", "Xế", "Tối"];
+}
+
+function calcMenuGenTokens(days, meals) {
+  const d = Math.min(7, Math.max(1, Number(days) || 3));
+  const m = Math.min(5, Math.max(2, Number(meals) || 3));
+  return Math.min(2200, 850 + d * m * 70);
+}
 
 function numOrNull(v) {
   const n = Number(v);
@@ -86,6 +155,11 @@ const GOAL_LABEL_VI = {
   duy_tri: "Duy trì cân nặng",
   tang_can: "Tăng cân",
   tang_co: "Tăng cơ",
+};
+
+const goalLabelByKey = (k) => {
+  const key = String(k || "").trim();
+  return GOAL_LABEL_VI[key] || GOAL_LABEL[key] || key;
 };
 
 const GOAL_GAIN = new Set(["tang_can", "tang_co"]);
@@ -245,10 +319,15 @@ async function findSuggestMenusForUser({ userId, goalKey, targetKcal, userText =
   return { range, items };
 }
 
-function formatMenuRecommendReply({ goalLabel, targetKcal, range, items }) {
+function formatMenuRecommendReply({ profileGoalLabel, appliedGoalLabel, targetKcal, range, items }) {
   const lines = [];
-  if (goalLabel) lines.push(`Mục tiêu hiện tại của bạn: (${goalLabel}).`);
-  if (Number.isFinite(targetKcal)) lines.push(`Calo mục tiêu: (${Math.round(targetKcal)} kcal/ngày).`);
+
+  if (profileGoalLabel) lines.push(`Mục tiêu trong hồ sơ của bạn: (${profileGoalLabel}).`);
+  if (appliedGoalLabel && appliedGoalLabel !== profileGoalLabel) {
+    lines.push(`Mục tiêu bạn đang yêu cầu: (${appliedGoalLabel}).`);
+  }
+
+  if (Number.isFinite(targetKcal)) lines.push(`Calo mục tiêu tham khảo: (${Math.round(targetKcal)} kcal/ngày).`);
   if (range) lines.push(`Mình sẽ gợi ý thực đơn trong khoảng (${range.min}–${range.max} kcal/ngày).`);
 
   if (!items?.length) {
@@ -501,9 +580,14 @@ function explainPlanReason(goalKey, preferred) {
     .join("\n");
 }
 
-function formatPlanRecommendReply({ goalLabel, items, goalKey, preferred }) {
+function formatPlanRecommendReply({ profileGoalLabel, appliedGoalLabel, items, goalKey, preferred }) {
   const lines = [];
-  if (goalLabel) lines.push(`Mục tiêu hiện tại của bạn (theo hồ sơ): ${goalLabel}.`);
+
+  if (profileGoalLabel) lines.push(`Mục tiêu trong hồ sơ của bạn: ${profileGoalLabel}.`);
+  if (appliedGoalLabel && appliedGoalLabel !== profileGoalLabel) {
+    lines.push(`Mục tiêu bạn đang yêu cầu: ${appliedGoalLabel}.`);
+  }
+
   lines.push(explainPlanReason(goalKey, preferred));
 
   if (!items?.length) {
@@ -596,11 +680,17 @@ function fillDraftFromSimilar(foodDraft, similarFoods = []) {
 function inferIntent(text, imageUrls) {
   const t = s(text).toLowerCase();
   if (safeArr(imageUrls).length) return "meal_scan";
+
+  // ✅ ưu tiên "tạo/lập/xây ..." => generate
+  if (WANT_CREATE_MENU_RE.test(t)) return "menu_generate";
+  if (WANT_CREATE_PLAN_RE.test(t)) return "plan_generate";
+
   if (/(thực\s*đơn|menu|bữa\s*ăn)/i.test(t)) return "menu_recommend";
   if (/(lịch\s*tập|workout|plan|kế\s*hoạch\s*tập)/i.test(t)) return "plan_recommend";
   if (/(calo|kcal|macro|protein|carb|fat)/i.test(t)) return "nutrition";
   return "general";
 }
+
 
 function formatMealScanReply({ parsedReply, foodDraft, similarFoods, notes = [] }) {
   const name = s(foodDraft?.name) || "món ăn trong ảnh";
@@ -1354,18 +1444,32 @@ export async function sendAiChat(req, res) {
     // MENU RECOMMEND / GENERATE
     // =========================
     if (!imageUrls.length && (intentFinal === "menu_recommend" || intentFinal === "menu_generate")) {
-      const { goalKey, goalLabel, targetKcal } = await getUserGoalAndTargetKcal(userId);
+      const { goalKey: profileGoalKey, goalLabel: profileGoalLabel, targetKcal } = await getUserGoalAndTargetKcal(userId);
+
+      const requestedGoalKey = detectGoalOverride(text);
+      const appliedGoalKey = requestedGoalKey || profileGoalKey || "duy_tri";
+      const appliedGoalLabel = goalLabelByKey(appliedGoalKey) || profileGoalLabel;
+      const profileLabel = profileGoalLabel || goalLabelByKey(profileGoalKey);
+
+      const rangeFromText = parseKcalRangeFromText(text);
+      const appliedTargetKcal =
+        targetKcal || (rangeFromText ? Math.round((rangeFromText.min + rangeFromText.max) / 2) : null);
 
       if (intentFinal === "menu_generate") {
+        const days = parseMenuDaysFromText(text) || 3;
+        const mealsPerDay = parseMealsPerDayFromText(text) || 3;
+        const slots = mealSlotsByCount(mealsPerDay);
+
         const sys = [
           "Bạn là FitMatch AI Coach.",
-          "Hãy tạo một bộ THỰC ĐƠN GỢI Ý MỚI (không lưu DB) cho người dùng.",
+          "Hãy tạo một bộ THỰC ĐƠN GỢI Ý (không lưu DB) cho người dùng.",
           "Ngôn ngữ: Tiếng Việt, rõ ràng, đủ ý nhưng không lan man.",
-          "Nếu gần hết giới hạn nội dung, hãy rút gọn bằng cách giảm số món mỗi bữa (vẫn giữ đủ 3 ngày).",
+          "QUY TẮC ƯU TIÊN: nếu người dùng nêu mục tiêu, ưu tiên tuyệt đối mục tiêu đó (không bám cứng mục tiêu hồ sơ).",
+          "",
           "Yêu cầu:",
-          `- Mục tiêu: ${goalLabel || (goalKey || "duy_tri")}`,
-          `- Calo mục tiêu: ${targetKcal ? Math.round(targetKcal) : "không rõ"} kcal/ngày`,
-          "- Tạo 3 ngày (Ngày 1-3), mỗi ngày 3 bữa (Sáng/Trưa/Tối).",
+          `- Mục tiêu theo yêu cầu: ${appliedGoalLabel || appliedGoalKey}`,
+          `- Calo mục tiêu tham khảo: ${appliedTargetKcal ? Math.round(appliedTargetKcal) : "không rõ"} kcal/ngày`,
+          `- Tạo ${days} ngày (Ngày 1-${days}), mỗi ngày ${mealsPerDay} bữa: ${slots.join(" / ")}.`,
           "- Mỗi bữa liệt kê 2-4 món, ước tính kcal từng món và tổng kcal/ngày xấp xỉ mục tiêu.",
           "- Không cần nói về DB FitMatch.",
           "- Có thể dùng **...** để in đậm và ==...== để tô nền chỗ quan trọng (kcal, mục tiêu, bước làm).",
@@ -1374,10 +1478,12 @@ export async function sendAiChat(req, res) {
 
         let genText = "";
         try {
+          const maxTokens = calcMenuGenTokens(days, mealsPerDay);
+
           genText = await callOpenAIResponses({
             systemText: sys,
             historyItems: [{ role: "user", text, imageUrls: [] }],
-            maxOutputTokens: getMaxOutTokensByIntent("menu_generate"),
+            maxOutputTokens: maxTokens,
           });
         } catch (e) {
           genText = await callOpenAIChatFallback({
@@ -1397,8 +1503,8 @@ export async function sendAiChat(req, res) {
           meta: {
             intent: "menu_generate",
             action: "virtual_menu",
-            goalKey: goalKey || undefined,
-            targetKcal: targetKcal || undefined,
+            goalKey: appliedGoalKey || undefined,
+            targetKcal: appliedTargetKcal || undefined,
           },
         });
 
@@ -1409,7 +1515,7 @@ export async function sendAiChat(req, res) {
         });
       }
 
-      if (!targetKcal) {
+      if (!appliedTargetKcal) {
         const replyMissing =
           "Mình chưa thấy (Calo mục tiêu) trong hồ sơ của bạn.\n" +
           "Bạn vào *Tài khoản → Hồ sơ* (hoặc Onboarding) để cập nhật, rồi quay lại nhắn: “Gợi ý thực đơn cho mình” nhé.";
@@ -1419,7 +1525,7 @@ export async function sendAiChat(req, res) {
           role: "assistant",
           text: replyMissing,
           imageUrls: [],
-          meta: { intent: intentFinal, action: "menu_missing_target", goalKey: goalKey || undefined },
+          meta: { intent: intentFinal, action: "menu_missing_target", goalKey: appliedGoalKey || profileGoalKey || undefined },
         });
 
         return res.json({
@@ -1431,17 +1537,18 @@ export async function sendAiChat(req, res) {
 
       const rec = await findSuggestMenusForUser({
         userId,
-        goalKey,
-        targetKcal,
+        goalKey: appliedGoalKey,
+        targetKcal: appliedTargetKcal,
         userText: text,
         limit: 6,
       });
 
       let reply = formatMenuRecommendReply({
-        goalLabel,
-        targetKcal,
+        profileGoalLabel: profileLabel,
+        appliedGoalLabel,
+        targetKcal: appliedTargetKcal,
         range: rec.range,
-        items: rec.items, 
+        items: rec.items,
       });
 
       reply = appendOutroSmart(reply, "menu_recommend", text);
@@ -1455,9 +1562,9 @@ export async function sendAiChat(req, res) {
           intent: intentFinal,
           action: "recommend_menus",
           menuRecommendations: {
-            goalKey: goalKey || undefined,
-            goalLabel: goalLabel || undefined,
-            targetKcal,
+            goalKey: appliedGoalKey || undefined,
+            goalLabel: appliedGoalLabel || undefined,
+            targetKcal: appliedTargetKcal || undefined,
             range: rec.range || undefined,
             items: rec.items || [],
           },
@@ -1477,9 +1584,14 @@ export async function sendAiChat(req, res) {
     // PLAN RECOMMEND / GENERATE
     // =========================
     if (!imageUrls.length && (intentFinal === "plan_recommend" || intentFinal === "plan_generate")) {
-      const { goalKey, goalLabel } = await getUserGoalAndTargetKcal(userId);
+      const { goalKey: profileGoalKey, goalLabel: profileGoalLabel } = await getUserGoalAndTargetKcal(userId);
 
-      if (!goalKey) {
+      const requestedGoalKey = detectGoalOverride(text);
+      const appliedGoalKey = requestedGoalKey || profileGoalKey;
+      const appliedGoalLabel = appliedGoalKey ? goalLabelByKey(appliedGoalKey) : "";
+      const profileLabel = profileGoalLabel || goalLabelByKey(profileGoalKey);
+
+      if (!appliedGoalKey) {
         const replyMissing =
           "Mình chưa thấy (Mục tiêu luyện tập) trong hồ sơ của bạn.\n" +
           "Bạn vào *Tài khoản → Hồ sơ* (hoặc Onboarding) để cập nhật mục tiêu, rồi nhắn lại: “Gợi ý lịch tập cho mình” nhé.";
@@ -1510,7 +1622,7 @@ export async function sendAiChat(req, res) {
           "Ngôn ngữ: Tiếng Việt, rõ ràng, đủ ý nhưng không lan man.",
           "Nếu gần hết giới hạn nội dung, hãy rút gọn bằng cách giảm số bài mỗi buổi (vẫn giữ cấu trúc buổi).",
           "Yêu cầu:",
-          `- Mục tiêu (theo hồ sơ): ${goalLabel || goalKey}`,
+          `- Mục tiêu theo yêu cầu: ${appliedGoalLabel || appliedGoalKey}`, requestedGoalKey && profileGoalKey && requestedGoalKey !== profileGoalKey ? `- (Tham khảo) Mục tiêu trong hồ sơ: ${profileLabel}` : "",
           `- Mức độ: ${level}`,
           `- Số buổi/tuần: ${sessionsPerWeek} buổi`,
           "- Trình bày theo Buổi 1..N.",
@@ -1546,7 +1658,7 @@ export async function sendAiChat(req, res) {
           meta: {
             intent: "plan_generate",
             action: "virtual_plan",
-            goalKey: goalKey || undefined,
+            goalKey: appliedGoalKey || undefined,
             preferredLevel: level,
             sessionsPerWeek,
           },
@@ -1561,14 +1673,15 @@ export async function sendAiChat(req, res) {
 
       const rec = await findSuggestPlansForUser({
         userId,
-        goalKey,
+        goalKey: appliedGoalKey,
         userText: text,
         limit: 6,
       });
 
       let reply = formatPlanRecommendReply({
-        goalLabel,
-        goalKey,
+        profileGoalLabel: profileLabel,
+        appliedGoalLabel,
+        goalKey: appliedGoalKey,
         items: rec.items,
         preferred: rec.preferred,
       });
@@ -1584,8 +1697,8 @@ export async function sendAiChat(req, res) {
           intent: intentFinal,
           action: "recommend_plans",
           planRecommendations: {
-            goalKey,
-            goalLabel: goalLabel || undefined,
+            goalKey: appliedGoalKey || undefined,
+            goalLabel: appliedGoalLabel || undefined,
             preferred: rec.preferred || undefined,
             items: rec.items || [],
           },
@@ -1790,7 +1903,7 @@ export async function sendAiChat(req, res) {
       suggestions,
     });
   } catch (e) {
-    console.error("[ai.chat]", e?.message || e);
+    console.error("[ai.chat]", e);
     if (!OPENAI_KEY) {
       return res.status(500).json({ message: "Chưa cấu hình OPENAI_API_KEY trên server" });
     }
