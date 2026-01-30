@@ -65,15 +65,13 @@
     width: 40px;
     height: 40px;
     right: 12px;
-    /* nâng lên chút để không bị dính sát mép + dễ bấm hơn */
-    bottom: 72px;
+    bottom: 60px;
   }
   .stb i {
     font-size: 13px;
   }
 }
 
-/* iPhone notch safe-area (ưu tiên nếu có) */
 @supports (padding: max(0px)) {
   @media (max-width: 480px) {
     .stb {

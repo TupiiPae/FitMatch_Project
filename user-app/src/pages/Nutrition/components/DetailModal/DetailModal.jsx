@@ -57,7 +57,13 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
       : "Chưa có mô tả";
 
   return (
-    <div className="detail-modal-backdrop" onClick={onClose}>
+    <div
+        className="detail-modal-backdrop"
+        data-fm-modal="true"
+        role="dialog"
+        aria-modal="true"
+        onClick={onClose}
+      >
       <div
         className="food-modal-new"
         onClick={(e) => e.stopPropagation()}

@@ -60,7 +60,13 @@ export default function AddModal({
   };
 
   return (
-    <div className="add-modal-backdrop" onClick={onClose}>
+      <div
+        className="add-modal-backdrop"
+        data-fm-modal="true"
+        role="dialog"
+        aria-modal="true"
+        onClick={onClose}
+      >
       <div
         className="add-modal-card add-modal"
         onClick={(e) => e.stopPropagation()}

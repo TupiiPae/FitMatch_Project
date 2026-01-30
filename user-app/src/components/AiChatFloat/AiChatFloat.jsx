@@ -1,0 +1,94 @@
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import AiChatBox from "../../pages/Chat/AiChatBox.jsx";
+import "./AiChatFloat.css";
+
+export default function AiChatFloat({ meId }) {
+  const myId = String(meId || "").trim();
+  const [open, setOpen] = useState(false);
+  const [vh, setVh] = useState(() => window.innerHeight);
+
+  const canShow = !!myId;
+  const close = () => setOpen(false);
+  const toggle = () => setOpen((v) => !v);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(() => {
+    const onResize = () => setVh(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const b = document.body;
+    const prev = b.style.overflow;
+    b.style.overflow = "hidden";
+    return () => {
+      b.style.overflow = prev;
+    };
+  }, [open]);
+
+  const modalHeight = useMemo(() => {
+    const h = Math.max(420, Math.min(720, vh - 120));
+    return h;
+  }, [vh]);
+
+  if (!canShow) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        className={"fm-ai-float-bubble" + (open ? " is-open" : "")}
+        onClick={toggle}
+        title="Chat với FitMatch AI"
+        aria-label="Chat với FitMatch AI"
+      >
+        <img className="fm-ai-bb" src="/images/chatbot.png" alt="FitMatch AI" />
+      </button>
+
+      {open
+        ? createPortal(
+            <div
+              className="fm-ai-float-overlay"
+              onMouseDown={(e) => {
+                if (e.target === e.currentTarget) close();
+              }}
+            >
+              <div className="fm-ai-float-modal" role="dialog" aria-modal="true">
+                <div className="fm-ai-float-head">
+                  <div className="fm-ai-float-title">
+                    <img className="fm-ai-ava" src="/images/chatbot.png" alt="FitMatch AI" /> <span>FitMatch AI</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="fm-ai-float-iconbtn"
+                    onClick={close}
+                    title="Đóng"
+                    aria-label="Đóng"
+                  >
+                    <i className="fa-solid fa-xmark" />
+                  </button>
+                </div>
+
+                <div className="fm-ai-float-body">
+                  <AiChatBox meId={myId} height={modalHeight} />
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
+    </>
+  );
+}

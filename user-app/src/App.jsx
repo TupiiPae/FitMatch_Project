@@ -49,6 +49,8 @@ import AppShell from "./components/layout/AppShell";
 
 import useGlobalModalScrollLock from "./hooks/useGlobalModalScrollLock";
 
+import { useMemo } from "react";
+
 // PLACEHOLDER (thay bằng component thật sau)
 const ThongKe = () => <div>Trang Thống kê</div>;
 const KetNoi = () => <div>Trang Kết nối (Teammate)</div>;
@@ -73,12 +75,45 @@ const TheThao = () => <div>Các môn thể thao</div>; // Placeholder mới
 // const CongDong = () => <div>Cộng đồng (đang phát triển)</div>; // Đã xóa
 const UngDung = () => <div>Ứng dụng di động</div>;
 
-/** Layout bảo vệ + bọc AppShell */
 function ProtectedLayout() {
-  const nickname = "Bạn"; 
+  const nickname = "Bạn";
+
+  const meId = useMemo(() => {
+    const token = localStorage.getItem("token") || "";
+    if (!token) return "";
+
+    try {
+      const part = token.split(".")[1];
+      if (!part) return "";
+
+      const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+      const json = decodeURIComponent(
+        atob(b64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+
+      const payload = JSON.parse(json);
+
+      const id =
+        payload?.id ||
+        payload?._id ||
+        payload?.userId ||
+        payload?.sub ||
+        (payload.user && (payload.user.id || payload.user._id)) ||
+        (payload.data && (payload.data.id || payload.data._id)) ||
+        "";
+
+      return String(id || "");
+    } catch {
+      return "";
+    }
+  }, []);
+
   return (
     <HomeGuard>
-      <AppShell nickname={nickname}>
+      <AppShell nickname={nickname} meId={meId}>
         <Outlet />
       </AppShell>
     </HomeGuard>

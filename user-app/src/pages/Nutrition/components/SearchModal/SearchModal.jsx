@@ -138,7 +138,13 @@ export default function SearchModal({ date: initialISO, hour: initialHour, onClo
   }
 
   return (
-    <div className="dj-search-backdrop" onClick={onClose}>
+    <div
+        className="dj-search-backdrop"
+        data-fm-modal="true"
+        role="dialog"
+        aria-modal="true"
+        onClick={onClose}
+      >
       <div className="dj-search-modal" onClick={(e) => e.stopPropagation()}>
         {/* Bước 1: Tìm kiếm */}
         {!showAdd && (

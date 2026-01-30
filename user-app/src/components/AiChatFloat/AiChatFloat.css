@@ -1,0 +1,138 @@
+.fm-ai-float-bubble{
+  position: fixed;
+  right: 18px;
+  bottom: 76px; /* 18 + 44 + 14 */
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9997;
+  box-shadow: 0 10px 28px rgba(0,0,0,.35);
+  transition: transform .12s ease, filter .12s ease, background .12s ease;
+  
+}
+
+.fm-ai-bb{
+  width: 58px;
+  height: 58px;
+  border-radius:999px;
+  object-fit:cover;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);
+}
+
+.fm-ai-ava{
+  width: 38px;
+  height: 38px;
+  border-radius:999px;
+  object-fit:cover;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);
+}
+
+.fm-ai-float-bubble:hover{
+  filter: brightness(1.05);
+  transform: translateY(-2px);
+}
+
+.fm-ai-float-bubble.is-open{
+  background: rgba(26,115,232,.95);
+}
+
+.fm-ai-float-bubble i{
+  font-size: 18px;
+}
+
+@supports (padding: max(0px)) {
+  .fm-ai-float-bubble{
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 76px));
+    right: max(18px, env(safe-area-inset-right));
+  }
+}
+
+.fm-ai-float-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 9999;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding: 16px;
+}
+
+.fm-ai-float-modal{
+  width: min(560px, 100%);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.14);
+  background: #0f0f10;
+  box-shadow: 0 24px 70px rgba(0,0,0,.55);
+}
+
+.fm-ai-float-head{
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+}
+
+.fm-ai-float-title{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(229,231,235,.95);
+  font-weight: 700;
+}
+
+.fm-ai-float-iconbtn{
+  width: 36px;
+  height: 36px;
+  color: rgba(255, 255, 255, 0.50);
+  cursor: pointer;
+}
+
+.fm-ai-float-body{
+  padding: 0;
+}
+
+@media (max-width: 768px){
+  .fm-ai-float-bubble{
+    right: 14px;
+    bottom: 68px; /* 14 + 42 + 12 */
+  }
+  @supports (padding: max(0px)) {
+    .fm-ai-float-bubble{
+      bottom: max(68px, calc(env(safe-area-inset-bottom) + 68px));
+      right: max(14px, env(safe-area-inset-right));
+    }
+  }
+
+  .fm-ai-float-overlay{
+    padding: 0;
+    align-items: stretch;
+  }
+  .fm-ai-float-modal{
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 480px){
+  .fm-ai-float-bubble{
+    right: 12px;
+    bottom: 132px; /* tránh trường hợp stb bottom 72px */
+  }
+  @supports (padding: max(0px)) {
+    .fm-ai-float-bubble{
+      bottom: max(132px, calc(env(safe-area-inset-bottom) + 132px));
+      right: max(12px, env(safe-area-inset-right));
+    }
+  }
+}

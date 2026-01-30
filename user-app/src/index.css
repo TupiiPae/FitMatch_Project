@@ -13,7 +13,6 @@ html {
 html.fm-noscroll,
 body.fm-noscroll {
   overflow: hidden !important;
-  height: 100%;
 }
 
 
