@@ -166,6 +166,136 @@ const GOAL_GAIN = new Set(["tang_can", "tang_co"]);
 const GOAL_LOSS = new Set(["giam_can", "giam_mo"]);
 const GOAL_MAINTAIN = new Set(["duy_tri"]);
 
+const KCAL_PER_KG = 7700;
+
+// default surplus/deficit nếu user không nói rõ tăng/giảm bao nhiêu kg
+function defaultDeltaByGoal(goalKey) {
+  if (goalKey === "tang_co") return 250;     // lean bulk
+  if (goalKey === "tang_can") return 400;    // bulk
+  if (goalKey === "giam_mo") return -300;    // cut nhẹ
+  if (goalKey === "giam_can") return -400;   // cut vừa
+  if (goalKey === "duy_tri") return 0;
+  return 0;
+}
+
+function parseDurationDaysFromText(text) {
+  const t = stripVN(text);
+
+  let m = t.match(/\b(\d{1,3})\s*(ngay|day|days)\b/);
+  if (m) return Math.min(365, Math.max(1, Number(m[1])));
+
+  m = t.match(/\b(\d{1,2})\s*(tuan|week|weeks)\b/);
+  if (m) return Math.min(365, Math.max(7, Number(m[1]) * 7));
+
+  m = t.match(/\b(\d{1,2})\s*(thang|month|months)\b/);
+  if (m) return Math.min(365, Math.max(30, Number(m[1]) * 30));
+
+  return null;
+}
+
+function parseWeightChangeFromText(text) {
+  const t = stripVN(text);
+
+  // "tu 75kg len 80kg"
+  let m = t.match(/\btu\s*(\d{2,3}(?:\.\d+)?)\s*kg?\s*(len|toi)\s*(\d{2,3}(?:\.\d+)?)\s*kg?\b/);
+  if (m) {
+    const from = Number(m[1]);
+    const to = Number(m[3]);
+    if (Number.isFinite(from) && Number.isFinite(to)) {
+      return { fromKg: from, toKg: to, deltaKg: to - from };
+    }
+  }
+
+  // "tang 5kg" / "giam 3kg"
+  m = t.match(/\b(tang|giam)\s*(\d{1,2}(?:\.\d+)?)\s*kg\b/);
+  if (m) {
+    const sign = m[1] === "giam" ? -1 : 1;
+    const kg = Number(m[2]);
+    if (Number.isFinite(kg)) return { deltaKg: sign * kg };
+  }
+
+  return null;
+}
+
+function clampInt(n, min, max) {
+  const x = Math.round(Number(n));
+  if (!Number.isFinite(x)) return null;
+  return Math.max(min, Math.min(max, x));
+}
+
+/**
+ * Ước tính mức duy trì (maintenance) từ targetKcal hiện tại.
+ * (vì targetKcal hiện tại thường đã là deficit/surplus theo profileGoalKey)
+ */
+function estimateMaintenanceFromTarget(targetKcal, profileGoalKey) {
+  const t = Number(targetKcal);
+  if (!Number.isFinite(t) || t <= 0) return null;
+
+  if (GOAL_MAINTAIN.has(profileGoalKey)) return t;
+
+  if (GOAL_LOSS.has(profileGoalKey)) return t + 400; // giả định deficit ~400
+  if (GOAL_GAIN.has(profileGoalKey)) return t - 350; // giả định surplus ~350
+
+  return t; // fallback
+}
+
+/**
+ * Tính appliedTargetKcal hợp lý theo:
+ * - kcal user chỉ định (nếu có) => ưu tiên
+ * - nếu user muốn tăng/giảm X kg trong Y thời gian => tính delta kcal/ngày
+ * - còn lại => dùng default delta theo goalKey
+ */
+function computeAppliedTargetKcal({ profileGoalKey, profileTargetKcal, appliedGoalKey, userText, rangeFromText }) {
+  // 1) user tự chỉ định kcal => lấy luôn
+  if (rangeFromText?.min && rangeFromText?.max) {
+    const mid = Math.round((rangeFromText.min + rangeFromText.max) / 2);
+    return {
+      appliedTargetKcal: mid,
+      maintenanceKcal: null,
+      deltaKcal: null,
+      reason: "user_range",
+    };
+  }
+
+  const baseMaintenance =
+    estimateMaintenanceFromTarget(profileTargetKcal, profileGoalKey || "duy_tri") ??
+    (Number.isFinite(Number(profileTargetKcal)) ? Number(profileTargetKcal) : null);
+
+  if (!baseMaintenance) {
+    return { appliedTargetKcal: null, maintenanceKcal: null, deltaKcal: null, reason: "missing_profile_kcal" };
+  }
+
+  // 2) nếu user có nói tăng/giảm bao nhiêu kg + thời gian => ưu tiên tính theo đó
+  const w = parseWeightChangeFromText(userText);
+  const days = parseDurationDaysFromText(userText);
+
+  let delta = null;
+  if (w?.deltaKg && days) {
+    const raw = (Number(w.deltaKg) * KCAL_PER_KG) / Number(days); // kcal/ngày
+    if (Number.isFinite(raw)) {
+      // clamp “hợp lý” để tránh số quá cực đoan
+      if (GOAL_GAIN.has(appliedGoalKey)) delta = clampInt(raw, 250, 750);
+      else if (GOAL_LOSS.has(appliedGoalKey)) delta = -clampInt(Math.abs(raw), 250, 750);
+      else delta = clampInt(raw, -400, 400);
+    }
+  }
+
+  // 3) không có weight/time => dùng default theo goal
+  if (delta == null) delta = defaultDeltaByGoal(appliedGoalKey);
+
+  let finalKcal = Math.round(baseMaintenance + delta);
+
+  // chặn cực trị
+  finalKcal = clampInt(finalKcal, 1200, 4500);
+
+  return {
+    appliedTargetKcal: finalKcal,
+    maintenanceKcal: Math.round(baseMaintenance),
+    deltaKcal: Math.round(delta),
+    reason: w?.deltaKg && days ? "weight_timeline" : "default_by_goal",
+  };
+}
+
 /* =========================
  * MENU RECOMMEND HELPERS
  * ========================= */
@@ -1452,8 +1582,18 @@ export async function sendAiChat(req, res) {
       const profileLabel = profileGoalLabel || goalLabelByKey(profileGoalKey);
 
       const rangeFromText = parseKcalRangeFromText(text);
-      const appliedTargetKcal =
-        targetKcal || (rangeFromText ? Math.round((rangeFromText.min + rangeFromText.max) / 2) : null);
+
+      const kcalPack = computeAppliedTargetKcal({
+        profileGoalKey,
+        profileTargetKcal: targetKcal,
+        appliedGoalKey,
+        userText: text,
+        rangeFromText,
+      });
+
+      const appliedTargetKcal = kcalPack.appliedTargetKcal;
+      const maintenanceKcal = kcalPack.maintenanceKcal;
+      const deltaKcal = kcalPack.deltaKcal;
 
       if (intentFinal === "menu_generate") {
         const days = parseMenuDaysFromText(text) || 3;
@@ -1468,7 +1608,10 @@ export async function sendAiChat(req, res) {
           "",
           "Yêu cầu:",
           `- Mục tiêu theo yêu cầu: ${appliedGoalLabel || appliedGoalKey}`,
-          `- Calo mục tiêu tham khảo: ${appliedTargetKcal ? Math.round(appliedTargetKcal) : "không rõ"} kcal/ngày`,
+          maintenanceKcal && deltaKcal != null
+            ? `- (Ước tính) Calo duy trì: ${Math.round(maintenanceKcal)} kcal/ngày; điều chỉnh theo mục tiêu: ${deltaKcal > 0 ? `+${deltaKcal}` : `${deltaKcal}`} kcal/ngày`
+            : "",
+          `- Calo mục tiêu tham khảo cho mục tiêu hiện tại: ${appliedTargetKcal ? Math.round(appliedTargetKcal) : "không rõ"} kcal/ngày`,
           `- Tạo ${days} ngày (Ngày 1-${days}), mỗi ngày ${mealsPerDay} bữa: ${slots.join(" / ")}.`,
           "- Mỗi bữa liệt kê 2-4 món, ước tính kcal từng món và tổng kcal/ngày xấp xỉ mục tiêu.",
           "- Không cần nói về DB FitMatch.",
@@ -1505,6 +1648,9 @@ export async function sendAiChat(req, res) {
             action: "virtual_menu",
             goalKey: appliedGoalKey || undefined,
             targetKcal: appliedTargetKcal || undefined,
+            maintenanceKcal: maintenanceKcal || undefined,
+            deltaKcal: deltaKcal || undefined,
+            kcalReason: kcalPack.reason,
           },
         });
 

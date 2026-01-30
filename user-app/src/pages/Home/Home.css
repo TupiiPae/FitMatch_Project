@@ -197,7 +197,7 @@
 @media (max-width: 1024px) {
   .hero-background {
     width: 100%;
-    opacity: 0.4;
+    opacity: 0.9;
   }
 
   .fade-overlay {
@@ -213,7 +213,7 @@
     padding-left: 0;
     align-items: center;
     text-align: center;
-    padding-bottom: 150px;
+    padding-bottom: 40px;
   }
 
   .hero-desc {
