@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./WorkoutList.css";
 import "../Training/SuggestPlanList.css";
+import "../Nutrition/RecordMeal.css";
+import "../Nutrition/SuggestMenuList.css";
 import { listMyWorkouts, deletePlan } from "../../api/workouts";
 import {
   listSavedSuggestPlans,
@@ -515,30 +517,30 @@ export default function WorkoutList() {
       {confirmDel.open && (
         <div className="modal" onClick={closeConfirmDelete}>
           <div
-            className="modal-card confirm-modal"
+            className="rm-modal-card rm-confirm-modal"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="confirm-del-title"
           >
-            <div className="cm-head">
-              <div className="cm-icon">
+            <div className="rm-head">
+              <div className="rm-icon">
                 <i
                   className="fa-solid fa-triangle-exclamation"
                   aria-hidden="true"
                 ></i>
               </div>
+              <h3 id="confirm-del-title">Xóa món ăn?</h3>
             </div>
-            <div className="cm-body">
+            <div className="rm-body">
               Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?
-              <br />
               Thao tác này không thể hoàn tác.
             </div>
-            <div className="cm-foot">
-              <button className="btn ghost" onClick={closeConfirmDelete}>
+            <div className="rm-foot">
+              <button className="smu-modal-btn ghost" onClick={closeConfirmDelete}>
                 Hủy
               </button>
-              <button className="btn bad" onClick={confirmDeleteNow}>
+              <button className="smu-modal-btn danger" onClick={confirmDeleteNow}>
                 Xóa
               </button>
             </div>
@@ -550,26 +552,23 @@ export default function WorkoutList() {
       {confirmUnsave.open && (
         <div className="modal" onClick={closeConfirmUnsave}>
           <div
-            className="modal-card confirm-modal"
+            className="rm-modal-card rm-confirm-modal"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
           >
-            <div className="cm-head">
-              <div className="cm-icon">
-                <i className="fa-solid fa-bookmark" />
-              </div>
+            <div className="rm-head">
+            <h3 id="confirm-del-title">Bỏ lưu lịch tập gợi ý?</h3>
             </div>
-            <div className="cm-body">
+            <div className="rm-body">
               Bạn chắc chắn muốn bỏ lưu <b>{confirmUnsave.name}</b>?
-              <br />
               Bạn vẫn có thể tìm lại lịch tập này trong mục &quot;Lịch tập gợi ý&quot;.
             </div>
-            <div className="cm-foot">
-              <button className="btn ghost" onClick={closeConfirmUnsave}>
+            <div className="rm-foot">
+              <button className="smu-modal-btn ghost" onClick={closeConfirmUnsave}>
                 Hủy
               </button>
-              <button className="btn bad" onClick={confirmUnsaveNow}>
+              <button className="smu-modal-btn danger" onClick={confirmUnsaveNow}>
                 Bỏ lưu
               </button>
             </div>

@@ -17,7 +17,6 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 if (!clientId) {
-  // Giúp debug nhanh nếu quên .env
   console.warn("[GoogleOAuth] Missing VITE_GOOGLE_CLIENT_ID in client .env");
 }
 

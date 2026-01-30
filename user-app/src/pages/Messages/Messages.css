@@ -5,10 +5,9 @@
   display:flex;
   width:100%;
   height: calc(100vh - 100px);
-  margin: -16px auto -50px;
+  margin: auto 0;
   max-width: 100%;
   box-sizing: border-box;
-
   background:#0b1220;
   border:1px solid rgba(255,255,255,.08);
   border-radius:10px;

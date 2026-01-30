@@ -2,7 +2,7 @@
   min-height: 100%;
   margin: 0 auto;
   padding-bottom: 20px;
-  max-width: 1400px;
+  max-width: 1300px;
 }
 
 /* ===== HEAD ===== */
@@ -13,7 +13,7 @@
   padding-bottom: 12px;
   z-index: 5;
   width: 100%;
-  margin: 36px auto 20px auto;
+  margin: 32px auto 20px auto;
 }
 
 /* Search trong WorkoutList: đồng bộ với RecordMeal .search */
@@ -293,17 +293,11 @@
 .wl-item .more-btn {
   width: 36px;
   height: 36px;
-  background: #111827;
-  border-radius: 999px;
-  border: 1px solid #1f2937;
   color: #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-}
-.wl-item .more-btn:hover {
-  background: #1f2937;
 }
 
 .wl-item .menuWL {
@@ -311,8 +305,9 @@
   right: 0;
   top: 40px;
   min-width: 200px;
+  border-radius: 4px;
   background: #020617;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   padding: 6px;
   z-index: 10;
 }
@@ -321,6 +316,7 @@
   width: 100%;
   text-align: left;
   background: #020617;
+
   padding: 8px 10px;
   border-radius: 4px;
   cursor: pointer;
@@ -379,20 +375,22 @@
   padding: 16px;
 }
 
-/* Confirm delete (giữ tông sáng như RecordMeal) */
+/* Confirm delete: match SuggestMenuList .smu-modal design */
 .confirm-modal {
-  width: min(440px, 92vw);
-  padding: 0;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  width: 100%;
+  max-width: 420px;
+  padding: 16px 18px 14px;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  color: #e5e7eb;
   overflow: hidden;
 }
 .cm-head {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 6px;
 }
 .cm-icon {
   width: 36px;
@@ -402,24 +400,24 @@
   place-items: center;
   background: #fef2f2;
   color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 .cm-head h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  color: #111827;
+  color: #e5e7eb;
 }
 .cm-body {
-  padding: 14px 16px;
-  color: #374151;
+  padding: 6px 0 0;
+  color: #d1d5db;
   text-align: left;
 }
 .cm-foot {
-  padding: 12px 16px;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 12px;
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
 }
 
 /* Buttons (giữ giống RecordMeal) */

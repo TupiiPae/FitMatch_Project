@@ -1,7 +1,7 @@
 .nm-wrap {
   min-height: 100%;
   margin: 0 auto;
-  max-width: 1400px; /* narrower for better readability on desktop */
+  max-width: 1300px;
   padding-bottom: 10px;
   box-sizing: border-box;
 }
@@ -27,7 +27,7 @@
   align-items: center;
   justify-content: flex-end;
   position: relative;
-  padding: 36px 0 20px 0;
+  padding: 32px 0 20px 0;
   z-index: 5;
   gap: 16px;
 }
@@ -769,12 +769,11 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
   right: 0;
   top: 36px;
   min-width: 140px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
   padding: 6px;
   z-index: 40;
   border: 1px solid #e5e7eb;
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 .menu-item {
   display: block;
@@ -813,49 +812,49 @@ grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 /* ===== Confirm Delete Modal ===== */
-.confirm-modal {
-  width: min(440px, 92vw);
-  padding: 0;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px; /* đồng bộ với ur-modal */
-  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.18);
+.rm-confirm-modal {
+  width: 100%;
+  max-width: 420px;
+  padding: 16px 18px 14px;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  color: #e5e7eb;
   overflow: hidden;
 }
-.cm-head {
+.rm-head {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #f1f5f9; /* giống ur-head */
+  margin-bottom: 6px;
 }
-.cm-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+.rm-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   background: #fef2f2;
   color: #b91c1c;
   border: 1px solid #fecaca;
 }
-.cm-head h3 {
+.rm-head h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  color: #111827;
+  color: #e5e7eb;
 }
-.cm-body {
-  padding: 14px 16px;
-  color: #374151;
+.rm-body {
+  padding: 6px 0 0;
+  font-size: 14px;
+  color: #d1d5db;
 }
 
-.cm-foot {
-  padding: 12px 16px;
-  border-top: 1px dashed #e5e7eb;
+.rm-foot {
+  margin-top: 12px;
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
 }
 
 /* Bổ sung nút màu “Xóa” dùng chung */

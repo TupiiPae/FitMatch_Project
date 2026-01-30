@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./SuggestMenuList.css";
-import "../Training/Exercises.css"; // reuse màu / layout giống SuggestPlanList
+import "../Training/Exercises.css"; 
 import { listSuggestMenus, toggleSaveSuggestMenu } from "../../api/suggestMenus";
 import { toast } from "react-toastify";
 import api from "../../lib/api";

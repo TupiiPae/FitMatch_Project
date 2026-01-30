@@ -1,7 +1,7 @@
 .smu-wrap {
   min-height: 100%;
   margin: 0 auto;
-  max-width: 1400px;
+  max-width: 1300px;
   padding-bottom: 40px;
   box-sizing: border-box;
   overflow-x: hidden;
@@ -416,8 +416,8 @@
 .smu-modal {
   width: 100%;
   max-width: 420px;
-  background: #0b1120;
-  border-radius: 12px;
+  background: #020617;
+  border-radius: 8px;
   padding: 16px 18px 14px;
   border: 1px solid #4b5563;
   color: #e5e7eb;
@@ -430,7 +430,8 @@
 }
 
 .smu-modal-body {
-  font-size: 13px;
+  padding: 6px 0 0;
+  font-size: 14px;
   color: #d1d5db;
 }
 

@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 // ==== NEW: modal components dùng chung ====
 import DetailModal from "./components/DetailModal/DetailModal";
 import AddModal from "./components/AddModal/AddModal";
+import "./SuggestMenuList.css";
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/, "");
 const toAbs = (u) => {
@@ -702,14 +703,14 @@ export default function RecordMeal() {
       {confirmDel.open && (
         <div className="modal" onClick={closeConfirmDelete}>
           <div
-            className="modal-card confirm-modal"
+            className="rm-modal-card rm-confirm-modal"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="confirm-del-title"
           >
-            <div className="cm-head">
-              <div className="cm-icon">
+            <div className="rm-head">
+              <div className="rm-icon">
                 <i
                   className="fa-solid fa-triangle-exclamation"
                   aria-hidden="true"
@@ -717,15 +718,15 @@ export default function RecordMeal() {
               </div>
               <h3 id="confirm-del-title">Xóa món ăn?</h3>
             </div>
-            <div className="cm-body">
-              Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?<br />
+            <div className="rm-body">
+              Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?
               Thao tác này không thể hoàn tác.
             </div>
-            <div className="cm-foot">
-              <button className="btn ghost" onClick={closeConfirmDelete}>
+            <div className="rm-foot">
+              <button className="smu-modal-btn ghost" onClick={closeConfirmDelete}>
                 Hủy
               </button>
-              <button className="btn bad" onClick={confirmDeleteNow}>
+              <button className="smu-modal-btn danger" onClick={confirmDeleteNow}>
                 Xóa
               </button>
             </div>

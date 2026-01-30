@@ -47,6 +47,8 @@ import Statistical from "./pages/Statistical/Statistical";
 // Layout (Navbar + Footer)
 import AppShell from "./components/layout/AppShell";
 
+import useGlobalModalScrollLock from "./hooks/useGlobalModalScrollLock";
+
 // PLACEHOLDER (thay bằng component thật sau)
 const ThongKe = () => <div>Trang Thống kê</div>;
 const KetNoi = () => <div>Trang Kết nối (Teammate)</div>;
@@ -84,6 +86,7 @@ function ProtectedLayout() {
 }
 
 export default function App() {
+  useGlobalModalScrollLock();
   return (
     <BrowserRouter>
       <Routes>
