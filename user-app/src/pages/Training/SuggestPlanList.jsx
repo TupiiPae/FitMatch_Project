@@ -245,7 +245,7 @@ export default function SuggestPlanList() {
                             {/* Phân loại */}
                             <div className="exf-col">
                                 <div className="exf-col-title">PHÂN LOẠI</div>
-                                <div className="exf-list">
+                                <div className="exf-list spl-list">
                                     {CATEGORY_OPTIONS.map((x) => (
                                     <button
                                         key={x}

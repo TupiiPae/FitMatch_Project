@@ -213,9 +213,6 @@
     color: #e5e7eb;
   }
 
-  /* Keep macro numbers inline and truncated if needed */
-  /* For narrow screens, reduce macro font-size and tighten spacing so they fit horizontally
-     Prefer keeping macros on one line; if necessary they may wrap but font-size is reduced. */
   .nm-item .macro {
     display: flex;
     gap: 6px;

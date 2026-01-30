@@ -7,6 +7,10 @@
   gap: 0 18px;
 }
 
+.spl-list {
+  display: grid; grid-auto-flow: column; grid-template-rows: repeat(3, auto); gap: 4px 16px;
+}
+
 /* ===== LIST FRAME (DARK MODE) ===== */
 .spl-list-frame {
   background: rgba(148,163,184,.10); /* Nền tối */
@@ -154,16 +158,33 @@
 
 /* Responsive */
 @media (max-width: 900px) {
+  /* Keep list items horizontal on most mobile widths */
   .spl-item {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
   }
   .spl-img {
-    flex-basis: 110px;
+    flex: 0 0 72px;
   }
+  .spl-img img {
+    width: 72px;
+    height: 72px;
+  }
+  .spl-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .spl-plan-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 16px;
+  }
+  .spl-plan-note { font-size: 13px; }
   .spl-actions {
-    width: 100%;
-    justify-content: flex-end;
-    margin-top: 8px;
+    flex: 0 0 auto;
+    margin-top: 0;
   }
 }
 
@@ -172,51 +193,82 @@
     padding: 16px 12px;
   }
 
+  /* Slightly smaller thumbnail and tighter spacing on small phones */
   .spl-item {
-    padding: 12px;
     gap: 10px;
   }
-
   .spl-img {
-    flex-basis: 100px;
-    height: 100px;
+    flex: 0 0 64px;
   }
+  .spl-img img { width: 64px; height: 64px; }
+  .spl-plan-title { font-size: 15px; }
+  .spl-plan-note { font-size: 12px; }
+  .spl-actions { margin-top: 0; }
+}
 
-  .spl-body {
-    gap: 6px;
-  }
-
-  .spl-title {
+/* Mobile tweaks: larger title, smaller chips and smaller save button */
+@media (max-width: 640px) {
+  .spl-plan-title {
     font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-
-  .spl-desc {
+  .spl-plan-meta .ex-chip {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+  .spl-save-btn {
+    min-width: 72px;
+    height: 32px;
+    padding: 0 10px;
     font-size: 13px;
   }
-
-  .spl-actions {
-    margin-top: 10px;
+  .spl-save-btn.saved {
+    min-width: 72px;
+    height: 32px;
+    font-size: 13px;
   }
 }
 
 @media (max-width: 480px) {
-  .spl-wrap {
-    padding: 12px 8px;
-  }
-
+  /* Very small phones: keep horizontal but compact */
+  .spl-wrap { padding: 12px 8px; }
   .spl-item {
-    padding: 10px;
-    flex-direction: column;
-    align-items: stretch;
+    padding: 8px;
+    gap: 8px;
   }
+  .spl-img { flex: 0 0 64px; }
+  .spl-img img { width: 64px; height: 64px; }
+  .spl-plan-title { font-size: 14px; }
+}
 
-  .spl-img {
-    width: 100%;
-    height: 150px;
-    flex-basis: auto;
+@media (max-width: 480px) {
+  /* increase title slightly on very small phones but keep single-line */
+  .spl-plan-title {
+    font-size: 14px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-
-  .spl-title {
-    font-size: 15px;
+  .spl-plan-meta {
+    gap: 6px;
+  }
+  .spl-plan-meta .ex-chip {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+  .spl-save-btn {
+    min-width: 64px;
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  .spl-save-btn.saved {
+    min-width: 64px;
+    height: 28px;
+    font-size: 12px;
   }
 }
