@@ -53,7 +53,7 @@ export default function AiChatFloat({ meId }) {
         title="Chat với FitMatch AI"
         aria-label="Chat với FitMatch AI"
       >
-        <img className="fm-ai-bb" src="/images/chatbot.png" alt="FitMatch AI" />
+        <img className="fm-ai-bb" src="/images/ai-chatbot.png" alt="FitMatch AI" />
       </button>
 
       {open
@@ -67,7 +67,7 @@ export default function AiChatFloat({ meId }) {
               <div className="fm-ai-float-modal" role="dialog" aria-modal="true">
                 <div className="fm-ai-float-head">
                   <div className="fm-ai-float-title">
-                    <img className="fm-ai-ava" src="/images/chatbot.png" alt="FitMatch AI" /> <span>FitMatch AI</span>
+                    <img className="fm-ai-ava" src="/images/ai-chatbot.png" alt="FitMatch AI" /> <span>FitMatch AI</span>
                   </div>
 
                   <button
