@@ -6,7 +6,10 @@ import "./AiChatFloat.css";
 export default function AiChatFloat({ meId }) {
   const myId = String(meId || "").trim();
   const [open, setOpen] = useState(false);
-  const [vh, setVh] = useState(() => window.innerHeight);
+  const [vp, setVp] = useState(() => ({
+    w: window.innerWidth,
+    h: Math.round(window.visualViewport?.height || window.innerHeight),
+  }));
 
   const canShow = !!myId;
   const close = () => setOpen(false);
@@ -22,9 +25,23 @@ export default function AiChatFloat({ meId }) {
   }, [open]);
 
   useEffect(() => {
-    const onResize = () => setVh(window.innerHeight);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const update = () => {
+      setVp({
+        w: window.innerWidth,
+        h: Math.round(window.visualViewport?.height || window.innerHeight),
+      });
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+
+    return () => {
+      window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+    };
   }, []);
 
   useEffect(() => {
@@ -37,10 +54,14 @@ export default function AiChatFloat({ meId }) {
     };
   }, [open]);
 
+  const isMobile = vp.w <= 768;
+  const headerH = 52;
+
   const modalHeight = useMemo(() => {
-    const h = Math.max(420, Math.min(720, vh - 120));
-    return h;
-  }, [vh]);
+    const h = vp.h || window.innerHeight;
+    if (isMobile) return Math.max(320, h - headerH);
+    return Math.max(420, Math.min(720, h - 120));
+  }, [vp.h, isMobile]);
 
   if (!canShow) return null;
 
@@ -67,7 +88,8 @@ export default function AiChatFloat({ meId }) {
               <div className="fm-ai-float-modal" role="dialog" aria-modal="true">
                 <div className="fm-ai-float-head">
                   <div className="fm-ai-float-title">
-                    <img className="fm-ai-ava" src="/images/ai-chatbot.png" alt="FitMatch AI" /> <span>FitMatch AI</span>
+                    <img className="fm-ai-ava" src="/images/ai-chatbot.png" alt="FitMatch AI" />
+                    <span>FitMatch AI</span>
                   </div>
 
                   <button

@@ -20,8 +20,6 @@
   color: #e2e8f0;
 }
 
-/* HEADER */
-
 .lm-header {
   position: fixed;
   top: 0;
@@ -67,8 +65,6 @@
   color: #000;
 }
 
-/* Titles bên phải giống hình: chỉ là text, không phải button */
-
 .lm-header-right {
   display: flex;
   align-items: center;
@@ -78,29 +74,26 @@
   text-transform: uppercase;
 }
 
-/* ===== USER DROPDOWN TRÊN HEADER ===== */
-
 .lm-header-user {
-  position: relative;                /* để dropdown bám theo */
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  color: #000;                       /* text màu đen đồng bộ header */
+  color: #000;
 }
 
 .lm-header-user i {
-  color: #000;                       /* icon user + caret màu đen */
+  color: #000;
 }
 
 .lm-header-username {
   font-size: 16px;
   font-weight: 500;
-  text-transform: none;              /* để username không bị UPPERCASE nếu bạn muốn */
+  text-transform: none;
   color: #000;
 }
 
-/* icon caret quay xuống khi mở */
 .lm-header-user .fa-caret-down {
   font-size: 14px;
   transition: transform 0.18s ease;
@@ -110,7 +103,6 @@
   transform: rotate(180deg);
 }
 
-/* dropdown thả ngoài, không đẩy header */
 .lm-header-dropdown {
   position: absolute;
   top: calc(100% + 8px);
@@ -121,7 +113,7 @@
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
   border: 1px solid rgba(148, 163, 184, 0.4);
   padding: 6px 0;
-  z-index: 40;                       /* cao hơn header */
+  z-index: 40;
 }
 
 .lm-header-dropdown-item {
@@ -151,14 +143,10 @@
   color: #000;
   position: relative;
 }
+
 .lm-header-login i {
   color: #000;
   font-size: 20px;
-}
-.lm-header-nav {
-  cursor: pointer;
-  color: #000;
-  position: relative;
 }
 
 .lm-header-nav::after {
@@ -176,7 +164,6 @@
   width: 100%;
 }
 
-/* Hamburger menu button */
 .lm-header-burger {
   display: none;
   flex-direction: column;
@@ -200,8 +187,6 @@
   background: #ef4444;
 }
 
-/* HERO VIDEO */
-
 .lm-hero {
   position: relative;
   min-height: 100vh;
@@ -223,17 +208,11 @@
 .lm-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-      130deg,
-      rgba(148, 81, 81, 0.75),
-      rgba(29, 34, 48, 0.92)
-    ),
+  background: linear-gradient(130deg, rgba(148, 81, 81, 0.75), rgba(29, 34, 48, 0.92)),
     radial-gradient(circle at top, rgba(248, 250, 252, 0.25), transparent 60%);
   mix-blend-mode: multiply;
   z-index: 1;
 }
-
-/* Toàn bộ content được căn giữa khối hero */
 
 .lm-hero-content {
   position: relative;
@@ -270,16 +249,12 @@
   font-weight: 600;
 }
 
-/* NOTE – slogan */
-
 .lm-hero-slogan {
   font-size: 48px;
   font-weight: 800;
   line-height: 1.35;
   color: #ffffff;
 }
-
-/* BOXES */
 
 .lm-hero-boxes {
   width: 100%;
@@ -290,31 +265,28 @@
 }
 
 .lm-hero-boxes-single {
-  grid-template-columns: 1fr;      
-  max-width: 480px;               
-  margin: 0 auto;             
+  grid-template-columns: 1fr;
+  max-width: 480px;
+  margin: 0 auto;
   justify-items: stretch;
 }
 
 .lm-box {
   position: relative;
-  padding: 24px 22px 20px; 
+  padding: 24px 22px 20px;
   border-radius: 4px;
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.55);
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  
-  /* Flex settings */
   display: flex;
   flex-direction: column;
-  align-items: center; 
-  text-align: center; 
-  min-height: 200px; 
+  align-items: center;
+  text-align: center;
+  min-height: 200px;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease,
-    box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .lm-box:hover {
@@ -322,22 +294,20 @@
   border-color: #da0b3e;
 }
 
-/* Phần text mô tả */
 .lm-box-text {
   font-size: 0.95rem;
   color: #e2e8f0;
   line-height: 1.5;
   margin-top: 4px;
-  margin-bottom: 16px; 
+  margin-bottom: 16px;
 }
 
-/* Container chứa Icon + Title */
 .lm-box-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: auto;     
-  justify-content: center; 
+  margin-top: auto;
+  justify-content: center;
   width: 100%;
 }
 
@@ -356,29 +326,20 @@
 }
 
 .lm-box-title {
-  font-size: 34px; 
+  font-size: 34px;
   font-weight: 700;
   color: #da0b3e;
   display: flex;
-  text-transform: uppercase; 
+  text-transform: uppercase;
 }
 
 .lm-box-login .lm-box-title {
-  font-size: 34px; 
+  font-size: 34px;
   font-weight: 700;
   color: #e5e7eb;
   display: flex;
-  text-transform: uppercase; 
+  text-transform: uppercase;
 }
-
-.lm-box-text {
-  font-size: 0.9rem;
-  color: #e2e8f0;
-  line-height: 1.5;
-  margin-top: 4px;
-}
-
-/* nút auto-width theo chữ */
 
 .lm-box-btn {
   margin-top: 10px;
@@ -410,7 +371,7 @@
 }
 
 .lm-box-login:hover {
-  border-color: #002C3E;
+  border-color: #002c3e;
 }
 
 .lm-box-register:hover {
@@ -422,10 +383,8 @@
   box-shadow: 0 16px 40px rgba(248, 113, 113, 0.6);
 }
 
-/* ========== NỘI DUNG PHÍA DƯỚI ========== */
-
 .lm-main {
-  background: #121212; 
+  background: #121212;
   color: #f4f4f5;
 }
 
@@ -436,11 +395,7 @@
   border-radius: 4px;
   position: relative;
   overflow: hidden;
-  background-image: linear-gradient(
-      rgba(5, 5, 5, 0.88),
-      rgba(5, 5, 5, 0.7)
-    ),
-    url("/images/bg-landing.png");
+  background-image: linear-gradient(rgba(5, 5, 5, 0.88), rgba(5, 5, 5, 0.7)), url("/images/bg-landing.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -489,8 +444,6 @@
   transform: translateY(-1px);
 }
 
-/* Section chung */
-
 .lm-section {
   margin: 0 auto;
   padding: 80px 24px 80px;
@@ -514,11 +467,9 @@
   color: #a1a1aa;
 }
 
-/* Intro: FITMATCH là gì? */
-
 .lm-section-intro {
   text-align: center;
-  background-color: #F8F9FA;
+  background-color: #f8f9fa;
   width: 100%;
 }
 
@@ -528,6 +479,7 @@
   margin: 0 auto;
   color: #212427;
 }
+
 .lm-section-intro h2 {
   max-width: 700px;
   font-size: 38px;
@@ -536,16 +488,11 @@
   color: #000;
 }
 
-/* Header chung cho section có title + desc */
-
 .lm-section-header {
   text-align: center;
   max-width: 1200px;
   margin: 0 auto 32px;
 }
-
-
-/* Features – Các tính năng chính */
 
 .lm-section-features {
   text-align: center;
@@ -578,7 +525,6 @@
   transform: translateY(-5px);
 }
 
-
 .lm-feature-icon {
   width: 44px;
   height: 44px;
@@ -600,8 +546,6 @@
   color: #d4d4d8;
 }
 
-/* Benefits – Lợi ích vượt trội */
-
 .lm-section-benefits {
   text-align: center;
   width: 100%;
@@ -609,7 +553,7 @@
   margin: 0 auto;
 }
 
-.lm-section-benefits h2{
+.lm-section-benefits h2 {
   color: #000;
 }
 
@@ -631,7 +575,6 @@
   border-radius: 8px;
   border: 1px solid #27272f;
   padding: 18px;
-  text-align: center;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -646,7 +589,6 @@
   border-radius: 14px;
   border: 1px solid #27272f;
   padding: 18px;
-  text-align: center;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -657,15 +599,16 @@
   width: calc(50% - 10px);
   margin: 0 auto;
 }
+
 .lm-benefit-img {
-width: 140px;    
+  width: 140px;
   height: 140px;
   object-fit: cover;
   border-radius: 10px;
 }
 
 .lm-benefit-body {
-flex: 1;
+  flex: 1;
 }
 
 .lm-benefit-body h3 {
@@ -678,14 +621,11 @@ flex: 1;
   color: #d4d4d8;
 }
 
-/* CTA cuối – khối đỏ lớn */
-
 .lm-section-cta {
   padding-top: 150px;
   padding-bottom: 150px;
-  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)),
-              url('/images/section5.png');
-  background-size: cover;    
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), url("/images/section5.png");
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   width: 100%;
@@ -696,8 +636,8 @@ flex: 1;
   margin: 0 auto;
   border-radius: 18px;
   padding: 40px 32px;
-  background: rgba(34, 16, 16, 0.6); 
-  backdrop-filter: blur(8px); 
+  background: rgba(34, 16, 16, 0.6);
+  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fef2f2;
@@ -708,27 +648,26 @@ flex: 1;
 .lm-cta-box h2 {
   font-size: 1.8rem;
   margin-bottom: 10px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5); 
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .lm-cta-box p {
   max-width: 560px;
   margin: 0 auto 20px;
   font-size: 0.98rem;
-  color: #e5e7eb; 
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  color: #e5e7eb;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .lm-cta-main {
   border-radius: 999px;
   border: none;
-  padding: 12px 30px; 
+  padding: 12px 30px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  background: #f00519; 
+  background: #f00519;
   color: #fff;
-  
   transition: all 0.2s ease;
   box-shadow: 0 4px 15px rgba(240, 5, 25, 0.4);
 }
@@ -739,8 +678,6 @@ flex: 1;
   box-shadow: 0 6px 20px rgba(240, 5, 25, 0.6);
 }
 
-/* ========== FOOTER ========== */
-
 .lm-footer {
   text-align: center;
   padding: 18px 10px 26px;
@@ -748,8 +685,6 @@ flex: 1;
   color: var(--muted);
   border-top: 1px solid #27272f;
 }
-
-/* ========== RESPONSIVE ========== */
 
 @media (max-width: 1024px) {
   .lm-hero-content {
@@ -804,7 +739,7 @@ flex: 1;
     background: #ffffff;
     flex-direction: column;
     align-items: stretch;
-    padding: 16px;
+    padding: 14px 14px;
     gap: 0;
     border-bottom: 1px solid rgba(148, 163, 184, 0.4);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
@@ -813,6 +748,7 @@ flex: 1;
     visibility: hidden;
     transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
     z-index: 31;
+    text-align: right;
   }
 
   .lm-header-right.is-open {
@@ -828,6 +764,8 @@ flex: 1;
     display: flex;
     align-items: center;
     gap: 8px;
+    justify-content: flex-end;
+    text-align: right;
   }
 
   .lm-header-nav:last-child {
@@ -841,6 +779,7 @@ flex: 1;
   .lm-header-user {
     padding: 12px 16px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    justify-content: flex-end;
   }
 
   .lm-header-username {
@@ -855,16 +794,61 @@ flex: 1;
     width: 100%;
   }
 
+  .lm-header-dropdown-item {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
   .lm-hero {
     min-height: 90vh;
   }
 
   .lm-hero-content {
-    padding: 96px 16px 60px;
+    padding: 86px 14px 52px;
+    gap: 22px;
+  }
+
+  .lm-hero-head {
+    gap: 18px;
   }
 
   .lm-hero-boxes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .lm-hero-boxes-single {
     grid-template-columns: 1fr;
+  }
+
+  .lm-box {
+    padding: 14px 12px 12px;
+    min-height: 150px;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.78);
+  }
+
+  .lm-box-text {
+    font-size: 0.82rem;
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .lm-box-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .lm-box-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .lm-box-title,
+  .lm-box-login .lm-box-title {
+    font-size: 18px;
+    letter-spacing: 0.02em;
   }
 
   .lm-main-hero {
@@ -923,6 +907,7 @@ flex: 1;
 
   .lm-header-right {
     top: 50px;
+    padding: 12px 12px;
   }
 
   .lm-hero-logo {
@@ -931,10 +916,25 @@ flex: 1;
 
   .lm-hero-slogan {
     font-size: 24px;
+    line-height: 1.25;
   }
 
-  .lm-box-title {
-    font-size: 24px;
+  .lm-hero-boxes {
+    gap: 10px;
+  }
+
+  .lm-box {
+    padding: 12px 10px 10px;
+    min-height: 140px;
+  }
+
+  .lm-box-text {
+    font-size: 0.78rem;
+  }
+
+  .lm-box-title,
+  .lm-box-login .lm-box-title {
+    font-size: 16px;
   }
 
   .lm-main-hero-title {
