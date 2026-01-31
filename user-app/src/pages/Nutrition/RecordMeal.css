@@ -116,7 +116,7 @@
 
 @media (max-width: 640px) {
   .nm-wrap {
-    padding: 0 8px;
+    padding: 12px 8px;
   }
 
   /* keep action buttons on the same row; allow them to shrink */

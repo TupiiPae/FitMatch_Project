@@ -275,13 +275,14 @@
 @media (max-width: 600px){ 
   /* Keep two columns on most mobile widths for denser layout */
   .ex-grid-4{ grid-template-columns: repeat(2,1fr); }
-  .ex-page {
-    padding: 16px 12px;
+  .ex-wrap {
+    padding: 0px 12px;
   }
-  .ex-header {
+  .ex-head {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
+    
   }
   .ex-filters {
     width: 100%;

@@ -134,11 +134,28 @@
     padding: 16px;
     margin-top: 16px;
   }
+
+  /* mobile: make list frame touch-scroll friendly and limit height */
+  .wl-list-frame {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  /* allow note to wrap on smaller screens */
+  .wl-note {
+    white-space: normal;
+  }
+
+  /* reduce large side margins used for desktop separators */
+  .wl-line { margin: 20px 0 16px 0; }
+  .wl-empty { margin: 0; padding: 12px; }
 }
 
 @media (max-width: 640px) {
   .wl-wrap {
-    padding: 0 8px;
+    padding: 10px 8px 20px;
   }
 
   .wl-head {
@@ -154,6 +171,12 @@
     padding: 12px;
     margin-top: 12px;
   }
+
+  .wl-list-frame {
+    max-height: 65vh;
+  }
+
+  .wl-note { font-size: 15px; }
 }
 
 @media (max-width: 480px) {
@@ -169,6 +192,26 @@
   .wl-list-frame {
     padding: 10px;
   }
+
+  /* tighter item spacing and smaller paddings for very small phones */
+  .wl-item { padding: 10px 10px 8px; }
+  .wl-note { font-size: 14px; }
+
+  /* metrics grid stacks into two columns for readability */
+  .wl-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  /* Ensure the list frame remains touch-friendly and not too tall */
+  .wl-list-frame {
+    max-height: 55vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .wl-line { margin: 16px 0; }
+  .wl-empty { margin: 0; padding: 10px; }
 }
 .wl-list-frame.dragging {
   cursor: grabbing;

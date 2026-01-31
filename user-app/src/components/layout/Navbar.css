@@ -146,6 +146,17 @@
   font-weight: 700;
 }
 
+/* Fill the caret icon when the link is active (desktop and mobile) */
+.fm-link.active .fm-caret,
+.fm-link[aria-current="page"] .fm-caret,
+.fm-menu__item.is-active-parent > .fm-link .fm-caret {
+  color: var(--nav-accent);
+}
+/* Ensure caret SVGs use the currentColor so they appear filled */
+.fm-caret svg {
+  fill: currentColor;
+}
+
 .fm-link::after {
   content: "";
   position: absolute;
@@ -184,9 +195,11 @@
 .fm-link:hover .fm-caret {
   color: var(--nav-accent);
 }
-.has-dropdown:hover > .fm-link .fm-caret {
-  transform: rotate(180deg);
-}
+  .fm-menu__item.has-dropdown.is-open > .fm-link.fm-link--parent .fm-caret {
+    transform: rotate(180deg);
+    color: var(--primary-red);
+  }
+
 
 .fm-dropdown {
   position: absolute;
@@ -407,7 +420,6 @@
   .fm-link[aria-current="page"]::after {
     transform: scaleX(0);
   }
-
 
   .fm-link.fm-link--parent {
     justify-content: space-between;
