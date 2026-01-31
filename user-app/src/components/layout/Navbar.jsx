@@ -65,6 +65,11 @@ export default function Navbar({
   const [notiItems, setNotiItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const [isMobileView, setIsMobileView] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(max-width: 980px)").matches;
+  });
+
   const safeArr = (v) => (Array.isArray(v) ? v : []);
 
   const parseNotiList = (res) => {
@@ -148,6 +153,20 @@ export default function Navbar({
   const location = useLocation();
 
   useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(max-width: 980px)");
+    const onChange = () => setIsMobileView(mq.matches);
+
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else mq.addListener(onChange);
+
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", onChange);
+      else mq.removeListener(onChange);
+    };
+  }, []);
+
+  useEffect(() => {
     let mounted = true;
     (async () => {
       try {
@@ -218,9 +237,9 @@ export default function Navbar({
 
   const displayAvatar = avatarFromDb || avatarProp || "/images/avatar.png";
 
-  const toggleMobile = () => setMobileOpen(v => !v);
-  const dropdownToggle = key => setOpenDropdown(prev => (prev === key ? null : key));
-  const toggleAccount = () => setAccountOpen(v => !v);
+  const toggleMobile = () => setMobileOpen((v) => !v);
+  const dropdownToggle = (key) => setOpenDropdown((prev) => (prev === key ? null : key));
+  const toggleAccount = () => setAccountOpen((v) => !v);
   const closeAccount = () => setAccountOpen(false);
 
   const closeMobileMenu = () => {
@@ -247,6 +266,32 @@ export default function Navbar({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [openLogout]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
+
+  const onParentClick = (key) => (e) => {
+    if (isMobileView) {
+      e.preventDefault();
+      dropdownToggle(key);
+      return;
+    }
+    closeMobileMenu();
+  };
 
   const uploadAvatarQuick = async (file) => {
     try {
@@ -295,7 +340,7 @@ export default function Navbar({
             <button className="fm-burger" aria-label="Mở menu" onClick={toggleMobile}>
               <span /><span /><span />
             </button>
-            <NavLink to="/" className="fm-brand" aria-label="FitMatch">
+            <NavLink to="/" className="fm-brand" aria-label="FitMatch expressed">
               <img className="fm-logo" src={logoHref} alt="FitMatch" />
             </NavLink>
           </div>
@@ -306,18 +351,20 @@ export default function Navbar({
                 <NavLink to="/home" className="fm-link" onClick={closeMobileMenu}>Trang chủ</NavLink>
               </li>
 
-              <li className={`fm-menu__item has-dropdown ${isDinhDuongActive ? "is-active-parent" : ""}`}>
-                <NavLink to="/dinh-duong/nhat-ky" className="fm-link" onClick={closeMobileMenu}>
-                  Dinh dưỡng<i className="fa-solid fa-caret-down"></i>
-                </NavLink>
-                <button
-                  className="fm-dd-toggle"
-                  aria-label="Mở Dinh dưỡng"
-                  onClick={() => dropdownToggle("dd")}
+              <li
+                className={`fm-menu__item has-dropdown ${isDinhDuongActive ? "is-active-parent" : ""} ${
+                  openDropdown === "dd" ? "is-open" : ""
+                }`}
+              >
+                <NavLink
+                  to="/dinh-duong/nhat-ky"
+                  className="fm-link fm-link--parent"
+                  onClick={onParentClick("dd")}
+                  aria-haspopup="menu"
                   aria-expanded={openDropdown === "dd"}
                 >
-                  <FontAwesomeIcon icon={faCaretDown} />
-                </button>
+                  Dinh dưỡng <FontAwesomeIcon icon={faCaretDown} className="fm-caret" />
+                </NavLink>
 
                 <div className={`fm-dropdown fm-megamenu fm-dropdown--stack ${openDropdown === "dd" ? "is-open" : ""}`} role="menu" aria-haspopup="true">
                   <div className="fm-megamenu-content">
@@ -362,18 +409,20 @@ export default function Navbar({
                 </div>
               </li>
 
-              <li className={`fm-menu__item has-dropdown ${isTapLuyenActive ? "is-active-parent" : ""}`}>
-                <NavLink to="/tap-luyen/lich-cua-ban" className="fm-link" onClick={closeMobileMenu}>
-                  Tập luyện<i className="fa-solid fa-caret-down"></i>
-                </NavLink>
-                <button
-                  className="fm-dd-toggle"
-                  aria-label="Mở Tập luyện"
-                  onClick={() => dropdownToggle("tl")}
+              <li
+                className={`fm-menu__item has-dropdown ${isTapLuyenActive ? "is-active-parent" : ""} ${
+                  openDropdown === "tl" ? "is-open" : ""
+                }`}
+              >
+                <NavLink
+                  to="/tap-luyen/lich-cua-ban"
+                  className="fm-link fm-link--parent"
+                  onClick={onParentClick("tl")}
+                  aria-haspopup="menu"
                   aria-expanded={openDropdown === "tl"}
                 >
-                  <FontAwesomeIcon icon={faCaretDown} />
-                </button>
+                  Tập luyện <FontAwesomeIcon icon={faCaretDown} className="fm-caret" />
+                </NavLink>
 
                 <div className={`fm-dropdown fm-megamenu fm-dropdown--stack ${openDropdown === "tl" ? "is-open" : ""}`} role="menu" aria-haspopup="true">
                   <div className="fm-megamenu-content">
@@ -449,7 +498,7 @@ export default function Navbar({
 
           <AccountDropdown
             open={accountOpen}
-            onClose={closeAccount}
+            onClose={() => setAccountOpen(false)}
             nickname={displayNickname}
             joinDate={displayJoinDate}
             age={displayAge}
@@ -461,6 +510,10 @@ export default function Navbar({
           />
         </div>
       </div>
+
+      {mobileOpen && (
+        <div className="fm-mobileOverlay" role="presentation" onClick={closeMobileMenu} />
+      )}
 
       {openLogout && (
         <div className="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
