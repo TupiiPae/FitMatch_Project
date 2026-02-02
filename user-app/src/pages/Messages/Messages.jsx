@@ -60,6 +60,37 @@ function useQueryOpenAi() {
   }, [loc.search]);
 }
 
+function useQueryConversationId() {
+  const loc = useLocation();
+  return useMemo(() => {
+    const sp = new URLSearchParams(loc.search);
+    const cid = sp.get("conversationId") || sp.get("cid") || "";
+    return cid ? String(cid) : "";
+  }, [loc.search]);
+}
+
+function useIsMobile(bp = 768) {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia(`(max-width: ${bp}px)`).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const m = window.matchMedia(`(max-width: ${bp}px)`);
+    const onChange = () => setIsMobile(m.matches);
+    onChange();
+    if (m.addEventListener) m.addEventListener("change", onChange);
+    else m.addListener(onChange);
+    return () => {
+      if (m.removeEventListener) m.removeEventListener("change", onChange);
+      else m.removeListener(onChange);
+    };
+  }, [bp]);
+
+  return isMobile;
+}
+
 const normType = (t) => String(t || "").toLowerCase().trim();
 const isDmConv = (c, meId = "") => {
   const t = normType(c?.type || c?.kind || c?.conversationType);
@@ -166,11 +197,12 @@ const AI_HELP_PAGES = [
 
 const AI_HELP_INTERVAL_MS = 3000;
 
-
 export default function Messages() {
   const nav = useNavigate();
   const qUserId = useQueryUserId();
   const qAi = useQueryOpenAi();
+  const qConvId = useQueryConversationId();
+  const isMobile = useIsMobile(768);
 
   const socket = useMemo(() => getSocket(), []);
 
@@ -179,7 +211,7 @@ export default function Messages() {
 
   const [convs, setConvs] = useState([]);
 
-  const [tab, setTab] = useState("all"); // all | new | unread
+  const [tab, setTab] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [searchGlobal, setSearchGlobal] = useState([]);
   const searchTimer = useRef(null);
@@ -189,6 +221,8 @@ export default function Messages() {
 
   const [dmLock, setDmLock] = useState({ locked: false, text: "" });
 
+  const [mobileStage, setMobileStage] = useState("list");
+
   const resetDmLock = () => setDmLock({ locked: false, text: "" });
 
   const lockDm = (msg) =>
@@ -197,7 +231,6 @@ export default function Messages() {
       text: msg || "Người này hiện không nhận tin nhắn từ người lạ",
     });
 
-  // ===== AI preview (for sidebar) =====
   const [aiPreview, setAiPreview] = useState({
     lastText: "Nhắn để bắt đầu…",
     lastAt: null,
@@ -206,11 +239,22 @@ export default function Messages() {
 
   const isAiActive = String(activeConvId || "") === AI_CONV_ID;
 
-    const onAiHelpPointerDown = (e) => {
-    // chỉ xử lý khi dropdown đang mở
+  const [aiHelpOpen, setAiHelpOpen] = useState(false);
+  const [aiHelpIndex, setAiHelpIndex] = useState(0);
+  const [aiHelpAuto, setAiHelpAuto] = useState(true);
+
+  const aiHelpRef = useRef(null);
+  const aiHelpBtnRef = useRef(null);
+  const aiHelpViewportRef = useRef(null);
+
+  const [aiHelpDragX, setAiHelpDragX] = useState(0);
+  const [aiHelpDragging, setAiHelpDragging] = useState(false);
+  const aiHelpDragRef = useRef({ active: false, startX: 0, pointerId: null });
+
+  const onAiHelpPointerDown = (e) => {
     if (!aiHelpOpen) return;
 
-    setAiHelpAuto(false); // user chạm => tắt auto
+    setAiHelpAuto(false);
     setAiHelpDragging(true);
 
     aiHelpDragRef.current = {
@@ -219,6 +263,9 @@ export default function Messages() {
       pointerId: e.pointerId,
     };
 
+    try {
+      aiHelpViewportRef.current?.setPointerCapture?.(e.pointerId);
+    } catch {}
   };
 
   const onAiHelpPointerMove = (e) => {
@@ -235,10 +282,8 @@ export default function Messages() {
     const threshold = Math.min(90, w * 0.22);
 
     if (dx > threshold) {
-      // prev
       setAiHelpIndex((i) => (i - 1 + AI_HELP_PAGES.length) % AI_HELP_PAGES.length);
     } else if (dx < -threshold) {
-      // next
       setAiHelpIndex((i) => (i + 1) % AI_HELP_PAGES.length);
     }
 
@@ -251,19 +296,6 @@ export default function Messages() {
     } catch {}
   };
 
-    // ===== AI Help dropdown (carousel) =====
-  const [aiHelpOpen, setAiHelpOpen] = useState(false);
-  const [aiHelpIndex, setAiHelpIndex] = useState(0);
-  const [aiHelpAuto, setAiHelpAuto] = useState(true);
-
-  const aiHelpRef = useRef(null);
-  const aiHelpBtnRef = useRef(null);
-  const aiHelpViewportRef = useRef(null);
-
-  const [aiHelpDragX, setAiHelpDragX] = useState(0);
-  const [aiHelpDragging, setAiHelpDragging] = useState(false);
-  const aiHelpDragRef = useRef({ active: false, startX: 0, pointerId: null });
-
   const closeAiHelp = () => {
     setAiHelpOpen(false);
     setAiHelpDragX(0);
@@ -275,8 +307,8 @@ export default function Messages() {
     setAiHelpOpen((v) => {
       const next = !v;
       if (next) {
-        setAiHelpIndex(0);     // mở ra luôn ở trang 1
-        setAiHelpAuto(true);   // bật auto khi mở
+        setAiHelpIndex(0);
+        setAiHelpAuto(true);
       }
       return next;
     });
@@ -290,7 +322,6 @@ export default function Messages() {
       await navigator.clipboard.writeText(t);
       toast.success("Đã copy câu hỏi mẫu ");
     } catch {
-      // fallback cho môi trường chặn clipboard
       try {
         const ta = document.createElement("textarea");
         ta.value = t;
@@ -311,16 +342,29 @@ export default function Messages() {
     const n = AI_HELP_PAGES.length;
     const next = ((Number(idx) || 0) % n + n) % n;
     setAiHelpIndex(next);
-    setAiHelpAuto(false); // user đã can thiệp => tắt auto
+    setAiHelpAuto(false);
+  };
+
+  const setUrlConv = (cid) => {
+    const v = String(cid || "");
+    if (!v) nav("/tin-nhan", { replace: true });
+    else nav(`/tin-nhan?conversationId=${encodeURIComponent(v)}`, { replace: true });
   };
 
   const openAi = () => {
     setActiveConvId(AI_CONV_ID);
     setActivePeer(null);
     setAiPreview((p) => ({ ...p, unread: 0 }));
+    if (isMobile) setMobileStage("chat");
+    setUrlConv(AI_CONV_ID);
   };
 
-  // ===== delete conversation (box chat) =====
+  const backToList = () => {
+    if (!isMobile) return;
+    setMobileStage("list");
+    setUrlConv("");
+  };
+
   const [delOpen, setDelOpen] = useState(false);
   const [delConv, setDelConv] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -346,28 +390,37 @@ export default function Messages() {
       setDeleting(true);
 
       if (cid === AI_CONV_ID) {
-        await api.delete("/ai/messages"); // baseURL đang là /api => thành /api/ai/messages
+        await api.delete("/ai/messages");
 
-        // reset preview + remount AiChatBox
         setAiPreview({ lastText: "Nhắn để bắt đầu…", lastAt: null, unread: 0 });
         setAiResetSeq((s) => s + 1);
 
-        // dọn session (nếu còn kẹt prefill từ AI)
-        try { sessionStorage.removeItem("fm_ai_food_prefill"); } catch {}
+        try {
+          sessionStorage.removeItem("fm_ai_food_prefill");
+        } catch {}
 
         toast.success("Đã xóa đoạn chat với FitMatch AI");
         closeDelete();
+        if (String(activeConvId || "") === AI_CONV_ID) {
+          if (isMobile) setMobileStage("chat");
+          setUrlConv(AI_CONV_ID);
+        }
         return;
       }
 
-      // ✅ DM: delete conversation
       await api.delete(`/chat/dm/conversations/${cid}`);
 
       setConvs((prev) => safeArr(prev).filter((x) => String(x?._id || "") !== cid));
 
       if (String(activeConvId || "") === cid) {
-        setActiveConvId(AI_CONV_ID);
-        setActivePeer(null);
+        if (isMobile) {
+          setMobileStage("list");
+          setUrlConv("");
+          setActiveConvId("");
+          setActivePeer(null);
+        } else {
+          openAi();
+        }
       }
 
       toast.success("Đã xóa đoạn lịch sử tin nhắn");
@@ -380,7 +433,6 @@ export default function Messages() {
     }
   };
 
-  // ESC để đóng modal
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape" && delOpen) closeDelete();
@@ -389,7 +441,6 @@ export default function Messages() {
     return () => window.removeEventListener("keydown", onKey);
   }, [delOpen, deleting]);
 
-  // header: shared team
   const [sharedInfo, setSharedInfo] = useState({ loading: false, text: "" });
 
   const [sideOpen, setSideOpen] = useState(false);
@@ -428,6 +479,12 @@ export default function Messages() {
     return allConvs;
   }, [tab, newConvs, unreadConvs, allConvs]);
 
+  useEffect(() => {
+    if (!isMobile) return;
+    const shouldChat = !!qConvId || qAi || qUserId;
+    setMobileStage(shouldChat ? "chat" : "list");
+  }, [isMobile, qConvId, qAi, qUserId]);
+
   const loadMeAndConvs = async () => {
     try {
       setLoading(true);
@@ -446,26 +503,57 @@ export default function Messages() {
       arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
       setConvs(arr);
 
-      // Không auto-open nếu user vào theo ?u= hoặc ?ai=1
-      if (!qUserId && !qAi) {
-        const pickConv = arr.find((c) => isAllConv(c)) || arr[0] || null;
-        if (pickConv?._id) {
-          setActiveConvId(String(pickConv._id));
-          setActivePeer(pickConv.peer || null);
+      if (qConvId) {
+        if (qConvId === AI_CONV_ID) {
+          setActiveConvId(AI_CONV_ID);
+          setActivePeer(null);
         } else {
-          openAi();
+          const found = arr.find((c) => String(c?._id || "") === String(qConvId));
+          if (found?._id) {
+            setActiveConvId(String(found._id));
+            setActivePeer(found.peer || null);
+          } else {
+            setActiveConvId("");
+            setActivePeer(null);
+          }
         }
+        return;
       }
 
-      // Nếu vào theo ?ai=1 => ép mở AI
       if (qAi) {
-        openAi();
+        setActiveConvId(AI_CONV_ID);
+        setActivePeer(null);
+        return;
+      }
+
+      if (!qUserId) {
+        if (!isMobile) {
+          const pickConv = arr.find((c) => isAllConv(c)) || arr[0] || null;
+          if (pickConv?._id) {
+            setActiveConvId(String(pickConv._id));
+            setActivePeer(pickConv.peer || null);
+            setUrlConv(String(pickConv._id));
+          } else {
+            setActiveConvId(AI_CONV_ID);
+            setActivePeer(null);
+            setUrlConv(AI_CONV_ID);
+          }
+        } else {
+          setActiveConvId("");
+          setActivePeer(null);
+        }
       }
     } catch (e) {
       console.error(e);
       toast.error("Không tải được tin nhắn");
-      // vẫn mở AI để user có chỗ chat
-      openAi();
+      if (isMobile) {
+        setActiveConvId("");
+        setActivePeer(null);
+      } else {
+        setActiveConvId(AI_CONV_ID);
+        setActivePeer(null);
+        setUrlConv(AI_CONV_ID);
+      }
     } finally {
       setLoading(false);
     }
@@ -473,10 +561,28 @@ export default function Messages() {
 
   useEffect(() => {
     loadMeAndConvs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ===== realtime update (DM only) =====
+  useEffect(() => {
+    if (!qConvId) return;
+
+    if (qConvId === AI_CONV_ID) {
+      setActiveConvId(AI_CONV_ID);
+      setActivePeer(null);
+      resetDmLock();
+      if (isMobile) setMobileStage("chat");
+      return;
+    }
+
+    const found = safeArr(convs).find((c) => String(c?._id || "") === String(qConvId));
+    if (found?._id) {
+      setActiveConvId(String(found._id));
+      setActivePeer(found.peer || null);
+      resetDmLock();
+      if (isMobile) setMobileStage("chat");
+    }
+  }, [qConvId, convs, isMobile]);
+
   useEffect(() => {
     const onConvUpdate = (p) => {
       const pType = normType(p?.type || p?.kind || p?.conversationType);
@@ -489,7 +595,6 @@ export default function Messages() {
         const arr = safeArr(prev);
         const idx = arr.findIndex((x) => String(x?._id || "") === cid);
 
-        // DM mới xuất hiện -> reload list
         if (idx === -1) {
           listDmConversations()
             .then((raw) => {
@@ -541,7 +646,6 @@ export default function Messages() {
     return () => socket.off("chat:conversation_update", onConvUpdate);
   }, [socket, me]);
 
-  // reload list khi hide_for_me (optional)
   useEffect(() => {
     const onHidden = () => {
       listDmConversations()
@@ -561,7 +665,6 @@ export default function Messages() {
     return () => socket.off("chat:hidden_update", onHidden);
   }, [socket, me]);
 
-  // ===== open by query /tin-nhan?u=USERID =====
   useEffect(() => {
     (async () => {
       if (!qUserId) return;
@@ -569,7 +672,7 @@ export default function Messages() {
 
       if (qUserId === String(me._id)) {
         toast.info("Bạn không thể nhắn tin cho chính mình.");
-        nav("/tin-nhan", { replace: true });
+        setUrlConv("");
         return;
       }
 
@@ -577,30 +680,35 @@ export default function Messages() {
       if (existed?._id) {
         setActiveConvId(String(existed._id));
         setActivePeer(existed.peer || null);
-        nav("/tin-nhan", { replace: true });
+        resetDmLock();
+        if (isMobile) setMobileStage("chat");
+        setUrlConv(String(existed._id));
         return;
       }
 
       try {
-      const conv = await createOrGetDmConversation(qUserId);
-      const cid = String(conv?._id || "");
-      if (cid) {
-        setActiveConvId(cid);
-        if (conv?.peer) setActivePeer(conv.peer);
+        const conv = await createOrGetDmConversation(qUserId);
+        const cid = String(conv?._id || "");
+        if (cid) {
+          setActiveConvId(cid);
+          if (conv?.peer) setActivePeer(conv.peer);
 
-        if (conv?.canSend === false) lockDm("Người này hiện không nhận tin nhắn từ người lạ");
-        else resetDmLock();
-      }
+          if (conv?.canSend === false) lockDm("Người này hiện không nhận tin nhắn từ người lạ");
+          else resetDmLock();
+
+          if (isMobile) setMobileStage("chat");
+          setUrlConv(cid);
+          return;
+        }
       } catch (e) {
         console.error(e);
         toast.error("Không thể mở đoạn chat");
       } finally {
-        nav("/tin-nhan", { replace: true });
+        setUrlConv("");
       }
     })();
-  }, [qUserId, me, convByPeer, nav]);
+  }, [qUserId, me, convByPeer, isMobile]);
 
-  // ===== search global users =====
   useEffect(() => {
     const q = String(searchText || "").trim();
     if (!q) {
@@ -636,6 +744,8 @@ export default function Messages() {
     setActiveConvId(cid);
     setActivePeer(c?.peer || null);
     resetDmLock();
+    if (isMobile) setMobileStage("chat");
+    setUrlConv(cid);
   };
 
   const openDmWithUser = async (userId) => {
@@ -652,19 +762,18 @@ export default function Messages() {
     }
 
     try {
-    const conv = await createOrGetDmConversation(uid);
-    const cid = String(conv?._id || "");
-    if (cid) {
-      setActiveConvId(cid);
-      if (conv?.peer) setActivePeer(conv.peer);
+      const conv = await createOrGetDmConversation(uid);
+      const cid = String(conv?._id || "");
+      if (cid) {
+        setActiveConvId(cid);
+        if (conv?.peer) setActivePeer(conv.peer);
 
-      // ✅ lock input nếu bị chặn
-      if (conv?.canSend === false) {
-        lockDm("Người này hiện không nhận tin nhắn từ người lạ");
-      } else {
-        resetDmLock();
+        if (conv?.canSend === false) lockDm("Người này hiện không nhận tin nhắn từ người lạ");
+        else resetDmLock();
+
+        if (isMobile) setMobileStage("chat");
+        setUrlConv(cid);
       }
-    }
 
       setSearchText("");
       setSearchGlobal([]);
@@ -674,7 +783,6 @@ export default function Messages() {
     }
   };
 
-  // ===== header: shared team info =====
   useEffect(() => {
     let alive = true;
 
@@ -726,13 +834,10 @@ export default function Messages() {
     };
   }, [activePeer, isAiActive]);
 
-    // đóng dropdown nếu rời khỏi AI chat
   useEffect(() => {
     if (!isAiActive) closeAiHelp();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAiActive]);
 
-  // auto slide mỗi 3s khi open và còn auto
   useEffect(() => {
     if (!aiHelpOpen || !aiHelpAuto) return;
 
@@ -743,7 +848,6 @@ export default function Messages() {
     return () => clearInterval(t);
   }, [aiHelpOpen, aiHelpAuto]);
 
-  // click outside + ESC để đóng
   useEffect(() => {
     if (!aiHelpOpen) return;
 
@@ -796,7 +900,6 @@ export default function Messages() {
     return out;
   }, [me, activePeer]);
 
-  // ===== render AI item =====
   const renderAiItem = () => {
     const active = isAiActive;
     const unread = Number(aiPreview?.unread || 0);
@@ -851,7 +954,6 @@ export default function Messages() {
     );
   };
 
-  // ===== render list (DM item) =====
   const renderConvItem = (c) => {
     const active = String(activeConvId) === String(c?._id || "");
     const peer = c.peer;
@@ -917,7 +1019,12 @@ export default function Messages() {
 
   return (
     <>
-      <div className="msg-page">
+      <div
+        className={
+          "msg-page" +
+          (isMobile ? " is-mobile " + (mobileStage === "chat" ? "is-mobile-chat" : "is-mobile-list") : "")
+        }
+      >
         <aside className="msg-left">
           <div className="msg-left-head">
             <div className="msg-head-row">
@@ -939,6 +1046,7 @@ export default function Messages() {
                     setSearchGlobal([]);
                   }}
                   title="Xóa"
+                  type="button"
                 >
                   <i className="fa-solid fa-xmark" />
                 </button>
@@ -946,16 +1054,20 @@ export default function Messages() {
             </div>
 
             <div className="msg-tabs">
-              <button className={`msg-tab ${tab === "all" ? "is-on" : ""}`} onClick={() => setTab("all")}>
+              <button className={`msg-tab ${tab === "all" ? "is-on" : ""}`} onClick={() => setTab("all")} type="button">
                 Tất cả
               </button>
 
-              <button className={`msg-tab ${tab === "unread" ? "is-on" : ""}`} onClick={() => setTab("unread")}>
+              <button
+                className={`msg-tab ${tab === "unread" ? "is-on" : ""}`}
+                onClick={() => setTab("unread")}
+                type="button"
+              >
                 Chưa đọc
                 {unreadCount > 0 ? <span className="msg-tab-badge">{unreadCount}</span> : null}
               </button>
 
-              <button className={`msg-tab ${tab === "new" ? "is-on" : ""}`} onClick={() => setTab("new")}>
+              <button className={`msg-tab ${tab === "new" ? "is-on" : ""}`} onClick={() => setTab("new")} type="button">
                 Mới
                 {newCount > 0 ? <span className="msg-tab-badge">{newCount}</span> : null}
               </button>
@@ -965,8 +1077,7 @@ export default function Messages() {
           <div className="msg-left-body">
             {loading ? <div className="msg-loading">Đang tải…</div> : null}
 
-            {/* ✅ AI pinned luôn ở đầu */}
-            <div className="msg-pinned">{renderAiItem()}</div>
+            {tab === "all" ? <div className="msg-pinned">{renderAiItem()}</div> : null}
 
             {!!String(searchText || "").trim() ? (
               <>
@@ -992,6 +1103,7 @@ export default function Messages() {
                         key={getId(u)}
                         className="msg-item"
                         onClick={() => openDmWithUser(getId(u))}
+                        type="button"
                       >
                         <img
                           className="msg-ava"
@@ -1040,6 +1152,10 @@ export default function Messages() {
             ) : isAiActive ? (
               <div className="msg-right-wrap">
                 <div className="msg-right-head">
+                  <button type="button" className="msg-back" onClick={backToList} aria-label="Quay lại danh sách">
+                    <i className="fa-solid fa-arrow-left" />
+                  </button>
+
                   <div className="msg-peer">
                     <div className="msg-peer-ava msg-peer-ava-ai" aria-hidden="true">
                       <img className="msg-ava" src="/images/ai-chatbot.png" alt="FitMatch AI" />
@@ -1052,7 +1168,6 @@ export default function Messages() {
 
                   <div className="msg-head-spacer" />
 
-                  {/* ✅ Help icon + dropdown carousel */}
                   <div className="msg-ai-help" ref={aiHelpRef}>
                     <button
                       ref={aiHelpBtnRef}
@@ -1099,22 +1214,22 @@ export default function Messages() {
 
                                 <div className="msg-ai-dd-page-body msg-ai-dd-grid">
                                   <div className="msg-ai-dd-list">
-                                    {safeArr(pg.prompts).map((q, idx) => (
+                                    {safeArr(pg.prompts).map((qq, idx) => (
                                       <div
                                         key={`${pg.key}-${idx}`}
                                         className="msg-ai-dd-item"
                                         role="button"
                                         tabIndex={0}
-                                        onClick={() => copyPromptText(q)}
+                                        onClick={() => copyPromptText(qq)}
                                         onKeyDown={(e) => {
                                           if (e.key === "Enter" || e.key === " ") {
                                             e.preventDefault();
-                                            copyPromptText(q);
+                                            copyPromptText(qq);
                                           }
                                         }}
                                         title="Nhấp để copy"
                                       >
-                                        {q}
+                                        {qq}
                                       </div>
                                     ))}
                                   </div>
@@ -1164,7 +1279,11 @@ export default function Messages() {
             ) : (
               <div className="msg-right-wrap">
                 <div className="msg-right-head">
-                  <button className="msg-peer" onClick={() => activePeer && openUser(activePeer)}>
+                  <button type="button" className="msg-back" onClick={backToList} aria-label="Quay lại danh sách">
+                    <i className="fa-solid fa-arrow-left" />
+                  </button>
+
+                  <button className="msg-peer" onClick={() => activePeer && openUser(activePeer)} type="button">
                     <img
                       className="msg-peer-ava"
                       src={getAvatar(activePeer)}
@@ -1225,10 +1344,10 @@ export default function Messages() {
             </div>
 
             <div className="msg-modal-actions">
-              <button className="msg-btn ghost" onClick={closeDelete} disabled={deleting}>
+              <button className="msg-btn ghost" onClick={closeDelete} disabled={deleting} type="button">
                 Hủy
               </button>
-              <button className="msg-btn danger" onClick={confirmDelete} disabled={deleting}>
+              <button className="msg-btn danger" onClick={confirmDelete} disabled={deleting} type="button">
                 {deleting ? "Đang xóa..." : "Xóa"}
               </button>
             </div>

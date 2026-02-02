@@ -1,6 +1,3 @@
-/* =========================================================
-   Messages Page Layout
-========================================================= */
 .msg-page{
   display:flex;
   width:100%;
@@ -14,7 +11,6 @@
   overflow:hidden;
 }
 
-/* ✅ FIX flex overflow: cho phép children co lại để scroll nội bộ */
 .msg-page,
 .msg-left,
 .msg-right,
@@ -37,9 +33,6 @@
   pointer-events:none;
 }
 
-/* =========================================================
-   LEFT SIDEBAR
-========================================================= */
 .msg-left{
   width:340px;
   min-width: 0;
@@ -66,7 +59,6 @@
   color:#fff;
 }
 
-/* Search */
 .msg-search{
   display:flex;
   align-items:center;
@@ -94,7 +86,6 @@
   cursor:pointer;
 }
 
-/* Tabs */
 .msg-tabs{
   display:flex;
   gap:10px;
@@ -135,7 +126,7 @@
   color:#fff;
   background:#1A73E8;
 }
-/* List body */
+
 .msg-left-body{
   flex:1;
   overflow:auto;
@@ -157,7 +148,6 @@
   opacity:.75;
 }
 
-/* Conversation/User item */
 .msg-item{
   width:100%;
   display:flex;
@@ -208,7 +198,7 @@
   opacity:1;
   transition:opacity .12s ease;
   z-index:2;
-  pointer-events:none; 
+  pointer-events:none;
 }
 .msg-item:hover .msg-badge{
   opacity:0;
@@ -279,7 +269,6 @@
 .msg-dot{ opacity:.5; }
 .msg-time{ white-space:nowrap; }
 
-/* pill "Mới" */
 .msg-pill{
   margin-left:8px;
   font-size:11px;
@@ -292,7 +281,6 @@
   color:#fbbf24;
 }
 
-/* Trash button (hover) */
 .msg-trash{
   position:absolute;
   right:10px;
@@ -325,9 +313,6 @@
   color:#fff;
 }
 
-/* =========================================================
-   RIGHT PANEL
-========================================================= */
 .msg-right{
   flex:1;
   min-width:0;
@@ -374,6 +359,25 @@
 
   background:#221010;
   border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.msg-back{
+  display:none;
+  width:36px;
+  height:36px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:#e5e7eb;
+  cursor:pointer;
+  margin-right:10px;
+  align-items:center;
+  justify-content:center;
+}
+.msg-back:hover{
+  background:rgba(239,68,68,.12);
+  border-color:rgba(239,68,68,.35);
+  color:#fff;
 }
 
 .msg-peer{
@@ -426,7 +430,6 @@
   max-width:520px;
 }
 
-/* Chat area */
 .msg-chat{
   flex:1;
   min-height:0;
@@ -455,9 +458,6 @@
   color:#e5e7eb;
 }
 
-/* =========================================================
-   CONFIRM DELETE MODAL
-========================================================= */
 .msg-modal-backdrop{
   position:fixed;
   inset:0;
@@ -526,9 +526,6 @@
 .msg-btn.danger:hover{ background:#ef4444; }
 .msg-btn:disabled{ opacity:.6; cursor:not-allowed; }
 
-/* =========================
-   AI pinned item
-   ========================= */
 .msg-pinned{
   padding: 6px 2px 10px;
 }
@@ -562,7 +559,6 @@
   color:#93c5fd;
 }
 
-/* AI header */
 .msg-right-head.is-ai{
   background:#0b1220;
 }
@@ -583,9 +579,6 @@
   flex:0 0 auto;
 }
 
-/* =========================================================
-   AI Help Dropdown (Carousel pages)
-========================================================= */
 .msg-head-spacer{ flex:1; }
 
 .msg-ai-help{
@@ -666,10 +659,9 @@
   white-space:nowrap;
 }
 
-/* viewport & track */
 .msg-ai-dd-viewport{
   overflow:hidden;
-  touch-action: pan-y; /* cho phép drag ngang mượt hơn (sau này mobile) */
+  touch-action: pan-y;
 }
 
 .msg-ai-dd-track{
@@ -677,7 +669,6 @@
   width: 100%;
 }
 
-/* mỗi page full width */
 .msg-ai-dd-page{
   flex: 0 0 100%;
   padding: 12px 14px 10px;
@@ -709,12 +700,76 @@
   box-sizing: border-box;
 }
 
-/* list prompts */
 .msg-ai-dd-list{
   text-align: center;
 }
 
-/* Responsive */
+.msg-ai-dd-item{
+  padding:10px 10px;
+  color:#e5e7eb;
+
+  font-size:13px;
+  font-weight:600;
+  line-height:1.35;
+
+  cursor:pointer;
+  user-select:none;
+
+  transition: background .12s ease, border-color .12s ease, transform .12s ease;
+}
+
+.msg-ai-dd-item:active{
+  transform: translateY(0);
+}
+
+.msg-ai-dd-dots{
+  padding: 10px 12px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+
+  border-top:1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.02);
+}
+
+.msg-ai-dd-dot{
+  width:10px;
+  height:10px;
+  border-radius:999px;
+
+  border:1px solid rgba(255,255,255,.26);
+  background: rgba(255,255,255,.08);
+
+  cursor:pointer;
+  transition: background .12s ease, border-color .12s ease, transform .12s ease;
+}
+.msg-ai-dd-dot:hover{ transform: scale(1.08); }
+.msg-ai-dd-dot.is-on{
+  background:#ef4444;
+  border-color: rgba(239,68,68,.70);
+}
+
+.msg-ai-dd-page-body{
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.22) rgba(255,255,255,.06);
+}
+.msg-ai-dd-page-body::-webkit-scrollbar{ width:8px; }
+.msg-ai-dd-page-body::-webkit-scrollbar-track{
+  background: rgba(255,255,255,.05);
+  border-radius:999px;
+}
+.msg-ai-dd-page-body::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.18);
+  border-radius:999px;
+  border:2px solid rgba(0,0,0,0);
+  background-clip: padding-box;
+}
+.msg-ai-dd-page-body::-webkit-scrollbar-thumb:hover{
+  background: rgba(239,68,68,.35);
+  background-clip: padding-box;
+}
+
 @media (max-width: 980px) {
   .msg-page {
     height: calc(100vh - 68px);
@@ -730,72 +785,54 @@
 }
 
 @media (max-width: 768px) {
-  .msg-page {
-    flex-direction: column;
+  .msg-page{
     height: calc(100vh - 68px);
     margin: 0;
     border-radius: 0;
     max-width: 100vw;
-    overflow-x: hidden;
+    overflow: hidden;
+    position: relative;
+    display: block;
   }
 
-  .msg-left {
+  .msg-left,
+  .msg-right{
+    position: absolute;
+    inset: 0;
     width: 100%;
-    border-right: none;
-    border-bottom: 1px solid rgba(255,255,255,.20);
-    max-height: 40vh;
-  }
-
-  .msg-left-body {
-    max-height: calc(40vh - 100px);
-  }
-
-  .msg-right {
-    width: 100%;
-    flex: 1;
+    height: 100%;
     min-height: 0;
   }
 
-  .msg-title {
-    font-size: 18px;
+  .msg-right{
+    padding: 0;
+    background: #202020;
   }
 
-  .msg-search {
-    padding: 8px 10px;
-    font-size: 13px;
+  .msg-right-box{
+    height: 100%;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+    border-bottom: 0;
   }
 
-  .msg-tabs {
-    gap: 6px;
-    margin-top: 8px;
+  .msg-page.is-mobile-list .msg-right{ display: none; }
+  .msg-page.is-mobile-chat .msg-left{ display: none; }
+
+  .msg-page.is-mobile-chat .msg-back{
+    display: inline-flex;
   }
 
-  .msg-tab {
-    padding: 6px 14px;
-    font-size: 13px;
+  .msg-left{
+    width: 100%;
+    border-right: none;
   }
 
-  .msg-item {
-    padding: 10px 8px;
-    gap: 8px;
-  }
-
-  .msg-ava,
-  .msg-ava-box {
-    width: 40px;
-    height: 40px;
-  }
-
-  .msg-item-text {
-    gap: 2px;
-  }
-
-  .msg-item-name {
-    font-size: 14px;
-  }
-
-  .msg-item-sub {
-    font-size: 11px;
+  .msg-left-body{
+    height: calc(100% - 154px);
+    overflow: auto;
   }
 
   .msg-right-head {
@@ -811,12 +848,12 @@
 
   .msg-peer-name {
     font-size: 16px;
-    max-width: calc(100vw - 120px);
+    max-width: calc(100vw - 160px);
   }
 
   .msg-peer-sub {
     font-size: 11px;
-    max-width: calc(100vw - 120px);
+    max-width: calc(100vw - 160px);
   }
 
   .msg-ai-dd {
@@ -831,16 +868,13 @@
   .msg-last {
     max-width: calc(100vw - 180px);
   }
+
+  .msg-dm-locked{
+    padding: 24px;
+  }
 }
 
 @media (max-width: 520px) {
-  .msg-page {
-    margin: 0;
-    height: calc(100vh - 68px);
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
-
   .msg-left-head {
     padding: 12px 10px 8px;
   }
@@ -886,14 +920,6 @@
     height: 36px;
   }
 
-  .msg-item-name {
-    font-size: 13px;
-  }
-
-  .msg-item-sub {
-    font-size: 10px;
-  }
-
   .msg-right-head {
     height: 52px;
     padding: 6px 10px;
@@ -911,12 +937,12 @@
 
   .msg-peer-name {
     font-size: 15px;
-    max-width: calc(100vw - 100px);
+    max-width: calc(100vw - 150px);
   }
 
   .msg-peer-sub {
     font-size: 10px;
-    max-width: calc(100vw - 100px);
+    max-width: calc(100vw - 150px);
   }
 
   .msg-last {
@@ -958,10 +984,6 @@
     max-height: 240px;
   }
 
-  .msg-ai-dd-list {
-    grid-template-columns: 1fr;
-  }
-
   .msg-modal {
     width: calc(100vw - 20px);
     padding: 12px;
@@ -980,72 +1002,4 @@
     padding: 0 12px;
     font-size: 12px;
   }
-}
-
-.msg-ai-dd-item{
-  padding:10px 10px;
-  color:#e5e7eb;
-
-  font-size:13px;
-  font-weight:600;
-  line-height:1.35;
-
-  cursor:pointer;
-  user-select:none;
-
-  transition: background .12s ease, border-color .12s ease, transform .12s ease;
-}
-
-.msg-ai-dd-item:active{
-  transform: translateY(0);
-}
-
-/* dots */
-.msg-ai-dd-dots{
-  padding: 10px 12px 12px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-
-  border-top:1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.02);
-}
-
-.msg-ai-dd-dot{
-  width:10px;
-  height:10px;
-  border-radius:999px;
-
-  border:1px solid rgba(255,255,255,.26);
-  background: rgba(255,255,255,.08);
-
-  cursor:pointer;
-  transition: background .12s ease, border-color .12s ease, transform .12s ease;
-}
-.msg-ai-dd-dot:hover{ transform: scale(1.08); }
-.msg-ai-dd-dot.is-on{
-  background:#ef4444;
-  border-color: rgba(239,68,68,.70);
-}
-
-/* ✅ slim scrollbar cho dropdown body */
-.msg-ai-dd-page-body{
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.22) rgba(255,255,255,.06);
-}
-.msg-ai-dd-page-body::-webkit-scrollbar{ width:8px; }
-.msg-ai-dd-page-body::-webkit-scrollbar-track{
-  background: rgba(255,255,255,.05);
-  border-radius:999px;
-}
-.msg-ai-dd-page-body::-webkit-scrollbar-thumb{
-  background: rgba(255,255,255,.18);
-  border-radius:999px;
-  border:2px solid rgba(0,0,0,0);
-  background-clip: padding-box;
-}
-.msg-ai-dd-page-body::-webkit-scrollbar-thumb:hover{
-  background: rgba(239,68,68,.35);
-  background-clip: padding-box;
 }
