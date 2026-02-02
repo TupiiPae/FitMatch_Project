@@ -530,7 +530,7 @@ export default function WorkoutList() {
                   aria-hidden="true"
                 ></i>
               </div>
-              <h3 id="confirm-del-title">Xóa món ăn?</h3>
+              <h3 id="confirm-del-title">Xóa lịch tập?</h3>
             </div>
             <div className="rm-body">
               Bạn chắc chắn muốn xóa <b>{confirmDel.name}</b>?

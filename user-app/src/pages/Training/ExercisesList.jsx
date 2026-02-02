@@ -401,7 +401,7 @@ export default function ExercisesList({ type = "Strength", title = "Các bài t�
         </div>
 
         {!loading && items.length === 0 && (
-          <div className="ex-empty">Không tìm thấy bài tập.</div>
+          <div className="ex-empty">Không có bài tập phù hợp.</div>
         )}
 
         {hasMore && (

@@ -21,7 +21,7 @@
   flex: 1 1 auto;
   display: flex;
   align-items: center;
-  background-color: #1C1C1E;
+  background-color: #1c1c1e;
   height: 44px;
   border-radius: 8px;
   padding: 0 16px;
@@ -68,7 +68,7 @@
 
 .wl-linee {
   border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.30)
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .wl-list-title {
@@ -86,7 +86,7 @@
 }
 
 .wl-list-frame {
-  background: rgba(148,163,184,.10);
+  background: rgba(148, 163, 184, 0.1);
   border-radius: 4px;
   padding: 20px;
   width: 100%;
@@ -96,154 +96,6 @@
   overflow-x: hidden;
   scrollbar-width: none;
   cursor: grab;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .wl-wrap {
-    padding: 0 12px;
-  }
-
-  .wl-head {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    margin: 16px auto;
-  }
-
-  .wl-head .search {
-    max-width: 100%;
-    width: 100%;
-  }
-
-  .wl-create-btn {
-    width: 100%;
-    justify-content: center;
-    font-size: 14px;
-    height: 36px;
-    padding: 0 12px;
-  }
-
-  /* Make sure the search input can shrink on narrow screens and keep readable */
-  .wl-head .search {
-    max-width: none;
-    flex-basis: auto;
-  }
-
-  .wl-list-title {
-    padding-top: 40px;
-  }
-
-
-  .wl-list-frame {
-    padding: 16px;
-    margin-top: 16px;
-  }
-
-  /* mobile: make list frame touch-scroll friendly and limit height */
-  .wl-list-frame {
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-
-  /* allow note to wrap on smaller screens */
-  .wl-note {
-    white-space: normal;
-  }
-
-  /* reduce large side margins used for desktop separators */
-  .wl-line { margin: 20px 0 16px 0; }
-  .wl-empty { margin: 0; padding: 12px; }
-}
-
-@media (max-width: 640px) {
-  .wl-wrap {
-    padding: 10px 8px 20px;
-  }
-
-  .wl-head {
-    margin: 12px auto;
-  }
-
-  .wl-list-title {
-    padding-top: 32px;
-  }
-
-  .wl-list-frame {
-    padding: 12px;
-    margin-top: 12px;
-  }
-
-  .wl-list-frame {
-    max-height: 65vh;
-  }
-
-  .wl-note { font-size: 15px; }
-}
-
-@media (max-width: 480px) {
-  .wl-list-title {
-    padding-top: 28px;
-  }
-
-  .wl-list-frame {
-    padding: 10px;
-  }
-
-  /* tighter item spacing and smaller paddings for very small phones */
-  .wl-item { padding: 8px 8px 6px; }
-  .wl-title { font-size: 16px; }
-  .wl-note { font-size: 13px; }
-
-  /* metrics grid stacks into two columns for readability */
-  .wl-metrics {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  /* Ensure the list frame remains touch-friendly and not too tall */
-  .wl-list-frame {
-    max-height: 55vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .wl-line { margin: 16px 0; }
-  .wl-empty { margin: 0; padding: 10px; }
-}
-@media (max-width: 420px) {
-  .wl-title { font-size: 15px; }
-  .wl-note { font-size: 12px; }
-  .wl-metrics .num { font-size: 16px; }
-  .wl-metrics .lab { font-size: 12px; }
-  .wl-metrics .mcol { padding: 3px 4px; }
-  .wl-item { padding: 8px 6px; }
-  .wl-head .search input { font-size: 13px; }
-}
-.wl-list-frame.dragging {
-  cursor: grabbing;
-  user-select: none;
-}
-
-.wl-more {
-  margin-top: 12px;
-  text-align: center;
-}
-.wl-more button {
-  height: 36px;
-  padding: 0 18px;
-  border-radius: 999px;
-  border: 1px solid #002c3e80;
-  background: #fff;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 14px;
-  color: #111827;
-}
-.wl-more button:hover {
-  background: #f9fafb;
 }
 
 /* Section head + line (giữ nguyên layout) */
@@ -288,12 +140,36 @@
   margin: 6px 0 12px;
 }
 
+.wl-list-frame.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.wl-more {
+  margin-top: 12px;
+  text-align: center;
+}
+.wl-more button {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid #002c3e80;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  color: #111827;
+}
+.wl-more button:hover {
+  background: #f9fafb;
+}
+
 /* ===== ITEM CARD – đồng bộ palette như nm-item ===== */
 .wl-item {
-  border: 1px solid rgba(255, 255, 255, 0.50);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   padding: 14px 14px 10px;
-  background: #1C1C1E;
+  background: #1c1c1e;
   cursor: pointer;
   transition: border-color 0.12s ease, background-color 0.12s ease;
 }
@@ -359,7 +235,7 @@
   min-width: 200px;
   border-radius: 4px;
   background: #020617;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 6px;
   z-index: 10;
 }
@@ -368,17 +244,16 @@
   width: 100%;
   text-align: left;
   background: #020617;
-
   padding: 8px 10px;
   border-radius: 4px;
   cursor: pointer;
   color: #e5e7eb;
 }
-
 .wl-item .menu-item.danger {
   color: #dc2626;
 }
 
+/* Metrics */
 .wl-metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -405,8 +280,15 @@
   font-size: 14px;
   color: #e5e7eb;
 }
+.wl-metrics .num.calo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
 .wl-metrics .calo {
-  color: #E31C25;
+  color: #e31c25;
 }
 
 /* ===== Modal (backdrop dùng chung) ===== */
@@ -503,12 +385,10 @@
   border-radius: 16px;
   padding: 16px;
   position: relative;
-
   max-height: 700px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-
   background: #1e1e1e;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   color: #ffffff;
@@ -605,13 +485,11 @@
   gap: 10px;
   margin-top: 8px;
   background: rgba(0, 0, 0, 0.4);
-
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
 }
 
-/* Ẩn scrollbar cho giống DetailModal */
 .wp-exlist::-webkit-scrollbar {
   display: none;
 }
@@ -661,7 +539,6 @@
   font-size: 16px;
 }
 
-/* Footer trong modal (nếu dùng) */
 .wp-actions {
   display: flex;
   justify-content: flex-end;
@@ -670,7 +547,214 @@
   flex: 0 0 auto;
 }
 
-/* Khoá scroll nền khi mở modal */
 body.modal-open {
   overflow: hidden;
+}
+
+/* ===================== Responsive (GIỮ 1 NHÓM CHÍNH) ===================== */
+@media (max-width: 768px) {
+  .wl-wrap {
+    padding: 0 12px;
+  }
+
+  .wl-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin: 16px auto;
+  }
+
+  .wl-head .search {
+    max-width: 100%;
+    width: 100%;
+    height: 40px;
+    padding: 0 14px;
+  }
+  .wl-head .search input {
+    font-size: 13px;
+  }
+
+  .wl-create-btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 14px;
+    height: 36px;
+    padding: 0 12px;
+  }
+
+  .wl-list-title {
+    padding-top: 32px;
+    line-height: 1.15;
+  }
+
+  .wl-list-desc {
+    line-height: 1.35;
+  }
+
+  .wl-line {
+    margin: 16px 0;
+  }
+
+  .wl-empty {
+    margin: 0;
+    padding: 12px;
+  }
+
+  .wl-list-frame {
+    padding: 12px;
+    margin-top: 12px;
+    max-height: 65vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    cursor: auto;
+  }
+
+  .wl-list {
+    gap: 12px;
+    cursor: auto;
+  }
+
+  .wl-item {
+    padding: 12px 12px 10px;
+  }
+
+  .wl-top {
+    gap: 10px;
+  }
+
+  /* Giảm size title/note + bỏ padding-left để gọn hơn trên mobile */
+  .wl-title {
+    font-size: 16px;
+    padding-left: 0;
+    margin-bottom: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .wl-note {
+    font-size: 12px;
+    padding-left: 0;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .wl-item .more-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .wl-item .menuWL {
+    top: 36px;
+    min-width: 180px;
+  }
+
+  /* Metrics: chỉ giữ "Tổng số bài tập" + "Tổng lượng Calorie đốt" */
+  .wl-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: 10px;
+  }
+
+  .wl-metrics .mcol:nth-child(2),
+  .wl-metrics .mcol:nth-child(3) {
+    display: none;
+  }
+
+  .wl-metrics .mcol {
+    padding: 6px 8px;
+  }
+
+  .wl-metrics .num {
+    font-size: 16px;
+  }
+
+  .wl-metrics .lab {
+    font-size: 12px;
+  }
+
+  .wl-metrics .num.calo {
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  /* Modal detail: dễ đọc hơn trên mobile */
+  .wp-modal {
+    max-height: 78vh;
+    padding: 14px;
+  }
+
+  .wp-head {
+    grid-template-columns: 92px 1fr;
+    gap: 12px;
+  }
+
+  .wp-thumb {
+    width: 92px;
+    height: 92px;
+  }
+
+  .wp-title {
+    font-size: 18px;
+  }
+
+  .wp-eximg {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 64px;
+  }
+
+  .wp-exname {
+    font-size: 16px;
+  }
+
+  .wp-exsub {
+    font-size: 13px;
+  }
+
+  .spl-main .spl-plan-title {
+    font-size: 16px;
+  }
+  .spl-main .spl-plan-meta {
+    font-size: 13px;
+  }
+}
+
+/* Nhỏ hơn nữa: tinh gọn thêm */
+@media (max-width: 480px) {
+  .wl-wrap {
+    padding: 10px 8px 20px;
+  }
+
+  .wl-list-title {
+    padding-top: 26px;
+  }
+
+  .wl-item {
+    padding: 10px 10px 8px;
+  }
+
+  .wl-title {
+    font-size: 15px;
+  }
+
+  .wl-note {
+    font-size: 11.5px;
+  }
+
+  .wl-metrics .num {
+    font-size: 15px;
+  }
+
+  .wl-metrics .lab {
+    font-size: 11px;
+  }
+
+  .wl-metrics .num.calo {
+    font-size: 14px;
+  }
 }

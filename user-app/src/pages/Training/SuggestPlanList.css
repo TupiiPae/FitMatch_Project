@@ -21,13 +21,19 @@
   margin-left: auto;
   margin-right: auto;
   margin-top: 14px;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .spl-empty {
-  color: #9ca3af;
+  color: #fff;
   padding: 20px;
   text-align: center;
-  font-style: italic;
+  flex: 1 1 auto;
+  min-height: 260px;
+  display: grid;
+  place-items: center;
 }
 
 /* ===== ITEM CARD (DARK MODE) ===== */
@@ -185,6 +191,43 @@
   .spl-actions {
     flex: 0 0 auto;
     margin-top: 0;
+  }
+  
+  .ex-filter-dd {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .spl-filter-cols {
+    display: block;
+    flex: 1 1 auto;
+    overflow: auto;
+    max-height: calc(100vh - 190px);
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 12px;
+    overscroll-behavior: contain;
+  }
+
+  .ex-filter-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 80;
+    background: #1C1C1E;
+    padding: 10px 0 8px;
+  }
+
+  .exf-list.spl-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+
+  .exf-list.spl-list .exf-item {
+    flex: 0 0 auto;
   }
 }
 

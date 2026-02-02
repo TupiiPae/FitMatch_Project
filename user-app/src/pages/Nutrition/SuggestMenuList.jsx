@@ -224,7 +224,7 @@ export default function SuggestMenuList() {
       {/* ===== HEAD ===== */}
       <div className="ex-head">
         <div className="ex-head-text">
-          <div className="ex-list-title">Danh sách thực đơn gợi ý</div>
+          <div className="ex-list-title sml-list-title">Danh sách thực đơn gợi ý</div>
           <div className="ex-list-desc">
             Đây là danh sách mang tính chất gợi ý, không bắt buộc sử dụng
             hoàn toàn thực đơn.
@@ -363,7 +363,7 @@ export default function SuggestMenuList() {
 
       {/* ===== SAVED MENUS (giống list RecordMeal) ===== */}
       <div className="smu-saved-section">
-        <div className="smu-saved-title">Thực đơn gợi ý đã lưu</div>
+        <div className="smu-saved-title sml-list-title">Thực đơn gợi ý đã lưu</div>
         <div className="smu-saved-desc">
           Những thực đơn bạn lưu lại sẽ hiển thị tại đây. Nhấp vào một thực
           đơn để xem chi tiết hoặc bỏ lưu nếu không còn phù hợp.

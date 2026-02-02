@@ -476,6 +476,16 @@
     padding-bottom: 110px;
   }
 
+  .ff-image-box {
+    max-width:260px;
+    max-height: 240px;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 0 auto;
+  }
+
   /* Keep the three toolbox items on a single row on mobile.
      Use auto 1fr auto so the center title can shrink and truncate. */
   .ff-toolbox {

@@ -709,7 +709,7 @@ export default function FoodForm() {
         </div>
       </form>
 
-      <div className="ff-sticky-actions" aria-hidden="false">
+      {/* <div className="ff-sticky-actions" aria-hidden="false">
         <button type="button" className="ff-sticky-back" onClick={() => nav(-1)}>
           <i className="fa-solid fa-arrow-left-long"></i>
           <span>Quay lại</span>
@@ -725,7 +725,7 @@ export default function FoodForm() {
         <button type="button" className="ff-sticky-main" onClick={submit}>
           {isEdit ? "Lưu" : "Tạo món"}
         </button>
-      </div>
+      </div> */}
 
       {confirmDel.open && (
         <div className="modal" onClick={closeConfirmDelete}>

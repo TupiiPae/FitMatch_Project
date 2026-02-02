@@ -142,10 +142,6 @@
   background-color: #444;
 }
 
-/* Khi có active filter */
-.ex-filter-btn.has-active {
-  background: #000;
-}
 .ex-filter-btn.has-active i,
 .ex-filter-btn.has-active span {
   color: #fff;
@@ -167,12 +163,11 @@
   margin-left: 4px;
 }
 
-/* DROPDOWN PANEL (Giữ nguyên logic, chỉnh lại màu nếu cần thiết) */
 .ex-filter-dd {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  background: #1C1C1E; /* dark panel to match page */
+  background: #1C1C1E; 
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.50);
   box-shadow: 0 8px 16px rgba(0,0,0,0.25);
@@ -192,16 +187,15 @@
     left: auto;
     min-width: 220px;
     max-width: calc(100vw - 24px);
-    padding: 12px;
+    padding: 12px 12px 6px;
     box-sizing: border-box;
-    max-height: calc(100vh - 140px);
-    overflow: auto; /* allow inner scrolling */
     border-radius: 10px;
     z-index: 60;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
   }
 
-  /* Stack columns vertically but keep selectable lists horizontally scrollable */
-  /* make panel a column so footer can stay fixed */
   .ex-filter-dd {
     display: flex;
     flex-direction: column;
@@ -210,11 +204,12 @@
 
   .ex-filter-cols {
     display: block;
-    /* allow the main content area to scroll independently */
     flex: 1 1 auto;
     overflow: auto;
+    max-height: calc(100vh - 190px);
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 12px; /* room for sticky actions */
+    padding-bottom: 12px;
+    overscroll-behavior: contain;
   }
 
   .exf-col {
@@ -234,17 +229,16 @@
     flex: 0 0 auto;
   }
 
-  /* Keep action buttons visible — sticky to panel bottom */
   .ex-filter-actions {
     position: sticky;
     bottom: 0;
     z-index: 80;
-    padding-top: 10px;
+    padding: 10px 0 8px;
     margin-top: 6px;
-    padding-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 8px;
+    background: #1C1C1E;
   }
 }
 
@@ -260,6 +254,9 @@
   max-height: 900px;
   overflow-y: auto;
   scrollbar-width: none;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* GRID */
@@ -299,6 +296,10 @@
   }
   .ex-card {
     padding: 12px;
+  }
+
+  .ex-list-title {
+    margin-top: -22px;
   }
 }
 
@@ -383,9 +384,10 @@
 }
 
 .ex-empty {
-  text-align: center;
-  color: #9ca3af;
-  padding: 20px;
+  flex: 1 1 auto;
+  min-height: 260px;
+  display: grid;
+  place-items: center;
 }
 
 /* MORE BUTTON */
