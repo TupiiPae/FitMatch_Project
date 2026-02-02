@@ -1153,7 +1153,7 @@ export default function Messages() {
               <div className="msg-right-wrap">
                 <div className="msg-right-head">
                   <button type="button" className="msg-back" onClick={backToList} aria-label="Quay lại danh sách">
-                    <i className="fa-solid fa-arrow-left" />
+                    <i className="fa-solid fa-chevron-left"></i>
                   </button>
 
                   <div className="msg-peer">
@@ -1280,7 +1280,7 @@ export default function Messages() {
               <div className="msg-right-wrap">
                 <div className="msg-right-head">
                   <button type="button" className="msg-back" onClick={backToList} aria-label="Quay lại danh sách">
-                    <i className="fa-solid fa-arrow-left" />
+                    <i className="fa-solid fa-chevron-left"></i>
                   </button>
 
                   <button className="msg-peer" onClick={() => activePeer && openUser(activePeer)} type="button">

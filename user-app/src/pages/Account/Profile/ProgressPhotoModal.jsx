@@ -218,7 +218,7 @@ export default function ProgressPhotoModal({
 
   const helperText = useMemo(() => {
     if (tab === "front")
-      return "Ảnh mặt trước với toàn thân hoặc nửa người, ánh sáng tốt, phông nền rõ ràng.";
+      return "Ảnh mặt trước với toàn thân hoặc nửa người, phông nền rõ ràng.";
     if (tab === "side")
       return "Ảnh chụp từ bên hông để dễ thấy đường cong cơ thể.";
     return "Ảnh chụp mặt sau với phông nền và ánh sáng ổn định.";
@@ -231,7 +231,6 @@ export default function ProgressPhotoModal({
         <h3 className="bp-modal-title">{title}</h3>
 
         <div className="bp-photo-layout">
-          {/* CỘT TRÁI: khung ảnh / dropzone */}
           <div
             className={`bp-photo-left ${
               isEdit ? "bp-photo-left-readonly" : ""

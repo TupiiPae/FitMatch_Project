@@ -295,7 +295,7 @@
 .bp-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(17, 21, 31, 0.75);
   backdrop-filter: blur(2px);
 }
 
@@ -304,10 +304,9 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: min(1020px, calc(100% - 32px));
-  background: #1e1e1e;
-  border-radius: 14px;
-  border: 1px solid #1f2937;
+  min-width: min(920px, calc(100% - 32px));
+  background: #020617;
+  border-radius: 8px;
   padding: 18px 18px 16px;
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.75);
   color: #e5e7eb;
@@ -317,6 +316,7 @@
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 12px;
+  color: #fff;
 }
 
 .bp-modal-grid {
@@ -337,7 +337,6 @@
 .bp-modal-grid select {
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid #4b5563;
   background: #020617;
   color: #f9fafb;
   font-size: 14px;
@@ -365,7 +364,7 @@
 
 /* Trang Hồ sơ thể chất – dùng dark theme giống Account */
 .bp-page {
-  padding: 0 12px;
+  padding: 0 12px 20px;
   color: #e5e7eb;
   font-size: 14px;
 }
@@ -435,8 +434,8 @@
 .bp-input {
   width: 100%;
   border-radius: 4px;
-  border: 1px solid #4b5563;
-  background: #020617;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background: rgba(148,163,184,.10);
   color: #f9fafb;
   padding: 8px 10px;
   font-size: 14px;
@@ -483,10 +482,10 @@
 /* ===== Bảng mục tiêu cân nặng ===== */
 
 .bp-goal-table {
-  border: 1px solid #1f2937;
+  border: 1px solid rgba(255, 255, 255, 0.30);
   border-radius: 8px;
   overflow: hidden;
-  background: #020617;
+  background: rgba(148,163,184,.10);
 }
 
 .bp-row-goal {
@@ -495,11 +494,11 @@
 }
 
 .bp-row-goal + .bp-row-goal {
-  border-top: 1px solid #1f2937;
+  border-top: 1px solid rgba(255, 255, 255, 0.20);
 }
 
 .bp-row-goal-head {
-  background: #1e1e1e;
+  background: #444444;
   font-weight: 600;
 }
 
@@ -594,7 +593,7 @@
   gap: 6px;
   padding: 2px;
   border-radius: 999px;
-  background: #020617;
+  background: #1C1C1E;
   border: 1px solid #4b5563;
 }
 
@@ -756,8 +755,8 @@
 
 .bp-photo-left {
   border-radius: 4px;
-  border: 1px dashed #4b5563;
-  background: #020617;
+  border: 1px dashed rgba(255, 255, 255, 0.50);
+  background: #050505;
   min-height: 260px;
   display: flex;
   align-items: stretch;
@@ -833,22 +832,27 @@
 }
 
 .modal-bp-tab {
-  border: 1px solid #4b5563;
-  background-color: transparent;
-  color: #9ca3af;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background-color: #050505;
+  color: #e5e7eb; 
+  font-size: 13px;
+  font-weight: 500;
   border-radius: 99px; /* Bo tròn kiểu viên thuốc */
   padding: 8px 4px;
-  font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap
 }
 
+.modal-bp-tab.active {
+  background-color: #ef4444; 
+  color: #ffffff;  
+}
+
 .bp-photo-helper {
   border-radius: 4px;
-  background: #020617;
-  border: 1px solid #4b5563;
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.30);
   padding: 8px 10px;
   font-size: 12px;
 }
@@ -912,8 +916,8 @@
 .bp-photo-label textarea {
   padding: 7px 10px;
   border-radius: 4px;
-  border: 1px solid #4b5563;
-  background: #020617;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  background: #050505;
   color: #f9fafb;
   font-size: 13px;
   outline: none;

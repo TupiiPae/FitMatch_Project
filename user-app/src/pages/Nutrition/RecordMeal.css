@@ -326,19 +326,19 @@
 .rm-search,
 .rm-tabs,
 .rm-view-toggle {
-  background-color: #1C1C1E; /* Màu nền xám của box chứa */
-  height: 44px; /* Chiều cao cố định để bằng nhau tăm tắp */
-  border-radius: 8px; /* Bo góc cả khối */
+  background-color: #1C1C1E; 
+  height: 44px; 
+  border-radius: 8px; 
   display: flex;
   align-items: center;
-  border: none; /* Xóa border cũ */
+  border: none; 
   box-sizing: border-box;
-  min-width: 0; /* allow shrinking */
+  min-width: 0; 
 }
 
 /* --- 1. THANH TÌM KIẾM (.search) --- */
 .rm-search {
-  flex: 1 1 60%; /* Giãn hết cỡ khoảng trống còn lại but allow wrap */
+  flex: 1 1 60%; 
   padding: 0 16px;
   color: #aaa;
 }
@@ -361,32 +361,32 @@
 
 /* --- 2. BOX TAB LỌC (.rm-tabs) --- */
 .rm-tabs {
-  padding: 4px; /* Padding bên trong để tạo khoảng hở cho nút active */
-  gap: 2px; /* Khoảng cách nhỏ giữa các nút text */
+  padding: 4px; 
+  gap: 2px; 
   flex: 0 1 auto;
 }
 
 .rm-tab {
-  background: transparent; /* Mặc định trong suốt */
+  background: transparent; 
   border: none;
-  color: #aaa; /* Màu chữ khi chưa chọn */
+  color: #aaa; 
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  padding: 0 20px; /* Độ rộng của nút */
-  height: 100%; /* Cao bằng box cha trừ đi padding */
-  border-radius: 6px; /* Bo góc nút con bé hơn box cha một chút */
+  padding: 0 20px; 
+  height: 100%; 
+  border-radius: 6px; 
   transition: all 0.2s ease;
 }
 
 /* Trạng thái Active của Tab Filter */
 .rm-tab.on {
-  background-color: rgba(255, 255, 255, 0.30); /* Màu đen (hoặc rất tối) giống hình */
-  color: #fff; /* Chữ trắng */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Tạo độ nổi nhẹ */
+  background-color: rgba(255, 255, 255, 0.30); 
+  color: #fff; 
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); 
 }
 .rm-tab:hover:not(.on) {
-  color: #fff; /* Hover nhẹ lên màu trắng nhưng không đổi nền */
+  color: #fff; 
 }
 
 /* --- 3. BOX VIEW MODE (.rm-view-toggle) --- */
@@ -400,7 +400,7 @@
   background: transparent;
   border: none;
   color: #aaa;
-  width: 36px; /* Nút hình vuông */
+  width: 36px; 
   height: 100%;
   border-radius: 6px;
   display: flex;
@@ -411,7 +411,6 @@
   font-size: 16px;
 }
 
-/* ensure toolbar controls don't force horizontal scroll */
 .rm-tabs,
 .rm-view-toggle { min-width: 0; }
 
