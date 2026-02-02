@@ -18,7 +18,7 @@
 
 /* Search trong WorkoutList: đồng bộ với RecordMeal .search */
 .wl-head .search {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   background-color: #1C1C1E;
@@ -27,6 +27,7 @@
   padding: 0 16px;
   color: #aaa;
   max-width: 700px;
+  min-width: 0;
 }
 .wl-head .search i {
   color: #aaa;
@@ -58,6 +59,7 @@
   font-weight: 500;
   border: none;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 .wl-create-btn:hover {
   color: #002c3e;
@@ -119,16 +121,19 @@
     justify-content: center;
     font-size: 14px;
     height: 36px;
+    padding: 0 12px;
+  }
+
+  /* Make sure the search input can shrink on narrow screens and keep readable */
+  .wl-head .search {
+    max-width: none;
+    flex-basis: auto;
   }
 
   .wl-list-title {
-    font-size: 24px;
     padding-top: 40px;
   }
 
-  .wl-list-desc {
-    font-size: 14px;
-  }
 
   .wl-list-frame {
     padding: 16px;
@@ -163,7 +168,6 @@
   }
 
   .wl-list-title {
-    font-size: 22px;
     padding-top: 32px;
   }
 
@@ -181,12 +185,7 @@
 
 @media (max-width: 480px) {
   .wl-list-title {
-    font-size: 20px;
     padding-top: 28px;
-  }
-
-  .wl-list-desc {
-    font-size: 13px;
   }
 
   .wl-list-frame {
@@ -194,8 +193,9 @@
   }
 
   /* tighter item spacing and smaller paddings for very small phones */
-  .wl-item { padding: 10px 10px 8px; }
-  .wl-note { font-size: 14px; }
+  .wl-item { padding: 8px 8px 6px; }
+  .wl-title { font-size: 16px; }
+  .wl-note { font-size: 13px; }
 
   /* metrics grid stacks into two columns for readability */
   .wl-metrics {
@@ -212,6 +212,15 @@
 
   .wl-line { margin: 16px 0; }
   .wl-empty { margin: 0; padding: 10px; }
+}
+@media (max-width: 420px) {
+  .wl-title { font-size: 15px; }
+  .wl-note { font-size: 12px; }
+  .wl-metrics .num { font-size: 16px; }
+  .wl-metrics .lab { font-size: 12px; }
+  .wl-metrics .mcol { padding: 3px 4px; }
+  .wl-item { padding: 8px 6px; }
+  .wl-head .search input { font-size: 13px; }
 }
 .wl-list-frame.dragging {
   cursor: grabbing;

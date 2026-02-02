@@ -584,13 +584,15 @@
     margin: 16px auto 12px;
   }
 
+  /* Keep the overview metrics horizontal on narrower screens */
   .ov-metrics {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
 
   .ov-col + .ov-col {
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.50);
+    border-top: none;
   }
 
   .wc-sets {

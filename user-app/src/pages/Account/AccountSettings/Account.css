@@ -372,13 +372,136 @@
 
 /* ===== Responsive ===== */
 @media (max-width: 960px) {
+  .acc-page {
+    padding: 0 8px;
+  }
   .acc-layout {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 32px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "avatar"
+      "left"
+      "actions";
+    gap: 16px;
   }
 
   .acc-right {
-    align-items: flex-start;
+    display: contents;
+  }
+
+  .acc-left {
+    grid-area: left;
+    max-width: 100%;
+  }
+
+  .acc-avatar-panel {
+    grid-area: avatar;
+    align-items: center;
+    gap: 10px;
+
+    padding: 14px 12px;
+    backdrop-filter: blur(6px);
+  }
+
+  .acc-avatar-large {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 6px;
+  }
+
+  .acc-avatar-btn-main,
+  .acc-avatar-btn-remove {
+    width: auto;            
+    flex: 1 1 0;              
+    min-width: 0;
+    justify-content: center;
+    padding: 6px 8px;       
+    border-radius: 8px;      
+    white-space: nowrap;     
+  }
+
+  .acc-avatar-btn-main {
+    margin: 0;
+  }
+
+  .acc-avatar-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .acc-avatar-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "ava ava"
+      "btn1 btn2";
+    column-gap: 10px;
+    row-gap: 10px;
+    justify-items: stretch;
+    align-items: center;
+  }
+
+  .acc-avatar-large {
+    grid-area: ava;
+    justify-self: center;
+  }
+
+  .acc-avatar-btn-main {
+    grid-area: btn1;
+  }
+
+  .acc-avatar-btn-remove {
+    grid-area: btn2;
+  }
+
+  /* ===== Action bar: đặt dưới "Cài đặt yêu cầu trò chuyện" (cuộn theo trang) ===== */
+  .acc-actions-bar {
+    grid-area: actions;
+
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+
+    margin: 6px 0 22px;
+    padding: 12px;
+
+    width: 100%;
+    box-sizing: border-box;
+
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+
+    backdrop-filter: blur(6px);
+    z-index: auto;
+  }
+
+  .acc-actions-bar .acc-btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  /* ===== Spacing chuẩn mobile ===== */
+  .acc-title-main {
+    font-size: 22px;
+    margin: 0 0 14px;
+  }
+
+  .acc-title-sub {
+    font-size: 16px;
+    margin: 0 0 12px;
+  }
+
+  .acc-field-block {
+    margin-bottom: 18px;
+  }
+
+  .acct-divider {
+    margin: 22px 0;
+  }
+
+  .acc-radio-group {
+    gap: 12px;
   }
 
   .acc-row-2 {
@@ -392,9 +515,5 @@
 
   .acc-input-email {
     width: 100%;
-  }
-
-  .acc-actions-bar {
-    bottom: 16px;   /* gần đáy màn hình mobile hơn */
   }
 }

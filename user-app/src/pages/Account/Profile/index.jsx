@@ -5,6 +5,7 @@ import { getMe } from "../../../api/account";
 import api from "../../../lib/api";
 import BodyProfile from "./BodyProfile";
 import GoalsCustomize from "./GoalsCustomize";
+import { Link } from "react-router-dom";
 
 const fmtDate = (iso) => {
   if (!iso) return "xx/xx/xxxx";
@@ -72,7 +73,7 @@ export default function Profile() {
             <div className="pf-join">Đã tham gia từ {joinDate}</div>
           </div>
         </div>
-        <a type="button" className="pf-cta" onClick={() => nav("/tai-khoan/tai-khoan")}>Đi tới trang chỉnh sửa tài khoản</a>
+        <Link className="pf-cta" to="/tai-khoan/tai-khoan">Đi tới trang chỉnh sửa tài khoản</Link>
       </div>
 
       <div className="pf-body">

@@ -440,7 +440,7 @@ export default function WorkoutCreate() {
         </div>
       </div>
 
-      <div className="wc-sticky-actions" aria-hidden="false">
+      {/* <div className="wc-sticky-actions" aria-hidden="false">
         <button type="button" className="wc-sticky-back" onClick={() => nav(-1)}>
           <i className="fa-solid fa-arrow-left-long"></i>
           <span>Quay lại</span>
@@ -448,7 +448,7 @@ export default function WorkoutCreate() {
         <button type="button" className="wc-sticky-main" onClick={onSave}>
           {editingId ? "Cập nhật" : "Tạo lịch"}
         </button>
-      </div>
+      </div> */}
 
       {pickerOpen && (
         <div

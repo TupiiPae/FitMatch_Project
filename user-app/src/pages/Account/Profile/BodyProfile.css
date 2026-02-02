@@ -1009,90 +1009,136 @@
 }
 
 
-/* Responsive */
+/* ================== RESPONSIVE (BodyProfile) ================== */
 
+/* Tablet & Mobile */
+@media (max-width: 960px) {
+  /* Chiều cao / cân nặng / bodyfat / BMI: 4 -> 2 cột */
+  .bp-row-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Grid ảnh: 4 -> 3 cột */
+  .bp-progress-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Actions bar giống Account: nằm dưới section, KHÔNG fixed */
+  .bp-actions {
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+
+    margin: 10px 0 22px;
+    padding: 12px;
+
+    width: 100%;
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: stretch;
+
+    backdrop-filter: blur(6px);
+  }
+
+  .bp-actions .bp-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    justify-content: center;
+  }
+}
+
+/* Modal ảnh: 2 cột -> 1 cột */
 @media (max-width: 768px) {
   .bp-photo-layout {
     grid-template-columns: 1fr;
   }
 }
 
-
+/* Mobile */
 @media (max-width: 640px) {
   .bp-page {
     padding: 0 8px;
   }
 
+  .bp-title-main {
+    font-size: 22px;
+    margin: 0 0 12px;
+  }
+
+  .gc-title-sub {
+    font-size: 16px;
+    margin: 0 0 10px;
+  }
+
+  .bp-title-sub {
+    font-size: 16px;
+    margin: 0 0 10px;
+  }
+
+  /* 2 cột -> 1 cột */
   .bp-row-2,
   .bp-row-4 {
     grid-template-columns: 1fr;
   }
 
+  /* Header ảnh: tabs + nút thêm ảnh xếp dọc */
   .bp-progress-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 10px;
   }
 
-  .bp-modal-card {
-    width: calc(100% - 24px);
+  /* Tabs scroll ngang */
+  .bp-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    white-space: nowrap;
+  }
+  .bp-tabs::-webkit-scrollbar {
+    display: none;
   }
 
-  .bp-modal-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .bp-modal-actions {
-    flex-direction: column-reverse;
-  }
-
-  .bp-modal-actions .bp-btn {
+  /* Nút thêm ảnh full width */
+  .bp-add-btn {
     width: 100%;
     justify-content: center;
+    min-height: 40px;
   }
 
-  .bp-photo-form {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* ===== Responsive ===== */
-
-@media (max-width: 960px) {
-  .bp-row-4 {
+  /* Grid ảnh: 3 -> 2 cột */
+  .bp-progress-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
-@media (max-width: 640px) {
-  .bp-page {
-    padding: 0 8px;
-  }
-
-  .bp-row-2,
-  .bp-row-4 {
-    grid-template-columns: 1fr;
-  }
-
-  .bp-progress-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
+  /* Modal mục tiêu */
   .bp-modal-card {
     width: calc(100% - 24px);
   }
-
   .bp-modal-grid {
     grid-template-columns: 1fr;
   }
-
   .bp-modal-actions {
     flex-direction: column-reverse;
+    gap: 10px;
   }
-
   .bp-modal-actions .bp-btn {
     width: 100%;
+    min-height: 44px;
     justify-content: center;
+  }
+}
+
+/* Mobile nhỏ */
+@media (max-width: 420px) {
+  .bp-progress-list {
+    grid-template-columns: 1fr;
   }
 }

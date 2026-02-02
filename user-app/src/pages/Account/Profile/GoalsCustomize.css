@@ -1,11 +1,10 @@
-/* Trang Tùy chỉnh mục tiêu – dark theme giống BodyProfile */
 .gc-page {
+  --goal-frame-max: 920px;
   padding: 0 12px;
   color: #e5e7eb;
   font-size: 14px;
 }
 
-/* Sections & titles */
 .gc-section + .gc-section {
   margin-top: 32px;
 }
@@ -22,72 +21,73 @@
   margin: 0 0 14px;
 }
 
-/* Giới hạn bề rộng khối KPI */
-.gc-page {
-  --goal-frame-max: 920px;
-}
-
-/* Khung KPI Calo + Macro – giống khung bảng ở BodyProfile */
-.gc-page .goal-frame {
-  border: 1px solid #1f2937;
-  border-radius: 10px;
-  padding: 12px 16px;
-  background: #020617;
+.goal-frame {
   margin: 0 auto 14px;
   max-width: var(--goal-frame-max);
+  border: 0;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
 }
 
-/* 4 phần tử căn đều – grid 4 cột, canh giữa từng ô */
-.gc-page .goal-row-center {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  justify-items: center;
+.goal-row-center {
+  display: flex;
   align-items: center;
-  gap: 24px;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+  flex-wrap: nowrap;
 }
 
-/* Calo mục tiêu – box nhỏ, tối đồng bộ BodyProfile */
-.gc-page .kpi-cal {
-  width: 200px;
-  height: 92px;
-  background: #020617;
-  border-radius: 10px;
-  border: 1px solid #4b5563;
+.kpi-cal {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  text-align: center;
+  width: auto;
+  height: auto;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  flex: 0 0 auto;
+  min-width: 110px;
 }
 
-.gc-page .cal-val {
-  font-size: 22px;
-  font-weight: 700;
+.cal-val {
+  font-size: 28px;
+  font-weight: 800;
   line-height: 1;
+  letter-spacing: 0.2px;
 }
 
-.gc-page .cal-sub {
+.cal-sub {
   font-size: 12px;
   color: #9ca3af;
-  margin-top: 4px;
+  margin-top: 6px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
 }
 
-/* Macro ring */
-.gc-page .kpi-macro {
+.kpi-macro {
   display: grid;
   place-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-width: 78px;
 }
 
-.gc-page .kpi-label {
-  font-size: 14px;
+.kpi-label {
+  font-size: 12px;
   font-weight: 600;
   color: #f9fafb;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  opacity: 0.95;
 }
 
-/* Vòng tròn macro */
-.gc-page .ring {
-  --size: 70px;
+.ring {
+  --size: 68px;
   --thick: 10px;
   width: var(--size);
   height: var(--size);
@@ -101,8 +101,7 @@
   );
 }
 
-/* Mặt nạ trong */
-.gc-page .ring::after {
+.ring::after {
   content: "";
   position: absolute;
   inset: var(--thick);
@@ -111,192 +110,306 @@
   z-index: 0;
 }
 
-/* Số % ở giữa – luôn trên cùng */
-.gc-page .ring-text {
+.ring-text {
   position: relative;
   z-index: 1;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   color: #f9fafb;
   line-height: 1;
   pointer-events: none;
 }
 
-/* Tone màu theo loại */
-.gc-page .tone-prot .ring {
+.tone-prot .ring {
   --tone: #ff4602;
-} /* đạm */
-.gc-page .tone-carb .ring {
-  --tone: #6c63ff;
-} /* carb */
-.gc-page .tone-fat .ring {
-  --tone: #a1a100;
-} /* béo */
+}
 
-/* Fallback class phần trăm (nếu var(--p) không ăn) */
-.gc-page .ring.pct-0 {
+.tone-carb .ring {
+  --tone: #6c63ff;
+}
+
+.tone-fat .ring {
+  --tone: #a1a100;
+}
+
+.ring.pct-0 {
   background: conic-gradient(var(--tone, #22c55e) 0%, #1f2937 0);
 }
-.gc-page .ring.pct-10 {
+.ring.pct-10 {
   background: conic-gradient(var(--tone, #22c55e) 10%, #1f2937 0);
 }
-.gc-page .ring.pct-20 {
+.ring.pct-20 {
   background: conic-gradient(var(--tone, #22c55e) 20%, #1f2937 0);
 }
-.gc-page .ring.pct-30 {
+.ring.pct-30 {
   background: conic-gradient(var(--tone, #22c55e) 30%, #1f2937 0);
 }
-.gc-page .ring.pct-40 {
+.ring.pct-40 {
   background: conic-gradient(var(--tone, #22c55e) 40%, #1f2937 0);
 }
-.gc-page .ring.pct-50 {
+.ring.pct-50 {
   background: conic-gradient(var(--tone, #22c55e) 50%, #1f2937 0);
 }
-.gc-page .ring.pct-60 {
+.ring.pct-60 {
   background: conic-gradient(var(--tone, #22c55e) 60%, #1f2937 0);
 }
-.gc-page .ring.pct-70 {
+.ring.pct-70 {
   background: conic-gradient(var(--tone, #22c55e) 70%, #1f2937 0);
 }
-.gc-page .ring.pct-80 {
+.ring.pct-80 {
   background: conic-gradient(var(--tone, #22c55e) 80%, #1f2937 0);
 }
-.gc-page .ring.pct-90 {
+.ring.pct-90 {
   background: conic-gradient(var(--tone, #22c55e) 90%, #1f2937 0);
 }
-.gc-page .ring.pct-100 {
+.ring.pct-100 {
   background: conic-gradient(var(--tone, #22c55e) 100%, #1f2937 0);
 }
 
-/* BMR/TDEE – khung giống bảng trong BodyProfile */
-.gc-page .goal-facts {
+.goal-facts {
   border: 1px solid #1f2937;
   border-radius: 10px;
   overflow: hidden;
   background: #020617;
-  margin-top: 12px;
+  margin: 12px auto 0;
+  max-width: var(--goal-frame-max);
 }
 
-.gc-page .goal-facts.filled .fact-row {
+.goal-facts.filled .fact-row {
   background: #020617;
   border-bottom: 1px solid #1f2937;
 }
 
-.gc-page .goal-facts.filled .fact-row + .fact-row {
+.goal-facts.filled .fact-row + .fact-row {
   border-top: 1px solid #1f2937;
 }
 
-.gc-page .fact-row {
+.fact-row {
   display: grid;
   grid-template-columns: 1fr auto;
-  padding: 8px 10px;
+  padding: 10px 12px;
+  align-items: center;
+  gap: 12px;
 }
 
-.gc-page .fact-row span {
+.fact-row span {
   color: #e5e7eb;
   font-size: 14px;
 }
 
-.gc-page .fact-row strong {
-  font-weight: 700;
+.fact-row strong {
+  font-weight: 800;
+  font-size: 16px;
 }
 
-/* Accordion – dark theme */
-.gc-page .goal-acc {
+.goal-acc {
   border: 1px solid #1f2937;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   background: #020617;
+  max-width: var(--goal-frame-max);
 }
 
-.gc-page .acc-head {
-  background: #111827;
-  padding: 10px 12px;
-  font-weight: 700;
-  border-bottom: 1px solid #1f2937;
-}
-
-.gc-page .acc-row {
+.acc-row {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: #020617;
   border: 0;
   cursor: pointer;
   border-top: 1px solid #1f2937;
   font-size: 14px;
   color: #e5e7eb;
+  gap: 10px;
 }
 
-.gc-page .acc-row:hover {
+.acc-row:hover {
   background: #111827;
 }
 
-.gc-page .acc-row .chev {
+.acc-row .chev {
   transition: transform 0.2s ease;
   color: #9ca3af;
+  font-weight: 700;
 }
 
-.gc-page .acc-row.is-open .chev {
+.acc-row.is-open .chev {
   transform: rotate(90deg);
 }
 
-.gc-page .acc-panel {
-  padding: 12px;
+.acc-panel {
+  padding: 12px 14px 14px;
   border-top: 1px dashed #4b5563;
   background: #020617;
 }
 
-/* Nút trong accordion – đồng bộ style nút BodyProfile */
-.gc-page .btn-success {
+.pf-form-5 {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.pf-form-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pf-form-cell label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.pf-form-cell input,
+.pf-form-cell select {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #f9fafb;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pf-form-cell input:hover,
+.pf-form-cell select:hover {
+  border-color: #ef4444;
+}
+
+.pf-form-cell input:focus,
+.pf-form-cell select:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45);
+}
+
+.btn-success {
+  width: 100%;
   background: #f00519;
   color: #ffffff;
   border: 0;
   border-radius: 999px;
-  padding: 8px 16px;
+  padding: 10px 16px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease,
-    color 0.15s ease, transform 0.05s ease;
+  transition: background-color 0.15s ease, transform 0.05s ease;
 }
 
-.gc-page .btn-success:active {
+.btn-success:active {
   transform: translateY(1px);
 }
 
-.gc-page .btn-success:hover:not(:disabled) {
+.btn-success:hover:not(:disabled) {
   background: #ef4444;
-  border-color: #ef4444;
 }
 
-.gc-page .btn-success:disabled {
+.btn-success:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .gc-page .goal-row-center {
+@media (max-width: 960px) {
+  .goal-row-center {
+    gap: 14px;
+  }
+
+  .kpi-cal {
+    min-width: 96px;
+  }
+
+  .cal-val {
+    font-size: 26px;
+  }
+
+  .ring {
+    --size: 62px;
+    --thick: 10px;
+  }
+
+  .pf-form-5 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
+  }
+
+  .pf-form-cell:last-child {
+    grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 640px) {
   .gc-page {
-    padding: 0 8px;
+    padding: 0 8px 20px;
   }
 
-  .gc-page .goal-row-center {
+  .gc-title-main {
+    font-size: 22px;
+    margin: 0 0 12px;
+  }
+
+  .gc-title-sub {
+    font-size: 16px;
+    margin: 0 0 12px;
+  }
+
+  .goal-row-center {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 10px;
+    padding-top: 10px;
+  }
+
+  .goal-row-center::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kpi-cal,
+  .kpi-macro {
+    flex: 0 0 auto;
+  }
+
+  .cal-val {
+    font-size: 24px;
+  }
+
+  .cal-sub {
+    font-size: 11px;
+  }
+
+  .ring {
+    --size: 58px;
+    --thick: 9px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+  }
+
+  .fact-row {
+    padding: 10px 12px;
+  }
+
+  .pf-form-5 {
     grid-template-columns: 1fr;
-    gap: 16px;
   }
 
-  .gc-page .kpi-cal {
-    width: 100%;
-    max-width: 320px;
+  .pf-form-cell:last-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .ring {
+    --size: 54px;
+    --thick: 9px;
+  }
+
+  .cal-val {
+    font-size: 22px;
   }
 }

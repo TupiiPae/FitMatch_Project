@@ -327,19 +327,95 @@
   .acc-page .pf-body {
     grid-template-columns: 1fr;
   }
+
+  /* SIDEBAR -> TAB NGANG (SCROLL) + STICKY */
   .acc-page .pf-side {
-    position: static;
-    padding-right: 0;
+    position: sticky;
+    top: calc(var(--nav-size) + 10px);
+    z-index: 30;
+
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px 10px;
+    margin: 0 0 14px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    border: 1px solid #1f2937;
+    border-radius: 8px;
+    background: rgba(2, 6, 23, 0.88);
+    backdrop-filter: blur(6px);
+    -webkit-overflow-scrolling: touch;
+
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
   }
+
+  /* Ẩn title nhóm trên mobile để bar gọn và đúng “tab ngang” */
+  .acc-page .pf-side-title {
+    display: none;
+  }
+
+  /* Item -> pill chip */
+  .acc-page .pf-side-item {
+    width: auto;
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 10px 14px;
+    margin: 0;
+
+    border-radius: 999px;
+    border: 1px solid #374151;
+    background: rgba(15, 23, 42, 0.6);
+
+    font-size: 14px;
+    line-height: 1;
+    white-space: nowrap;
+
+    scroll-snap-align: start;
+
+    color: #e5e7eb;
+    border-right: 0;
+  }
+
+  .acc-page .pf-side-item:hover,
+  .acc-page .pf-side-item:focus-visible {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: rgba(239, 68, 68, 0.55);
+  }
+
+  .acc-page .pf-side-item.is-active {
+    background: rgba(240, 5, 25, 0.16);
+    border-color: var(--nav-accent);
+    color: #fff;
+    font-weight: 700;
+  }
+
+  /* Ẩn scrollbar (vẫn scroll được) */
+  .acc-page .pf-side::-webkit-scrollbar {
+    height: 0;
+  }
+
+  /* CONTENT */
   .acc-page .pf-content {
     border-left: none;
     padding-left: 0;
-    margin-top: 8px;
-  }
-  .acc-page .pf-form-5 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 0;
+    min-width: 0;
   }
 }
+
 @media (max-width: 640px) {
   .acc-page.pf-wrap {
     margin: 20px auto 0 auto;
@@ -372,12 +448,14 @@
   }
 
   .acc-page .pf-side {
-    margin-bottom: 16px;
+    padding: 10px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.50);
   }
 
   .acc-page .pf-side-item {
-    font-size: 14px;
-    padding: 10px 0 10px 12px;
+    padding: 10px 12px;
+    font-size: 13px;
   }
 
   .acc-page .pf-content {
