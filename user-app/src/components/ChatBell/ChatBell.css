@@ -45,6 +45,11 @@
   border: 2px solid var(--bg-black, #050505);
 }
 
+.cnb-pop,
+.cnb-pop *{
+  box-sizing: border-box;
+}
+
 .cnb-pop{
   position: absolute;
   top: calc(100% + 10px);
@@ -231,3 +236,24 @@
 }
 
 .cnb-loadmore i{ color: var(--nav-accent, #E31C25); }
+
+@media (max-width: 560px){
+  .cnb-pop{
+    position: fixed;
+    top: 58px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+    z-index: 9999;
+  }
+
+  .cnb-pop::after{
+    display: none;
+  }
+
+  .cnb-list{
+    max-height: calc(100vh - 170px);
+    overscroll-behavior: contain;
+  }
+}

@@ -47,6 +47,11 @@
   border: 2px solid var(--bg-black, #050505);
 }
 
+.noti-pop,
+.noti-pop *{
+  box-sizing: border-box;
+}
+
 .noti-pop {
   position: absolute;
   top: calc(100% + 10px);
@@ -221,3 +226,24 @@
 }
 
 .noti-loadmore:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 560px){
+  .noti-pop{
+    position: fixed;
+    top: 58px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+    z-index: 9999;
+  }
+
+  .noti-pop::after{
+    display: none;
+  }
+
+  .noti-list{
+    max-height: calc(100vh - 170px);
+    overscroll-behavior: contain;
+  }
+}

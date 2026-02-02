@@ -629,7 +629,6 @@ body.modal-open {
     padding-left: 0;
     margin-bottom: 2px;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
@@ -639,7 +638,6 @@ body.modal-open {
     padding-left: 0;
     white-space: normal;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
