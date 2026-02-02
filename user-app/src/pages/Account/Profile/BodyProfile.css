@@ -1094,20 +1094,28 @@
   /* Header ảnh: tabs + nút thêm ảnh xếp dọc */
   .bp-progress-header {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
     gap: 10px;
   }
 
-  /* Tabs scroll ngang */
+  /* Tabs: center on small screens, allow horizontal scroll if needed */
   .bp-tabs {
-    max-width: 100%;
+    display: flex;
+    justify-content: center;
+    width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     white-space: nowrap;
+
   }
   .bp-tabs::-webkit-scrollbar {
     display: none;
+  }
+  .bp-tab {
+    width: 100%;
+    font-size: 13px;
+    font-weight: 500;
   }
 
   /* Nút thêm ảnh full width */
@@ -1144,5 +1152,98 @@
 @media (max-width: 420px) {
   .bp-progress-list {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .bp-modal-card.bp-photo-modal-card{
+    width: calc(100% - 24px);
+    min-width: 0;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bp-photo-img-full{
+    max-height: 320px;
+  }
+}
+
+@media (max-width: 640px) {
+  .bp-modal-card.bp-photo-modal-card{
+    padding: 14px 14px 12px;
+    border-radius: 10px;
+  }
+
+  .bp-photo-left{
+    min-height: 220px;
+  }
+
+  .bp-photo-dropzone{
+    padding: 12px;
+  }
+
+  .bp-photo-upload-icon i{
+    font-size: 84px;
+  }
+
+  .bp-photo-tabs{
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .modal-bp-tab{
+    padding: 7px 4px;
+    font-size: 12px;
+  }
+
+  .bp-photo-caption-counter{
+    right: 6px;
+    bottom: 6px;
+  }
+
+  .bp-modal-actions.bp-photo-actions{
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .bp-modal-actions.bp-photo-actions .bp-btn{
+    flex: 1 1 0;
+    min-width: 0;
+    height: 40px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .bp-modal-actions.bp-photo-actions .bp-photo-delete{
+    min-width: 0;
+  }
+
+  .bp-modal-actions.bp-photo-actions .bp-photo-actions-right{
+    margin-left: 0;
+    display: flex;
+    gap: 8px;
+    flex: 2 1 0;
+  }
+
+  .bp-modal-actions.bp-photo-actions .bp-photo-actions-right .bp-btn{
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  @supports (display: contents) {
+    .bp-modal-actions.bp-photo-actions .bp-photo-actions-right{
+      display: contents;
+    }
+  }
+}
+
+@media (max-width: 420px) {
+  .bp-modal-actions.bp-photo-actions .bp-btn{
+    height: 38px;
+    padding: 0 8px;
+    font-size: 12px;
   }
 }
