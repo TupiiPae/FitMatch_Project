@@ -165,7 +165,7 @@ export default function App() {
           {/* Link "Tạo món ăn với AI" từ navbar */}
           <Route path="/dinh-duong/tao-mon-an-ai" element={<TaoMonAI />} />
           {/* Link "Tính Calo AI" từ navbar */}
-          <Route path="/dinh-duong/tinh-calo-ai" element={<TinhCaloAI />} />
+          <Route path="/dinh-duong/tinh-calo-ai" element={<Navigate to="/tin-nhan?ai=1" replace />} />
           <Route  path="/dinh-duong/thuc-don-goi-y" element={<SuggestMenuList  />} />
           <Route path="/dinh-duong/thuc-don-goi-y/chi-tiet/:id" element={<SuggestMenuDetail />} />
 

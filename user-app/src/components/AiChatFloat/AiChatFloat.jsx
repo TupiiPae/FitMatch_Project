@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useLocation } from "react-router-dom";
 import AiChatBox from "../../pages/Chat/AiChatBox.jsx";
 import "./AiChatFloat.css";
 
@@ -11,9 +12,18 @@ export default function AiChatFloat({ meId }) {
     h: Math.round(window.visualViewport?.height || window.innerHeight),
   }));
 
-  const canShow = !!myId;
+  const loc = useLocation();
+  const pathname = String(loc?.pathname || "");
+  const hideOnMessages = pathname === "/tin-nhan" || pathname.startsWith("/tin-nhan/");
+
+  const canShow = !!myId && !hideOnMessages;
+
   const close = () => setOpen(false);
   const toggle = () => setOpen((v) => !v);
+
+  useEffect(() => {
+    if (hideOnMessages) setOpen(false);
+  }, [hideOnMessages]);
 
   useEffect(() => {
     if (!open) return;

@@ -51,6 +51,15 @@ function useQueryUserId() {
   }, [loc.search]);
 }
 
+function useQueryOpenAi() {
+  const loc = useLocation();
+  return useMemo(() => {
+    const sp = new URLSearchParams(loc.search);
+    const v = String(sp.get("ai") || "").toLowerCase().trim();
+    return v === "1" || v === "true" || v === "ai";
+  }, [loc.search]);
+}
+
 const normType = (t) => String(t || "").toLowerCase().trim();
 const isDmConv = (c, meId = "") => {
   const t = normType(c?.type || c?.kind || c?.conversationType);
@@ -161,6 +170,8 @@ const AI_HELP_INTERVAL_MS = 3000;
 export default function Messages() {
   const nav = useNavigate();
   const qUserId = useQueryUserId();
+  const qAi = useQueryOpenAi();
+
   const socket = useMemo(() => getSocket(), []);
 
   const [loading, setLoading] = useState(true);
@@ -435,16 +446,20 @@ export default function Messages() {
       arr.sort((a, b) => new Date(b?.lastMessageAt || 0) - new Date(a?.lastMessageAt || 0));
       setConvs(arr);
 
-      // Không auto-open nếu user vào theo ?u=
-      if (!qUserId) {
+      // Không auto-open nếu user vào theo ?u= hoặc ?ai=1
+      if (!qUserId && !qAi) {
         const pickConv = arr.find((c) => isAllConv(c)) || arr[0] || null;
         if (pickConv?._id) {
           setActiveConvId(String(pickConv._id));
           setActivePeer(pickConv.peer || null);
         } else {
-          // nếu chưa có DM nào -> mở AI
           openAi();
         }
+      }
+
+      // Nếu vào theo ?ai=1 => ép mở AI
+      if (qAi) {
+        openAi();
       }
     } catch (e) {
       console.error(e);
@@ -802,7 +817,7 @@ export default function Messages() {
         }}
       >
         <div className="msg-ava-box msg-ava-ai" aria-hidden="true">
-          <img className="msg-ava" src="/images/ai-avatar.png" alt="FitMatch AI" />
+          <img className="msg-ava" src="/images/ai-chatbot.png" alt="FitMatch AI" />
         </div>
 
         <div className="msg-mid">
@@ -1027,7 +1042,7 @@ export default function Messages() {
                 <div className="msg-right-head">
                   <div className="msg-peer">
                     <div className="msg-peer-ava msg-peer-ava-ai" aria-hidden="true">
-                      <img className="msg-ava" src="/images/ai-avatar.png" alt="FitMatch AI" />
+                      <img className="msg-ava" src="/images/ai-chatbot.png" alt="FitMatch AI" />
                     </div>
                     <div className="msg-peer-text">
                       <div className="msg-peer-name">{AI_TITLE}</div>

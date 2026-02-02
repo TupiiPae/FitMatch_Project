@@ -397,7 +397,7 @@ export default function Navbar({
                           <span>Khám phá các thực đơn lành mạnh</span>
                         </div>
                       </NavLink>
-                      <NavLink to="/dinh-duong/tinh-calo-ai" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
+                      <NavLink to="/tin-nhan?ai=1" className="fm-megamenu-link" role="menuitem" onClick={closeMobileMenu}>
                         <FontAwesomeIcon icon={faCalculator} />
                         <div>
                           <strong>Tính toán Calorie với AI</strong>
