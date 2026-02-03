@@ -133,6 +133,8 @@ export default function TeamConnect({ onLeftRoom }){
   const roomId=room?._id?String(room._id):null;
   const [me,setMe]=useState(null);
 
+  const [chatHeight,setChatHeight]=useState(670);
+
   const [menuOpen,setMenuOpen]=useState(false);
   const [leaveModalOpen,setLeaveModalOpen]=useState(false);
   const [leaving,setLeaving]=useState(false);
@@ -185,6 +187,21 @@ export default function TeamConnect({ onLeftRoom }){
   };
 
   useEffect(()=>{ if(topTab==="setup" && roomId) loadTeamStreaks(roomId); },[topTab,roomId]);
+
+  useEffect(()=>{
+    const calc=()=>{
+      const w=window.innerWidth||0;
+      const h=window.innerHeight||0;
+      if(w<=900){
+        setChatHeight(Math.max(420,h-260));
+      }else{
+        setChatHeight(670);
+      }
+    };
+    calc();
+    window.addEventListener("resize",calc);
+    return()=>window.removeEventListener("resize",calc);
+  },[]);
 
   const myId=me?._id||me?.id||null;
     // ===== USER SIDE MODAL =====
@@ -716,7 +733,7 @@ export default function TeamConnect({ onLeftRoom }){
                 meId={String(myId||"")}
                 members={members}
                 onOpenUser={openUserModal}
-                height={670}
+                height={chatHeight}
               />
             </div>
           ) : (
@@ -895,7 +912,7 @@ export default function TeamConnect({ onLeftRoom }){
             <h3 className="tc-modal-title">Rời khỏi nhóm?</h3>
             <p className="tc-modal-text">Sau khi rời nhóm, bạn sẽ không còn trong phòng kết nối nhóm này nữa.</p>
             <div className="tc-modal-actions">
-              <button type="button" className="tc-btn-ghost" onClick={()=>setLeaveModalOpen(false)} disabled={leaving}>Ở lại</button>
+              <button type="button" className="tc-btn-ghost" onClick={()=>setLeaveModalOpen(false)} disabled={leaving}>Hủy</button>
               <button type="button" className="tc-btn-reject" onClick={handleConfirmLeave} disabled={leaving}>{leaving?"Đang xử lý...":"Rời nhóm"}</button>
             </div>
           </div>

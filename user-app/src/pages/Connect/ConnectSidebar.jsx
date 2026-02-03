@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./Connect.css";
 import TabNearby from "./TabNearby";
@@ -59,6 +59,20 @@ export default function ConnectSidebar(){
     (locationRange !== "any" ? 1 : 0) +
     (ageRange !== "all" ? 1 : 0) +
     (genderFilter !== "all" ? 1 : 0);
+
+const hideMobileTopbar = useMemo(() => {
+  const p = String(loc?.pathname || "");
+  const byPath =
+    p.includes("/team-connect") ||
+    p.includes("/teamconnect") ||
+    p.includes("/connect/team") ||
+    p.includes("/connect/group");
+  return byPath; 
+}, [loc?.pathname]);
+
+  useEffect(() => {
+    if (hideMobileTopbar && filtersOpen) setFiltersOpen(false);
+  }, [hideMobileTopbar, filtersOpen]);
 
   const [navIntent, setNavIntent] = useState(null);
 
@@ -392,40 +406,42 @@ export default function ConnectSidebar(){
         </aside>
 
         <main className="cn-main">
-          <div className="cn-mobile-topbar">
-            <div className="cn-mobile-tabs">
-              <button
-                type="button"
-                className={"cn-mobile-tab" + (activeTab === "nearby" ? " is-active" : "")}
-                onClick={() => {
-                  setActiveTab("nearby");
-                  setShowCreateTeam(false);
-                }}
-              >
-                Tìm kiếm xung quanh
-              </button>
+          {!hideMobileTopbar && (
+            <div className="cn-mobile-topbar">
+              <div className="cn-mobile-tabs">
+                <button
+                  type="button"
+                  className={"cn-mobile-tab" + (activeTab === "nearby" ? " is-active" : "")}
+                  onClick={() => {
+                    setActiveTab("nearby");
+                    setShowCreateTeam(false);
+                 }}
+                >
+                  Tìm kiếm xung quanh
+                </button>
 
-              <button
-                type="button"
-                className={"cn-mobile-tab" + (activeTab === "my-connections" ? " is-active" : "")}
-                disabled={!hasRequestsTabEnabled}
-                title={hasRequestsTabEnabled ? "" : "Tab này sẽ mở khi bạn có lời mời kết nối hoặc tham gia phòng."}
-                onClick={() => {
-                  if (!hasRequestsTabEnabled) return;
-                  setActiveTab("my-connections");
-                  setShowCreateTeam(false);
-                }}
-              >
-                Kết nối của tôi
+                <button
+                  type="button"
+                  className={"cn-mobile-tab" + (activeTab === "my-connections" ? " is-active" : "")}
+                  disabled={!hasRequestsTabEnabled}
+                  title={hasRequestsTabEnabled ? "" : "Tab này sẽ mở khi bạn có lời mời kết nối hoặc tham gia phòng."}
+                  onClick={() => {
+                    if (!hasRequestsTabEnabled) return;
+                    setActiveTab("my-connections");
+                    setShowCreateTeam(false);
+                  }}
+                >
+                  Kết nối của tôi
+                </button>
+              </div>
+
+              <button type="button" className="cn-mobile-filter-btn" onClick={openFilters}>
+                <i className="fa-solid fa-sliders" />
+                <span>Lọc</span>
+                {activeFiltersCount > 0 && <span className="cn-mobile-filter-badge">{activeFiltersCount}</span>}
               </button>
             </div>
-
-            <button type="button" className="cn-mobile-filter-btn" onClick={openFilters}>
-              <i className="fa-solid fa-sliders" />
-              <span>Lọc</span>
-              {activeFiltersCount > 0 && <span className="cn-mobile-filter-badge">{activeFiltersCount}</span>}
-            </button>
-          </div>
+          )}
 
           {activeTab === "nearby" ? (
             showCreateTeam ? (

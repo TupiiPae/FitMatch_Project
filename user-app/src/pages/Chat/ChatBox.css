@@ -265,7 +265,7 @@
    ========================= */
 .fm-chat-compose{padding:12px;border-top:1px solid rgba(255,255,255,.10);background:#020617}
 
-.fm-chat-replybox{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);margin-bottom:10px}
+.fm-chat-replybox{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);margin-bottom:10px}
 .fm-chat-replybox-title{font-weight:500;display:flex;align-items:center;gap:8px}
 .fm-chat-replybox-text{opacity:.8;font-size:12px;margin-top:4px}
 .fm-chat-replybox-close{width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center}

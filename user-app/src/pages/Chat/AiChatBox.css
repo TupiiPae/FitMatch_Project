@@ -6,7 +6,6 @@
 
 /* nền list */
 .fm-ai-chat .fm-chat-list{
-  background: #121212;
   color:#e5e7eb;
 }
 
@@ -92,7 +91,6 @@
 
 /* compose đồng bộ Messages */
 .fm-ai-chat .fm-chat-compose{
-  background:#221010;
   border-top: 1px solid rgba(255,255,255,.08);
 }
 

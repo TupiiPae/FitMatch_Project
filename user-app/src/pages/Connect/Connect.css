@@ -292,7 +292,8 @@
   border-radius: 4px;
   border: 1px solid #4b5563;
   padding: 2px 16px;
-  font-size: 16px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   background: transparent;
   color: #e5e7eb;
@@ -345,7 +346,7 @@
 .cn-request-status-pill{align-self:flex-start;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:500}
 .cn-request-status-pending{background:#221010;color:#fca5a5}
 
-.cn-request-actions{margin-top:8px;display:flex;gap:8px}
+.cn-request-actions{margin-top:8px;display:flex;gap:8px;}
 .cn-request-actions .cn-btn-primary,.cn-request-actions .cn-btn-ghost{min-width:0;flex:1}
 
 .cn-modal-backdrop{
@@ -475,8 +476,7 @@
   .cn-sidebar--desktop{display:none}
   .cn-mobile-topbar{
     display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:10px;border-radius:12px;border:1px solid #1f2937;
-    background:rgba(2,6,23,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:60
-  }
+    background:rgba(2,6,23,.92);backdrop-filter:blur(8px);}
   .cn-mobile-tab,.cn-mobile-filter-btn{height:38px;display:inline-flex;align-items:center}
 }
 

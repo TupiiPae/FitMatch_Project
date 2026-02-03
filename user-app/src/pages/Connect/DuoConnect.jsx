@@ -324,6 +324,22 @@ export default function DuoConnect({ onLeftRoom }) {
     }
   };
 
+    const [vh, setVh] = useState(() =>
+    typeof window !== "undefined" ? window.innerHeight : 800
+  );
+
+  useEffect(() => {
+    const onResize = () => setVh(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const chatHeight = useMemo(() => {
+    const base = Number(vh || 800);
+    const target = base - 240; // chừa header + tabs + padding
+    return Math.max(420, Math.min(674, target));
+  }, [vh]);
+
   if (loading && !room) return (<div className="cn-duo-page"><p className="cn-duo-loading">Đang tải phòng ghép đôi...</p></div>);
   if (!room) return null;
 
@@ -384,7 +400,7 @@ export default function DuoConnect({ onLeftRoom }) {
         )}
         {activeTab === "chat" && (
           <section className="cn-duo-main">
-            <ChatBox conversationId={roomId} meId={myId} members={[slotMe,slotPartner].filter(Boolean)} height={674}/>
+            <ChatBox conversationId={roomId} meId={myId} members={[slotMe,slotPartner].filter(Boolean)} height={chatHeight}/>
           </section>
         )}
       </div>
@@ -399,8 +415,8 @@ export default function DuoConnect({ onLeftRoom }) {
               Nếu muốn ghép đôi lại, hai bạn cần gửi lời mời kết nối mới.
             </p>
             <div className="cn-modal-actions">
-              <button type="button" className="cn-btn-ghost" onClick={handleCloseLeaveModal} disabled={leaving}>Ở lại phòng</button>
-              <button type="button" className="cn-btn-reject" onClick={handleConfirmLeave} disabled={leaving}>{leaving ? "Đang xử lý..." : "Rời khỏi phòng"}</button>
+              <button type="button" className="cn-modal-btn ghost" onClick={handleCloseLeaveModal} disabled={leaving}>Hủy</button>
+              <button type="button" className="cn-modal-btn primary" onClick={handleConfirmLeave} disabled={leaving}>{leaving ? "Đang xử lý..." : "Rời kết nối"}</button>
             </div>
           </div>
         </div>

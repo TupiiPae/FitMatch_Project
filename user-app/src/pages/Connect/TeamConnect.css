@@ -95,7 +95,7 @@
 .tc-streak-refresh:hover{border-color:#4b5563;}
 .tc-streak-refresh:disabled{opacity:.6;cursor:not-allowed;}
 
-.tc-streak-canvas{border:1px solid #F7F8F390;background:rgba(15,23,42,.35);border-radius:4px;padding:12px;}
+.tc-streak-canvas{border:1px solid #F7F8F390;background:rgba(15,23,42,.35);border-radius:4px;padding:12px; overflow:hidden;}
 .tc-streak-inner{position:relative;--pad:18px;}
 .tc-streak-bar{position:absolute;left:var(--pad);right:var(--pad);height:6px;border-radius:999px;background:#1f2937;top:var(--barTop);}
 
@@ -322,7 +322,11 @@ color: #F7F8F3
 .tc-pr-left-name{font-size:13px;font-weight:600;color:#ef4444;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 .tc-pr-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
-.tc-pr-facts.tc-pr-facts{display:grid;grid-template-columns:auto .5fr .4fr auto;gap:70px;}
+.tc-pr-facts.tc-pr-facts{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
 .tc-pr-fact{min-width:0;}
 .tc-pr-k{font-size:11px;color:#9ca3af;font-weight:800;text-transform:none;}
 .tc-pr-v{margin-top:3px;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; text-align: center;}
@@ -488,3 +492,182 @@ color: #F7F8F3
   display:inline-flex;align-items:center;justify-content:center;
   font-size:12px;font-weight:600;line-height:1;color:#fff;background:#ef4444;
 }
+
+@media (max-width:900px){
+  .tc-page{padding:0 0 12px}
+
+  .tc-header{
+    position:sticky;
+    top:0;
+    z-index:70;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:12px;
+    border:1px solid #1f2937;
+    background:rgba(2,6,23,.92);
+    backdrop-filter:blur(8px);
+    align-items:center;
+  }
+  .tc-header-left{display:flex;align-items:center}
+  .tc-badge{font-size:10px;padding:3px 8px}
+  .tc-header-right{display:flex;align-items:center}
+  .tc-more-btn{
+    width:38px;height:38px;
+    border-radius:999px;
+    display:grid;place-items:center;
+    border:1px solid #1f2937;
+    background:rgba(2,6,23,.9);
+    font-size:16px;
+  }
+  .tc-more-btn:hover{background:#111827;color:#f9fafb}
+  .tc-menu{top:44px}
+
+  .tc-box-body{padding:10px 10px 12px}
+  .tc-empty-tab{padding:12px;font-size:12px}
+
+  .tc-top-tabs{
+    padding:6px 10px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .tc-top-tabs::-webkit-scrollbar{display:none}
+  .tc-top-tab{
+    padding:10px 10px;
+    font-size:12px;
+    white-space:nowrap;
+    flex:0 0 auto;
+  }
+  .tc-top-tab.is-active::after{left:8px;right:8px;bottom:-6px}
+  .tc-top-tab-badge{min-width:18px;height:18px;font-size:11px}
+
+  .tc-slots{
+    gap:18px;
+    padding:14px 10px;
+    justify-content:flex-start;
+  }
+  .tc-slot{min-width:140px}
+  .tc-slot-ava{width:46px;height:46px}
+  .tc-slot-role{font-size:11px;padding:2px 7px}
+  .tc-slot-name{font-size:11px}
+
+  .tc-timeline{padding:12px 10px 14px}
+  .tc-streak-head{flex-direction:column;align-items:flex-start}
+  .tc-streak-sub{max-width:100%}
+  .tc-streak-right{width:100%;justify-content:space-between}
+  .tc-streak-range{font-size:10px}
+  .tc-streak-refresh{padding:8px 10px;font-size:11px}
+  .tc-streak-canvas{padding:10px}
+  .tc-streak-inner{--pad:18px}
+  .tc-streak-bar{height:5px}
+  .tc-streak-runner{width:30px;height:30px}
+  .tc-streak-ghost{width:8px;height:8px}
+  .tc-streak-badge{min-width:16px;height:16px;font-size:9px}
+  .tc-streak-flame{width:16px;height:16px}
+  .tc-streak-item{padding:8px}
+  .tc-streak-item img{width:30px;height:30px}
+  .tc-streak-item-name{font-size:11px}
+  .tc-streak-item-meta .pill{font-size:10px;padding:2px 7px}
+
+  .tc-sec2-head{
+    padding:16px 12px;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .tc-head-right{
+    gap:14px;
+    width:100%;
+    justify-content:flex-start;
+    flex-wrap:wrap;
+  }
+  .tc-stat{min-width:auto;text-align:left}
+  .tc-stat-k,.tc-stat-v{font-size:13px}
+
+  .tc-group-row{padding:16px 12px 0;gap:12px}
+  .tc-cover-btn{width:88px;height:88px}
+  .tc-group-name{font-size:16px}
+  .tc-group-actions{width:100%;justify-content:flex-start}
+  .tc-act-btn{padding:8px 10px;font-size:12px}
+  .tc-act-code-text{
+    max-width:220px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:inline-block;
+    vertical-align:bottom;
+  }
+
+  .tc-group-chips{gap:6px;margin-top:8px}
+  .tc-chip{font-size:10px;padding:4px 8px}
+
+  .tc-group-desc{
+    padding:14px 12px 18px;
+    font-size:12px;
+    max-width:100%;
+  }
+
+  .tc-req-tab{padding:14px 6px;gap:4px}
+  .tc-req-title,.tc-req-count{font-size:12px}
+  .tc-req-body{padding:14px 12px 16px}
+  .tc-req-list{gap:12px}
+
+  .tc-pr-head{padding:12px 12px 12px}
+  .tc-pr-body{padding:14px 12px;gap:12px}
+  .tc-pr-foot{padding:12px 12px 12px}
+  .tc-pr-msg{font-size:11px}
+  .tc-pr-msg-name{
+    max-width:180px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:inline-block;
+    vertical-align:bottom;
+  }
+  .tc-rq-btn{min-width:0;height:36px;font-size:13px;padding:0 14px}
+  .tc-pr-left{padding:10px}
+  .tc-pr-facts{gap:12px}
+  .tc-pr-v{font-size:11px}
+}
+
+@media (max-width:740px){
+  .tc-slot{min-width:132px}
+
+  .tc-group-row{flex-direction:column;align-items:flex-start}
+  .tc-cover-btn{width:96px;height:96px}
+
+  .tc-req-tabs{grid-template-columns:1fr}
+  .tc-req-tab:not(:first-child)::before{display:none}
+  .tc-req-tab{
+    flex-direction:row;
+    justify-content:space-between;
+    padding:12px 12px;
+  }
+
+  .tc-streak-right{gap:8px}
+  .tc-streak-refresh{padding:8px 10px}
+}
+
+@media (max-width:480px){
+  .tc-header{padding:8px}
+  .tc-more-btn{width:36px;height:36px}
+  .tc-top-tab{padding:10px 8px;font-size:12px}
+  .tc-slots{gap:12px;padding:12px 8px}
+  .tc-slot{min-width:124px}
+  .tc-slot-ava{width:42px;height:42px}
+  .tc-act-code-text{max-width:170px}
+  .tc-pr-msg-name{max-width:130px}
+}
+
+.tc-sec2-head,
+.tc-group-row,
+.tc-req-body,
+.tc-group-desc,
+.tc-pr-head,
+.tc-pr-body,
+.tc-pr-foot{
+  padding-left: clamp(12px, 4vw, 100px);
+  padding-right: clamp(12px, 4vw, 100px);
+}
+
+.tc-page{ max-width:100%; overflow-x:hidden; }
+.tc-box{ max-width:100%; }
