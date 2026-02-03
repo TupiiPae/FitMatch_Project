@@ -16,15 +16,28 @@ const getScrollY = () =>
   document.body.scrollTop ||
   0;
 
+const isVisibleModal = (el) => {
+  if (!el || typeof window === "undefined") return false;
+  const style = window.getComputedStyle(el);
+  if (!style) return false;
+  if (style.display === "none" || style.visibility === "hidden") return false;
+  if (el.getAttribute("aria-hidden") === "true") return false;
+
+  const r = el.getBoundingClientRect();
+  if ((r.width === 0 && r.height === 0) && el.getClientRects().length === 0) return false;
+
+  return true;
+};
+
 export default function useGlobalModalScrollLock() {
   const stRef = useRef({ locked: false, y: 0 });
 
   useEffect(() => {
     const apply = () => {
-      const hasModal = !!document.querySelector(MODAL_SELECTOR);
+      const nodes = Array.from(document.querySelectorAll(MODAL_SELECTOR));
+      const hasModal = nodes.some(isVisibleModal);
       const st = stRef.current;
 
-      // ===== LOCK =====
       if (hasModal && !st.locked) {
         st.locked = true;
         st.y = getScrollY();
@@ -35,7 +48,6 @@ export default function useGlobalModalScrollLock() {
         const sbw = window.innerWidth - document.documentElement.clientWidth;
         document.body.style.paddingRight = sbw > 0 ? `${sbw}px` : "";
 
-        // Đóng băng body tại vị trí hiện tại (KHÔNG bị nhảy lên top)
         document.body.style.position = "fixed";
         document.body.style.top = `-${st.y}px`;
         document.body.style.left = "0";
@@ -44,7 +56,6 @@ export default function useGlobalModalScrollLock() {
         return;
       }
 
-      // ===== UNLOCK =====
       if (!hasModal && st.locked) {
         st.locked = false;
 
@@ -64,13 +75,11 @@ export default function useGlobalModalScrollLock() {
         return;
       }
 
-      // ===== KEEP LOCKED: update scrollbar padding on resize =====
       if (hasModal && st.locked) {
         const sbw = window.innerWidth - document.documentElement.clientWidth;
         document.body.style.paddingRight = sbw > 0 ? `${sbw}px` : "";
       }
 
-      // ===== NO MODAL =====
       if (!hasModal && !st.locked) {
         document.body.style.paddingRight = "";
       }

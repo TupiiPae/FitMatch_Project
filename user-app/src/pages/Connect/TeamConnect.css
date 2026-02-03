@@ -404,7 +404,7 @@ color: #F7F8F3
 
 /* ===== MODALS (leave) ===== */
 .tc-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:2000;}
-.tc-modal{width:min(560px,calc(100% - 24px));background:#020617;border:1px solid #1f2937;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,.75);padding:16px 16px 14px;}
+.tc-modal{width:min(560px,calc(100% - 24px));background:#020617;border:1px solid #1f2937;border-radius:8px;box-shadow:0 24px 80px rgba(0,0,0,.75);padding:16px 16px 14px;}
 .tc-modal-title{margin:0;font-size:16px;font-weight:600;color:#f9fafb;}
 .tc-modal-text{margin:8px 0 0;font-size:13px;color:#9ca3af;line-height:1.45;}
 .tc-modal-text b {color: #ef4444;}

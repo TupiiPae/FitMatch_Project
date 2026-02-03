@@ -11,6 +11,18 @@ const GENDER_LABELS={all:"Tất cả",male:"Nam",female:"Nữ"};
 const norm=(v)=>(v||"").toString().trim().toLowerCase();
 const areaLabelFromKey=(k)=>k==="same_ward"?"Rất gần bạn":k==="same_district"?"Trong quận của bạn":k==="same_city"?"Cùng thành phố":k==="other"?"Ngoài khu vực":"";
 const getAddrParts=(u)=>{const a=u?.profile?.address||{};return{country:norm(a.country),city:norm(a.city),district:norm(a.district),ward:norm(a.ward)};};
+const LOC_RANGE_LABELS = {
+  any: "Không giới hạn",
+  same_city: "Cùng thành phố",
+  same_district: "Trong quận",
+  same_ward: "Rất gần",
+};
+
+const MODE_LABELS = {
+  one_to_one: "1:1",
+  group: "Nhóm",
+};
+
 
 function computeGroupArea(meAddr, groupLocationLabel){
   const gl=norm(groupLocationLabel);
@@ -97,6 +109,7 @@ export default function TabNearby({
   onCreatedRequest,
   onEnteredRoom,
   onOpenCreateTeam,
+  onOpenFilters,
 }) {
   const nav = useNavigate();
 
@@ -466,6 +479,24 @@ export default function TabNearby({
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+        </div>
+
+        <div className="cn-filter-chips">
+          <button type="button" className="cn-chip cn-chip-sum" onClick={() => onOpenFilters?.()}>
+            <i className="fa-solid fa-link" /> {MODE_LABELS[connectionMode] || "—"}
+          </button>
+
+          <button type="button" className="cn-chip cn-chip-sum" onClick={() => onOpenFilters?.()}>
+            <i className="fa-solid fa-location-dot" /> {LOC_RANGE_LABELS[locationRange] || "—"}
+          </button>
+
+          <button type="button" className="cn-chip cn-chip-sum" onClick={() => onOpenFilters?.()}>
+            <i className="fa-solid fa-cake-candles" /> {AGE_RANGE_LABELS[ageRange] || "—"}
+          </button>
+
+          <button type="button" className="cn-chip cn-chip-sum" onClick={() => onOpenFilters?.()}>
+            <i className="fa-solid fa-venus-mars" /> {GENDER_LABELS[genderFilter] || "—"}
+          </button>
         </div>
 
         {errorMsg && <div className="cn-error"><p>{errorMsg}</p></div>}

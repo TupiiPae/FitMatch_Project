@@ -903,7 +903,7 @@ export default function TeamConnect({ onLeftRoom }){
       )}
 
       {confirm.open && (
-        <div className="tc-modal-backdrop" onClick={closeConfirm}>
+        <div className="tc-modal-backdrop" data-fm-modal="true" onClick={closeConfirm}>
           <div className="tc-modal" onClick={(e)=>e.stopPropagation()}>
             <h3 className="tc-modal-title">{confirm.mode==="accept"?"Duyệt vào nhóm?":"Từ chối yêu cầu?"}</h3>
             <p className="tc-modal-text">

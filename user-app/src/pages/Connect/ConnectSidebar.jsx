@@ -43,7 +43,23 @@ export default function ConnectSidebar(){
   const [showCreateTeam,setShowCreateTeam]=useState(false);
   const [nearbyReloadKey,setNearbyReloadKey]=useState(0);
 
-    // ✅ intent điều hướng từ notification (state/query)
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const openFilters = () => setFiltersOpen(true);
+  const closeFilters = () => setFiltersOpen(false);
+
+  const resetFilters = () => {
+    setLocationRange("any");
+    setAgeRange("all");
+    setGenderFilter("all");
+  };
+
+  const activeFiltersCount =
+    (connectionMode !== "one_to_one" ? 1 : 0) +
+    (locationRange !== "any" ? 1 : 0) +
+    (ageRange !== "all" ? 1 : 0) +
+    (genderFilter !== "all" ? 1 : 0);
+
   const [navIntent, setNavIntent] = useState(null);
 
   const normMode = (m) => {
@@ -297,7 +313,7 @@ export default function ConnectSidebar(){
   return (
     <div className="cn-page">
       <div className="cn-layout">
-        <aside className="cn-sidebar">
+        <aside className="cn-sidebar cn-sidebar--desktop">
           <div className="cn-filters">
             <div className="cn-side-profile">
               <div className="cn-side-avatar">{avatarUrl?<img src={avatarUrl} alt={displayUser.name}/>:<span>{getInitials(displayUser.name)}</span>}</div>
@@ -320,10 +336,10 @@ export default function ConnectSidebar(){
               <button type="button" className="cn-side-link" onClick={()=>nav("/tai-khoan/ho-so")}><span className="cn-side-link-icon"><i className="fa-regular fa-user"/></span><span className="cn-side-link-label">Hồ sơ thể chất của tôi</span></button>
               <button type="button" className="cn-side-link" onClick={()=>nav("/tai-khoan/tai-khoan")}><span className="cn-side-link-icon"><i className="fa-solid fa-gear"/></span><span className="cn-side-link-label">Thông tin của tôi</span></button>
               <hr className="cn-side-divider"/>
-              <button type="button" className={"cn-side-link"+(activeTab==="nearby"?" is-active":"")} onClick={()=>{setActiveTab("nearby");setShowCreateTeam(false);}}>
+              <button type="button" className={"cn-side-link cn-side-link--tab"+(activeTab==="nearby"?" is-active":"")} onClick={()=>{setActiveTab("nearby");setShowCreateTeam(false);}}>
                 <span className="cn-side-link-icon"><i className="fa-solid fa-location-arrow"/></span><span className="cn-side-link-label">Tìm kiếm xung quanh</span>
               </button>
-              <button type="button" className={"cn-side-link"+(activeTab==="my-connections"?" is-active":"")+(!hasRequestsTabEnabled?" is-disabled":"")} disabled={!hasRequestsTabEnabled}
+              <button type="button" className={"cn-side-link cn-side-link--tab"+(activeTab==="my-connections"?" is-active":"")+(!hasRequestsTabEnabled?" is-disabled":"")} disabled={!hasRequestsTabEnabled}
                 title={hasRequestsTabEnabled?"":"Tab này sẽ mở khi bạn có lời mời kết nối hoặc tham gia phòng."}
                 onClick={()=>{if(!hasRequestsTabEnabled)return;setActiveTab("my-connections");setShowCreateTeam(false);}}>
                 <span className="cn-side-link-icon"><i className="fa-solid fa-users"/></span><span className="cn-side-link-label">Kết nối của tôi</span>
@@ -376,9 +392,49 @@ export default function ConnectSidebar(){
         </aside>
 
         <main className="cn-main">
-          {activeTab==="nearby" ? (
+          <div className="cn-mobile-topbar">
+            <div className="cn-mobile-tabs">
+              <button
+                type="button"
+                className={"cn-mobile-tab" + (activeTab === "nearby" ? " is-active" : "")}
+                onClick={() => {
+                  setActiveTab("nearby");
+                  setShowCreateTeam(false);
+                }}
+              >
+                Tìm kiếm xung quanh
+              </button>
+
+              <button
+                type="button"
+                className={"cn-mobile-tab" + (activeTab === "my-connections" ? " is-active" : "")}
+                disabled={!hasRequestsTabEnabled}
+                title={hasRequestsTabEnabled ? "" : "Tab này sẽ mở khi bạn có lời mời kết nối hoặc tham gia phòng."}
+                onClick={() => {
+                  if (!hasRequestsTabEnabled) return;
+                  setActiveTab("my-connections");
+                  setShowCreateTeam(false);
+                }}
+              >
+                Kết nối của tôi
+              </button>
+            </div>
+
+            <button type="button" className="cn-mobile-filter-btn" onClick={openFilters}>
+              <i className="fa-solid fa-sliders" />
+              <span>Lọc</span>
+              {activeFiltersCount > 0 && <span className="cn-mobile-filter-badge">{activeFiltersCount}</span>}
+            </button>
+          </div>
+
+          {activeTab === "nearby" ? (
             showCreateTeam ? (
-              <CreateTeam currentUser={user} hasAddressForConnect={hasAddressForConnect} onClose={closeCreateTeam} onCreated={handleCreatedTeam} />
+              <CreateTeam
+                currentUser={user}
+                hasAddressForConnect={hasAddressForConnect}
+                onClose={closeCreateTeam}
+                onCreated={handleCreatedTeam}
+              />
             ) : (
               <TabNearby
                 key={nearbyReloadKey}
@@ -388,27 +444,205 @@ export default function ConnectSidebar(){
                 ageRange={ageRange}
                 genderFilter={genderFilter}
                 discoverable={discoverable}
-                goalFilter={displayUser.goalLabel||""}
-                onCreatedRequest={()=>setHasRequestsTabEnabled(true)}
+                goalFilter={displayUser.goalLabel || ""}
+                onCreatedRequest={() => setHasRequestsTabEnabled(true)}
                 onEnteredRoom={handleEnteredRoom}
                 onOpenCreateTeam={openCreateTeam}
+                onOpenFilters={openFilters}
               />
             )
           ) : (
-            <TabMyConnections currentUser={user} activeRoomId={activeRoomId} activeRoomType={activeRoomType} onEnteredRoom={handleEnteredRoom} onLeftRoom={handleLeftRoom} navIntent={navIntent} onConsumeNavIntent={() => setNavIntent(null)}/>
+            <TabMyConnections
+              currentUser={user}
+              activeRoomId={activeRoomId}
+              activeRoomType={activeRoomType}
+              onEnteredRoom={handleEnteredRoom}
+              onLeftRoom={handleLeftRoom}
+              navIntent={navIntent}
+              onConsumeNavIntent={() => setNavIntent(null)}
+            />
           )}
         </main>
       </div>
 
+      <div className={"cn-sheet-backdrop" + (filtersOpen ? " is-open" : "")} data-fm-modal={filtersOpen ? "true" : undefined} onClick={closeFilters}>
+        <div className="cn-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal={filtersOpen}>
+          <div className="cn-sheet-handle" />
+          <div className="cn-sheet-head">
+            <div className="cn-sheet-title">Bộ lọc</div>
+            <button type="button" className="cn-sheet-close" onClick={closeFilters}>
+              <i className="fa-solid fa-xmark" />
+            </button>
+          </div>
+
+          <div className="cn-sheet-body">
+            <div className="cn-filters cn-filters--sheet">
+              <div className="cn-side-profile">
+                <div className="cn-side-avatar">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={displayUser.name} />
+                  ) : (
+                    <span>{getInitials(displayUser.name)}</span>
+                  )}
+                </div>
+                <div>
+                  <div className="cn-side-nickname">{displayUser.name}</div>
+                  <div className="cn-side-discover">
+                    <span className="cn-side-discover-label">Cho phép mọi người tìm kiếm bạn</span>
+                    <button
+                      type="button"
+                      className={"cn-switch" + (discoverable ? " is-on" : "")}
+                      onClick={handleToggleDiscoverable}
+                      disabled={loading || updatingDiscoverable}
+                    >
+                      <span className="cn-switch-knob" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {hasAddressForConnect ? (
+                <div className="cn-side-sub">
+                  {discoverable
+                    ? "Bạn đang được hiển thị và có thể tìm kiếm trên cộng đồng."
+                    : "Bật chức năng kết nối để hồ sơ của bạn có thể được tìm kiếm trên cộng đồng."}
+                </div>
+              ) : (
+                <div className="cn-side-sub">
+                  Bạn cần nhập địa chỉ trong <strong>Thông tin tài khoản</strong> để dùng chức năng kết nối xung quanh.
+                </div>
+              )}
+
+              <nav className="cn-side-menu">
+                <button type="button" className="cn-side-link" onClick={() => nav("/tai-khoan/ho-so")}>
+                  <span className="cn-side-link-icon"><i className="fa-regular fa-user" /></span>
+                  <span className="cn-side-link-label">Hồ sơ thể chất của tôi</span>
+                </button>
+                <button type="button" className="cn-side-link" onClick={() => nav("/tai-khoan/tai-khoan")}>
+                  <span className="cn-side-link-icon"><i className="fa-solid fa-gear" /></span>
+                  <span className="cn-side-link-label">Thông tin của tôi</span>
+                </button>
+                <hr className="cn-side-divider" />
+                <button
+                  type="button"
+                  className={"cn-side-link cn-side-link--tab" + (activeTab === "nearby" ? " is-active" : "")}
+                  onClick={() => {
+                    setActiveTab("nearby");
+                    setShowCreateTeam(false);
+                    closeFilters();
+                  }}
+                >
+                  <span className="cn-side-link-icon"><i className="fa-solid fa-location-arrow" /></span>
+                  <span className="cn-side-link-label">Tìm kiếm xung quanh</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    "cn-side-link cn-side-link--tab" +
+                    (activeTab === "my-connections" ? " is-active" : "") +
+                    (!hasRequestsTabEnabled ? " is-disabled" : "")
+                  }
+                  disabled={!hasRequestsTabEnabled}
+                  title={hasRequestsTabEnabled ? "" : "Tab này sẽ mở khi bạn có lời mời kết nối hoặc tham gia phòng."}
+                  onClick={() => {
+                    if (!hasRequestsTabEnabled) return;
+                    setActiveTab("my-connections");
+                    setShowCreateTeam(false);
+                    closeFilters();
+                  }}
+                >
+                  <span className="cn-side-link-icon"><i className="fa-solid fa-users" /></span>
+                  <span className="cn-side-link-label">Kết nối của tôi</span>
+                </button>
+              </nav>
+
+              <div className="cn-side-section">
+                <h3 className="cn-side-section-title">Lọc</h3>
+
+                <div className="cn-side-field">
+                  <div className="cn-filter-label">Chế độ kết nối</div>
+                  <div className="cn-connection-mode">
+                    <button
+                      type="button"
+                      className={"cn-toggle-btn" + (connectionMode === "one_to_one" ? " is-active" : "")}
+                      onClick={() => setConnectionMode("one_to_one")}
+                    >
+                      1:1
+                    </button>
+                    <button
+                      type="button"
+                      className={"cn-toggle-btn" + (connectionMode === "group" ? " is-active" : "")}
+                      onClick={() => setConnectionMode("group")}
+                    >
+                      Nhóm
+                    </button>
+                  </div>
+                </div>
+
+                <div className="cn-side-field">
+                  <div className="cn-filter-label">Vị trí</div>
+                  <select className="cn-location-select" value={locationRange} onChange={(e) => setLocationRange(e.target.value)}>
+                    {LOCATION_RANGE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                  <p className="cn-filter-hint">Vị trí được lấy từ địa chỉ trong hồ sơ của bạn.</p>
+                </div>
+
+                <div className="cn-side-field">
+                  <div className="cn-filter-label">Độ tuổi hiển thị</div>
+                  <select className="cn-location-select cn-age-select" value={ageRange} onChange={(e) => setAgeRange(e.target.value)}>
+                    {AGE_RANGE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="cn-side-field">
+                  <div className="cn-filter-label">Giới tính hiển thị</div>
+                  <div className="cn-chip-group">
+                    <button type="button" className={"cn-chip cn-chip-filter" + (genderFilter === "all" ? " is-active" : "")} onClick={() => setGenderFilter("all")}>Tất cả</button>
+                    <button type="button" className={"cn-chip cn-chip-filter" + (genderFilter === "male" ? " is-active" : "")} onClick={() => setGenderFilter("male")}>Nam</button>
+                    <button type="button" className={"cn-chip cn-chip-filter" + (genderFilter === "female" ? " is-active" : "")} onClick={() => setGenderFilter("female")}>Nữ</button>
+                  </div>
+                  <p className="cn-filter-hint">Giới tính của bạn: {getGenderLabel(displayUser.gender)}</p>
+                </div>
+
+                <div className="cn-side-field cn-side-goal-highlight">
+                  <div className="cn-side-goal-header">
+                    <i className="fa-solid fa-bullseye" />
+                    <span className="cn-side-goal-label">Mục tiêu tập luyện hiện tại</span>
+                  </div>
+                  <div className="cn-goal-chip-wrap">
+                    <span className="cn-chip-static">{displayUser.goalLabel || "Chưa thiết lập mục tiêu"}</span>
+                  </div>
+                  <p className="cn-goal-hint">Thay đổi trong <strong>Hồ sơ thể chất</strong> để hệ thống gợi ý bạn tập phù hợp hơn.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="cn-sheet-actions">
+            <button type="button" className="cn-btn-ghost" onClick={resetFilters}>Đặt lại</button>
+            <button type="button" className="cn-btn-primary" onClick={closeFilters}>Áp dụng</button>
+          </div>
+        </div>
+      </div>
+
       {showConfirmModal && (
-        <div className="cn-modal-backdrop" onClick={handleCancelEnable}>
-          <div className="cn-modal" onClick={(e)=>e.stopPropagation()}>
+        <div className="cn-modal-backdrop" data-fm-modal="true" onClick={handleCancelEnable}>
+          <div className="cn-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="cn-modal-title">Cho phép mọi người tìm kiếm bạn?</h3>
-            <p className="cn-modal-text">Khi bật tính năng này, hồ sơ của bạn sẽ xuất hiện trong mục <strong>"Tìm kiếm xung quanh"</strong> để mọi người có thể gửi lời mời kết nối hoặc mời bạn tham gia nhóm tập luyện.</p>
-            <p className="cn-modal-text cn-modal-text-small">Bạn có thể tắt bất cứ lúc nào. Thông tin liên hệ nhạy cảm (email, mật khẩu, ...) sẽ không bị hiển thị công khai.</p>
+            <p className="cn-modal-text">
+              Khi bật tính năng này, hồ sơ của bạn sẽ xuất hiện trong mục <strong>"Tìm kiếm xung quanh"</strong> để mọi người có thể gửi lời mời kết nối hoặc mời bạn tham gia nhóm tập luyện.
+            </p>
+            <p className="cn-modal-text cn-modal-text-small">
+              Bạn có thể tắt bất cứ lúc nào. Thông tin liên hệ nhạy cảm (email, mật khẩu, ...) sẽ không bị hiển thị công khai.
+            </p>
             <div className="cn-modal-actions">
-              <button type="button" className="cn-btn-ghost" onClick={handleCancelEnable} disabled={updatingDiscoverable}>Để sau</button>
-              <button type="button" className="cn-btn-primary" onClick={handleConfirmEnable} disabled={updatingDiscoverable}>Bật hiển thị</button>
+              <button type="button" className="cn-modal-btn ghost" onClick={handleCancelEnable} disabled={updatingDiscoverable}>Hủy</button>
+              <button type="button" className="cn-modal-btn primary" onClick={handleConfirmEnable} disabled={updatingDiscoverable}>Bật hiển thị</button>
             </div>
           </div>
         </div>
