@@ -440,7 +440,7 @@
 .msg-chat .fm-chat-compose{
   flex:0 0 auto;
   background: transparent;
-  padding:12px 14px;
+  padding:10px 14px;
 }
 .msg-chat .fm-chat-input{
   border:1px solid rgba(255,255,255,.08);
