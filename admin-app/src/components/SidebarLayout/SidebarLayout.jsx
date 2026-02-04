@@ -217,6 +217,7 @@ const buildManagementSections = (rawLevel) => {
     icon: <i className="fa-solid fa-star" />,
     items: [
       { to: "/premium/users", label: "Danh sách Premium", exact: true },
+      { to: "/premium/config", label: "Cấu hình Premium", },
     ],
   };
 

@@ -1,15 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { cancelPremium, getMyPremium } from "../../api/premium";
-import { createPayosLinkForMonths } from "../../api/payos";
+import { cancelPremium, getMyPremium, listPremiumPlans } from "../../api/premium";
+import { createPayosLinkForPlanCode } from "../../api/payos";
 import "./Premium.css";
-
-const PLANS = [
-  { months: 1, title: "1 tháng", note: "Trải nghiệm Premium" },
-  { months: 3, title: "3 tháng", note: "Tiết kiệm hơn" },
-  { months: 6, title: "6 tháng", note: "Dùng ổn định" },
-  { months: 12, title: "12 tháng", note: "Tối ưu nhất" },
-];
 
 const fmtDate = (d) => {
   if (!d) return "—";
@@ -18,9 +11,17 @@ const fmtDate = (d) => {
   return dt.toLocaleDateString("vi-VN");
 };
 
+const fmtMoney = (v, currency = "VND") => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "—";
+  if (String(currency).toUpperCase() === "VND") return `${n.toLocaleString("vi-VN")} ₫`;
+  return `${n.toLocaleString("vi-VN")} ${currency}`;
+};
+
 export default function Premium() {
   const [loading, setLoading] = useState(true);
   const [premium, setPremium] = useState(null);
+  const [plans, setPlans] = useState([]);
   const [busy, setBusy] = useState(false);
 
   const isPremium = !!premium?.isPremium;
@@ -37,12 +38,14 @@ export default function Premium() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await getMyPremium();
-      setPremium(data?.premium || null);
+      const [me, pl] = await Promise.all([getMyPremium(), listPremiumPlans()]);
+      setPremium(me?.premium || null);
+      setPlans(Array.isArray(pl?.items) ? pl.items : []);
     } catch (e) {
       console.error(e);
-      toast.error(e?.response?.data?.message || "Không tải được trạng thái Premium");
+      toast.error(e?.response?.data?.message || "Không tải được dữ liệu Premium");
       setPremium(null);
+      setPlans([]);
     } finally {
       setLoading(false);
     }
@@ -52,20 +55,19 @@ export default function Premium() {
     load();
   }, []);
 
-  const onSubscribe = async (months) => {
+  const onSubscribe = async (planCode) => {
     if (busy) return;
     setBusy(true);
     try {
-      const rs = await createPayosLinkForMonths(months);
+      const rs = await createPayosLinkForPlanCode(planCode);
       if (!rs?.ok || !rs?.checkoutUrl) {
         throw new Error(rs?.message || "Không tạo được link thanh toán");
       }
-
       toast.info("Đang chuyển đến cổng thanh toán…");
       window.location.assign(rs.checkoutUrl);
     } catch (e) {
       console.error(e);
-      toast.error(e?.message || e?.response?.data?.message || "Không mở được thanh toán");
+      toast.error(e?.response?.data?.message || e?.message || "Không mở được thanh toán");
     } finally {
       setBusy(false);
     }
@@ -127,7 +129,6 @@ export default function Premium() {
                 <button className="fm-btn fm-btn-outline" onClick={load} disabled={loading || busy}>
                   Làm mới
                 </button>
-
                 <button
                   className="fm-btn fm-btn-danger"
                   onClick={onCancel}
@@ -142,40 +143,56 @@ export default function Premium() {
         </div>
 
         <div className="fm-premium-grid">
-          {PLANS.map((p) => (
-            <div key={p.months} className="fm-plan">
-              <div className="fm-plan-top">
-                <div className="fm-plan-title">{p.title}</div>
-                <div className="fm-plan-note">{p.note}</div>
-              </div>
+          {loading && <div className="fm-premium-sub">Đang tải gói…</div>}
+          {!loading && plans.length === 0 && (
+            <div className="fm-premium-sub">Hiện chưa có gói Premium nào đang hoạt động.</div>
+          )}
 
-              <div className="fm-plan-body">
-                <div className="fm-plan-line">
-                  <span>AI Chat</span>
-                  <b>{premium?.benefits?.aiDailyLimit ? `${premium.benefits.aiDailyLimit}/ngày` : "—"}</b>
+          {!loading &&
+            plans.map((p) => (
+              <div key={p._id || p.code} className="fm-plan">
+                <div className="fm-plan-top">
+                  <div className="fm-plan-title">{p.name || `${p.months} tháng`}</div>
+                  <div className="fm-plan-note">
+                    {p.months === 1 ? "Trải nghiệm" : p.months === 12 ? "Tối ưu nhất" : "Tiết kiệm hơn"}
+                  </div>
                 </div>
-                <div className="fm-plan-line">
-                  <span>Giới hạn kết nối</span>
-                  <b>{premium?.benefits?.connectLimit ? `${premium.benefits.connectLimit} đối tượng` : "—"}</b>
-                </div>
-              </div>
 
-              <button
-                className="fm-btn fm-btn-primary fm-plan-btn"
-                onClick={() => onSubscribe(p.months)}
-                disabled={loading || busy}
-              >
-                {busy ? "Đang mở thanh toán..." : isPremium ? "Gia hạn / Cộng dồn" : "Thanh toán Premium"}
-              </button>
-            </div>
-          ))}
+                <div className="fm-plan-body">
+                  <div className="fm-plan-line">
+                    <span>Thời hạn</span>
+                    <b>{Number(p.months || 0)} tháng</b>
+                  </div>
+                  <div className="fm-plan-line">
+                    <span>Giá</span>
+                    <b>{fmtMoney(p.price, p.currency)}</b>
+                  </div>
+
+                  {Array.isArray(p.features) && p.features.length > 0 && (
+                    <div className="fm-plan-features">
+                      {p.features.slice(0, 3).map((x, idx) => (
+                        <div key={idx} className="fm-plan-feature">• {x}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  className="fm-btn fm-btn-primary fm-plan-btn"
+                  onClick={() => onSubscribe(p.code)}
+                  disabled={loading || busy}
+                >
+                  {busy ? "Đang mở thanh toán..." : isPremium ? "Gia hạn / Cộng dồn" : "Thanh toán Premium"}
+                </button>
+              </div>
+            ))}
         </div>
 
         <div className="fm-premium-footnote">
           <div className="fm-premium-footnote-title">Ghi chú</div>
           <ul>
-            <li>Nhấn gói bất kỳ để mở trang thanh toán PayOS.</li>
-            <li>Sau khi thanh toán xong, trạng thái Premium sẽ cập nhật qua webhook; nếu chưa thấy, bấm <b>Làm mới</b>.</li>
+            <li>Chọn gói để mở trang thanh toán PayOS.</li>
+            <li>Sau khi thanh toán xong, trạng thái Premium cập nhật qua webhook; nếu chưa thấy, bấm <b>Làm mới</b>.</li>
           </ul>
         </div>
       </div>

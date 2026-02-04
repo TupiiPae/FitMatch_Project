@@ -1,6 +1,7 @@
 // server/src/controllers/payos.controller.js
 import PaymentTransaction from "../models/PaymentTransaction.js";
 import { User } from "../models/User.js";
+import PremiumPlan from "../models/PremiumPlan.js";
 import {
   payosGet,
   payosPost,
@@ -10,30 +11,30 @@ import {
 
 const uidFromReq = (req) => String(req?.userId || req?.user?._id || "");
 
-// TODO: thay bảng giá của bạn
-const PLANS = {
-  premium_1m: { amount: 39000, months: 1, label: "Premium 1 tháng" },
-  premium_3m: { amount: 99000, months: 3, label: "Premium 3 tháng" },
-  premium_6m: { amount: 189000, months: 6, label: "Premium 6 tháng" },
-  premium_12m: { amount: 349000, months: 12, label: "Premium 12 tháng" },
-};
+/** tạo orderCode dạng 9 chữ số (an toàn cho nhiều cổng) + chống trùng bằng retry DB */
+function genOrderCode9() {
+  const tail6 = String(Date.now()).slice(-6); // 6 digits
+  const r3 = String(Math.floor(Math.random() * 1000)).padStart(3, "0"); // 3 digits
+  return Number(`${tail6}${r3}`); // 9 digits
+}
 
 function addMonths(baseDate, months) {
   const d = new Date(baseDate);
   const m = Number(months) || 0;
   const day = d.getDate();
   d.setMonth(d.getMonth() + m);
-  if (d.getDate() !== day) d.setDate(0); // fix overflow 31 + 1 month
+  if (d.getDate() !== day) d.setDate(0);
   return d;
 }
 
-function genOrderCode() {
-  // number, unique hơn Date.now()
-  return Number(
-    `${Date.now()}${Math.floor(Math.random() * 1000)
-      .toString()
-      .padStart(3, "0")}`
-  );
+async function ensurePlans() {
+  await PremiumPlan.ensureDefaults().catch(() => {});
+}
+
+async function getActivePlanByCode(code) {
+  const c = String(code || "").trim();
+  if (!c) return null;
+  return PremiumPlan.findOne({ code: c, isActive: true }).lean().catch(() => null);
 }
 
 export async function createPayosPaymentLink(req, res) {
@@ -41,51 +42,61 @@ export async function createPayosPaymentLink(req, res) {
     const uid = uidFromReq(req);
     if (!uid) return res.status(401).json({ ok: false, message: "Unauthorized" });
 
-    const { planCode } = req.body || {};
-    const plan = PLANS[String(planCode || "")];
-    if (!plan) return res.status(400).json({ ok: false, message: "Plan không hợp lệ" });
+    await ensurePlans();
 
-    const clientUrl = (process.env.CLIENT_USER_ORIGIN || "").replace(/\/+$/, "");
+    const planCode = String(req.body?.planCode || "").trim();
+    if (!planCode) return res.status(400).json({ ok: false, message: "Thiếu planCode" });
+
+    const plan = await getActivePlanByCode(planCode);
+    if (!plan) return res.status(400).json({ ok: false, message: "Gói không hợp lệ hoặc đã tắt" });
+
+    const amount = Number(plan.price);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ ok: false, message: "Giá gói không hợp lệ" });
+    }
+
+    const clientUrl = String(process.env.CLIENT_USER_ORIGIN || "").replace(/\/+$/, "");
     if (!clientUrl) {
-      return res.status(500).json({ ok: false, message: "Missing CLIENT_USER_ORIGIN" });
+      return res.status(500).json({
+        ok: false,
+        message: "Missing CLIENT_USER_ORIGIN (VD: http://localhost:5173 hoặc domain user-app)",
+      });
     }
 
     // tạo orderCode chống trùng
-    let orderCode = genOrderCode();
+    let orderCode = genOrderCode9();
 
-    // description: nên ngắn (nhiều bank giới hạn)
-    const description = `FM${String(orderCode).slice(-7)}`;
+    // description nên ngắn (PayOS khuyến nghị ngắn)
+    const description = `FM${String(orderCode).padStart(9, "0").slice(-7)}`;
 
     const returnUrl = `${clientUrl}/payment/return?orderCode=${orderCode}`;
     const cancelUrl = `${clientUrl}/payment/cancel?orderCode=${orderCode}`;
 
-    // signature theo docs
     const signature = signCreatePaymentLink({
-      amount: plan.amount,
+      amount,
       cancelUrl,
       description,
       orderCode,
       returnUrl,
     });
 
-    // Lưu PENDING trước (nếu hiếm khi trùng orderCode, thử lại 2 lần)
+    // Lưu PENDING trước (retry nếu trùng orderCode)
     let created = false;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       try {
         await PaymentTransaction.create({
           user: uid,
           orderCode,
-          amount: plan.amount,
-          planCode: String(planCode),
-          months: plan.months,
+          amount,
+          planCode: String(plan.code),
+          months: Number(plan.months),
           status: "PENDING",
         });
         created = true;
         break;
       } catch (e) {
-        // duplicate key -> tạo orderCode mới rồi thử lại
         if (String(e?.code) === "11000") {
-          orderCode = genOrderCode();
+          orderCode = genOrderCode9();
           continue;
         }
         throw e;
@@ -97,15 +108,14 @@ export async function createPayosPaymentLink(req, res) {
 
     const payload = {
       orderCode,
-      amount: plan.amount,
+      amount,
       description,
       cancelUrl,
       returnUrl,
-      items: [{ name: plan.label, quantity: 1, price: plan.amount }],
+      items: [{ name: plan.name || plan.code, quantity: 1, price: amount }],
       signature,
     };
 
-    // tạo link payos
     const rs = await payosPost("/v2/payment-requests", payload);
     const data = rs?.data || {};
 
@@ -125,12 +135,15 @@ export async function createPayosPaymentLink(req, res) {
       orderCode,
       checkoutUrl: data.checkoutUrl,
       qrCode: data.qrCode,
+      plan: { code: plan.code, months: plan.months, price: plan.price, currency: plan.currency },
     });
   } catch (e) {
-    return res.status(e.status || 500).json({
+    // Ưu tiên trả rõ status nếu utils/payos.js có attach
+    const status = e?.status || e?.response?.status || 500;
+    return res.status(status).json({
       ok: false,
-      message: e.message || "Create PayOS link failed",
-      payload: e.payload,
+      message: e?.message || "Create PayOS link failed",
+      payload: e?.payload || e?.response?.data,
     });
   }
 }
@@ -148,30 +161,30 @@ export async function getPayosStatus(req, res) {
     const tx = await PaymentTransaction.findOne({ orderCode, user: uid }).lean();
     if (!tx) return res.status(404).json({ ok: false, message: "Không tìm thấy giao dịch" });
 
-    // optional: sync remote
     let remote = null;
     try {
       const r = await payosGet(`/v2/payment-requests/${orderCode}`);
       remote = r?.data || null;
-    } catch (err) {
-      // không fail cả API nếu remote lỗi
+    } catch {
       remote = null;
     }
 
     return res.json({ ok: true, local: tx, remote });
   } catch (e) {
-    return res.status(e.status || 500).json({ ok: false, message: e.message || "Get status failed" });
+    const status = e?.status || e?.response?.status || 500;
+    return res.status(status).json({ ok: false, message: e?.message || "Get status failed" });
   }
 }
 
-// Webhook PayOS gọi về server bạn (KHÔNG auth) -> verify signature
+// Webhook PayOS gọi về server (KHÔNG auth)
 export async function payosWebhook(req, res) {
   try {
     const body = req.body || {};
     const signature = String(body.signature || "");
     const data = body.data || {};
 
-    // verify signature dựa trên data
+    // Verify signature theo docs PayOS: signature = HMAC_SHA256(queryStrSorted, checksumKey)
+    // Ở codebase bạn đang dùng signObjectAlphabetical(data) (nên đảm bảo utils/payos.js đã dùng checksumKey + HMAC)
     const expected = signObjectAlphabetical(data);
     if (!signature || signature !== expected) {
       return res.status(400).json({ ok: false, message: "Invalid signature" });
@@ -185,23 +198,14 @@ export async function payosWebhook(req, res) {
     }
 
     const tx = await PaymentTransaction.findOne({ orderCode });
-    if (!tx) return res.status(200).json({ ok: true }); // tránh PayOS retry spam
+    if (!tx) return res.status(200).json({ ok: true });
 
-    // lưu webhookData để audit
-    // chống giả mạo: check amount khớp
     if (Number(tx.amount) !== amount) {
-      await PaymentTransaction.updateOne(
-        { orderCode },
-        { $set: { webhookData: body } }
-      );
+      await PaymentTransaction.updateOne({ orderCode }, { $set: { webhookData: body } });
       return res.status(400).json({ ok: false, message: "Amount mismatch" });
     }
 
-    // success: theo bạn đang dùng logic (code "00" + success true)
-    const isOk =
-      body.success === true &&
-      String(data.code || body.code || "") === "00";
-
+    const isOk = body.success === true && String(data.code || body.code || "") === "00";
     if (!isOk) {
       await PaymentTransaction.updateOne(
         { orderCode },
@@ -210,16 +214,11 @@ export async function payosWebhook(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // idempotent
     if (tx.status === "PAID") {
-      await PaymentTransaction.updateOne(
-        { orderCode },
-        { $set: { webhookData: body } }
-      );
+      await PaymentTransaction.updateOne({ orderCode }, { $set: { webhookData: body } });
       return res.status(200).json({ ok: true });
     }
 
-    // nâng premium đúng theo schema user.premium
     const user = await User.findById(tx.user).select("premium").catch(() => null);
     if (user) {
       const now = new Date();
@@ -240,22 +239,15 @@ export async function payosWebhook(req, res) {
 
     await PaymentTransaction.updateOne(
       { orderCode },
-      {
-        $set: {
-          status: "PAID",
-          paidAt: new Date(),
-          webhookData: body,
-        },
-      }
+      { $set: { status: "PAID", paidAt: new Date(), webhookData: body } }
     );
 
     return res.status(200).json({ ok: true });
   } catch (e) {
-    return res.status(500).json({ ok: false, message: e.message || "Webhook failed" });
+    return res.status(500).json({ ok: false, message: e?.message || "Webhook failed" });
   }
 }
 
-// (Optional) confirm-webhook để PayOS test URL webhook và lưu vào kênh thanh toán
 export async function confirmWebhook(req, res) {
   try {
     const { webhookUrl } = req.body || {};
@@ -264,6 +256,7 @@ export async function confirmWebhook(req, res) {
     const rs = await payosPost("/confirm-webhook", { webhookUrl });
     return res.json({ ok: true, data: rs?.data || null });
   } catch (e) {
-    return res.status(e.status || 500).json({ ok: false, message: e.message || "Confirm webhook failed" });
+    const status = e?.status || e?.response?.status || 500;
+    return res.status(status).json({ ok: false, message: e?.message || "Confirm webhook failed" });
   }
 }

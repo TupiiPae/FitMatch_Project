@@ -834,3 +834,28 @@ export const revokePremiumAdmin = async (userId, reason = "") => {
   const r = await api.post(`/api/admin/premium/users/${userId}/revoke`, { reason });
   return r.data?.data ?? r.data;
 };
+
+// =========================
+// PREMIUM PLANS (ADMIN)
+// =========================
+const unwrap = (res) => res?.data?.data ?? res?.data ?? res;
+
+export async function listPremiumPlansAdmin(params = {}) {
+  const res = await api.get("/api/admin/premium/plans", { params });
+  return unwrap(res);
+}
+
+export async function createPremiumPlanAdmin(payload) {
+  const res = await api.post("/api/admin/premium/plans", payload);
+  return unwrap(res);
+}
+
+export async function updatePremiumPlanAdmin(id, payload) {
+  const res = await api.patch(`/api/admin/premium/plans/${id}`, payload);
+  return unwrap(res);
+}
+
+export async function deletePremiumPlanAdmin(id) {
+  const res = await api.delete(`/api/admin/premium/plans/${id}`);
+  return unwrap(res);
+}

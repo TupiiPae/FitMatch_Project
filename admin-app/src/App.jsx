@@ -57,6 +57,7 @@ import ProfilePage from "./pages/ProfilePage/ProfilePage.jsx";
 
 // ===== Premium
 import Premium_List from "./pages/pagesPremium/Premium_List/Premium_List.jsx";
+import Premium_Config from "./pages/pagesPremium/Premium_Config/Premium_Config";
 
 export default function App() {
   return (
@@ -112,6 +113,7 @@ export default function App() {
 
           {/* Premium */}
           <Route path="/premium/users" element={<Premium_List />} />
+          <Route path="/premium/config" element={<Premium_Config />} />
 
           {/* Thống kê */}
           <Route path="/dashboard" element={<Dashboard />} />
