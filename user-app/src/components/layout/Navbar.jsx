@@ -7,7 +7,7 @@ import {
   faShieldHalved, faCamera, faChartLine, faUserFriends, faMobileAlt,
   faAppleAlt, faUtensils, faBrain, faCalculator, faBookOpen,
   faHeartPulse, faPersonRunning, faDumbbell, faVolleyball,
-  faClipboard, faClipboardList, faClipboardCheck, faBell,
+  faClipboard, faClipboardList, faClipboardCheck, faBell, faStar
 } from "@fortawesome/free-solid-svg-icons";
 import { getMe } from "../../api/account";
 import api from "../../lib/api";
@@ -588,6 +588,8 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
         <NavLink to="/tai-khoan/tai-khoan" className="acc-item"><FontAwesomeIcon icon={faGear} />Tài khoản</NavLink>
         <div className="acc-sep" />
         <NavLink to="/tin-nhan" className="acc-item"><FontAwesomeIcon icon={faMessage} />Tin nhắn</NavLink>
+        <div className="acc-sep" />
+        <NavLink to="/premium" className="acc-item"><FontAwesomeIcon icon={faStar} />Premium</NavLink>
       </div>
       <button className="acc-logout" type="button" onClick={onAskLogout}>
         <FontAwesomeIcon icon={faRightFromBracket} /> Đăng xuất

@@ -184,6 +184,21 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["user", "admin"], default: "user" },
     onboarded: { type: Boolean, default: false },
 
+    premium: {
+      tier: { type: String, enum: ["free", "premium"], default: "free" },
+      months: {
+        type: Number,
+        default: 0,
+        validate: {
+          validator: (v) => v === 0 || [1, 3, 6, 12].includes(Number(v)),
+          message: "premium.months chỉ nhận 0/1/3/6/12",
+        },
+      },
+      startedAt: { type: Date, default: null },
+      expiresAt: { type: Date, default: null },
+      provider: { type: String, trim: true, default: "mock" },
+    },
+
     // 🔹 Thời điểm hoạt động
     lastLoginAt: { type: Date, default: undefined },
     lastActiveAt: { type: Date, default: undefined },

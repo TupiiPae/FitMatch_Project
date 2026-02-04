@@ -17,6 +17,7 @@ import TermsCondiotionsPage from "./pages/Account/TermsConditions";
 import ContactPage from "./pages/Account/Contact/Contact";
 import FAQPage from "./pages/Account/FAQ";
 import Messages from "./pages/Messages/Messages";
+import Premium from "./pages/Premium/Premium";
 
 // Diary
 import RecordMeal from "./pages/Nutrition/RecordMeal";
@@ -43,6 +44,10 @@ import TeamConnect from "./pages/Connect/TeamConnect";
 
 // Statistical
 import Statistical from "./pages/Statistical/Statistical";
+
+// Payment
+import PaymentReturn from "./pages/Premium/PaymentReturn";
+import PaymentCancel from "./pages/Premium/PaymentCancel";
 
 // Layout (Navbar + Footer)
 import AppShell from "./components/layout/AppShell";
@@ -190,6 +195,11 @@ export default function App() {
           <Route path="/tai-khoan/lien-he" element={<ContactPage></ContactPage>} />
           <Route path="/tai-khoan/faq" element={<FAQPage />} />
           <Route path="/tin-nhan" element={<Messages />} />
+
+          {/* Premium / Payment */}
+          <Route path="/premium" element={<Premium />} />
+          <Route path="/payment/return" element={<PaymentReturn />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
 
           {/* Khác */}
           {/* <Route path="/cong-dong" element={<CongDong />} /> */} {/* Đã xóa */}

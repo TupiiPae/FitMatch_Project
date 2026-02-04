@@ -41,6 +41,9 @@ import notificationRoutes from "./routes/notification.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import { initSocket } from "./realtime/socket.js";
 
+import premiumRoutes from "./routes/premium.routes.js";
+import payosRoutes from "./routes/payos.routes.js";
+
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
 import { UPLOAD_ROOT } from "./middleware/upload.js";
@@ -160,6 +163,8 @@ app.use("/api/activity", activityRoutes);
 app.use("/api", matchRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/premium", premiumRoutes);
+app.use("/api/payos", payosRoutes);
 
 // ===== Debug: list registered routes in DEV =====
 if (isDev) {
