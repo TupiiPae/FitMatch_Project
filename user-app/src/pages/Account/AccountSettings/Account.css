@@ -74,6 +74,11 @@
   max-height: 40px;
 }
 
+.acc-select option {
+  background-color: #1a1a1a; 
+  color: white;             
+}
+
 .acc-input-bio {
   height: 130px;
   resize: vertical;
