@@ -815,3 +815,22 @@ export const getConnectStats = async (params = {}) => {
   const r = await api.get("/api/admin/stats/connect", { params });
   return r.data?.data ?? r.data;
 };
+
+/* =========================
+ * PREMIUM (ADMIN)
+ * ========================= */
+export const listPremiumUsersAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/premium/users", { params });
+  // BE responseOk => { success:true, items,total,limit,skip,... }
+  return r.data?.data ?? r.data;
+};
+
+export const listPremiumTransactionsAdmin = async (userId, params = {}) => {
+  const r = await api.get(`/api/admin/premium/users/${userId}/transactions`, { params });
+  return r.data?.data ?? r.data;
+};
+
+export const revokePremiumAdmin = async (userId, reason = "") => {
+  const r = await api.post(`/api/admin/premium/users/${userId}/revoke`, { reason });
+  return r.data?.data ?? r.data;
+};

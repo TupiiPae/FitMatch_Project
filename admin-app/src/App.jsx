@@ -55,6 +55,9 @@ import AdminCreate from "./pages/pagesAdmins/Admin_Create/Admin_Create.jsx";
 // ===== Profile
 import ProfilePage from "./pages/ProfilePage/ProfilePage.jsx";
 
+// ===== Premium
+import Premium_List from "./pages/pagesPremium/Premium_List/Premium_List.jsx";
+
 export default function App() {
   return (
     <Suspense fallback={<div style={{ padding: 24 }}>Đang tải…</div>}>
@@ -106,6 +109,9 @@ export default function App() {
 
           {/* Kết nối */}
           <Route path="/connect/rooms" element={<ConnectRooms_List />} />
+
+          {/* Premium */}
+          <Route path="/premium/users" element={<Premium_List />} />
 
           {/* Thống kê */}
           <Route path="/dashboard" element={<Dashboard />} />

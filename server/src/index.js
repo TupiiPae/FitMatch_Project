@@ -43,6 +43,7 @@ import { initSocket } from "./realtime/socket.js";
 
 import premiumRoutes from "./routes/premium.routes.js";
 import payosRoutes from "./routes/payos.routes.js";
+import adminPremiumRoutes from "./routes/admin.premium.routes.js";
 
 // ===== Middlewares =====
 import { auth } from "./middleware/auth.js";
@@ -142,6 +143,7 @@ app.use("/api/admin", adminAuditRoutes);
 app.use("/api/admin", adminContactRoutes);
 app.use("/api/admin", adminFaqRoutes);
 app.use("/api/admin/match-rooms", adminMatchRoomsRoutes);
+app.use("/api/admin", adminPremiumRoutes);
 
 // ===== User routes =====
 app.use("/api/user/onboarding", onboardingRoutes);

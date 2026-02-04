@@ -211,7 +211,16 @@ const buildManagementSections = (rawLevel) => {
     ],
   };
 
-  const sections = [statsSection, usersSection, foodsSection, exsSection, matchingSection];
+  const premiumSection = {
+    key: "premium",
+    title: "Premium",
+    icon: <i className="fa-solid fa-star" />,
+    items: [
+      { to: "/premium/users", label: "Danh sách Premium", exact: true },
+    ],
+  };
+
+  const sections = [statsSection, usersSection, foodsSection, exsSection, matchingSection, premiumSection];
 
   if (level === 1) {
     sections.splice(1, 0, {
