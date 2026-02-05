@@ -78,7 +78,7 @@ export default function PaymentReturn() {
         variant: "success",
         icon: "fa-solid fa-circle-check",
         title: "Thanh toán thành công",
-        sub: "Cảm ơn bạn! Premium sẽ được cập nhật sau khi PayOS xác nhận hoàn tất.",
+        sub: "Cảm ơn bạn! Tài khoản của bạn đã được cập nhật Premium.",
       };
     }
 

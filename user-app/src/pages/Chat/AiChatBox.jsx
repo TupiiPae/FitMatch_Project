@@ -1014,8 +1014,10 @@ return (
         {loading ? <div className="fm-chat-loading">Đang tải…</div> : null}
 
         {!loading && !items.length ? (
-          <div className="fm-chat-empty">
-            {emptyText || "Bắt đầu hỏi FitMatch AI… (có thể gửi kèm ảnh món ăn)"}
+          <div className="fm-chat-empty fm-ai-empty">
+            <div className="fm-ai-empty-title">
+              Hỏi Fitmatch AI về dinh dưỡng & tập luyện — bạn có thể gửi kèm ảnh món ăn để AI phân tích Calo.
+            </div>
           </div>
         ) : null}
 

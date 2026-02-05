@@ -195,7 +195,7 @@ const AI_HELP_PAGES = [
   },
 ];
 
-const AI_HELP_INTERVAL_MS = 3000;
+const AI_HELP_INTERVAL_MS = 5000;
 
 export default function Messages() {
   const nav = useNavigate();
@@ -253,6 +253,12 @@ export default function Messages() {
 
   const onAiHelpPointerDown = (e) => {
     if (!aiHelpOpen) return;
+    if (e.pointerType === "mouse") return;
+
+    const hitInteractive = e.target?.closest?.(
+      ".msg-ai-dd-item, .msg-ai-dd-dot, button, a, input, textarea"
+    );
+    if (hitInteractive) return;
 
     setAiHelpAuto(false);
     setAiHelpDragging(true);
@@ -1215,22 +1221,21 @@ export default function Messages() {
                                 <div className="msg-ai-dd-page-body msg-ai-dd-grid">
                                   <div className="msg-ai-dd-list">
                                     {safeArr(pg.prompts).map((qq, idx) => (
-                                      <div
+                                      <button
                                         key={`${pg.key}-${idx}`}
+                                        type="button"
                                         className="msg-ai-dd-item"
-                                        role="button"
-                                        tabIndex={0}
-                                        onClick={() => copyPromptText(qq)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter" || e.key === " ") {
-                                            e.preventDefault();
-                                            copyPromptText(qq);
-                                          }
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          copyPromptText(qq);
                                         }}
                                         title="Nhấp để copy"
                                       >
                                         {qq}
-                                      </div>
+                                      </button>
                                     ))}
                                   </div>
                                 </div>

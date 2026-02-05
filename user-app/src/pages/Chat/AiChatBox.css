@@ -2,6 +2,27 @@
 
 .fm-ai-chat{
   color:#e5e7eb;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fm-ai-chat .fm-ai-shell{
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fm-ai-chat .fm-ai-shell .fm-chat-list{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.fm-ai-chat .fm-ai-shell .fm-chat-compose{
+  flex: 0 0 auto;
 }
 
 /* nền list */
@@ -477,6 +498,9 @@
   .fm-ai-chat .fm-chat-row.is-ai .fm-ai-card{
     max-width: 100%;
   }
+  .fm-ai-chat .fm-ai-empty-title {
+    text-align: center;
+  }
 }
 
 /* ===== Rich emphasis (AI only) ===== */
@@ -642,4 +666,21 @@
   .fm-ai-upgrade-center{ max-width: 320px; }
   .fm-ai-upgrade-line1{ font-size: 14.5px; }
   .fm-ai-upgrade-line2{ font-size: 13px; }
+}
+
+.fm-ai-chat .fm-chat-empty.fm-ai-empty{
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: left;
+  line-height: 1.7;
+}
+
+.fm-ai-chat .fm-ai-empty-title{
+  font-weight: 500;
+  color: #e5e7eb;
+  font-size: 14px;
+  margin-bottom: 8px;
 }

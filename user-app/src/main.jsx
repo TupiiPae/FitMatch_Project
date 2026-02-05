@@ -24,7 +24,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={clientId}>
       <App />
-      <ToastContainer position="bottom-center" hideProgressBar={true} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover autoClose={2200} />
+      <ToastContainer position="bottom-center" autoClose={2200} hideProgressBar closeButton={false} newestOnTop={false} closeOnClick pauseOnFocusLoss draggable pauseOnHover limit={3} theme="dark" toastClassName="fm-toast" bodyClassName="fm-toast-body" style={{ marginBottom: "calc(12px + env(safe-area-inset-bottom))" }} />
     </GoogleOAuthProvider>
   </React.StrictMode>
 );

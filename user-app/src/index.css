@@ -15,6 +15,57 @@ body.fm-noscroll {
   overflow: hidden !important;
 }
 
+.fm-toast{
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  background: rgba(0, 0, 0, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45) !important;
+  color: rgba(229,231,235,.95) !important;
+}
+
+.fm-toast-body{
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  font-weight: 600 !important;
+}
+
+@media (max-width: 768px){
+  .Toastify__toast-container{
+    width: calc(80vw - 24px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+
+  .Toastify__toast{
+    margin-bottom: 10px !important;
+  }
+
+  .fm-toast{
+    border-radius: 14px !important;
+    padding: 10px 12px !important;
+  }
+
+  .fm-toast-body{
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 420px){
+  .Toastify__toast-container{
+    width: calc(80vw - 16px) !important;
+    left: 8px !important;
+    right: 8px !important;
+  }
+
+  .fm-toast-body{
+    font-size: 12.5px !important;
+  }
+}
 
 @supports not (scrollbar-gutter: stable) {
   body {
