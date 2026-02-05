@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { cancelPremium, getMyPremium, listPremiumPlans } from "../../api/premium";
 import { createPayosLinkForPlanCode } from "../../api/payos";
 import PaymentReturn from "./PaymentReturn";
@@ -26,11 +26,11 @@ export default function Premium() {
   const [premium, setPremium] = useState(null);
   const [plans, setPlans] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState("upgrade");
 
   const { pathname } = useLocation();
   const isPayReturn = /\/payment\/return\/?$/.test(pathname);
   const isPayCancel = /\/payment\/cancel\/?$/.test(pathname);
-
 
   const isPremium = !!premium?.isPremium;
   const tierLabel = isPremium ? "Premium" : "Miễn phí";
@@ -38,10 +38,34 @@ export default function Premium() {
   const benefits = useMemo(() => {
     const b = premium?.benefits || {};
     return [
-      { k: "AI Chat", v: b.aiDailyLimit ? `${b.aiDailyLimit}/ngày` : "—" },
-      { k: "Giới hạn kết nối", v: b.connectLimit ? `${b.connectLimit} đối tượng` : "—" },
+      {
+        key: "ai",
+        k: "AI Chat",
+        v: b.aiDailyLimit ? `${b.aiDailyLimit}/ngày` : "—",
+        icon: "fa-solid fa-robot",
+        to: "/tin-nhan?ai=1",
+        btn: "Đi tới trang",
+      },
+      {
+        key: "connect",
+        k: "Giới hạn kết nối",
+        v: b.connectLimit ? `${b.connectLimit} đối tượng` : "—",
+        icon: "fa-solid fa-user-group",
+        to: "/ket-noi",
+        btn: "Đi tới trang",
+      },
     ];
   }, [premium]);
+
+  const myPlanLabel = useMemo(() => {
+    return (
+      premium?.planName ||
+      premium?.name ||
+      premium?.planCode ||
+      premium?.code ||
+      (isPremium ? "Premium" : "Miễn phí")
+    );
+  }, [premium, isPremium]);
 
   const load = async () => {
     setLoading(true);
@@ -68,9 +92,7 @@ export default function Premium() {
     setBusy(true);
     try {
       const rs = await createPayosLinkForPlanCode(planCode);
-      if (!rs?.ok || !rs?.checkoutUrl) {
-        throw new Error(rs?.message || "Không tạo được link thanh toán");
-      }
+      if (!rs?.ok || !rs?.checkoutUrl) throw new Error(rs?.message || "Không tạo được link thanh toán");
       toast.info("Đang chuyển đến cổng thanh toán…");
       window.location.assign(rs.checkoutUrl);
     } catch (e) {
@@ -96,32 +118,25 @@ export default function Premium() {
     }
   };
 
+  const onRefresh = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="fm-premium-page">
       <div className="fm-premium-wrap">
         <header className="fm-premium-head">
           <div className="fm-premium-badge">{tierLabel}</div>
           <h1 className="fm-premium-title">Fitmatch Premium</h1>
-
           <p className="fm-premium-desc">
-            Nâng cấp Premium để mở khóa nhiều lượt AI Chat mỗi ngày, tăng giới hạn kết nối và trải nghiệm FitMatch mượt hơn.
+            Nâng cấp Premium để mở khóa nhiều lượt AI Chat mỗi ngày, tăng giới hạn kết nối và trải nghiệm Fitmatch mượt hơn.
           </p>
-
-          {/* {loading ? (
-            <p className="fm-premium-sub">Đang tải…</p>
-          ) : (
-            <p className="fm-premium-sub">
-              Trạng thái: <b>{isPremium ? "Đang hoạt động" : "Chưa kích hoạt"}</b>
-              <span className="fm-premium-dot">•</span>
-              Hết hạn: <b>{fmtDate(premium?.expiresAt)}</b>
-              {isPremium ? (
-                <>
-                  <span className="fm-premium-dot">•</span>
-                  Còn lại: <b>{premium?.daysLeft || 0} ngày</b>
-                </>
-              ) : null}
-            </p>
-          )} */}
         </header>
 
         {isPayReturn ? (
@@ -134,142 +149,180 @@ export default function Premium() {
           </section>
         ) : null}
 
-        <section className="fm-premium-block fm-premium-pricing">
-          {loading && <div className="fm-premium-sub">Đang tải gói…</div>}
-          {!loading && plans.length === 0 && (
-            <div className="fm-premium-sub">Hiện chưa có gói Premium nào đang hoạt động.</div>
-          )}
+        <div className="fm-premium-tabs" role="tablist" aria-label="Premium tabs">
+          <div className="fm-premium-tabwrap">
+            <button
+              type="button"
+              className={`fm-premium-tab ${tab === "upgrade" ? "is-active" : ""}`}
+              onClick={() => setTab("upgrade")}
+              aria-selected={tab === "upgrade"}
+              role="tab"
+            >
+              Nâng cấp Premium
+            </button>
 
-          {!loading && plans.length > 0 ? (
-            <div className="fm-premium-pricing-grid">
-              {plans.map((p) => {
-                const name = p.name || `${p.months} tháng`;
-                const desc = String(p?.description || "").trim();
+            <button
+              type="button"
+              className={`fm-premium-tab ${tab === "mine" ? "is-active" : ""}`}
+              onClick={() => setTab("mine")}
+              aria-selected={tab === "mine"}
+              role="tab"
+            >
+              Premium của tôi
+            </button>
+          </div>
+        </div>
 
-                const feats =
-                  Array.isArray(p.features) && p.features.length
-                    ? p.features
-                    : ["Tăng giới hạn AI Chat mỗi ngày", "Tăng giới hạn kết nối", "Mở khóa nhiều tính năng nâng cao"];
+        {tab === "upgrade" ? (
+          <section className="fm-premium-block fm-premium-pricing">
+            {loading && <div className="fm-premium-sub">Đang tải gói…</div>}
+            {!loading && plans.length === 0 && (
+              <div className="fm-premium-sub">Hiện chưa có gói Premium nào đang hoạt động.</div>
+            )}
 
-                return (
-                  <div key={p._id || p.code} className="fm-price-card">
-                    <div className="fm-price-name">{name}</div>
+            {!loading && plans.length > 0 ? (
+              <div className="fm-premium-pricing-grid">
+                {plans.map((p) => {
+                  const name = p.name || `${p.months} tháng`;
+                  const desc = String(p?.description || "").trim();
+                  const feats =
+                    Array.isArray(p.features) && p.features.length
+                      ? p.features
+                      : ["Tăng giới hạn AI Chat mỗi ngày", "Tăng giới hạn kết nối", "Mở khóa nhiều tính năng nâng cao"];
 
-                    <div className="fm-price-desc">
-                      {desc ? desc : "Mô tả gói sẽ được cập nhật bởi quản trị viên."}
+                  return (
+                    <div key={p._id || p.code} className="fm-price-card">
+                      <div className="fm-price-name">{name}</div>
+
+                      <div className="fm-price-desc">
+                        {desc ? desc : "Mô tả gói sẽ được cập nhật bởi quản trị viên."}
+                      </div>
+
+                      <div className="fm-price-price">
+                        <span className="money">{fmtMoney(p.price, p.currency)}</span>
+                        <span className="per">/ {Number(p.months || 0)} tháng</span>
+                      </div>
+
+                      <div className="fm-price-features">
+                        {feats.slice(0, 6).map((x, idx) => (
+                          <div key={idx} className="fm-price-feature">
+                            <i className="fa-solid fa-check" />
+                            <span>{x}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        className="fm-btn fm-btn-primary fm-price-btn"
+                        onClick={() => onSubscribe(p.code)}
+                        disabled={loading || busy}
+                      >
+                        {busy ? "Đang mở thanh toán..." : isPremium ? "Gia hạn / Cộng dồn" : "Đăng ký gói"}
+                      </button>
                     </div>
+                  );
+                })}
+              </div>
+            ) : null}
+          </section>
+        ) : (
+          <section className="fm-premium-block fm-premium-my">
+            <div className="fm-premium-mygrid">
+              <div className="fm-premium-mycard">
+                <div className="fm-premium-myhead">
+                  <div className="fm-premium-mytier">
+                    <i className="fa-solid fa-crown" />
+                    <span>{myPlanLabel}</span>
+                  </div>
 
-                    <div className="fm-price-price">
-                      <span className="money">{fmtMoney(p.price, p.currency)}</span>
-                      <span className="per">/ {Number(p.months || 0)} tháng</span>
-                    </div>
-
-                    <div className="fm-price-features">
-                      {feats.slice(0, 6).map((x, idx) => (
-                        <div key={idx} className="fm-price-feature">
-                          <i className="fa-solid fa-check" />
-                          <span>{x}</span>
-                        </div>
-                      ))}
-                    </div>
-
+                  <div className="fm-premium-myactions">
                     <button
-                      className="fm-btn fm-btn-primary fm-price-btn"
-                      onClick={() => onSubscribe(p.code)}
+                      type="button"
+                      className="fm-btn fm-btn-outline fm-mybtn"
+                      onClick={onRefresh}
                       disabled={loading || busy}
                     >
-                      {busy ? "Đang mở thanh toán..." : isPremium ? "Gia hạn / Cộng dồn" : "Đăng ký gói"}
+                      <i className="fa-solid fa-arrow-rotate-right"></i>
                     </button>
+
+                    {isPremium ? (
+                      <button
+                        type="button"
+                        className="fm-btn fm-btn-primary fm-mybtn"
+                        onClick={onCancel}
+                        disabled={busy}
+                      >
+                        {busy ? "Đang xử lý..." : "Hủy gia hạn"}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="fm-btn fm-btn-primary fm-mybtn"
+                        onClick={() => setTab("upgrade")}
+                        disabled={loading}
+                      >
+                        Xem các gói
+                      </button>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          ) : null}
-        </section>
+                </div>
 
-        {/* <section className="fm-premium-block landing-section">
-          <h2 className="fm-premium-h2">Premium mang lại gì?</h2>
+                <div className="fm-premium-mykv">
+                  <div className="row">
+                    <span className="k">Trạng thái</span>
+                    <span className={`v ${isPremium ? "is-ok" : "is-off"}`}>
+                      {loading ? "Đang tải..." : isPremium ? "Đang hoạt động" : "Chưa kích hoạt"}
+                    </span>
+                  </div>
 
-          <div className="fm-premium-perkgrid">
-            <div className="fm-perk">
-              <div className="ic">
-                <i className="fa-solid fa-robot" />
-              </div>
-              <div className="tt">AI Chat thoải mái hơn</div>
-              <div className="ds">
-                Tăng giới hạn lượt chat mỗi ngày để hỏi kế hoạch ăn uống, tập luyện, phân tích ảnh…
-              </div>
-            </div>
+                  <div className="row">
+                    <span className="k">Hết hạn</span>
+                    <span className="v">{fmtDate(premium?.expiresAt)}</span>
+                  </div>
 
-            <div className="fm-perk">
-              <div className="ic">
-                <i className="fa-solid fa-user-group" />
-              </div>
-              <div className="tt">Tăng giới hạn kết nối</div>
-              <div className="ds">
-                Kết nối được nhiều đối tượng hơn để duy trì động lực tập luyện và theo dõi tiến độ.
-              </div>
-            </div>
+                  <div className="row">
+                    <span className="k">Còn lại</span>
+                    <span className="v">{isPremium ? `${premium?.daysLeft || 0} ngày` : "—"}</span>
+                  </div>
+                </div>
 
-            <div className="fm-perk">
-              <div className="ic">
-                <i className="fa-solid fa-bolt" />
+                <div className="fm-premium-mynote">
+                  {isPremium
+                    ? "Gia hạn gói Premium để không bị gián đoạn trải nghiệm của bạn tại Fitmatch."
+                    : "Bạn đang dùng gói miễn phí. Nâng cấp Premium để mở khóa nhiều quyền lợi hơn."}
+                </div>
               </div>
-              <div className="tt">Trải nghiệm mượt & ưu tiên</div>
-              <div className="ds">
-                Hạn chế bị gián đoạn do giới hạn và tối ưu trải nghiệm khi dùng tính năng nâng cao.
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <section className="fm-premium-block fm-premium-split landing-section">
-          <div className="left">
-            <h2 className="fm-premium-h2">Tối ưu hành trình tập luyện</h2>
-            <div className="fm-premium-h2sub">
-              Premium phù hợp nếu bạn dùng AI thường xuyên, theo dõi dinh dưỡng sát sao, hoặc muốn kết nối nhiều bạn tập.
-            </div>
+              <div className="fm-premium-mycard">
+                <div className="fm-premium-mytitle">Quyền lợi hiện tại</div>
 
-            <div className="fm-premium-points">
-              <div className="p">
-                <i className="fa-solid fa-circle-check" /> Cá nhân hóa gợi ý theo mục tiêu
-              </div>
-              <div className="p">
-                <i className="fa-solid fa-circle-check" /> Hỗ trợ lập thực đơn, lịch tập nhanh
-              </div>
-              <div className="p">
-                <i className="fa-solid fa-circle-check" /> Tối ưu trải nghiệm theo dõi hàng ngày
+                <div className="fm-premium-mybenefits">
+                  {benefits.map((x) => (
+                    <div key={x.key} className="fm-premium-mybenefit">
+                      <div className="ic" aria-hidden="true">
+                        <i className={x.icon} />
+                      </div>
+
+                      <div className="t">
+                        <div className="k">{x.k}</div>
+                        <div className="v">{x.v}</div>
+                      </div>
+
+                      <Link to={x.to} className="fm-premium-mygo" aria-label={`Đi tới ${x.k}`}>
+                        <span>{x.btn}</span>
+                        <i className="fa-solid fa-arrow-right" />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="fm-premium-mytip">
+                  Nếu bạn vừa thanh toán xong mà chưa thấy thay đổi, hãy nhấp icon <b>Làm mới</b> hoặc chờ vài giây rồi thử lại.
+                </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section className="fm-premium-block fm-premium-faq-section landing-section">
-          <h2 className="fm-premium-h2">Câu hỏi thường gặp</h2>
-
-          <div className="fm-premium-faq">
-            <details>
-              <summary>Thanh toán xong khi nào Premium kích hoạt?</summary>
-              <div className="ans">
-                Sau khi PayOS xác nhận thành công, hệ thống cập nhật qua webhook. Nếu chưa thấy, bấm “Làm mới trạng thái”.
-              </div>
-            </details>
-
-            <details>
-              <summary>Premium có cộng dồn thời hạn không?</summary>
-              <div className="ans">
-                Có. Khi bạn thanh toán gói mới, thời hạn sẽ được cộng thêm vào thời hạn hiện tại.
-              </div>
-            </details>
-
-            <details>
-              <summary>Tôi có thể hủy gia hạn không?</summary>
-              <div className="ans">
-                Bạn có thể hủy gia hạn, và vẫn dùng Premium đến hết ngày hết hạn.
-              </div>
-            </details>
-          </div>
-        </section> */}
+          </section>
+        )}
       </div>
     </div>
   );
