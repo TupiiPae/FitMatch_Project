@@ -42,7 +42,6 @@ PremiumPlanSchema.pre("validate", function (next) {
   next();
 });
 
-// Seed mặc định để chạy ngay
 PremiumPlanSchema.statics.ensureDefaults = async function () {
   const Plan = this;
   const existing = await Plan.find({}).select("months code").lean().catch(() => []);

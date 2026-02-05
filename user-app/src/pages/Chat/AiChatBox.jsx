@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { listAiMessages, sendAiChat, uploadAiImage } from "../../api/ai";
+import { listAiMessages, sendAiChat, uploadAiImage, getAiQuota } from "../../api/ai";
 import { toggleSaveSuggestMenu } from "../../api/suggestMenus";
 import { toggleSaveSuggestPlan } from "../../api/suggestPlans";
 
@@ -182,6 +182,16 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
   // ===== SuggestPlan saving state =====
   const [savingPlanMap, setSavingPlanMap] = useState({}); // { [planId]: true/false }
 
+  const [quota, setQuota] = useState(null); // { isPremium, limit, used, remaining, resetAt }
+  const quotaLocked = !!quota && Number(quota.remaining) <= 0;
+
+  const loadQuota = async () => {
+    try {
+      const q = await getAiQuota();
+      if (q) setQuota(q);
+    } catch {}
+  };
+
   // ===== File preview urls =====
   const fileUrlMapRef = useRef(new Map());
 
@@ -255,6 +265,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       setItems(arr);
       updatePreviewFromItems(arr);
       scrollBottom(false);
+      await loadQuota();
     } catch (e) {
       console.error(e);
       toast.error(e?.response?.data?.message || "Không tải được AI chat");
@@ -274,7 +285,10 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
 
-  const pickFiles = () => fileRef.current?.click?.();
+  const pickFiles = () => {
+    if (quotaLocked || uploading || sending) return;
+    fileRef.current?.click?.();
+  };
 
   const pushFiles = (list) => {
     const ok = [];
@@ -828,6 +842,15 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
   // ====== SEND ======
   const send = async (overrideText) => {
+    if (quotaLocked) {
+      toast.info(
+        quota?.isPremium
+          ? `Bạn đã dùng hết ${quota?.limit || 50} lượt chat AI hôm nay.`
+          : `Bạn đã dùng hết ${quota?.limit || 5} lượt chat AI hôm nay. Nâng cấp Premium để có 50 lượt/ngày.`
+      );
+      return;
+    }
+
     const isOverride = overrideText !== undefined;
     const content = String(isOverride ? overrideText : text || "").trim();
     const sendFiles = isOverride ? [] : files;
@@ -923,10 +946,24 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       });
 
       scrollBottom(true);
-    } catch (e) {
-      console.error(e);
-      toast.error(e?.response?.data?.message || "Không thể gửi đến AI");
-    } finally {
+      loadQuota().catch(() => {});
+      } catch (e) {
+        console.error(e);
+
+        const data = e?.response?.data;
+        if (e?.response?.status === 429 && data?.code === "AI_DAILY_LIMIT") {
+          setQuota((prev) => ({
+            ...(prev || {}),
+            isPremium: !!data.isPremium,
+            limit: Number(data.limit) || (data.isPremium ? 50 : 5),
+            used: Number(data.used) || Number(prev?.used) || 0,
+            remaining: 0,
+            resetAt: data.resetAt || prev?.resetAt,
+          }));
+        }
+
+        toast.error(e?.response?.data?.message || "Không thể gửi đến AI");
+      } finally {
       setAiTyping(false);
       setSending(false);
       requestAnimationFrame(() => inputRef.current?.focus?.());
@@ -1374,6 +1411,28 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       </div>
 
       <div className="fm-chat-compose">
+        {quotaLocked ? (
+          <div className="fm-ai-quota-lock">
+            {quota?.isPremium ? (
+              <>
+                <div className="t">Bạn đã dùng hết <b>{quota?.limit || 50}</b> lượt chat AI hôm nay.</div>
+                <div className="s">
+                  Bạn có thể chat lại sau{" "}
+                  <b>{dayjs(quota?.resetAt).isValid() ? dayjs(quota.resetAt).format("HH:mm DD/MM") : "00:00"}</b>.
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="t">Bạn đã dùng hết <b>{quota?.limit || 5}</b> lượt chat AI hôm nay (Standard).</div>
+                <div className="s">Nâng cấp Premium để có <b>50</b> lượt/ngày.</div>
+                <button type="button" className="fm-ai-upgradebtn" onClick={() => nav("/premium")}>
+                  Nâng cấp Premium
+                </button>
+              </>
+            )}
+          </div>
+        ) : null}
+
         <div className="fm-chat-inputrow">
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onPickFile} />
 
@@ -1382,7 +1441,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
             className="fm-chat-attach"
             onClick={pickFiles}
             title="Gửi hình ảnh cho AI"
-            disabled={uploading || sending}
+            disabled={uploading || sending || quotaLocked}
           >
             <i className="fa-regular fa-images" />
           </button>
@@ -1420,6 +1479,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     e.stopPropagation();
+                    if (quotaLocked) return;
                     send();
                   }
                 }}
@@ -1429,9 +1489,15 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
                   const dt = e.dataTransfer;
                   if (dt?.files && dt.files.length) e.preventDefault();
                 }}
-                placeholder={uploading ? "Đang tải ảnh…" : "Nhập câu hỏi cho AI…"}
+                placeholder={
+                  quotaLocked
+                    ? "Bạn đã hết lượt chat AI hôm nay."
+                    : uploading
+                    ? "Đang tải ảnh…"
+                    : "Nhập câu hỏi cho AI…"
+                }
                 className="fm-chat-input fm-chat-textarea"
-                disabled={uploading}
+                disabled={uploading || sending || quotaLocked}
                 rows={1}
               />
             </div>
@@ -1441,7 +1507,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
             type="button"
             className="fm-chat-send"
             onClick={() => send()}
-            disabled={sending || uploading}
+            disabled={sending || uploading || quotaLocked}
             title="Gửi"
           >
             <i className="fa-regular fa-paper-plane" />

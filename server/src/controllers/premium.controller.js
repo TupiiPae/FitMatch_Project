@@ -4,8 +4,8 @@ import PremiumPlan from "../models/PremiumPlan.js";
 import { responseOk } from "../utils/response.js";
 
 const BENEFITS = {
-  free: { aiDailyLimit: 20, connectLimit: 5 },
-  premium: { aiDailyLimit: 200, connectLimit: 50 },
+  free: { aiDailyLimit: 5, connectLimit: 1 },
+  premium: { aiDailyLimit: 50, connectLimit: 2 },
 };
 
 function addMonths(date, months) {

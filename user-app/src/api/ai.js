@@ -34,3 +34,8 @@ export const clearAiMessages = async () => {
   const r = await api.delete("/ai/messages");
   return r.data?.data ?? r.data;
 };
+
+export async function getAiQuota() {
+  const r = await api.get("/ai/quota");
+  return r.data?.data ?? r.data;
+}

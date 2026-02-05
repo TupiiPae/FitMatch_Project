@@ -11,6 +11,7 @@ import SuggestPlan, {
 import { User } from "../models/User.js";
 import { OnboardingProfile } from "../models/OnboardingProfile.js";
 import { uploadImageWithResize } from "../utils/cloudinary.js";
+import AiDailyUsage from "../models/AiDailyUsage.js";
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
@@ -19,6 +20,83 @@ const OPENAI_BASE = process.env.OPENAI_BASE_URL || "https://api.openai.com";
 const safeArr = (v) => (Array.isArray(v) ? v : []);
 const s = (v) => String(v ?? "").trim();
 const pick = (...v) => v.find((x) => x !== undefined && x !== null && x !== "");
+
+// ===== AI DAILY LIMIT (Standard/Premium) =====
+const VN_TZ_OFFSET_MIN = 7 * 60; // Asia/Ho_Chi_Minh UTC+7
+const AI_LIMIT_STANDARD = 5;
+const AI_LIMIT_PREMIUM = 50;
+
+function getDayRangeByOffset(offsetMin = VN_TZ_OFFSET_MIN, now = new Date()) {
+  const offsetMs = offsetMin * 60 * 1000;
+  const local = new Date(now.getTime() + offsetMs);
+  local.setHours(0, 0, 0, 0);
+  const start = new Date(local.getTime() - offsetMs);
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { start, end };
+}
+
+function pickDate(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isFinite(d.getTime()) ? d : null;
+}
+
+function isPremiumActive(premium) {
+  if (!premium) return false;
+
+  const now = Date.now();
+
+  // common field names
+  const exp =
+    premium?.expiresAt ??
+    premium?.expireAt ??
+    premium?.expiredAt ??
+    premium?.endAt ??
+    premium?.until ??
+    null;
+
+  const expDate = pickDate(exp);
+  if (!expDate) return false;
+
+  // if there is an active/status flag, respect it
+  const status = String(premium?.status || "").toLowerCase();
+  const activeFlag = premium?.isActive;
+  if (status && ["inactive", "disabled", "expired", "cancelled", "canceled"].includes(status)) return false;
+  if (activeFlag === false) return false;
+
+  return expDate.getTime() > now;
+}
+
+async function getAiDailyLimitForUser(userId) {
+  const u = await User.findById(userId).select("premium").lean().catch(() => null);
+  const premium = u?.premium || null;
+
+  const isPremium = isPremiumActive(premium);
+
+  // allow override from saved benefits if you already store it
+  const limitFromUser =
+    Number(premium?.benefits?.aiDailyLimit) ||
+    Number(premium?.aiDailyLimit) ||
+    Number(premium?.limits?.aiDailyLimit) ||
+    null;
+
+  const limit = Number.isFinite(limitFromUser) && limitFromUser > 0
+    ? limitFromUser
+    : (isPremium ? AI_LIMIT_PREMIUM : AI_LIMIT_STANDARD);
+
+  return { isPremium, limit };
+}
+
+async function getAiUsageToday(userId) {
+  const { start, end } = getDayRangeByOffset(VN_TZ_OFFSET_MIN, new Date());
+  const used = await AiMessage.countDocuments({
+    user: userId,
+    role: "user",
+    createdAt: { $gte: start, $lt: end },
+  }).catch(() => 0);
+
+  return { used: Number(used) || 0, start, end };
+}
 
 const toClientMsg = (m) => {
   const o = m?.toObject ? m.toObject() : m || {};
@@ -1416,6 +1494,32 @@ async function buildSuggestions({ userId, userText, detectedFoodName, intent }) 
   return out;
 }
 
+// GET /api/ai/quota
+export async function getAiQuota(req, res) {
+  try {
+    const userId = req.userId;
+
+    const [{ isPremium, limit }, usage] = await Promise.all([
+      getAiDailyLimitForUser(userId),
+      getAiUsageToday(userId),
+    ]);
+
+    const used = usage.used;
+    const remaining = Math.max(0, limit - used);
+
+    return res.json({
+      isPremium,
+      limit,
+      used,
+      remaining,
+      resetAt: usage.end.toISOString(),
+    });
+  } catch (e) {
+    console.error("[ai.quota]", e?.message || e);
+    return res.status(500).json({ message: "Không thể lấy quota AI" });
+  }
+}
+
 /* =========================
  * GET /api/ai/messages
  * ========================= */
@@ -1468,6 +1572,26 @@ export async function sendAiChat(req, res) {
 
     if (!text && !imageUrls.length) {
       return res.status(400).json({ message: "Thiếu nội dung chat" });
+    }
+
+    // ===== DAILY QUOTA CHECK =====
+    const [{ isPremium, limit }, usage] = await Promise.all([
+      getAiDailyLimitForUser(userId),
+      getAiUsageToday(userId),
+    ]);
+
+    if (usage.used >= limit) {
+      return res.status(429).json({
+        code: "AI_DAILY_LIMIT",
+        message: isPremium
+          ? `Bạn đã dùng hết ${limit} lượt chat AI hôm nay.`
+          : `Bạn đã dùng hết ${limit} lượt chat AI hôm nay. Nâng cấp Premium để có ${AI_LIMIT_PREMIUM} lượt/ngày.`,
+        isPremium,
+        limit,
+        used: usage.used,
+        remaining: 0,
+        resetAt: usage.end.toISOString(),
+      });
     }
 
     const intent = inferIntent(text, imageUrls);
