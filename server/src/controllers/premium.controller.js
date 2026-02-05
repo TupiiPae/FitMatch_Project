@@ -34,6 +34,7 @@ function premiumSnapshot(user) {
   return {
     tier,
     isPremium,
+    planCode: p?.planCode || null,
     months: Number(p?.months || 0),
     startedAt: p?.startedAt || null,
     expiresAt: p?.expiresAt || null,
@@ -88,8 +89,10 @@ export async function getMyPremium(req, res) {
     const snap = premiumSnapshot(u);
     let plan = null;
 
-    if (snap.isPremium && snap.months) {
-      plan = await getActivePlanByMonths(snap.months);
+    if (snap.isPremium) {
+      plan = snap.planCode
+        ? await getActivePlanByCode(snap.planCode)
+        : (snap.months ? await getActivePlanByMonths(snap.months) : null);
     }
 
     return responseOk(res, { premium: snap, plan });
@@ -136,6 +139,7 @@ export async function subscribePremium(req, res) {
 
     u.premium = {
       tier: "premium",
+      planCode: plan.code,
       months,
       startedAt: u?.premium?.startedAt || now,
       expiresAt: nextExp,

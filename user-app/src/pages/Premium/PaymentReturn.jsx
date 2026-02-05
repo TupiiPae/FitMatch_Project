@@ -1,13 +1,15 @@
 // user-app/src/pages/Premium/PaymentReturn.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getPayosStatus } from "../../api/payos";
+import { getMyPremium } from "../../api/premium";
 import "./PaymentReturn.css";
 
 export default function PaymentReturn() {
   const [sp] = useSearchParams();
   const orderCode = sp.get("orderCode");
+  const toastedRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState(null);
   const [err, setErr] = useState("");
@@ -21,7 +23,7 @@ export default function PaymentReturn() {
     setLoading(true);
     setErr("");
     try {
-      const rs = await getPayosStatus(orderCode);
+      const rs = await getPayosStatus(Number(orderCode) || orderCode);
       setStatus(rs || null);
     } catch (e) {
       console.error(e);
@@ -41,6 +43,13 @@ export default function PaymentReturn() {
 
   const isPaid =
     s === "PAID" || s === "SUCCESS" || s === "COMPLETED" || s === "PAYMENT_SUCCESS";
+
+  useEffect(() => {
+    if (!isPaid || toastedRef.current) return;
+    toastedRef.current = true;
+    getMyPremium().catch(() => {});
+    toast.success("Premium đã được kích hoạt!");
+  }, [isPaid]);
 
   const isPending =
     s === "PENDING" || s === "PROCESSING" || s === "WAITING" || s === "INIT";

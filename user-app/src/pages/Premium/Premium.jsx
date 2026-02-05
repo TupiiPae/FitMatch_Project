@@ -28,8 +28,9 @@ export default function Premium() {
   const [busy, setBusy] = useState(false);
 
   const { pathname } = useLocation();
-  const isPayReturn = /\/premium\/return\/?$/.test(pathname);
-  const isPayCancel = /\/premium\/cancel\/?$/.test(pathname);
+  const isPayReturn = /\/payment\/return\/?$/.test(pathname);
+  const isPayCancel = /\/payment\/cancel\/?$/.test(pathname);
+
 
   const isPremium = !!premium?.isPremium;
   const tierLabel = isPremium ? "Premium" : "Miễn phí";

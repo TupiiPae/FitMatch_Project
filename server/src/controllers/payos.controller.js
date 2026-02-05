@@ -11,6 +11,52 @@ import {
 
 const uidFromReq = (req) => String(req?.userId || req?.user?._id || "");
 
+const pick = (...v) => v.find((x) => x !== undefined && x !== null && x !== "");
+const up = (v) => String(v || "").trim().toUpperCase();
+
+function isRemotePaid(remote) {
+  // PayOS response có thể khác nhau tuỳ endpoint/version => check “mềm”
+  const st = up(pick(remote?.status, remote?.data?.status, remote?.paymentStatus, remote?.data?.paymentStatus));
+  const code = up(pick(remote?.code, remote?.data?.code, remote?.data?.responseCode));
+  if (st === "PAID" || st === "SUCCESS" || st === "COMPLETED") return true;
+  if (code === "00") return true;
+
+  const amount = Number(pick(remote?.amount, remote?.data?.amount));
+  const amountPaid = Number(pick(remote?.amountPaid, remote?.data?.amountPaid, remote?.data?.paidAmount));
+  if (Number.isFinite(amount) && Number.isFinite(amountPaid) && amountPaid >= amount && st && st !== "CANCELLED") return true;
+
+  return false;
+}
+
+async function applyPremiumFromTx({ tx, provider = "payos", extraData = null }) {
+  const user = await User.findById(tx.user).select("premium").catch(() => null);
+  if (user) {
+    const now = new Date();
+    const curExp = user?.premium?.expiresAt ? new Date(user.premium.expiresAt) : null;
+    const base = curExp && curExp.getTime() > now.getTime() ? curExp : now;
+    const nextExp = addMonths(base, tx.months);
+
+    user.premium = {
+      tier: "premium",
+      planCode: tx.planCode,          // ✅ lưu đúng gói đã mua
+      months: Number(tx.months) || 0,
+      startedAt: user?.premium?.startedAt || now,
+      expiresAt: nextExp,
+      provider,
+    };
+
+    await user.save();
+  }
+
+  // update transaction (idempotent)
+  await PaymentTransaction.updateOne(
+    { _id: tx._id, status: { $ne: "PAID" } },
+    { $set: { status: "PAID", paidAt: new Date(), webhookData: extraData } }
+  ).catch(() => {});
+
+  return true;
+}
+
 /** tạo orderCode dạng 9 chữ số (an toàn cho nhiều cổng) + chống trùng bằng retry DB */
 function genOrderCode9() {
   const tail6 = String(Date.now()).slice(-6); // 6 digits
@@ -158,7 +204,7 @@ export async function getPayosStatus(req, res) {
       return res.status(400).json({ ok: false, message: "orderCode không hợp lệ" });
     }
 
-    const tx = await PaymentTransaction.findOne({ orderCode, user: uid }).lean();
+    let tx = await PaymentTransaction.findOne({ orderCode, user: uid }).lean();
     if (!tx) return res.status(404).json({ ok: false, message: "Không tìm thấy giao dịch" });
 
     let remote = null;
@@ -169,12 +215,32 @@ export async function getPayosStatus(req, res) {
       remote = null;
     }
 
+    // ✅ RECONCILE: remote đã PAID nhưng local chưa PAID => kích hoạt premium ngay
+    if (remote && tx.status !== "PAID" && isRemotePaid(remote)) {
+      // kiểm tra amount để an toàn
+      const remoteAmount = Number(pick(remote?.amount, remote?.data?.amount));
+      if (Number.isFinite(remoteAmount) && Number(tx.amount) !== remoteAmount) {
+        await PaymentTransaction.updateOne({ orderCode }, { $set: { webhookData: { source: "status_poll", remote } } });
+        return res.status(400).json({ ok: false, message: "Amount mismatch (reconcile)" });
+      }
+
+      await applyPremiumFromTx({
+        tx,
+        provider: "payos_status_poll",
+        extraData: { source: "status_poll", remote },
+      });
+
+      // reload local tx after update
+      tx = await PaymentTransaction.findOne({ orderCode, user: uid }).lean();
+    }
+
     return res.json({ ok: true, local: tx, remote });
   } catch (e) {
     const status = e?.status || e?.response?.status || 500;
     return res.status(status).json({ ok: false, message: e?.message || "Get status failed" });
   }
 }
+
 
 // Webhook PayOS gọi về server (KHÔNG auth)
 export async function payosWebhook(req, res) {
@@ -228,6 +294,7 @@ export async function payosWebhook(req, res) {
 
       user.premium = {
         tier: "premium",
+        planCode: tx.planCode,
         months: tx.months,
         startedAt: user?.premium?.startedAt || now,
         expiresAt: nextExp,

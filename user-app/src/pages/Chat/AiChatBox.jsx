@@ -408,15 +408,12 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
     nav("/dinh-duong/ghi-lai/tao-mon", { state: { aiPrefill: draft } });
   };
 
-  // auto navigate nếu BE trả action=create_food (CHỈ 1 LẦN + CHỈ message "mới")
   const lastAutoNavRef = useRef("");
 
   useEffect(() => {
-    // load dấu vết từ sessionStorage để không lặp khi mở lại trang
     try {
       lastAutoNavRef.current = sessionStorage.getItem(`fm_ai_autonav_create_food_${myId}`) || "";
     } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myId]);
 
   useEffect(() => {
@@ -451,6 +448,14 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
     goCreateFood(last.meta.foodDraft);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, myId]);
+
+  useEffect(() => {
+    const onFocus = () => loadQuota().catch(() => {});
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   // ===== open DetailModal for a food =====
   const closeFoodDetail = () => {
