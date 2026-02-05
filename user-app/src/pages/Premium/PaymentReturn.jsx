@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+// user-app/src/pages/Premium/PaymentReturn.jsx
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getPayosStatus } from "../../api/payos";
+import "./PaymentReturn.css";
 
 export default function PaymentReturn() {
   const [sp] = useSearchParams();
@@ -43,47 +45,109 @@ export default function PaymentReturn() {
   const isPending =
     s === "PENDING" || s === "PROCESSING" || s === "WAITING" || s === "INIT";
 
+  const view = useMemo(() => {
+    if (loading) {
+      return {
+        variant: "pending",
+        icon: "fa-solid fa-spinner fa-spin",
+        title: "Đang kiểm tra trạng thái thanh toán…",
+        sub: "Vui lòng chờ vài giây. Hệ thống đang đối soát trạng thái đơn hàng.",
+      };
+    }
+
+    if (err) {
+      return {
+        variant: "error",
+        icon: "fa-solid fa-circle-exclamation",
+        title: "Không kiểm tra được thanh toán",
+        sub: "Có lỗi xảy ra khi kiểm tra trạng thái. Bạn có thể thử kiểm tra lại.",
+      };
+    }
+
+    if (isPaid) {
+      return {
+        variant: "success",
+        icon: "fa-solid fa-circle-check",
+        title: "Thanh toán thành công",
+        sub: "Cảm ơn bạn! Premium sẽ được cập nhật sau khi PayOS xác nhận hoàn tất.",
+      };
+    }
+
+    if (isPending) {
+      return {
+        variant: "pending",
+        icon: "fa-solid fa-clock",
+        title: "Thanh toán đang xử lý",
+        sub: "Đơn hàng đang trong quá trình xử lý. Bạn có thể kiểm tra lại sau vài giây.",
+      };
+    }
+
+    return {
+      variant: "fail",
+      icon: "fa-solid fa-circle-xmark",
+      title: "Thanh toán chưa thành công",
+      sub: "Nếu bạn muốn, hãy quay lại Premium để chọn gói và thanh toán lại.",
+    };
+  }, [loading, err, isPaid, isPending]);
+
+  const showRetryPay = !loading && !err && !isPaid;
+
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-      <h2>
-        {loading
-          ? "Đang kiểm tra trạng thái thanh toán…"
-          : err
-          ? "Không kiểm tra được thanh toán"
-          : isPaid
-          ? "Thanh toán thành công"
-          : isPending
-          ? "Thanh toán đang xử lý"
-          : "Thanh toán chưa thành công"}
-      </h2>
+    <div className="fm-payresult">
+      <div className={`fm-payresult-card is-${view.variant}`}>
+        <div className="fm-payresult-icon" aria-hidden="true">
+          <i className={view.icon} />
+        </div>
 
-      <p>Mã đơn: {orderCode || "—"}</p>
+        <h2 className="fm-payresult-title">{view.title}</h2>
 
-      {err ? (
-        <p style={{ color: "#ff6b6b" }}>{err}</p>
-      ) : (
-        <p>Trạng thái: <b>{local?.status || "—"}</b></p>
-      )}
+        <p className="fm-payresult-sub">{view.sub}</p>
 
-      <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-        <button onClick={fetchStatus} disabled={loading} style={{ padding: "10px 12px", borderRadius: 10 }}>
-          {loading ? "Đang kiểm tra..." : "Kiểm tra lại"}
-        </button>
+        <div className="fm-payresult-meta">
+          <span className="k">Mã đơn</span>
+          <span className="v">{orderCode || "—"}</span>
+        </div>
 
-        <Link to="/premium" style={{ padding: "10px 12px", borderRadius: 10 }}>
-          Về Premium
-        </Link>
+        {!loading && !err ? (
+          <div className="fm-payresult-meta">
+            <span className="k">Trạng thái</span>
+            <span className="v">{local?.status || "—"}</span>
+          </div>
+        ) : null}
 
-        {!loading && !err && !isPaid ? (
-          <Link to="/premium" onClick={() => toast.info("Bạn có thể chọn gói và thanh toán lại")} style={{ padding: "10px 12px", borderRadius: 10 }}>
-            Thanh toán lại
+        {err ? <div className="fm-payresult-error">{err}</div> : null}
+
+        <div className="fm-payresult-actions">
+          <button
+            type="button"
+            className="fm-paybtn fm-paybtn-ghost"
+            onClick={fetchStatus}
+            disabled={loading}
+          >
+            {loading ? "Đang kiểm tra..." : "Kiểm tra lại"}
+          </button>
+
+          <Link to="/premium" className="fm-paybtn fm-paybtn-primary">
+            Về trang Premium
           </Link>
+
+          {showRetryPay ? (
+            <Link
+              to="/premium"
+              onClick={() => toast.info("Bạn có thể chọn gói và thanh toán lại")}
+              className="fm-paybtn fm-paybtn-ghost"
+            >
+              Thanh toán lại
+            </Link>
+          ) : null}
+        </div>
+
+        {!loading && !err ? (
+          <p className="fm-payresult-tip">
+            Nếu bạn vừa thanh toán xong mà Premium chưa cập nhật, hãy chờ vài giây rồi vào <b>Premium</b> và bấm <b>Làm mới</b>.
+          </p>
         ) : null}
       </div>
-
-      <p style={{ opacity: 0.8, marginTop: 12 }}>
-        Nếu vừa thanh toán xong mà Premium chưa cập nhật, hãy chờ vài giây rồi vào <b>Premium</b> bấm <b>Làm mới</b>.
-      </p>
     </div>
   );
 }

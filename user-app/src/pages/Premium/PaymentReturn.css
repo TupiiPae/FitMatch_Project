@@ -1,3 +1,4 @@
+/* user-app/src/pages/Premium/PaymentReturn.css */
 .fm-payresult{
   width: 100%;
   display: flex;
@@ -20,9 +21,29 @@
   content:"";
   position:absolute;
   inset:-2px;
-  background: radial-gradient(600px 220px at 30% 0%, rgba(255,70,70,.16), transparent 60%),
-              radial-gradient(520px 260px at 95% 40%, rgba(255,70,70,.10), transparent 65%);
+  background:
+    radial-gradient(600px 220px at 30% 0%, rgba(255,70,70,.16), transparent 60%),
+    radial-gradient(520px 260px at 95% 40%, rgba(255,70,70,.10), transparent 65%);
   pointer-events:none;
+}
+
+.fm-payresult-card.is-success::before{
+  background:
+    radial-gradient(600px 220px at 30% 0%, rgba(80,220,140,.14), transparent 60%),
+    radial-gradient(520px 260px at 95% 40%, rgba(255,70,70,.10), transparent 65%);
+}
+
+.fm-payresult-card.is-pending::before{
+  background:
+    radial-gradient(600px 220px at 30% 0%, rgba(255,200,80,.14), transparent 60%),
+    radial-gradient(520px 260px at 95% 40%, rgba(255,70,70,.10), transparent 65%);
+}
+
+.fm-payresult-card.is-fail::before,
+.fm-payresult-card.is-error::before{
+  background:
+    radial-gradient(600px 220px at 30% 0%, rgba(255,70,70,.18), transparent 60%),
+    radial-gradient(520px 260px at 95% 40%, rgba(255,70,70,.10), transparent 65%);
 }
 
 .fm-payresult-icon{
@@ -43,6 +64,11 @@
   font-size: 26px;
   color: rgba(255,80,80,.95);
 }
+
+.is-success .fm-payresult-icon i{ color: rgba(80,220,140,.95); }
+.is-pending .fm-payresult-icon i{ color: rgba(255,200,80,.95); }
+.is-fail .fm-payresult-icon i,
+.is-error .fm-payresult-icon i{ color: rgba(255,80,80,.95); }
 
 .fm-payresult-title{
   margin: 0 0 8px;
@@ -73,6 +99,7 @@
   background: rgba(0,0,0,.22);
   position: relative;
   z-index: 1;
+  margin-top: 10px;
 }
 
 .fm-payresult-meta .k{
@@ -84,6 +111,18 @@
   font-weight: 500;
   letter-spacing: .3px;
   color: #e5e7eb;
+}
+
+.fm-payresult-error{
+  margin-top: 12px;
+  padding: 12px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,70,70,.35);
+  background: rgba(255,70,70,.10);
+  color: rgba(255,220,220,.95);
+  line-height: 1.7;
+  position: relative;
+  z-index: 1;
 }
 
 .fm-payresult-actions{
@@ -108,6 +147,16 @@
   cursor: pointer;
   user-select: none;
   transition: transform .12s ease, filter .12s ease, background .12s ease, border-color .12s ease;
+  border: 0;
+}
+
+button.fm-paybtn{
+  background: transparent;
+}
+
+.fm-paybtn:disabled{
+  opacity: .6;
+  cursor: not-allowed;
 }
 
 .fm-paybtn:active{
@@ -133,12 +182,24 @@
   background: rgba(255,255,255,.06);
 }
 
+.fm-payresult-tip{
+  margin: 14px 0 0;
+  opacity: .86;
+  line-height: 1.75;
+  font-size: 13.5px;
+  position: relative;
+  z-index: 1;
+}
+
 @media (max-width: 560px){
   .fm-payresult{
     padding: 26px 12px 44px;
   }
   .fm-payresult-card{
     padding: 18px 16px;
+  }
+  .fm-payresult-actions{
+    justify-content: stretch;
   }
   .fm-paybtn{
     width: 100%;
