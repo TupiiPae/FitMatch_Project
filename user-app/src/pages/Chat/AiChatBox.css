@@ -568,3 +568,78 @@
   cursor: pointer;
 }
 .fm-ai-upgradebtn:hover{ filter: brightness(1.05); }
+
+.fm-ai-chat{
+  position: relative;
+}
+
+.fm-ai-shell{
+  height: 100%;
+}
+
+.fm-ai-chat.is-upgrade-locked .fm-ai-shell{
+  filter: blur(3px);
+  opacity: .35;
+  pointer-events: none;
+  user-select: none;
+}
+
+.fm-ai-upgrade-overlay{
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(0,0,0,.08);
+}
+
+.fm-ai-upgrade-center{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  max-width: 420px;
+}
+
+.fm-ai-upgrade-line1{
+  font-weight: 800;
+  color: rgba(229,231,235,.95);
+  font-size: 15px;
+}
+
+.fm-ai-upgrade-line2{
+  color: rgba(229,231,235,.72);
+  font-size: 13.5px;
+}
+
+.fm-ai-upgrade-cta{
+  margin-top: 6px;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #f5c400;
+  color: #111;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+.fm-ai-upgrade-cta:hover{
+  filter: brightness(1.03);
+}
+
+.fm-ai-upgrade-cta:active{
+  transform: translateY(1px);
+}
+
+@media (max-width: 480px){
+  .fm-ai-upgrade-center{ max-width: 320px; }
+  .fm-ai-upgrade-line1{ font-size: 14.5px; }
+  .fm-ai-upgrade-line2{ font-size: 13px; }
+}

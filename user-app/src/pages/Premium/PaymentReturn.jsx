@@ -82,7 +82,7 @@ export default function PaymentReturn() {
       </div>
 
       <p style={{ opacity: 0.8, marginTop: 12 }}>
-        Nếu vừa thanh toán xong mà Premium chưa cập nhật, hãy chờ webhook vài giây rồi vào <b>Premium</b> bấm <b>Làm mới</b>.
+        Nếu vừa thanh toán xong mà Premium chưa cập nhật, hãy chờ vài giây rồi vào <b>Premium</b> bấm <b>Làm mới</b>.
       </p>
     </div>
   );

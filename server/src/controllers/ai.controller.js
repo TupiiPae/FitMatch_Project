@@ -26,10 +26,22 @@ const VN_TZ_OFFSET_MIN = 7 * 60; // Asia/Ho_Chi_Minh UTC+7
 const AI_LIMIT_STANDARD = 5;
 const AI_LIMIT_PREMIUM = 50;
 
+const pad2 = (n) => String(n).padStart(2, "0");
+
+function getDateKeyByOffset(offsetMin = VN_TZ_OFFSET_MIN, now = new Date()) {
+  const offsetMs = offsetMin * 60 * 1000;
+  // shift time -> dùng getUTC* để tránh lệch theo timezone server
+  const local = new Date(now.getTime() + offsetMs);
+  const y = local.getUTCFullYear();
+  const m = local.getUTCMonth() + 1;
+  const d = local.getUTCDate();
+  return `${y}-${pad2(m)}-${pad2(d)}`; // YYYY-MM-DD (VN)
+}
+
 function getDayRangeByOffset(offsetMin = VN_TZ_OFFSET_MIN, now = new Date()) {
   const offsetMs = offsetMin * 60 * 1000;
   const local = new Date(now.getTime() + offsetMs);
-  local.setHours(0, 0, 0, 0);
+  local.setUTCHours(0, 0, 0, 0);
   const start = new Date(local.getTime() - offsetMs);
   const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
   return { start, end };
@@ -88,15 +100,44 @@ async function getAiDailyLimitForUser(userId) {
 }
 
 async function getAiUsageToday(userId) {
-  const { start, end } = getDayRangeByOffset(VN_TZ_OFFSET_MIN, new Date());
-  const used = await AiMessage.countDocuments({
-    user: userId,
-    role: "user",
-    createdAt: { $gte: start, $lt: end },
-  }).catch(() => 0);
+  const now = new Date();
+  const { start, end } = getDayRangeByOffset(VN_TZ_OFFSET_MIN, now);
+  const dateKey = getDateKeyByOffset(VN_TZ_OFFSET_MIN, now);
 
-  return { used: Number(used) || 0, start, end };
+  const doc = await AiDailyUsage.findOne({ user: userId, dateKey })
+    .select("used")
+    .lean()
+    .catch(() => null);
+
+  return { used: Number(doc?.used) || 0, start, end, dateKey };
 }
+
+async function reserveAiUsageToday({ userId, limit }) {
+  const now = new Date();
+  const { start, end } = getDayRangeByOffset(VN_TZ_OFFSET_MIN, now);
+  const dateKey = getDateKeyByOffset(VN_TZ_OFFSET_MIN, now);
+
+  // 1) ensure record exists (no used condition)
+  await AiDailyUsage.updateOne(
+    { user: userId, dateKey },
+    { $setOnInsert: { user: userId, dateKey, startAt: start, endAt: end, used: 0 } },
+    { upsert: true }
+  ).catch(() => null);
+
+  // 2) atomic reserve if still under limit
+  const doc = await AiDailyUsage.findOneAndUpdate(
+    { user: userId, dateKey, used: { $lt: limit } },
+    { $inc: { used: 1 } },
+    { new: true }
+  )
+    .select("used startAt endAt dateKey")
+    .lean()
+    .catch(() => null);
+
+  if (!doc) return { ok: false, used: limit, start, end, dateKey };
+  return { ok: true, used: Number(doc.used) || 0, start, end, dateKey };
+}
+
 
 const toClientMsg = (m) => {
   const o = m?.toObject ? m.toObject() : m || {};
@@ -1575,12 +1616,12 @@ export async function sendAiChat(req, res) {
     }
 
     // ===== DAILY QUOTA CHECK =====
-    const [{ isPremium, limit }, usage] = await Promise.all([
-      getAiDailyLimitForUser(userId),
-      getAiUsageToday(userId),
-    ]);
+    const { isPremium, limit } = await getAiDailyLimitForUser(userId);
 
-    if (usage.used >= limit) {
+    // reserve 1 lượt (atomic)
+    const usageAfter = await reserveAiUsageToday({ userId, limit });
+
+    if (!usageAfter.ok) {
       return res.status(429).json({
         code: "AI_DAILY_LIMIT",
         message: isPremium
@@ -1588,11 +1629,15 @@ export async function sendAiChat(req, res) {
           : `Bạn đã dùng hết ${limit} lượt chat AI hôm nay. Nâng cấp Premium để có ${AI_LIMIT_PREMIUM} lượt/ngày.`,
         isPremium,
         limit,
-        used: usage.used,
+        used: limit,
         remaining: 0,
-        resetAt: usage.end.toISOString(),
+        resetAt: usageAfter.end.toISOString(),
       });
     }
+
+    // nếu qua được thì used là used sau khi +1
+    const usedNow = usageAfter.used;
+    const remainingNow = Math.max(0, limit - usedNow);
 
     const intent = inferIntent(text, imageUrls);
 

@@ -197,7 +197,7 @@ export default function App() {
           <Route path="/tin-nhan" element={<Messages />} />
 
           {/* Premium / Payment */}
-          <Route path="/premium" element={<Premium />} />
+          <Route path="/premium/*" element={<Premium />} />
           <Route path="/payment/return" element={<PaymentReturn />} />
           <Route path="/payment/cancel" element={<PaymentCancel />} />
 

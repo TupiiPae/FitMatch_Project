@@ -59,7 +59,7 @@ export async function createPayosPaymentLink(req, res) {
     if (!clientUrl) {
       return res.status(500).json({
         ok: false,
-        message: "Missing CLIENT_USER_ORIGIN (VD: http://localhost:5173 hoặc domain user-app)",
+        message: "Missing CLIENT_USER_ORIGIN ",
       });
     }
 

@@ -1,0 +1,146 @@
+.fm-payresult{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 36px 14px 56px;
+}
+
+.fm-payresult-card{
+  width: min(720px, 100%);
+  border-radius: 8px;
+  padding: 22px 20px;
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(0,0,0,.28);
+  box-shadow: 0 10px 34px rgba(0,0,0,.45);
+  position: relative;
+  overflow: hidden;
+}
+
+.fm-payresult-card::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background: radial-gradient(600px 220px at 30% 0%, rgba(255,70,70,.16), transparent 60%),
+              radial-gradient(520px 260px at 95% 40%, rgba(255,70,70,.10), transparent 65%);
+  pointer-events:none;
+}
+
+.fm-payresult-icon{
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,.30);
+  background: rgba(255,255,255,.06);
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.fm-payresult-icon i{
+  font-size: 26px;
+  color: rgba(255,80,80,.95);
+}
+
+.fm-payresult-title{
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+}
+
+.fm-payresult-sub{
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #e5e7eb;
+  position: relative;
+  z-index: 1;
+}
+
+.fm-payresult-meta{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(0,0,0,.22);
+  position: relative;
+  z-index: 1;
+}
+
+.fm-payresult-meta .k{
+  font-weight: 600;
+  color: #B0B0B0;
+}
+
+.fm-payresult-meta .v{
+  font-weight: 500;
+  letter-spacing: .3px;
+  color: #e5e7eb;
+}
+
+.fm-payresult-actions{
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+  justify-content: flex-end;
+}
+
+.fm-paybtn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .12s ease, filter .12s ease, background .12s ease, border-color .12s ease;
+}
+
+.fm-paybtn:active{
+  transform: translateY(1px);
+}
+
+.fm-paybtn-primary{
+  background: rgba(255,70,70,.95);
+  color: #111;
+}
+
+.fm-paybtn-primary:hover{
+  filter: brightness(1.05);
+}
+
+.fm-paybtn-ghost{
+  background: transparent;
+  color: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.18);
+}
+
+.fm-paybtn-ghost:hover{
+  background: rgba(255,255,255,.06);
+}
+
+@media (max-width: 560px){
+  .fm-payresult{
+    padding: 26px 12px 44px;
+  }
+  .fm-payresult-card{
+    padding: 18px 16px;
+  }
+  .fm-paybtn{
+    width: 100%;
+  }
+}

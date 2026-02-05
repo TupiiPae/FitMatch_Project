@@ -184,6 +184,7 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
   const [quota, setQuota] = useState(null); // { isPremium, limit, used, remaining, resetAt }
   const quotaLocked = !!quota && Number(quota.remaining) <= 0;
+  const showUpgradeOverlay = quotaLocked && !quota?.isPremium;
 
   const loadQuota = async () => {
     try {
@@ -970,8 +971,12 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
     }
   };
 
-  return (
-    <div className="fm-chat fm-ai-chat" style={{ height }}>
+return (
+  <div
+    className={"fm-chat fm-ai-chat" + (showUpgradeOverlay ? " is-upgrade-locked" : "")}
+    style={{ height }}
+  >
+    <div className="fm-ai-shell">
       {imgView?.url && (
         <div
           className="fm-chat-imgview"
@@ -1411,25 +1416,15 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       </div>
 
       <div className="fm-chat-compose">
-        {quotaLocked ? (
+        {quotaLocked && quota?.isPremium ? (
           <div className="fm-ai-quota-lock">
-            {quota?.isPremium ? (
-              <>
-                <div className="t">Bạn đã dùng hết <b>{quota?.limit || 50}</b> lượt chat AI hôm nay.</div>
-                <div className="s">
-                  Bạn có thể chat lại sau{" "}
-                  <b>{dayjs(quota?.resetAt).isValid() ? dayjs(quota.resetAt).format("HH:mm DD/MM") : "00:00"}</b>.
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="t">Bạn đã dùng hết <b>{quota?.limit || 5}</b> lượt chat AI hôm nay (Standard).</div>
-                <div className="s">Nâng cấp Premium để có <b>50</b> lượt/ngày.</div>
-                <button type="button" className="fm-ai-upgradebtn" onClick={() => nav("/premium")}>
-                  Nâng cấp Premium
-                </button>
-              </>
-            )}
+            <div className="t">
+              Bạn đã dùng hết <b>{quota?.limit || 50}</b> lượt chat AI hôm nay.
+            </div>
+            <div className="s">
+              Bạn có thể chat lại sau{" "}
+              <b>{dayjs(quota?.resetAt).isValid() ? dayjs(quota.resetAt).format("HH:mm DD/MM") : "00:00"}</b>.
+            </div>
           </div>
         ) : null}
 
@@ -1516,9 +1511,27 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
       </div>
 
       <DetailModal open={detailOpen} food={detailFood} onClose={closeFoodDetail} />
-
-      {/* giữ lại loading để không bị eslint unused */}
       {detailLoading ? <div className="fm-ai-detailloading">Đang tải chi tiết…</div> : null}
     </div>
-  );
-}
+
+    {showUpgradeOverlay ? (
+      <div className="fm-ai-upgrade-overlay">
+        <div className="fm-ai-upgrade-center">
+          <button
+            type="button"
+            className="fm-ai-upgrade-cta"
+            onClick={() => nav("/premium")}
+          >
+            Nâng cấp Premium <i className="fa-solid fa-crown" />
+          </button>
+          <div className="fm-ai-upgrade-line1">
+            Bạn đã dùng hết {quota?.limit || 5} lượt chat AI hôm nay
+          </div>
+          <div className="fm-ai-upgrade-line2">
+            Nâng cấp Premium để tăng giới hạn lượt Chat
+          </div>
+        </div>
+      </div>
+    ) : null}
+  </div>
+);}
