@@ -161,6 +161,18 @@
   box-shadow:0 10px 35px rgba(0,0,0,.45);color:#e5e7eb;overflow:hidden
 }
 
+.cn-card--highlight{
+  border-color:#f59e0b;
+  box-shadow:0 0 0 1px rgba(245,158,11,.55), 0 0 18px rgba(245,158,11,.35), 0 10px 35px rgba(0,0,0,.45);
+  animation:cn-highlight-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes cn-highlight-pulse{
+  0%{box-shadow:0 0 0 1px rgba(245,158,11,.35), 0 0 10px rgba(245,158,11,.15), 0 10px 35px rgba(0,0,0,.45)}
+  50%{box-shadow:0 0 0 1px rgba(245,158,11,.75), 0 0 20px rgba(245,158,11,.45), 0 10px 35px rgba(0,0,0,.45)}
+  100%{box-shadow:0 0 0 1px rgba(245,158,11,.35), 0 0 10px rgba(245,158,11,.15), 0 10px 35px rgba(0,0,0,.45)}
+}
+
 .cn-card-img-title-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
 .cn-card-img-title-left{min-width:0;flex:1}
 .cn-card-img-title-left .cn-card-img-name-btn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

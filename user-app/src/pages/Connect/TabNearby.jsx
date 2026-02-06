@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { listNearby, createMatchRequest, getMyRequests, acceptMatchRequest, cancelMatchRequest, getMatchStatus, getRoomDetail, createConnectReport } from "../../api/match";
 import { toast } from "react-toastify";
 import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
@@ -112,8 +112,15 @@ export default function TabNearby({
   onOpenFilters,
 }) {
   const nav = useNavigate();
+  const loc = useLocation();
 
   const meId=useMemo(()=>String(currentUser?._id||currentUser?.id||currentUser?.user?._id||currentUser?.user?.id||""),[currentUser]);
+  const suggestUserId = useMemo(() => {
+    const qs = new URLSearchParams(loc?.search || "");
+    return qs.get("suggestUserId") || qs.get("suggest") || null;
+  }, [loc?.search]);
+  const [highlightId, setHighlightId] = useState(null);
+  const lastScrollRef = useRef("");
 
   const [viewMode, setViewMode] = useState("grid");
   const [search, setSearch] = useState("");
@@ -238,7 +245,7 @@ export default function TabNearby({
     return ()=>{ cancelled=true; };
   }, [connectionMode, discoverable]);
 
-  useEffect(()=>{
+  useEffect(()=>{ 
     let cancelled=false;
     async function loadMyGroup(){
       try{
@@ -261,6 +268,15 @@ export default function TabNearby({
     loadMyGroup();
     return ()=>{ cancelled=true; };
   }, [connectionMode, currentUser]);
+
+  useEffect(() => {
+    if (!suggestUserId) {
+      setHighlightId(null);
+      lastScrollRef.current = "";
+      return;
+    }
+    setHighlightId(String(suggestUserId));
+  }, [suggestUserId]);
 
   const filteredList = useMemo(() => {
     const meAddr=getAddrParts(currentUser);
@@ -353,6 +369,25 @@ export default function TabNearby({
       return true;
     });
   }, [items, myGroupCard, currentUser, connectionMode, locationRange, ageRange, genderFilter, search, goalFilter]);
+
+  useEffect(() => {
+    const id = highlightId ? String(highlightId) : "";
+    if (!id) return;
+
+    const exists = filteredList.some((u) => String(u?.id || u?._id || "") === id);
+    if (!exists) return;
+
+    if (lastScrollRef.current !== id) {
+      lastScrollRef.current = id;
+      const el = document.querySelector(`[data-suggest-id="${id}"]`);
+      if (el && typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    const t = setTimeout(() => setHighlightId(null), 6000);
+    return () => clearTimeout(t);
+  }, [highlightId, filteredList]);
 
   const resultCount = filteredList.length;
 
@@ -546,6 +581,7 @@ export default function TabNearby({
               meId={meId}
               isSelf={false}
               isPinned={false}
+              highlight={highlightId && String(u?.id || u?._id || "") === String(highlightId)}
             />
           ))}
         </div>
@@ -574,9 +610,10 @@ export default function TabNearby({
 }
 
 /* ===== Card: Grid & List ===== */
-function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport, onOpenUser, meId, isSelf=false, isPinned=false, pinText="" }) {
+function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport, onOpenUser, meId, isSelf=false, isPinned=false, pinText="", highlight=false }) {
   const { id,_id,nickname,age,gender,goal,trainingTypes=[],intensityLabel,locationLabel,bio,isGroup,membersCount,imageUrl,areaLabel,ageRange,trainingFrequency } = user || {};
   const uid=id||_id;
+  const uidStr = uid ? String(uid) : "";
 
   const userGenderLabel=!isGroup&&gender==="male"?"Nam":!isGroup&&gender==="female"?"Nữ":!isGroup&&gender?"Khác":"";
   const groupGenderLabel=isGroup?(GENDER_LABELS[gender]||"Tất cả"):"";
@@ -628,7 +665,10 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
 
   if(viewMode==="grid"){
     return (
-      <article className="cn-card cn-card--grid">
+      <article
+        className={`cn-card cn-card--grid${highlight ? " cn-card--highlight" : ""}`}
+        data-suggest-id={uidStr || undefined}
+      >
         {isPinned && <div className="cn-card-pin" title={pinText||"Đã ghim"}><i className="fa-solid fa-thumbtack" /></div>}
 
         <div className="cn-card-img-wrap">
@@ -698,7 +738,10 @@ function ConnectCard({ user, viewMode, inviteState, onOpenConfirm, onOpenReport,
   }
 
   return (
-    <article className="cn-card cn-card--list">
+    <article
+      className={`cn-card cn-card--list${highlight ? " cn-card--highlight" : ""}`}
+      data-suggest-id={uidStr || undefined}
+    >
       {isPinned && <div className="cn-card-pin" title={pinText||"Đã ghim"}><i className="fa-solid fa-thumbtack" /></div>}
 
       <div className="cn-avatar" onClick={handleOpenUser} style={!isGroup&&!isSelf?{cursor:"pointer"}:undefined}>

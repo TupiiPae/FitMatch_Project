@@ -1,6 +1,7 @@
 // server/src/controllers/match.controller.js
 import MatchRoom from "../models/MatchRoom.js";
 import MatchRequest from "../models/MatchRequest.js";
+import Notification from "../models/Notification.js";
 import { User } from "../models/User.js";
 import { responseOk } from "../utils/response.js";
 import { uploadImageWithResize } from "../utils/cloudinary.js";
@@ -112,6 +113,106 @@ function buildLocationLabel(profile, storedLabel) {
 function buildFullLocationLabel(profile) {
   const a = profile?.address || {};
   return [a.country, a.city, a.district, a.ward].filter(Boolean).join(" - ");
+}
+
+function buildDistrictLocationLabel(profile) {
+  const a = profile?.address || {};
+  return [a.country, a.city, a.district].filter(Boolean).join(" - ");
+}
+
+const NOTI_CONNECT_SUGGEST = "connect_suggest";
+const SUGGEST_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const escapeRegex = (s) => String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const exactRegex = (s) => new RegExp(`^${escapeRegex(s)}$`, "i");
+
+function pickGoalKey(u) {
+  return u?.connectGoalKey || u?.profile?.goal || null;
+}
+
+function pickGoalLabel(u, goalKey) {
+  return u?.connectGoalLabel || goalLabelFromKey(goalKey) || "";
+}
+
+function buildAreaMatchKey(profile) {
+  const a = profile?.address || {};
+  const country = String(a.country || "").trim();
+  const city = String(a.city || "").trim();
+  const district = String(a.district || "").trim();
+  if (!country || !city || !district) return null;
+  return { country, city, district };
+}
+
+async function notifyConnectSuggestionsIfNeeded(userDoc) {
+  const userId = String(userDoc?._id || "");
+  if (!userId) return 0;
+
+  const goalKey = pickGoalKey(userDoc);
+  if (!goalKey) return 0;
+
+  const area = buildAreaMatchKey(userDoc?.profile || {});
+  if (!area) return 0;
+
+  const targets = await User.find({
+    _id: { $ne: userId },
+    role: "user",
+    blocked: false,
+    connectDiscoverable: true,
+    $or: [{ connectGoalKey: goalKey }, { "profile.goal": goalKey }],
+    "profile.address.country": exactRegex(area.country),
+    "profile.address.city": exactRegex(area.city),
+    "profile.address.district": exactRegex(area.district),
+  })
+    .select("username email profile.nickname profile.avatarUrl connectGoalKey connectGoalLabel profile.goal")
+    .lean();
+
+  if (!targets.length) return 0;
+
+  const since = new Date(Date.now() - SUGGEST_COOLDOWN_MS);
+  const recent = await Notification.find({
+    type: NOTI_CONNECT_SUGGEST,
+    from: userId,
+    to: { $in: targets.map((x) => x._id) },
+    createdAt: { $gte: since },
+  })
+    .select("to")
+    .lean();
+
+  const skipSet = new Set((recent || []).map((n) => String(n?.to || "")));
+
+  const fromName = pickName(userDoc);
+  const fromAvatar = userDoc?.profile?.avatarUrl || null;
+  const fromGoalLabel = pickGoalLabel(userDoc, goalKey);
+  const fromLocationLabel = buildDistrictLocationLabel(userDoc?.profile || {});
+
+  let sent = 0;
+  for (const t of targets) {
+    const toId = String(t?._id || "");
+    if (!toId || skipSet.has(toId)) continue;
+
+    await notifySafe({
+      to: toId,
+      from: userId,
+      type: NOTI_CONNECT_SUGGEST,
+      title: "Gợi ý kết nối",
+      body: fromName
+        ? `Gợi ý kết ${fromName} cho bạn.`
+        : "Có người dùng phù hợp gần bạn.",
+      data: {
+        screen: "Connect",
+        tab: "nearby",
+        mode: "duo",
+        suggestUserId: userId,
+        suggestName: fromName,
+        suggestAvatar: fromAvatar,
+        suggestGoalKey: goalKey,
+        suggestGoalLabel: fromGoalLabel,
+        suggestLocationLabel: fromLocationLabel,
+      },
+    });
+    sent += 1;
+  }
+
+  return sent;
 }
 
 function buildAreaInfo(meProfile, otherProfile) {
@@ -298,13 +399,14 @@ export async function updateDiscoverable(req, res, next) {
 
     const { discoverable } = req.body || {};
     const user = await User.findById(userId).select(
-      "connectDiscoverable hasAddressForConnect profile"
+      "username email connectDiscoverable hasAddressForConnect connectGoalKey connectGoalLabel profile"
     );
     if (!user)
       return res
         .status(404)
         .json({ success: false, message: "Không tìm thấy người dùng" });
 
+    const wasDiscoverable = !!user.connectDiscoverable;
     const hasAddr = user.hasAddressForConnect || hasAddress(user.profile || {});
     if (discoverable && !hasAddr) {
       return res.status(400).json({
@@ -317,6 +419,14 @@ export async function updateDiscoverable(req, res, next) {
     user.connectDiscoverable = !!discoverable;
     if (!user.hasAddressForConnect && hasAddr) user.hasAddressForConnect = true;
     await user.save();
+
+    if (discoverable && !wasDiscoverable) {
+      try {
+        await notifyConnectSuggestionsIfNeeded(user);
+      } catch (e) {
+        /* không làm hỏng luồng chính */
+      }
+    }
 
     return responseOk(res, { discoverable: user.connectDiscoverable });
   } catch (err) {

@@ -1,48 +1,35 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
+import api from "../../lib/api";
 import { getSocket } from "../../lib/socket";
 import { listNotifications, markNotificationRead } from "../../api/notification";
-import "./NotificationBell.css";
+import "./ConnectSuggestBell.css";
 
 const safeArr = (v) => (Array.isArray(v) ? v : []);
 const unwrapItems = (payload) => payload?.items ?? payload?.data?.items ?? [];
-const getNextCursor = (payload) =>
-  payload?.nextCursor ?? payload?.data?.nextCursor ?? null;
+const getNextCursor = (payload) => payload?.nextCursor ?? payload?.data?.nextCursor ?? null;
 
+const isSuggestNoti = (n) => String(n?.type || "") === "connect_suggest";
 const getId = (n) => String(n?._id || n?.id || "");
 const isReadNoti = (n) => !!(n?.readAt || n?.isRead);
 
-const isChatNoti = (n) => {
-  const type = String(n?.type || "");
-  const d = n?.data || {};
-  return type === "chat_message" || d?.screen === "Messages";
+const apiBase = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE) || api.defaults?.baseURL || "";
+const toAbs = (u) => {
+  if (!u) return u;
+  try {
+    return new URL(u, apiBase).toString();
+  } catch {
+    return u;
+  }
 };
+const withBust = (u, t) => (u ? `${u}${u.includes("?") ? "&" : "?"}t=${t}` : u);
 
-const isSuggestNoti = (n) => String(n?.type || "") === "connect_suggest";
-
-const isFirstContactChat = (n) => {
-  const d = n?.data || {};
-  return isChatNoti(n) && d?.firstContact === true;
-};
-
-const shouldShowInBell = (n) => {
-  // Bell = thông báo tổng (trừ chat), + chat chỉ khi firstContact
-  if (!n) return false;
-  if (isSuggestNoti(n)) return false;
-  if (isChatNoti(n)) return isFirstContactChat(n);
-  return true;
-};
-
-const getConversationId = (n) => {
-  const d = n?.data || {};
-  return String(d?.conversationId || d?.cid || "");
-};
-
-export default function NotificationBell() {
+export default function ConnectSuggestBell() {
   const nav = useNavigate();
   const socket = useMemo(() => getSocket(), []);
+  const bustToken = useMemo(() => Date.now(), []);
   const boxRef = useRef(null);
 
   const [open, setOpen] = useState(false);
@@ -50,21 +37,16 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const [cursor, setCursor] = useState(null);
 
-  const items = useMemo(
-    () => safeArr(rawItems).filter(shouldShowInBell),
-    [rawItems]
-  );
-
+  const items = useMemo(() => safeArr(rawItems).filter(isSuggestNoti), [rawItems]);
   const unread = useMemo(
     () => items.reduce((sum, x) => sum + (isReadNoti(x) ? 0 : 1), 0),
     [items]
   );
 
-  // ✅ mặc định ~7 noti mới nhất
   const loadFirst = async () => {
     try {
       setLoading(true);
-      const l = await listNotifications({ limit: 7 });
+      const l = await listNotifications({ limit: 10 });
       const fetched = unwrapItems(l);
       setRawItems(fetched);
       setCursor(getNextCursor(l));
@@ -75,7 +57,6 @@ export default function NotificationBell() {
     }
   };
 
-  // ✅ mỗi lần "Xem thêm" -> lấy thêm 10 noti cũ hơn
   const loadMore = async () => {
     if (!cursor) return;
     try {
@@ -96,16 +77,14 @@ export default function NotificationBell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ Optional: refresh khi mở dropdown để luôn mới nhất
   useEffect(() => {
     if (open) loadFirst();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // realtime
   useEffect(() => {
     const onNew = (n) => {
-      if (!shouldShowInBell(n)) return;
+      if (!isSuggestNoti(n)) return;
 
       setRawItems((prev) => {
         const id = getId(n);
@@ -113,9 +92,8 @@ export default function NotificationBell() {
         return [n, ...safeArr(prev)];
       });
 
-      // toast:
-      const title = n?.title || "Bạn có thông báo mới";
-      if (!isChatNoti(n) || isFirstContactChat(n)) toast.info(title);
+      const name = n?.data?.suggestName || "";
+      toast.info(name ? `Gợi ý kết nối mới cho bạn` : "Bạn có gợi ý kết nối mới");
     };
 
     const onReadUpdate = ({ id, readAt, isRead }) => {
@@ -128,11 +106,8 @@ export default function NotificationBell() {
       );
     };
 
-    // ✅ Đồng bộ đúng với BE patch: "notification:*"
     socket.on("notification:new", onNew);
     socket.on("notification:read_update", onReadUpdate);
-
-    // (giữ compatibility nếu chỗ khác của bạn vẫn emit noti:*)
     socket.on("noti:new", onNew);
     socket.on("noti:read_update", onReadUpdate);
 
@@ -144,7 +119,6 @@ export default function NotificationBell() {
     };
   }, [socket]);
 
-  // click outside close
   useEffect(() => {
     const onDown = (e) => {
       if (!open) return;
@@ -156,46 +130,15 @@ export default function NotificationBell() {
   }, [open]);
 
   const goByNoti = (n) => {
-    const type = String(n?.type || "");
     const d = n?.data || {};
+    const qs = new URLSearchParams();
+    qs.set("screen", "Connect");
+    qs.set("tab", d?.tab || "nearby");
+    qs.set("mode", d?.mode || "duo");
+    if (d?.suggestUserId) qs.set("suggestUserId", String(d.suggestUserId));
+    const search = qs.toString();
 
-    // 0) Admin kick/remove group (theo patch BE)
-    if (type === "you_removed_by_admin" || type === "group_member_removed_by_admin") {
-      nav("/ket-noi/nhom");
-      return;
-    }
-
-    // 1) Chat first-contact -> mở đúng conversation
-    if (isFirstContactChat(n)) {
-      const cid = getConversationId(n);
-      if (cid) {
-        nav(`/tin-nhan?conversationId=${encodeURIComponent(cid)}`, {
-          state: { conversationId: cid },
-        });
-        return;
-      }
-      nav("/tin-nhan");
-      return;
-    }
-
-    // 2) Connect / Match / Group
-    if (
-      d?.screen === "Connect" ||
-      type.startsWith("match_") ||
-      type.startsWith("group_")
-    ) {
-      const mode = String(d?.mode || "");
-      if (mode === "group" || type.includes("_group") || type.startsWith("group_")) {
-        nav("/ket-noi/nhom");
-        return;
-      }
-      nav("/ket-noi/duo");
-      return;
-    }
-
-    // 3) fallback path
-    if (d?.path) nav(d.path);
-    else nav("/home");
+    nav(`/ket-noi${search ? `?${search}` : ""}`);
   };
 
   const onClickItem = async (n) => {
@@ -203,7 +146,6 @@ export default function NotificationBell() {
     try {
       if (!isReadNoti(n) && id) {
         await markNotificationRead(id);
-        // optimistic update (đỡ phải chờ socket)
         setRawItems((prev) =>
           safeArr(prev).map((x) =>
             getId(x) === id ? { ...x, readAt: x.readAt || new Date().toISOString(), isRead: true } : x
@@ -220,9 +162,7 @@ export default function NotificationBell() {
     if (!unreadList.length) return;
 
     try {
-      await Promise.all(
-        unreadList.map((x) => markNotificationRead(getId(x)).catch(() => null))
-      );
+      await Promise.all(unreadList.map((x) => markNotificationRead(getId(x)).catch(() => null)));
       setRawItems((prev) =>
         safeArr(prev).map((x) =>
           unreadList.some((u) => getId(u) === getId(x))
@@ -236,33 +176,33 @@ export default function NotificationBell() {
   };
 
   return (
-    <div className="fm-noti" ref={boxRef}>
+    <div className="csb-wrap" ref={boxRef}>
       <button
         type="button"
-        className="fm-noti-btn"
+        className="csb-btn"
         onClick={() => setOpen((v) => !v)}
-        title="Thông báo"
+        title="Gợi ý kết nối"
         aria-haspopup="menu"
         aria-expanded={open ? "true" : "false"}
       >
-        <i className="fa-regular fa-bell" />
+        <i className="fa-solid fa-user-plus" />
         {unread > 0 ? (
-          <span className="fm-noti-badge">{unread > 99 ? "99+" : unread}</span>
+          <span className="csb-badge">{unread > 99 ? "99+" : unread}</span>
         ) : null}
       </button>
 
       <div
-        className={`noti-pop ${open ? "is-open" : ""}`}
+        className={`csb-pop ${open ? "is-open" : ""}`}
         role="menu"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="noti-head">
-          <div className="noti-title">Thông báo</div>
+        <div className="csb-head">
+          <div className="csb-title">Gợi ý kết nối</div>
 
-          <div className="noti-actions">
+          <div className="csb-actions">
             <button
               type="button"
-              className="noti-actionLink"
+              className="csb-actionLink"
               onClick={onMarkAllVisible}
               title="Đánh dấu tất cả là đã đọc"
             >
@@ -272,18 +212,22 @@ export default function NotificationBell() {
           </div>
         </div>
 
-        <div className="noti-list">
-          {loading && !items.length ? <div className="noti-empty">Đang tải…</div> : null}
-          {!loading && !items.length ? <div className="noti-empty">Chưa có thông báo.</div> : null}
+        <div className="csb-list">
+          {loading && !items.length ? <div className="csb-empty">Đang tải…</div> : null}
+          {!loading && !items.length ? <div className="csb-empty">Chưa có gợi ý kết nối.</div> : null}
 
           {items.map((n) => {
             const id = getId(n);
             const read = isReadNoti(n);
+            const name = n?.data?.suggestName || n?.title || "Gợi ý kết nối";
+            const avatarRaw = n?.data?.suggestAvatar || "";
+            const avatar = avatarRaw ? withBust(toAbs(avatarRaw), bustToken) : "/images/avatar.png";
+            const time = n?.createdAt ? dayjs(n.createdAt).format("HH:mm DD/MM") : "";
 
             return (
               <div
                 key={id || Math.random()}
-                className={`noti-item ${read ? "read" : "unread"}`}
+                className={`csb-item ${read ? "read" : "unread"}`}
                 role="menuitem"
                 tabIndex={0}
                 onClick={() => onClickItem(n)}
@@ -294,40 +238,49 @@ export default function NotificationBell() {
                   }
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                  <div className="noti-item-title">{n.title || "Thông báo"}</div>
-
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-                    <div className="noti-item-time">
-                      {n.createdAt ? dayjs(n.createdAt).format("HH:mm DD/MM") : ""}
-                    </div>
-
-                    {!read ? (
-                      <button
-                        type="button"
-                        title="Đánh dấu đã đọc"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            await markNotificationRead(id);
-                            setRawItems((prev) =>
-                              safeArr(prev).map((x) =>
-                                getId(x) === id
-                                  ? { ...x, readAt: x.readAt || new Date().toISOString(), isRead: true }
-                                  : x
-                              )
-                            );
-                          } catch {}
-                        }}
-                        className="noti-mini-btn"
-                      >
-                        ✓
-                      </button>
-                    ) : null}
-                  </div>
+                <div className="csb-avatar">
+                  <img
+                    src={avatar}
+                    alt={name}
+                    onError={(e) => {
+                      e.currentTarget.src = "/images/avatar.png";
+                    }}
+                  />
                 </div>
 
-                {n.body ? <div className="noti-item-body">{n.body}</div> : null}
+                <div className="csb-content">
+                  <div className="csb-item-title">
+                    {n?.data?.suggestName ? `Gợi ý kết nối mới` : name}
+                  </div>
+                  {n?.body ? <div className="csb-item-body">{n.body}</div> : null}
+                </div>
+
+                <div className="csb-right">
+                  <div className="csb-time">{time}</div>
+
+                  {!read ? (
+                    <button
+                      type="button"
+                      title="Đánh dấu đã đọc"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await markNotificationRead(id);
+                          setRawItems((prev) =>
+                            safeArr(prev).map((x) =>
+                              getId(x) === id
+                                ? { ...x, readAt: x.readAt || new Date().toISOString(), isRead: true }
+                                : x
+                            )
+                          );
+                        } catch {}
+                      }}
+                      className="csb-mini-btn"
+                    >
+                      ✓
+                    </button>
+                  ) : null}
+                </div>
               </div>
             );
           })}
@@ -335,11 +288,11 @@ export default function NotificationBell() {
           {cursor ? (
             <button
               type="button"
-              className="noti-loadmore"
+              className="csb-loadmore"
               onClick={loadMore}
               disabled={loading}
             >
-              {loading ? "Đang tải…" : "Xem thêm thông báo"}
+              {loading ? "Đang tải…" : "Xem thêm gợi ý"}
             </button>
           ) : null}
         </div>

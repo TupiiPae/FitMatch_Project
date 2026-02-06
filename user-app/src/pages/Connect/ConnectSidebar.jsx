@@ -102,7 +102,7 @@ const hideMobileTopbar = useMemo(() => {
     const st = stRaw?.data && typeof stRaw.data === "object" ? stRaw.data : stRaw;
 
     const fromState =
-      st && (st.screen || st.tab || st.mode || st.roomId || st.requestId) ? st : null;
+      st && (st.screen || st.tab || st.mode || st.roomId || st.requestId || st.suggestUserId) ? st : null;
 
     const fromQuery = {
       screen: qs.get("screen") || null,
@@ -110,9 +110,10 @@ const hideMobileTopbar = useMemo(() => {
       mode: qs.get("mode") || null,
       roomId: qs.get("roomId") || qs.get("room") || null,
       requestId: qs.get("requestId") || qs.get("request") || null,
+      suggestUserId: qs.get("suggestUserId") || qs.get("suggest") || null,
     };
     const hasQuery =
-      fromQuery.screen || fromQuery.tab || fromQuery.mode || fromQuery.roomId || fromQuery.requestId;
+      fromQuery.screen || fromQuery.tab || fromQuery.mode || fromQuery.roomId || fromQuery.requestId || fromQuery.suggestUserId;
 
     const raw = fromState || (hasQuery ? fromQuery : null);
     if (!raw) return null;
@@ -124,6 +125,7 @@ const hideMobileTopbar = useMemo(() => {
 
     const roomId = raw.roomId ? String(raw.roomId) : null;
     const requestId = raw.requestId ? String(raw.requestId) : null;
+    const suggestUserId = raw.suggestUserId ? String(raw.suggestUserId) : null;
 
     return {
       screen: "Connect",
@@ -131,6 +133,7 @@ const hideMobileTopbar = useMemo(() => {
       mode,
       roomId,
       requestId,
+      suggestUserId,
       _fromState: !!fromState,
     };
   };
@@ -142,6 +145,7 @@ const hideMobileTopbar = useMemo(() => {
     if (intent?.mode) qs.set("mode", intent.mode);
     if (intent?.roomId) qs.set("roomId", intent.roomId);
     if (intent?.requestId) qs.set("requestId", intent.requestId);
+    if (intent?.suggestUserId) qs.set("suggestUserId", intent.suggestUserId);
     const s = qs.toString();
     return s ? `?${s}` : "";
   };
