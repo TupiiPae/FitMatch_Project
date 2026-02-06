@@ -6,13 +6,22 @@ import fetch from "node-fetch"; // nếu đang dùng Node <18, đảm bảo đã
 
 import { User } from "../models/User.js";
 import PasswordReset from "../models/PasswordReset.js";
-import { sendOtpEmail } from "../utils/mailer.js";
+
+import RegisterOtp from "../models/RegisterOtp.js";
+import { sendOtpEmail, sendRegisterOtpEmail } from "../utils/mailer.js";
 
 /* --------------------------- Config (có thể chỉnh qua ENV) --------------------------- */
 const OTP_TTL_MINUTES = Number(process.env.OTP_TTL_MINUTES || 2); // TTL OTP (phút) – mặc định 2 để đồng bộ UI
 const RESEND_COOLDOWN_SEC = Number(process.env.OTP_RESEND_COOLDOWN_SEC || 60); // cooldown gửi lại (giây)
 const MAX_OTP_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5); // số lần nhập sai tối đa
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+
+const REQUIRE_REGISTER_OTP = String(process.env.REQUIRE_REGISTER_OTP || "0") === "1";
+const REGISTER_OTP_TTL_MINUTES = Number(process.env.REGISTER_OTP_TTL_MINUTES || OTP_TTL_MINUTES);
+const REGISTER_OTP_COOLDOWN_SEC = Number(process.env.REGISTER_OTP_RESEND_COOLDOWN_SEC || RESEND_COOLDOWN_SEC);
+const EMAIL_GMAIL_SIMPLE = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+
+const genOTP4 = () => String(Math.floor(1000 + Math.random() * 9000));
 
 /* --------------------------- Helpers --------------------------- */
 const norm = (v) => (typeof v === "string" ? v.trim() : "");
@@ -61,9 +70,55 @@ const touchLoginActivity = async (userId) => {
   }
 };
 
+export const registerOtpRequest = async (req, res) => {
+  try {
+    const email = normLower(req.body.email);
+    if (!email) return res.status(400).json({ success: false, message: "Email là bắt buộc." });
+    if (!EMAIL_GMAIL_SIMPLE.test(email)) {
+      return res.status(400).json({ success: false, message: "Email phải có đuôi @gmail.com." });
+    }
+
+    const user = await User.findOne({ email }).select("_id").lean();
+    if (user) return res.status(409).json({ success: false, message: "Email đã được sử dụng." });
+
+    const latest = await RegisterOtp.findOne({ email, used: false }).sort({ createdAt: -1 });
+    if (latest && Date.now() - latest.createdAt.getTime() < REGISTER_OTP_COOLDOWN_SEC * 1000) {
+      return res
+        .status(429)
+        .json({ success: false, message: `Vui lòng đợi ${REGISTER_OTP_COOLDOWN_SEC} giây trước khi gửi lại OTP.` });
+    }
+
+    await RegisterOtp.deleteMany({ email, used: false });
+
+    const otp = genOTP4();
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    await RegisterOtp.create({
+      email,
+      otpHash,
+      attempts: 0,
+      used: false,
+      expiresAt: new Date(Date.now() + REGISTER_OTP_TTL_MINUTES * 60 * 1000),
+    });
+
+    await sendRegisterOtpEmail({ to: email, otp });
+
+    return res.json({ success: true, message: "OTP đăng ký đã được gửi.", ttlSec: REGISTER_OTP_TTL_MINUTES * 60 });
+  } catch (err) {
+    console.error("[auth.registerOtpRequest]", err);
+    return res.status(500).json({ success: false, message: "Không thể gửi OTP lúc này." });
+  }
+};
+
+export const registerOtpResend = async (req, res) => {
+  return registerOtpRequest(req, res);
+};
+
+
 /* =========================== AUTH CORE =========================== */
 export const register = async (req, res) => {
   try {
+    const otp = norm(req.body.otp);
     const username = norm(req.body.username);
     const email = normLower(req.body.email);
     const password = norm(req.body.password);
@@ -81,6 +136,33 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Tên tài khoản hoặc email đã tồn tại." });
     }
 
+    if (REQUIRE_REGISTER_OTP) {
+      if (!otp) return res.status(400).json({ message: "Vui lòng nhập OTP để xác thực email." });
+
+      const ro = await RegisterOtp.findOne({ email, used: false }).sort({ createdAt: -1 });
+      if (!ro) return res.status(400).json({ message: "OTP không hợp lệ hoặc đã hết hạn." });
+
+      if (ro.expiresAt && new Date() > new Date(ro.expiresAt)) {
+        await RegisterOtp.deleteMany({ email });
+        return res.status(400).json({ message: "OTP đã hết hạn. Vui lòng gửi lại." });
+      }
+
+      if (ro.attempts >= MAX_OTP_ATTEMPTS) {
+        await RegisterOtp.deleteMany({ email });
+        return res.status(429).json({ message: "Bạn đã nhập sai quá số lần cho phép. Vui lòng gửi OTP mới." });
+      }
+
+      const ok = await bcrypt.compare(otp, ro.otpHash);
+      if (!ok) {
+        ro.attempts += 1;
+        await ro.save();
+        return res.status(400).json({ message: "OTP không đúng." });
+      }
+
+      ro.used = true;
+      await ro.save();
+    }
+
     const now = new Date();
     const newUser = await User.create({
       username,
@@ -92,6 +174,10 @@ export const register = async (req, res) => {
     });
 
     const token = signToken(newUser);
+
+    if (REQUIRE_REGISTER_OTP) {
+      await RegisterOtp.deleteMany({ email });
+    }
 
     return res.status(201).json({
       message: "Đăng ký thành công!",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../Style/AuthLayout";
 import "../Style/style.css";
@@ -7,78 +7,145 @@ import { validateUsername, validateEmailGmail, validatePassword, validateConfirm
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 
+const OTP_TTL_SEC = Number(import.meta.env.VITE_OTP_TTL_SEC || 120);
+
+function fmtMMSS(s) {
+  const mm = Math.floor(Math.max(0, s) / 60);
+  const ss = Math.max(0, s) % 60;
+  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+}
+
 export default function Register() {
   const nav = useNavigate();
 
+  const [step, setStep] = useState("form");
+
   const [username, setUsername] = useState("");
-  const [email,    setEmail]    = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm,  setConfirm]  = useState("");
+  const [confirm, setConfirm] = useState("");
+
+  const [otp, setOtp] = useState("");
 
   const [showPass, setShowPass] = useState(false);
-  const [showCfm,  setShowCfm]  = useState(false);
-  const [loading, setLoading]   = useState(false);
+  const [showCfm, setShowCfm] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [cooldown, setCooldown] = useState(0);
+  const [otpLeft, setOtpLeft] = useState(0);
 
   const [errs, setErrs] = useState({
     username: "", email: "", password: "", confirm: "", global: ""
   });
 
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((s) => s - 1), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (otpLeft <= 0) return;
+    const t = setInterval(() => setOtpLeft((s) => s - 1), 1000);
+    return () => clearInterval(t);
+  }, [otpLeft]);
+
   const runValidateAll = () => {
     const eUser = validateUsername(username);
     const eMail = validateEmailGmail(email);
     const ePass = validatePassword(password);
-    const eCfm  = validateConfirm(password, confirm);
-    const next  = { username: eUser, email: eMail, password: ePass, confirm: eCfm, global: "" };
+    const eCfm = validateConfirm(password, confirm);
+    const next = { username: eUser, email: eMail, password: ePass, confirm: eCfm, global: "" };
     setErrs(next);
     return !Object.values(next).some(Boolean);
   };
 
-  const onSubmit = async (ev) => {
-    ev.preventDefault();
-    if (!runValidateAll()) return;
-    setLoading(true);
-    setErrs(prev => ({ ...prev, global: "" }));
+  const sendRegisterOtp = async (isResend = false) => {
+    const v = email.trim().toLowerCase();
+    if (!v) {
+      setErrs((p) => ({ ...p, global: "Vui lòng nhập email." }));
+      return;
+    }
     try {
-      const { data } = await api.post("/auth/register", {
-        username: username.trim(),
-        email: email.trim().toLowerCase(),
-        password,
-        confirmPassword: confirm
-      });
-
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-        if (data.user?.role) localStorage.setItem("role", data.user.role);
-      }
-      toast.success("Đăng ký thành công!");
-      if (data?.success || data?.token) {
-        nav("/login");
+      setLoading(true);
+      setErrs((p) => ({ ...p, global: "" }));
+      const url = isResend ? "/auth/register/otp/resend" : "/auth/register/otp";
+      const res = await api.post(url, { email: v });
+      setCooldown(60);
+      setOtpLeft(OTP_TTL_SEC);
+      toast.success(res?.data?.message || "OTP đăng ký đã được gửi.");
+      setStep("otp");
+    } catch (e) {
+      const status = e?.response?.status;
+      const m = e?.response?.data?.message || e?.message || "Không thể gửi OTP lúc này.";
+      if (status === 409) {
+        setErrs((p) => ({ ...p, email: m || "Email đã được sử dụng." }));
       } else {
-        setErrs(prev => ({ ...prev, global: data?.message || "Đăng ký thất bại." }));
-      }
-    } catch (error) {
-      const status = error?.response?.status;
-      const data   = error?.response?.data || {};
-      if (status === 422 && data.errors) {
-        const map = data.errors;
-        setErrs(prev => ({
-          username: map.username || prev.username,
-          email:    map.email    || prev.email,
-          password: map.password || prev.password,
-          confirm:  map.confirm  || prev.confirm,
-          global:   data.message || prev.global
-        }));
-      } else if (status === 409) {
-        setErrs(prev => ({ ...prev, email: data.message || "Email đã được sử dụng" }));
-      } else {
-        setErrs(prev => ({ ...prev, global: data.message || "Đăng ký thất bại." }));
+        setErrs((p) => ({ ...p, global: m }));
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // --- GOOGLE LOGIN (custom button) ---
+  const onSubmitForm = async (ev) => {
+    ev.preventDefault();
+    if (!runValidateAll()) return;
+    await sendRegisterOtp(false);
+  };
+
+  const onVerifyAndRegister = async (ev) => {
+    ev.preventDefault();
+    if (!runValidateAll()) return;
+
+    const vOtp = otp.trim();
+    if (!/^\d{4}$/.test(vOtp)) {
+      setErrs((p) => ({ ...p, global: "OTP phải gồm 4 chữ số." }));
+      return;
+    }
+
+    setLoading(true);
+    setErrs((p) => ({ ...p, global: "" }));
+
+    try {
+      const { data } = await api.post("/auth/register", {
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        confirmPassword: confirm,
+        otp: vOtp,
+      });
+
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+        if (data.user?.role) localStorage.setItem("role", data.user.role);
+      }
+
+      toast.success("Đăng ký thành công!");
+      if (data?.success || data?.token) nav("/login");
+      else setErrs((p) => ({ ...p, global: data?.message || "Đăng ký thất bại." }));
+    } catch (error) {
+      const status = error?.response?.status;
+      const data = error?.response?.data || {};
+      if (status === 422 && data.errors) {
+        const map = data.errors;
+        setErrs((prev) => ({
+          username: map.username || prev.username,
+          email: map.email || prev.email,
+          password: map.password || prev.password,
+          confirm: map.confirm || prev.confirm,
+          global: data.message || prev.global,
+        }));
+      } else if (status === 409) {
+        setErrs((p) => ({ ...p, email: data.message || "Email đã được sử dụng" }));
+      } else {
+        setErrs((p) => ({ ...p, global: data.message || "Đăng ký thất bại." }));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const startGoogleLogin = useGoogleLogin({
     flow: "implicit",
     scope: "openid email profile",
@@ -122,10 +189,67 @@ export default function Register() {
     startGoogleLogin();
   }
 
-  const renderSignIn = <div />;
+  const renderOtpStep = (
+    <form className="auth-form" noValidate onSubmit={onVerifyAndRegister} style={{ width: "100%", maxWidth: 520 }}>
+      <div className="login-head">
+        <img src="/images/fm-logo-name.png" alt="FitMatch" className="login-logo-rect" />
+        <h1>Xác thực email</h1>
+      </div>
 
-  const renderSignUp = (
-    <form className="auth-form" noValidate onSubmit={onSubmit} style={{ width:"100%", maxWidth: 520 }}>
+      <div className="auth-divider"><span>Nhập OTP đã gửi tới</span></div>
+
+      <input
+        className={`auth-input ${errs.global ? "input-invalid" : ""}`}
+        type="text"
+        placeholder="Mã OTP (4 số)"
+        inputMode="numeric"
+        maxLength={4}
+        value={otp}
+        onChange={(e) => setOtp(e.target.value)}
+        onFocus={() => setErrs((p) => ({ ...p, global: "" }))}
+        required
+      />
+
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        width: "var(--field-w)", maxWidth: "100%", marginTop: -10,
+      }}>
+        <div style={{ fontSize: 12, color: "#6b7280" }}>
+          {otpLeft > 0 ? `Mã hết hạn sau: ${fmtMMSS(otpLeft)}` : "OTP đã hết hạn — vui lòng gửi lại"}
+        </div>
+        <button
+          type="button"
+          className="btn btn-text btn-resetpwd"
+          onClick={() => sendRegisterOtp(true)}
+          disabled={loading || cooldown > 0}
+          style={{ fontSize: 12 }}
+        >
+          {cooldown > 0 ? `Gửi lại OTP (${cooldown}s)` : "Gửi lại OTP"}
+        </button>
+      </div>
+
+      <div className="error-stack" aria-live="polite">
+        {errs.global && <span className="error-item">{errs.global}</span>}
+      </div>
+
+      <button type="submit" className={`material-btn ${loading ? "loading" : ""}`} disabled={loading} style={{ marginTop: 6 }}>
+        <span className="btn-text">Xác nhận</span>
+        <div className="btn-loader"></div>
+      </button>
+
+      <div className="forgot-row" style={{ marginTop: 10, justifyContent: "space-between" }}>
+        <button type="button" className="btn btn-text" onClick={() => { setStep("form"); setOtp(""); setErrs((p) => ({ ...p, global: "" })); }}>
+          Quay lại
+        </button>
+        <button type="button" className="btn btn-text" onClick={() => nav("/login")}>
+          Đăng nhập
+        </button>
+      </div>
+    </form>
+  );
+
+  const renderFormStep = (
+    <form className="auth-form" noValidate onSubmit={onSubmitForm} style={{ width: "100%", maxWidth: 520 }}>
       <div className="login-head">
         <img src="/images/fm-logo-name.png" alt="FitMatch" className="login-logo-rect" />
         <h1>Đăng ký</h1>
@@ -133,39 +257,38 @@ export default function Register() {
 
       <div className="auth-divider"><span>Nhập thông tin tài khoản</span></div>
 
-      {/* Username */}
       <input
         className={`auth-input ${errs.username ? "input-invalid" : ""}`}
         type="text"
         id="reg-username"
         placeholder="Tên tài khoản"
         value={username}
-        onChange={(e)=>setUsername(e.target.value)}
-        onBlur={()=>setErrs(p=>({ ...p, username: validateUsername(username) }))}
-        required autoComplete="username"
+        onChange={(e) => setUsername(e.target.value)}
+        onBlur={() => setErrs((p) => ({ ...p, username: validateUsername(username) }))}
+        required
+        autoComplete="username"
         maxLength={200}
       />
       <div className="error-stack" aria-live="polite">
         {errs.username && <span className="error-item">{errs.username}</span>}
       </div>
 
-      {/* Email */}
       <input
         className={`auth-input ${errs.email ? "input-invalid" : ""}`}
         type="email"
         id="reg-email"
         placeholder="Email (@gmail.com)"
         value={email}
-        onChange={(e)=>setEmail(e.target.value)}
-        onBlur={()=>setErrs(p=>({ ...p, email: validateEmailGmail(email) }))}
-        required autoComplete="email"
+        onChange={(e) => setEmail(e.target.value)}
+        onBlur={() => setErrs((p) => ({ ...p, email: validateEmailGmail(email) }))}
+        required
+        autoComplete="email"
         maxLength={100}
       />
       <div className="error-stack" aria-live="polite">
         {errs.email && <span className="error-item">{errs.email}</span>}
       </div>
 
-      {/* Password + eye */}
       <div className="field">
         <input
           className={`auth-input ${errs.password ? "input-invalid" : ""}`}
@@ -173,12 +296,13 @@ export default function Register() {
           id="reg-password"
           placeholder="Mật khẩu"
           value={password}
-          onChange={(e)=>setPassword(e.target.value)}
-          onBlur={()=>setErrs(p=>({ ...p, password: validatePassword(password) }))}
-          required autoComplete="new-password"
+          onChange={(e) => setPassword(e.target.value)}
+          onBlur={() => setErrs((p) => ({ ...p, password: validatePassword(password) }))}
+          required
+          autoComplete="new-password"
           maxLength={200}
         />
-        <button type="button" className="eye-toggle" onClick={()=>setShowPass(v=>!v)} aria-label="Hiện/ẩn mật khẩu">
+        <button type="button" className="eye-toggle" onClick={() => setShowPass((v) => !v)} aria-label="Hiện/ẩn mật khẩu">
           <i className={`fa-solid ${showPass ? "fa-eye-slash" : "fa-eye"}`}></i>
         </button>
       </div>
@@ -186,7 +310,6 @@ export default function Register() {
         {errs.password && <span className="error-item">{errs.password}</span>}
       </div>
 
-      {/* Confirm + eye */}
       <div className="field">
         <input
           className={`auth-input ${errs.confirm ? "input-invalid" : ""}`}
@@ -194,12 +317,13 @@ export default function Register() {
           id="reg-confirm"
           placeholder="Xác nhận mật khẩu"
           value={confirm}
-          onChange={(e)=>setConfirm(e.target.value)}
-          onBlur={()=>setErrs(p=>({ ...p, confirm: validateConfirm(password, confirm) }))}
-          required autoComplete="new-password"
+          onChange={(e) => setConfirm(e.target.value)}
+          onBlur={() => setErrs((p) => ({ ...p, confirm: validateConfirm(password, confirm) }))}
+          required
+          autoComplete="new-password"
           maxLength={200}
         />
-        <button type="button" className="eye-toggle" onClick={()=>setShowCfm(v=>!v)} aria-label="Hiện/ẩn mật khẩu">
+        <button type="button" className="eye-toggle" onClick={() => setShowCfm((v) => !v)} aria-label="Hiện/ẩn mật khẩu">
           <i className={`fa-solid ${showCfm ? "fa-eye-slash" : "fa-eye"}`}></i>
         </button>
       </div>
@@ -207,18 +331,17 @@ export default function Register() {
         {errs.confirm && <span className="error-item">{errs.confirm}</span>}
       </div>
 
-      {/* Global error (nếu có) */}
       <div className="error-stack" aria-live="polite">
         {errs.global && <span className="error-item">{errs.global}</span>}
       </div>
 
       <button type="submit" className={`material-btn ${loading ? "loading" : ""}`} disabled={loading} style={{ marginTop: 6 }}>
         <span className="btn-text">Đăng ký</span>
+        <div className="btn-loader"></div>
       </button>
 
       <div className="auth-divider" style={{ marginTop: 20 }}><span>HOẶC</span></div>
 
-      {/* GOOGLE – giữ nguyên UI, chỉ gắn handler */}
       <div className="social-login">
         <button
           type="button"
@@ -241,5 +364,5 @@ export default function Register() {
     </form>
   );
 
-  return <AuthLayout mode="register" renderSignIn={<div />} renderSignUp={renderSignUp} />;
+  return <AuthLayout mode="register" renderSignIn={<div />} renderSignUp={step === "otp" ? renderOtpStep : renderFormStep} />;
 }

@@ -79,32 +79,44 @@ export async function verifyMailer() {
   }
 }
 
-function renderOtpEmail({ otp, ttlMinutes = 2 }) {
+function renderOtpEmail({ otp, ttlMinutes = 2, title = "Mã OTP Xác Minh", desc = "Sử dụng mã OTP bên dưới để xác minh thao tác của bạn:" }) {
   const year = new Date().getFullYear();
+  const logoUrl = "https://res.cloudinary.com/drpn2xdms/image/upload/v1770366979/fm-logo-name_dcht3y.png";
+
   return `
-  <div style="margin:0;padding:0;background:#f3f4f6">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f6ea;padding:24px 0">
+  <div style="margin:0;padding:0;background:#050505">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:radial-gradient(circle at top left,rgba(204, 30, 30, 0.63),rgb(26, 42, 80));padding:24px 0">
       <tr>
         <td align="center">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:600px;font-family:Arial,Helvetica,sans-serif;color:#0f172a">
             <tr>
               <td align="center">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="width:560px;background:#ffffff;border-radius:8px;border:1px solid #78BCC4;box-shadow:0 2px 10px rgba(15,23,42,0.08);overflow:hidden">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="width:560px;background:#ffffff;border-radius:4px;border:1px solid rgba(255, 255, 255, 0.30);box-shadow:0 2px 10px rgba(15,23,42,0.08);overflow:hidden">
+                  
                   <tr>
-                    <td height="64" style="height:64px;background:#f4f6ea;text-align:center;vertical-align:middle">
-                      <div style="display:inline-block;font-size:18px;line-height:24px;font-weight:700;letter-spacing:0.2px;color:#002C3E">
-                        Mã OTP Đặt Lại Mật Khẩu
-                      </div>
+                    <td style="background:#050505;padding: 12px 24px; vertical-align:middle; border-bottom: 1px solid rgba(255, 255, 255, 0.30);">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                        <tr>
+                          <td align="left" style="vertical-align:middle;">
+                             <div style="font-size:18px;line-height:24px;font-weight:700;letter-spacing:0.2px;color:#fff">
+                                ${title}
+                             </div>
+                          </td>
+                          <td align="right" style="vertical-align:middle; width: 140px;">
+                             <img src="${logoUrl}" alt="FitMatch" width="120" style="display:block; width: 120px; height: auto; border: 0;" />
+                          </td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                   <tr>
                     <td style="padding:24px 28px">
                       <div style="font-size:14px;line-height:1.6;margin:0 0 8px 0;color:#0f172a">Chào bạn,</div>
                       <div style="font-size:14px;line-height:1.6;margin:0 0 16px 0;color:#0f172a">
-                        Sử dụng mã OTP bên dưới để tiến hành đặt lại mật khẩu cho tài khoản của bạn:
+                        ${desc}
                       </div>
                       <div style="background:#f1f5f9;border-radius:8px;padding:14px 18px;text-align:center;margin:6px 0 18px 0">
-                        <div style="font-size:34px;font-weight:800;letter-spacing:4px;color:#008080;line-height:1">${otp}</div>
+                        <div style="font-size:34px;font-weight:800;letter-spacing:4px;color:#E31C25;line-height:1">${otp}</div>
                       </div>
                       <div style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 12px 0">
                         Mã có hiệu lực trong <b>${ttlMinutes} phút</b>. Vui lòng không chia sẻ mã này với bất kỳ ai.
@@ -137,7 +149,12 @@ function renderOtpEmail({ otp, ttlMinutes = 2 }) {
 export async function sendOtpEmail({ to, otp }) {
   if (!transporter) await buildTransport();
   const ttl = Number(process.env.OTP_TTL_MINUTES || 2);
-  const html = renderOtpEmail({ otp, ttlMinutes: ttl });
+  const html = renderOtpEmail({
+    otp,
+    ttlMinutes: ttl,
+    title: "Mã OTP Đặt Lại Mật Khẩu",
+    desc: "Sử dụng mã OTP bên dưới để tiến hành đặt lại mật khẩu cho tài khoản của bạn:",
+  });
   const info = await transporter.sendMail({
     from: FROM,
     to,
@@ -149,3 +166,21 @@ export async function sendOtpEmail({ to, otp }) {
   }
   return info;
 }
+
+export async function sendRegisterOtpEmail({ to, otp }) {
+  if (!transporter) await buildTransport();
+  const ttl = Number(process.env.REGISTER_OTP_TTL_MINUTES || process.env.OTP_TTL_MINUTES || 2);
+  const html = renderOtpEmail({
+    otp,
+    ttlMinutes: ttl,
+    title: "Mã OTP Xác Thực Đăng Ký",
+    desc: "Sử dụng mã OTP bên dưới để hoàn tất đăng ký tài khoản FitMatch:",
+  });
+  return transporter.sendMail({
+    from: FROM,
+    to,
+    subject: `[${APP_NAME}] OTP đăng ký`,
+    html,
+  });
+}
+
