@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useSearchParams } from "react-router-dom";
 import { cancelPremium, getMyPremium, listPremiumPlans } from "../../api/premium";
 import { createPayosLinkForPlanCode } from "../../api/payos";
 import PaymentReturn from "./PaymentReturn";
@@ -34,6 +34,8 @@ export default function Premium() {
 
   const isPremium = !!premium?.isPremium;
   const tierLabel = isPremium ? "Premium" : "Miễn phí";
+
+  const [sp] = useSearchParams();
 
   const benefits = useMemo(() => {
     const b = premium?.benefits || {};
@@ -86,6 +88,11 @@ export default function Premium() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    const t = String(sp.get("tab") || "").toLowerCase();
+    if (t === "mine" || t === "upgrade") setTab(t);
+  }, [sp]);
 
   const onSubscribe = async (planCode) => {
     if (busy) return;

@@ -70,7 +70,7 @@ html, body { font-size: var(--fs-base); }
 
 /* tiêu đề nhóm */
 .fm-cat{
-  font-size:13px; font-weight:700; letter-spacing:.06em;
+  font-size:13px; font-weight:600; letter-spacing:.06em;
   color:#002C3E ; text-transform:uppercase;
   padding:20px 12px 6px; opacity:.95;
 }

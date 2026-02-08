@@ -105,7 +105,6 @@
   grid-template-columns:
     2fr      /* name */
     2.5fr    /* email */
-    120px    /* plan */
     120px    /* provider */
     190px    /* started */
     220px    /* expires */
@@ -156,7 +155,7 @@
   border:1px solid #E5E7EB;
   background:#fff;
   display:grid; place-items:center;
-  cursor:pointer; color:#111827;
+  cursor:pointer; 
 }
 .iconbtn:hover{ background:#F9FAFB; }
 .iconbtn.danger{ color:#b91c1c; border-color:#FECACA; background:#fff; }
@@ -336,14 +335,14 @@
   .premium-list-page .thead,
   .premium-list-page .trow{
     grid-template-columns:
-      2fr 2.5fr 110px 110px 190px 220px 140px 2fr 100px;
+      2fr 2.5fr 110px 190px 220px 140px 2fr 100px;
   }
 }
 @media (max-width: 980px){
   .premium-list-page .thead,
   .premium-list-page .trow{
     grid-template-columns:
-      2fr 2.5fr 110px 220px 140px 100px;
+      2fr 2.5fr 220px 140px 100px;
   }
   .premium-list-page .cell.provider,
   .premium-list-page .cell.started,

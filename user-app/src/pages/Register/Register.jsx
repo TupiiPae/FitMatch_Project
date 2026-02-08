@@ -196,7 +196,7 @@ export default function Register() {
         <h1>Xác thực email</h1>
       </div>
 
-      <div className="auth-divider"><span>Nhập OTP đã gửi tới</span></div>
+      <div className="auth-divider"><span>Vui lòng nhập OTP đã gửi tới Email</span></div>
 
       <input
         className={`auth-input ${errs.global ? "input-invalid" : ""}`}

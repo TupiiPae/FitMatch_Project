@@ -463,7 +463,7 @@ export default function Premium_List() {
           <div className="thead">
             <div className="cell name">Người dùng</div>
             <div className="cell email">Email</div>
-            <div className="cell plan">Gói</div>
+            {/* <div className="cell plan">Gói</div> */}
             <div className="cell provider">Provider</div>
             <div className="cell started">Bắt đầu</div>
             <div className="cell expires">Hết hạn</div>
@@ -496,7 +496,7 @@ export default function Premium_List() {
                 </div>
 
                 <div className="cell email">{u?.email || "—"}</div>
-                <div className="cell plan">{u?.premium?.months ? `${u.premium.months} tháng` : "—"}</div>
+                {/* <div className="cell plan">{u?.premium?.months ? `${u.premium.months} tháng` : "—"}</div> */}
                 <div className="cell provider">{u?.premium?.provider || "—"}</div>
                 <div className="cell started">{fmtDate(u?.premium?.startedAt)}</div>
 

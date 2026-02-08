@@ -136,18 +136,21 @@ export default function PaymentReturn() {
             {loading ? "Đang kiểm tra..." : "Kiểm tra lại"}
           </button>
 
-          <Link to="/premium" className="fm-paybtn fm-paybtn-primary">
+          <Link
+            to={isPaid ? "/premium?tab=mine" : "/premium"}
+            className="fm-paybtn fm-paybtn-primary"
+          >
             Về trang Premium
           </Link>
 
           {showRetryPay ? (
-            <Link
-              to="/premium"
-              onClick={() => toast.info("Bạn có thể chọn gói và thanh toán lại")}
-              className="fm-paybtn fm-paybtn-ghost"
-            >
-              Thanh toán lại
-            </Link>
+          <Link
+            to="/premium?tab=upgrade"
+            onClick={() => toast.info("Bạn có thể chọn gói và thanh toán lại")}
+            className="fm-paybtn fm-paybtn-ghost"
+          >
+            Thanh toán lại
+          </Link>
           ) : null}
         </div>
 

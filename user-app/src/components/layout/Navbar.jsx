@@ -16,6 +16,7 @@ import { getSocket } from "../../lib/socket";
 import NotificationBell from "../NotificationBell/NotificationBell";
 import ChatBell from "../ChatBell/ChatBell";
 import ConnectSuggestBell from "../ConnectSuggestBell/ConnectSuggestBell";
+import { getMyPremium } from "../../api/premium";
 
 const logoHref =
   (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL ? import.meta.env.BASE_URL : "/") +
@@ -70,6 +71,33 @@ export default function Navbar({
     if (typeof window === "undefined" || !window.matchMedia) return false;
     return window.matchMedia("(max-width: 980px)").matches;
   });
+
+  const [isPremiumAcc, setIsPremiumAcc] = useState(null); // null = chưa biết
+
+  const detectPremiumFromMe = (u) => {
+    const a = u?.premium?.isPremium;
+    if (typeof a === "boolean") return a;
+    const b = u?.isPremium;
+    if (typeof b === "boolean") return b;
+    const c = u?.premiumActive;
+    if (typeof c === "boolean") return c;
+    return null;
+  };
+
+  const refreshPremium = async (uMaybe) => {
+    const fromMe = detectPremiumFromMe(uMaybe || me);
+    if (typeof fromMe === "boolean") {
+      setIsPremiumAcc(fromMe);
+      return;
+    }
+    try {
+      const rs = await getMyPremium();
+      const prem = rs?.premium ?? rs;
+      setIsPremiumAcc(!!prem?.isPremium);
+    } catch {
+      if (isPremiumAcc === null) setIsPremiumAcc(false);
+    }
+  };
 
   const safeArr = (v) => (Array.isArray(v) ? v : []);
 
@@ -175,6 +203,7 @@ export default function Navbar({
         const u = await getMe();
         if (!mounted) return;
         setMe(u || null);
+        await refreshPremium(u);
       } catch {
         if (!mounted) return;
         setMe(null);
@@ -230,6 +259,8 @@ export default function Navbar({
   const displayAge = (p.dob ? calcAge(p.dob) : ageProp) || "xx";
   const displayHeight = (typeof p.heightCm === "number" ? p.heightCm : heightProp) || "xxx";
   const displayWeight = (typeof p.weightKg === "number" ? p.weightKg : weightProp) || "xx";
+  const tierLabel = isPremiumAcc ? "Premium" : "tiêu chuẩn";
+  const tierClass = isPremiumAcc ? "is-premium" : "is-free";
 
   const avatarFromDb = useMemo(() => {
     if (!p?.avatarUrl) return null;
@@ -247,6 +278,13 @@ export default function Navbar({
     setMobileOpen(false);
     setOpenDropdown(null);
   };
+
+  useEffect(() => {
+    if (location.pathname.startsWith("/premium")) {
+      refreshPremium().catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   useEffect(() => {
     closeMobileMenu();
@@ -487,12 +525,15 @@ export default function Navbar({
         </div>
 
         <div className="fm-right" ref={accRef}>
-          <ChatBell />
           <ConnectSuggestBell />
           <NotificationBell />
+          <ChatBell />             
           <span className="fm-hello">
             Xin chào, <strong>{displayNickname}</strong>
             {loading ? "…" : ""}
+            {/* <span className={`fm-tierpill ${tierClass}`} aria-label={`Loại tài khoản ${tierLabel}`}>
+              {tierLabel}
+            </span> */}
           </span>
           <div className="fm-avatar" title="Tài khoản" role="button" tabIndex={0} onClick={toggleAccount}>
             <img src={displayAvatar} alt="Avatar" />
@@ -503,6 +544,9 @@ export default function Navbar({
             onClose={() => setAccountOpen(false)}
             nickname={displayNickname}
             joinDate={displayJoinDate}
+            tierLabel={tierLabel}
+            tierClass={tierClass}
+            tierLoading={isPremiumAcc === null}
             age={displayAge}
             heightCm={displayHeight}
             weightKg={displayWeight}
@@ -534,7 +578,7 @@ export default function Navbar({
   );
 }
 
-function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, weightKg, avatarUrl, onUploadAvatar, onAskLogout }) {
+function AccountDropdown({ open, onClose, nickname, joinDate, tierLabel, tierClass, tierLoading, age, heightCm, weightKg, avatarUrl, onUploadAvatar, onAskLogout }) {
   const [preview, setPreview] = useState(null);
   const fileRef = useRef(null);
 
@@ -567,6 +611,15 @@ function AccountDropdown({ open, onClose, nickname, joinDate, age, heightCm, wei
         </div>
         <div className="acc-name">{nickname}</div>
         <div className="acc-join">Đã tham gia từ {joinDate}</div>
+        {/* <div className="acc-tierline">
+          Loại tài khoản:{" "}
+          <b className={`acc-tiertext ${tierClass}`}>{tierLoading ? "..." : tierLabel}</b>
+        </div> */}
+        <div className="acc-tierrow">
+          <span className={`acc-tierpill ${tierClass} ${tierLoading ? "is-loading" : ""}`}>
+            Tài khoản {tierLoading ? "..." : tierLabel}
+          </span>
+        </div>
         <div className="acc-metrics">
           <div className="acc-metric">
             <div className="acc-metric__value">{age}</div>

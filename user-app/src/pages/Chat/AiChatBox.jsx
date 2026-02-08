@@ -184,6 +184,10 @@ export default function AiChatBox({ meId, height = 520, onPreview, emptyText }) 
 
   const [quota, setQuota] = useState(null); // { isPremium, limit, used, remaining, resetAt }
   const quotaLocked = !!quota && Number(quota.remaining) <= 0;
+  const quotaUsed = Math.max(0, Number(quota?.used) || 0);
+  const quotaLimit = Math.max(1, Number(quota?.limit) || (quota?.isPremium ? 50 : 5));
+  const quotaTone = quotaUsed >= quotaLimit ? " is-danger" : quotaUsed >= quotaLimit - 1 ? " is-warn" : "";
+
   const showUpgradeOverlay = quotaLocked && !quota?.isPremium;
 
   const loadQuota = async () => {
@@ -1502,6 +1506,24 @@ return (
                 disabled={uploading || sending || quotaLocked}
                 rows={1}
               />
+
+              {quota ? (
+                <div
+                  className={
+                    "fm-ai-quota-pill" +
+                    (quota?.isPremium ? " is-premium" : " is-standard") +
+                    quotaTone
+                  }
+                  title={
+                    quota?.isPremium
+                      ? `Premium: ${quotaUsed}/${quotaLimit} lượt hôm nay`
+                      : `Standard: ${quotaUsed}/${quotaLimit} lượt hôm nay`
+                  }
+                >
+                  {quota?.isPremium ? <i className="fa-solid fa-crown" /> : <i className="fa-regular fa-message" />}
+                  <span>{quotaUsed}/{quotaLimit}</span>
+                </div>
+              ) : null}
             </div>
           </div>
 
