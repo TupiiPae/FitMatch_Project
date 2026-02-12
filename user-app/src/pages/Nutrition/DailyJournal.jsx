@@ -18,6 +18,7 @@ import { addLog } from "../../api/foods";
 // Modal tách riêng
 import SearchModal from "./components/SearchModal/SearchModal";
 import EditModal from "./components/EditModal/EditModal";
+import ConfirmDeleteModal from "./components/ConfirmDeleteModal/ConfirmDeleteModal";
 
 const HOURS = Array.from({ length: 18 }, (_, i) => 6 + i); // 6..23
 
@@ -200,6 +201,41 @@ export default function DailyJournal() {
   const [editQty, setEditQty] = useState(1);
   const [editHour, setEditHour] = useState(12);
 
+  const [showDelConfirm, setShowDelConfirm] = useState(false);
+  const [delTarget, setDelTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const openDeleteConfirm = (log) => {
+    setDelTarget({
+      id: log?._id,
+      name: log?.food?.name || "món ăn",
+    });
+    setShowDelConfirm(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    if (deleting) return;
+    setShowDelConfirm(false);
+    setDelTarget(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!delTarget?.id || deleting) return;
+    setDeleting(true);
+    try {
+      await deleteLog(delTarget.id);
+      await load();
+      toast.success("Xóa khỏi nhật ký thành công");
+      setShowDelConfirm(false);
+      setDelTarget(null);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Xóa khỏi nhật ký thất bại");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+
   const openEditLog = (log) => {
     setEditLog(log);
     setEditQty(Number(log?.quantity || 1));
@@ -340,7 +376,7 @@ export default function DailyJournal() {
                               title="Xoá"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onDelete(item._id);
+                                openDeleteConfirm(item);
                               }}
                             >
                               <i className="fa-regular fa-trash-can" />
@@ -607,6 +643,17 @@ export default function DailyJournal() {
           onSave={saveEditLog}
         />
       )}
+
+      <ConfirmDeleteModal
+        open={showDelConfirm}
+        title="Xóa món ăn khỏi nhật ký"
+        message={`Bạn có chắc muốn xóa “${delTarget?.name || "món ăn"}” khỏi nhật ký không?`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        loading={deleting}
+        onClose={closeDeleteConfirm}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

@@ -1,0 +1,81 @@
+.cdm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.cdm-card {
+  width: 100%;
+  max-width: 420px;
+  background: #020617;
+  border-radius: 8px;
+  padding: 16px 18px 14px;
+  border: 1px solid #4b5563;
+  color: #e5e7eb;
+}
+
+.cdm-head {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.cdm-ico {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fb7185;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+
+
+.cdm-msg {
+  padding: 6px 0 0;
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.cdm-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cdm-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cdm-danger {
+  background: #f00519;
+  border-color: #f97373;
+  color: #fff;
+}
+
+.cdm-danger:hover {
+  background: #f97373;
+}
+
+.cdm-cancel {
+    background: #020617;
+  border-color: #4b5563;
+  color: #e5e7eb;
+}
+
+.cdm-cancel:hover {
+    background: #111827;
+}
