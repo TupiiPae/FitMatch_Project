@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import api from "../../../../lib/api";
 import "./DetailModal.css";
 
@@ -26,9 +26,9 @@ const fmt = (v, d = 2) => {
 export default function DetailModal({ open, food, onClose, onAddToLog }) {
   const [showNutrition, setShowNutrition] = useState(false);
 
-  if (!open || !food) return null;
-
+  const safeFood = food || {};
   const {
+    _id,
     name,
     portionName,
     massG,
@@ -42,9 +42,14 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
     fiberG,
     description,
     imageUrl,
-  } = food;
+  } = safeFood;
 
-  const desc = description && description.trim() ? description : "Chưa có mô tả";
+  useEffect(() => {
+    if (!open) setShowNutrition(false);
+  }, [open, _id]);
+
+  const desc =
+    description && String(description).trim() ? description : "Chưa có mô tả";
 
   const head = useMemo(() => {
     const pG = nNum(proteinG) ?? 0;
@@ -76,6 +81,8 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
     };
   }, [proteinG, carbG, fatG]);
 
+  if (!open || !food) return null;
+
   return (
     <div
       className="detail-modal-backdrop"
@@ -88,7 +95,7 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
         <div className="fm-col-left">
           <img
             src={toAbs(imageUrl) || "/images/food-placeholder.jpg"}
-            alt={name}
+            alt={name || "food"}
           />
         </div>
 
@@ -147,7 +154,9 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
               onClick={() => setShowNutrition((v) => !v)}
             >
               <span>
-                {showNutrition ? "Ẩn giá trị dinh dưỡng" : "Hiển thị giá trị dinh dưỡng"}
+                {showNutrition
+                  ? "Ẩn giá trị dinh dưỡng"
+                  : "Hiển thị giá trị dinh dưỡng"}
               </span>
               <i className="fa-solid fa-chevron-down"></i>
             </button>
