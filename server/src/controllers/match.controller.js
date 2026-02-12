@@ -195,7 +195,7 @@ async function notifyConnectSuggestionsIfNeeded(userDoc) {
       type: NOTI_CONNECT_SUGGEST,
       title: "Gợi ý kết nối",
       body: fromName
-        ? `Gợi ý kết ${fromName} cho bạn.`
+        ? `Gợi ý kết nối ${fromName} cho bạn.`
         : "Có người dùng phù hợp gần bạn.",
       data: {
         screen: "Connect",

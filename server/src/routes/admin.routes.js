@@ -17,6 +17,7 @@ import MatchRoom from "../models/MatchRoom.js";
 import MatchRequest from "../models/MatchRequest.js";
 import ConnectReport from "../models/ConnectReport.js";
 import ChatMessage from "../models/ChatMessage.js";
+import PaymentTransaction from "../models/PaymentTransaction.js";
 
 const router = Router();
 const escapeRegex = (s = "") => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -1650,6 +1651,305 @@ router.get("/stats/connect", adminAuth, async (req, res) => {
     });
   } catch (e) {
     console.error("[admin.stats.connect]", e);
+    return res.status(500).json({ success: false, message: "Lỗi máy chủ" });
+  }
+});
+
+/* ======================= Stats: PREMIUM (Revenue) ======================= */
+/**
+ * GET /api/admin/stats/premium
+ * Query:
+ *  - from=YYYY-MM-DD
+ *  - to=YYYY-MM-DD
+ *  - granularity=day|week|month
+ *  - q=search (username/email/nickname/planCode/planName)
+ *  - top=top list limit (default 8)
+ *
+ * Quy ước:
+ *  - Doanh thu "đã nhận": tx.status=PAID và lọc theo paidAt trong khoảng
+ *  - Pending/Cancelled: lọc theo createdAt trong khoảng (phản ánh phát sinh giao dịch)
+ */
+router.get("/stats/premium", adminAuth, async (req, res) => {
+  try {
+    const qRaw = String(req.query?.q ?? "").trim();
+    const granularityRaw = String(req.query?.granularity ?? "day").trim().toLowerCase();
+    const granularity = ["day", "week", "month"].includes(granularityRaw) ? granularityRaw : "day";
+    const top = Math.min(Math.max(Number(req.query?.top ?? 8) || 8, 3), 20);
+
+    const parseYMD = (s) => {
+      const str = String(s || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+      const d = new Date(str + "T00:00:00.000Z");
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+
+    const now = new Date();
+    const fromQ = parseYMD(req.query?.from);
+    const toQ = parseYMD(req.query?.to);
+
+    // default last 30 days (UTC like các stats khác)
+    const fromDate = fromQ || new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 29));
+    const toDateInclusive = toQ || new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const toDateExclusive = new Date(toDateInclusive.getTime() + 24 * 60 * 60 * 1000);
+
+    const rx = qRaw ? new RegExp(escapeRegex(qRaw), "i") : null;
+
+    const bucketBy = (dateExpr) => {
+      if (granularity === "month") {
+        return { $dateToString: { format: "%Y-%m", date: dateExpr } };
+      }
+      if (granularity === "week") {
+        return {
+          $concat: [
+            { $toString: { $isoWeekYear: dateExpr } },
+            "-W",
+            { $cond: [{ $lt: [{ $isoWeek: dateExpr }, 10] }, "0", ""] },
+            { $toString: { $isoWeek: dateExpr } },
+          ],
+        };
+      }
+      return { $dateToString: { format: "%Y-%m-%d", date: dateExpr } };
+    };
+
+    // Lấy những giao dịch có liên quan trong khoảng:
+    // - PAID: dựa vào paidAt
+    // - PENDING/CANCELLED: dựa vào createdAt
+    const txMatch = {
+      $or: [
+        { status: "PAID", paidAt: { $gte: fromDate, $lt: toDateExclusive } },
+        { status: { $in: ["PENDING", "CANCELLED"] }, createdAt: { $gte: fromDate, $lt: toDateExclusive } },
+      ],
+    };
+
+    const basePipe = [
+      { $match: txMatch },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "u",
+        },
+      },
+      { $unwind: { path: "$u", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "premiumplans",
+          localField: "planCode",
+          foreignField: "code",
+          as: "plan",
+        },
+      },
+      { $unwind: { path: "$plan", preserveNullAndEmptyArrays: true } },
+      ...(rx
+        ? [
+            {
+              $match: {
+                $or: [
+                  { planCode: rx },
+                  { "plan.name": rx },
+                  { "plan.code": rx },
+                  { "u.username": rx },
+                  { "u.email": rx },
+                  { "u.profile.nickname": rx },
+                  { "u.profile.tenGoi": rx },
+                ],
+              },
+            },
+          ]
+        : []),
+    ];
+
+    // 1) KPI + series + top
+    const agg = await PaymentTransaction.aggregate([
+      ...basePipe,
+      {
+        $facet: {
+          kpis: [
+            {
+              $group: {
+                _id: null,
+                revenuePaid: { $sum: { $cond: [{ $eq: ["$status", "PAID"] }, "$amount", 0] } },
+                ordersPaid: { $sum: { $cond: [{ $eq: ["$status", "PAID"] }, 1, 0] } },
+                ordersPending: { $sum: { $cond: [{ $eq: ["$status", "PENDING"] }, 1, 0] } },
+                ordersCancelled: { $sum: { $cond: [{ $eq: ["$status", "CANCELLED"] }, 1, 0] } },
+                payerSet: { $addToSet: { $cond: [{ $eq: ["$status", "PAID"] }, "$user", null] } },
+              },
+            },
+            {
+              $addFields: {
+                uniquePayers: { $size: { $setDifference: ["$payerSet", [null]] } },
+                avgOrderValue: {
+                  $cond: [{ $gt: ["$ordersPaid", 0] }, { $divide: ["$revenuePaid", "$ordersPaid"] }, 0],
+                },
+              },
+            },
+            { $project: { _id: 0, revenuePaid: 1, ordersPaid: 1, ordersPending: 1, ordersCancelled: 1, uniquePayers: 1, avgOrderValue: 1 } },
+          ],
+
+          revenueSeries: [
+            { $match: { status: "PAID", paidAt: { $gte: fromDate, $lt: toDateExclusive } } },
+            { $group: { _id: bucketBy("$paidAt"), v: { $sum: "$amount" } } },
+            { $sort: { _id: 1 } },
+            { $project: { _id: 0, t: "$_id", v: { $round: ["$v", 0] } } },
+          ],
+
+          paidOrdersSeries: [
+            { $match: { status: "PAID", paidAt: { $gte: fromDate, $lt: toDateExclusive } } },
+            { $group: { _id: bucketBy("$paidAt"), v: { $sum: 1 } } },
+            { $sort: { _id: 1 } },
+            { $project: { _id: 0, t: "$_id", v: 1 } },
+          ],
+
+          topPlansByRevenue: [
+            { $match: { status: "PAID", paidAt: { $gte: fromDate, $lt: toDateExclusive } } },
+            {
+              $group: {
+                _id: "$planCode",
+                revenue: { $sum: "$amount" },
+                orders: { $sum: 1 },
+                planName: { $first: { $ifNull: ["$plan.name", "$planCode"] } },
+              },
+            },
+            { $sort: { revenue: -1 } },
+            { $limit: top },
+            { $project: { _id: 0, code: "$_id", name: "$planName", revenue: 1, orders: 1 } },
+          ],
+
+          topUsersByRevenue: [
+            { $match: { status: "PAID", paidAt: { $gte: fromDate, $lt: toDateExclusive } } },
+            {
+              $group: {
+                _id: "$user",
+                revenue: { $sum: "$amount" },
+                orders: { $sum: 1 },
+                username: { $first: "$u.username" },
+                email: { $first: "$u.email" },
+                nick: { $first: { $ifNull: ["$u.profile.nickname", "$u.profile.tenGoi"] } },
+              },
+            },
+            { $sort: { revenue: -1 } },
+            { $limit: top },
+            {
+              $project: {
+                _id: 0,
+                userId: "$_id",
+                name: { $ifNull: ["$nick", { $ifNull: ["$username", { $ifNull: ["$email", "—"] }] }] },
+                revenue: 1,
+                orders: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const out = agg?.[0] || {};
+    const k = out.kpis?.[0] || {
+      revenuePaid: 0,
+      ordersPaid: 0,
+      ordersPending: 0,
+      ordersCancelled: 0,
+      uniquePayers: 0,
+      avgOrderValue: 0,
+    };
+
+    // 2) New premium users in range = user có FIRST PAID nằm trong range
+    // (phải scan PAID toàn lịch sử, rồi mới lọc firstPaidAt trong khoảng)
+    const firstPaidPipe = [
+      { $match: { status: "PAID", paidAt: { $ne: null } } },
+      { $group: { _id: "$user", firstPaidAt: { $min: "$paidAt" } } },
+      { $match: { firstPaidAt: { $gte: fromDate, $lt: toDateExclusive } } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "u",
+        },
+      },
+      { $unwind: { path: "$u", preserveNullAndEmptyArrays: true } },
+      ...(rx
+        ? [
+            {
+              $match: {
+                $or: [
+                  { "u.username": rx },
+                  { "u.email": rx },
+                  { "u.profile.nickname": rx },
+                  { "u.profile.tenGoi": rx },
+                ],
+              },
+            },
+          ]
+        : []),
+      { $count: "v" },
+    ];
+
+    const firstPaidAgg = await PaymentTransaction.aggregate(firstPaidPipe);
+    const newPremiumUsersInRange = Number(firstPaidAgg?.[0]?.v || 0);
+
+    // 3) Active premium users: đếm trực tiếp từ User.premium (chuẩn nhất vì bạn lưu expiresAt)
+    const userPremiumMatch = {
+      "premium.tier": "premium",
+      "premium.expiresAt": { $ne: null },
+    };
+
+    const userSearchMatch = rx
+      ? {
+          $or: [
+            { username: rx },
+            { email: rx },
+            { "profile.nickname": rx },
+            { "profile.tenGoi": rx },
+          ],
+        }
+      : null;
+
+    const activePremiumUsers = await User.countDocuments({
+      ...(userSearchMatch || {}),
+      ...userPremiumMatch,
+      "premium.expiresAt": { $gte: now },
+    });
+
+    const totalPremiumUsers = await User.countDocuments({
+      ...(userSearchMatch || {}),
+      ...userPremiumMatch,
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        query: {
+          from: fromDate.toISOString().slice(0, 10),
+          to: toDateInclusive.toISOString().slice(0, 10),
+          granularity,
+          q: qRaw,
+          top,
+        },
+        kpis: {
+          revenuePaid: Number(k.revenuePaid || 0),
+          ordersPaid: Number(k.ordersPaid || 0),
+          ordersPending: Number(k.ordersPending || 0),
+          ordersCancelled: Number(k.ordersCancelled || 0),
+          uniquePayers: Number(k.uniquePayers || 0),
+          avgOrderValue: Math.round(Number(k.avgOrderValue || 0)),
+          newPremiumUsersInRange,
+          activePremiumUsers,
+          totalPremiumUsers,
+        },
+        series: {
+          revenue: out.revenueSeries || [],
+          paidOrders: out.paidOrdersSeries || [],
+        },
+        top: {
+          plansByRevenue: out.topPlansByRevenue || [],
+          usersByRevenue: out.topUsersByRevenue || [],
+        },
+      },
+    });
+  } catch (e) {
+    console.error("[admin.stats.premium]", e);
     return res.status(500).json({ success: false, message: "Lỗi máy chủ" });
   }
 });

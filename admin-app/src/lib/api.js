@@ -816,6 +816,11 @@ export const getConnectStats = async (params = {}) => {
   return r.data?.data ?? r.data;
 };
 
+export const getStatsPremiumAdmin = async (params = {}) => {
+  const r = await api.get("/api/admin/stats/premium", { params });
+  return r.data?.data ?? r.data;
+};
+
 /* =========================
  * PREMIUM (ADMIN)
  * ========================= */

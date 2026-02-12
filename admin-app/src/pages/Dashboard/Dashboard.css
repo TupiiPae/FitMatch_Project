@@ -213,6 +213,11 @@
   font-weight:500;
 }
 
+.db-section--revenue .db-section-head h3 i {
+  color: #7C3AED;
+  background: rgba(124, 58, 237, 0.12);
+}
+
 .db-section{
   border: 1px solid #e2e8f0;
   border-radius: 12px;

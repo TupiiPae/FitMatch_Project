@@ -19,7 +19,9 @@ import {
   getStatsNutritionAdmin,
   getStatsWorkoutsAdmin,
   getConnectStats,
+  getStatsPremiumAdmin,
 } from "../../lib/api";
+
 import "./Dashboard.css";
 
 const safeArr = (v) => (Array.isArray(v) ? v : []);
@@ -223,6 +225,7 @@ export default function Dashboard() {
   const [nutritionStats, setNutritionStats] = useState(null);
   const [workoutsStats, setWorkoutsStats] = useState(null);
   const [connectStats, setConnectStats] = useState(null);
+  const [premiumStats, setPremiumStats] = useState(null);
 
   const params = useMemo(() => {
     const p = { granularity, top };
@@ -236,12 +239,14 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const p = overrideParams || params;
-      const [u, n, w, c] = await Promise.all([
+      const [pm, u, n, w, c] = await Promise.all([
+        getStatsPremiumAdmin(p),
         getStatsUsersAdmin(p),
         getStatsNutritionAdmin(p),
         getStatsWorkoutsAdmin(p),
         getConnectStats(p),
       ]);
+      setPremiumStats(pm || null);
       setUsersStats(u || null);
       setNutritionStats(n || null);
       setWorkoutsStats(w || null);
@@ -286,6 +291,21 @@ export default function Dashboard() {
   const nK = nutritionStats?.kpis || {};
   const wK = workoutsStats?.kpis || {};
   const cK = connectStats?.kpis || {};
+  const pK = premiumStats?.kpis || {};
+  const pSeriesRevenue = safeArr(premiumStats?.series?.revenue);
+  const pSeriesPaidOrders = safeArr(premiumStats?.series?.paidOrders);
+
+  const topPlansByRevenue = safeArr(premiumStats?.top?.plansByRevenue).map((x) => ({
+    name: x?.name || x?.code || "—",
+    value: Number(x?.revenue || 0),
+    note: x?.orders ? `${x.orders} giao dịch` : "",
+  }));
+
+  const topUsersByRevenue = safeArr(premiumStats?.top?.usersByRevenue).map((x) => ({
+    name: x?.name || "—",
+    value: Number(x?.revenue || 0),
+    note: x?.orders ? `${x.orders} giao dịch` : "",
+  }));
 
   const uSeriesNew = safeArr(usersStats?.series?.newUsers);
   const uSeriesActive = safeArr(usersStats?.series?.activeUsers);
@@ -449,6 +469,68 @@ export default function Dashboard() {
               <i className="fa-solid fa-filter" />
               <span>Áp dụng</span>
             </button>
+          </div>
+        </div>
+
+        <div className="db-section db-section--revenue">
+          <div className="db-section-head">
+            <h3>
+              <i className="fa-solid fa-sack-dollar" /> Doanh thu Premium
+            </h3>
+            <div className="db-section-meta">
+              {premiumStats?.query?.from && premiumStats?.query?.to ? (
+                <span>
+                  Khoảng: <strong>{premiumStats.query.from}</strong> →{" "}
+                  <strong>{premiumStats.query.to}</strong>
+                </span>
+              ) : (
+                <span className="db-muted">—</span>
+              )}
+            </div>
+          </div>
+
+          <div className="db-kpi-grid">
+            <KpiCard title="Doanh thu đã nhận (PAID)" value={fmtNum(pK?.revenuePaid)} tone="good" />
+            <KpiCard title="Giao dịch đã thanh toán" value={fmtNum(pK?.ordersPaid)} />
+            <KpiCard title="Chờ thanh toán" value={fmtNum(pK?.ordersPending)} tone="warn" />
+            <KpiCard title="Hủy" value={fmtNum(pK?.ordersCancelled)} tone="bad" />
+            <KpiCard title="Người mua (unique)" value={fmtNum(pK?.uniquePayers)} />
+            <KpiCard title="Người mua mới trong khoảng" value={fmtNum(pK?.newPremiumUsersInRange)} />
+            <KpiCard title="Premium đang hoạt động" value={fmtNum(pK?.activePremiumUsers)} tone="good" />
+            <KpiCard title="Tổng tài khoản Premium" value={fmtNum(pK?.totalPremiumUsers)} />
+          </div>
+
+          <div className="db-panels-2">
+            <div className="db-panel">
+              <div className="db-panel-head">
+                <h4>Doanh thu theo thời gian</h4>
+                <span className="db-muted">({granularityLabel})</span>
+              </div>
+              <ModernChart data={pSeriesRevenue} color="#7C3AED" emptyText="Chưa có giao dịch PAID" />
+            </div>
+
+            <div className="db-panel">
+              <div className="db-panel-head">
+                <h4>Số giao dịch PAID theo thời gian</h4>
+                <span className="db-muted">({granularityLabel})</span>
+              </div>
+              <ModernChart data={pSeriesPaidOrders} color="#4F46E5" emptyText="Chưa có giao dịch PAID" />
+            </div>
+          </div>
+
+          <div className="db-panels-2">
+            <ModernRankingList
+              title={`Gói Premium doanh thu cao nhất (${top} mục)`}
+              items={topPlansByRevenue}
+              color="#7C3AED"
+              emptyText="Chưa có dữ liệu doanh thu"
+            />
+            <ModernRankingList
+              title={`Người dùng chi tiêu nhiều nhất (${top} mục)`}
+              items={topUsersByRevenue}
+              color="#4F46E5"
+              emptyText="Chưa có dữ liệu doanh thu"
+            />
           </div>
         </div>
 
