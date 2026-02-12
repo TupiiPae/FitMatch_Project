@@ -16,9 +16,9 @@
   width: 100%;
   max-width: 720px;
   max-height: 90vh;
-  background: #020617;
+  background: #050505;
   border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.35); /* slate-400/35 */
+  border: 1px solid rgba(255, 255, 255, 0.50);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -32,11 +32,11 @@
   font-size: 18px;
   font-weight: 600;
   padding: 16px 20px;
-  border-bottom: 1px solid #111827;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.30);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #020617;
+  background: rgba(148,163,184,.10);
   color: #f9fafb;
 }
 
@@ -61,9 +61,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 20px 14px;
-  border-bottom: 1px solid #111827;
-  background: #020617;
+  padding: 20px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.30);
+  background: rgba(148,163,184,.10);
 }
 
 .dj-search-bar i {
@@ -74,22 +74,17 @@
 .dj-search-bar input {
   width: 100%;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  background: rgba(15, 23, 42, 0.9);
-  color: #f9fafb;
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  background: #1C1C1E;
+  color: #aaa;
   font-size: 14px;
-  padding: 8px 14px;
+  padding: 10px 14px;
   outline: none;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .dj-search-bar input::placeholder {
-  color: rgba(148, 163, 184, 0.9);
-}
-
-.dj-search-bar input:focus {
-  border-color: #f00519;
-  background: rgba(15, 23, 42, 1);
+  color: #aaa;
 }
 
 /* ===== DANH SÁCH KẾT QUẢ ===== */
@@ -97,7 +92,7 @@
 .dj-search-list {
   overflow-y: auto;
   flex-grow: 1;
-  background: #020617;
+  background: rgba(148,163,184,.10);
   padding: 12px 16px 16px;
 }
 
@@ -113,14 +108,13 @@
   border-radius: 999px;
 }
 
-/* Item kết quả: card tối, bo 12px */
 .dj-search-item {
   display: grid;
   grid-template-columns: 56px 1fr auto;
   gap: 12px;
   align-items: center;
-  background: #020617;
-  border: 3px solid #1f2937;
+  background: #1C1C1E;
+  border: 1px solid rgba(255, 255, 255, 0.50);
   border-radius: 8px;
   padding: 10px;
   margin-bottom: 10px;
@@ -131,8 +125,8 @@
 
 .dj-search-item:hover {
   border-color: #f00519;
-  background: #020617;
   transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(240, 5, 25, 0.15);
 }
 
 .dj-search-item img {

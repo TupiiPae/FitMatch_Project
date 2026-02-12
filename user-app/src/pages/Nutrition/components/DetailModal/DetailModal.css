@@ -8,25 +8,28 @@
   z-index: 1000;
 }
 
-/* Khung modal chính */
 .food-modal-new {
   display: flex;
   flex-direction: row;
-  width: 1000px;
-  height: 800px;
-  background: #1e1e1e;
-  border-radius: 8px;
+  width: min(980px, 94vw);
+  height: 80vh;
+  background: #1c1c1e;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   position: relative;
 }
 
-/* CỘT TRÁI: HÌNH ẢNH LỚN */
+.fm-col-left,
+.fm-col-right {
+  min-width: 0;
+}
+
+
 .fm-col-left {
-  width: 50%;
+  width: 60%;
   background: #000;
   position: relative;
-  
 }
 
 .fm-col-left img {
@@ -36,21 +39,18 @@
   display: block;
 }
 
-/* CỘT PHẢI: CONTENT */
 .fm-col-right {
-  width: 55%;
-  padding: 32px;
+  width: 50%;
+  padding: 26px 24px 22px;
   display: flex;
   flex-direction: column;
   position: relative;
   color: #fff;
-
 }
 
-/* Nút đóng X góc phải */
 .close-icon-btn {
   position: absolute;
-  top: 1px;
+  top: 2px;
   right: 4px;
   background: transparent;
   border: none;
@@ -61,92 +61,236 @@
   z-index: 10;
   transition: color 0.2s;
 }
+
 .close-icon-btn:hover {
   color: #fff;
 }
 
-/* Phần nội dung cuộn được (trừ nút bottom) */
 .fm-scroll-content {
   flex: 1;
   overflow-y: auto;
   padding-right: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-/* Custom scrollbar */
 .fm-scroll-content::-webkit-scrollbar {
   display: none;
 }
-.fm-scroll-content::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
-}
 
-/* Header Info */
 .fm-title-lg {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0 0 4px 0;
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
   line-height: 1.2;
   color: #fff;
 }
 
 .fm-sub-text {
-  font-size: 15px;
+  font-size: 14px;
   color: #9ca3af;
 }
 
-/* BOX CHỈ SỐ (giống card nhỏ bên trong, viền dashed) */
-.fm-macro-box {
-  border: 1px dashed #4b5563;
-  border-radius: 8px;
-  padding: 18px 22px;
-  margin: 0 24px 0 24px;
-  background: rgba(0, 0, 0, 0.4);
-  max-width: 420px;
+.fm-macro-head {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 112px repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  overflow: hidden;
 }
 
-/* Mỗi hàng: label trái, value phải */
-.macro-item {
+.fm-macro-pill {
+  min-width: 0;
+}
+
+.fm-pill-gram {
+  white-space: nowrap;
+}
+
+
+.fm-ring {
+  width: 102px;
+  height: 102px;
+  border-radius: 999px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fm-ring::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 999px;
+  background: #1c1c1e;
+}
+
+.fm-ring-center {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  line-height: 1;
+}
+
+.fm-ring-kcal {
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.fm-ring-unit {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.fm-macro-pill {
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.fm-pill-badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #fff;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+.fm-macro-pill.is-protein .fm-pill-badge {
+  background: #ef4444;
+}
+
+.fm-macro-pill.is-carb .fm-pill-badge {
+  background: #3b82f6;
+}
+
+.fm-macro-pill.is-fat .fm-pill-badge {
+  background: #f59e0b;
+}
+
+.fm-pill-gram {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #fff;
+}
+
+.fm-pill-label {
+  margin-top: 8px;
+  font-size: 10px;
+  letter-spacing: 0.2px;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fm-pill-label i {
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+.fm-block-title {
+  margin-top: 20px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.fm-toggle-btn {
+  margin-top: 4px;
+  width: 100%;
+  padding: 4px 14px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #E31C25;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 0;
-  font-size: 14px;
+  gap: 12px;
+  transition: background 0.2s, border-color 0.2s;
+  font-size: 13px;
+  justify-content: center;
 }
 
-.macro-item + .macro-item {
-  border-top: 1px dashed rgba(75, 85, 99, 0.6);
-  margin-top: 4px;
-  padding-top: 10px;
+.fm-toggle-btn i {
+  transition: transform 0.2s;
 }
 
-.macro-item .lbl {
-  color: #e5e7eb;
-  font-weight: 400;
+.fm-toggle-btn.is-open i {
+  transform: rotate(180deg);
 }
 
-.macro-item .val {
+.fm-nutri-panel {
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.20);
+}
+
+.fm-nutri-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+.fm-nutri-row + .fm-nutri-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.fm-nutri-row .k {
+  color: #fff;
+}
+
+.fm-nutri-row .v {
   color: #ffffff;
-  font-weight: 700;
 }
 
-/* Phần Mô tả / Hướng dẫn */
-.fm-description-section h4 {
+.fm-nutri-sub {
+  padding: 0 14px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-left: 30px;
+}
+
+.fm-nutri-subrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 0;
+  font-size: 13px;
+}
+
+.fm-nutri-subrow .k {
+  color: #e5e7eb;
+  opacity: 0.9;
+}
+
+.fm-nutri-subrow .v {
+  color: #fff;
+}
+
+.fm-desc-title {
+  margin-top: 20px;
   font-size: 16px;
-  color: #f00519; /* đỏ giống hình */
-  margin: 20px 0 8px 0;
-  font-weight: 700;
+  font-weight: 500;
+  color: #fff;
 }
 
 .desc-text {
-  font-size: 14px;
-  color: #d1d5db;
-  line-height: 1.6;
-  min-height: 60px; /* vẫn chừa khoảng trống kể cả khi chưa có mô tả */
+  margin-top: 4px;
+  font-size: 13px;
+  color: #e5e7eb;
+  min-height: 60px;
 }
 
-/* Nút Add Bottom */
 .fm-bottom-action {
   margin-top: auto;
 }
@@ -158,8 +302,8 @@
   border: none;
   background-color: #f00519;
   color: #fff;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -167,15 +311,15 @@
   gap: 8px;
   transition: background 0.2s;
 }
+
 .btn-add-log i {
-    font-size: 20px;
+  font-size: 20px;
 }
 
 .btn-add-log:hover {
   background-color: #d30016;
 }
 
-/* Responsive: modal dọc trên mobile */
 @media (max-width: 768px) {
   .food-modal-new {
     flex-direction: column;
@@ -184,19 +328,97 @@
     max-height: 90vh;
     overflow-y: auto;
   }
+
   .fm-col-left {
     width: 100%;
-    height: 200px;
+    height: min(32vh, 400px);
   }
+
   .fm-col-right {
     width: 100%;
-    padding: 20px;
+    padding: 18px 16px 16px;
+  }
+
+  .fm-title-lg {
+    font-size: 22px;
+  }
+
+  .fm-macro-head {
+    display: grid;
+    grid-template-columns: 78px repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    align-items: stretch;
+    padding: 10px;
+    overflow: hidden;
+  }
+
+  .fm-ring {
+    width: 78px;
+    height: 78px;
+    flex: none;
+  }
+
+  .fm-ring::after {
+    inset: 5px;
+  }
+
+  .fm-ring-kcal {
+    font-size: 16px;
+  }
+
+  .fm-ring-unit {
+    font-size: 11px;
+  }
+
+  .fm-macro-pill {
+    min-height: 78px;
+    padding: 8px 2px 8px;
+    min-width: 0;
+  }
+
+  .fm-pill-badge {
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  .fm-pill-gram {
+    margin-top: 6px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .fm-pill-label {
+    margin-top: 6px;
+    font-size: 9px;
+    gap: 6px;
+    line-height: 1.1;
+  }
+
+  .fm-pill-label i {
+    font-size: 11px;
   }
 }
+@media (max-width: 420px) {
+  .fm-macro-head {
+    grid-template-columns: 72px repeat(3, minmax(0, 1fr));
+    gap: 2px;
+    padding: 2px;
+  }
 
-/* (giữ lại nếu còn dùng ở nơi khác) */
-@media (max-width: 640px) {
-  .fm-head { grid-template-columns: 84px 1fr; }
-  .fm-thumb { width: 84px; height: 84px; }
-  .fm-grid { grid-template-columns: 1fr; }
+  .fm-ring {
+    width: 72px;
+    height: 72px;
+  }
+
+  .fm-macro-pill {
+    min-height: 72px;
+  }
+
+  .fm-pill-gram {
+    font-size: 12px;
+  }
+
+  .fm-pill-label {
+    font-size: 9.5px;
+  }
 }
