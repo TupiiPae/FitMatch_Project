@@ -42,6 +42,8 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
     fiberG,
     description,
     imageUrl,
+    createdByAdmin,
+    sourceType,
   } = safeFood;
 
   useEffect(() => {
@@ -50,6 +52,9 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
 
   const desc =
     description && String(description).trim() ? description : "Chưa có mô tả";
+
+  const isAdminCreated =
+  !!createdByAdmin || String(sourceType || "").toLowerCase() === "admin_created";
 
   const head = useMemo(() => {
     const pG = nNum(proteinG) ?? 0;
@@ -145,6 +150,17 @@ export default function DetailModal({ open, food, onClose, onAddToLog }) {
                 </div>
               </div>
             </div>
+
+            {isAdminCreated && (
+              <div className="fm-verified">
+                <div className="fm-verified">
+                  <span className="fm-verified-badge" aria-hidden="true">
+                    <i className="fa-solid fa-check"></i>
+                  </span>
+                  <span>Được tạo bởi đội ngũ dinh dưỡng Fitmatch</span>
+                </div>
+              </div>
+            )}
 
             <div className="fm-block-title">Giá trị dinh dưỡng</div>
 
