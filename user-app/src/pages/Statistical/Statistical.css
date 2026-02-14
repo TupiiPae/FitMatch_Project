@@ -1204,11 +1204,35 @@
 }
 
 @media (max-width:768px){
-  .st-grid-layout{ display:flex; flex-direction:column; }
-  .st-row-middle, .st-row-bottom{ display:flex; flex-direction:column; }
-  .st-row-middle-grid{ grid-template-columns: minmax(0, 1fr); }
+  .st-grid-layout{ display:flex; flex-direction:column; gap:18px; }
+  .st-grid-layout > *{ width:100%; min-width:0; box-sizing:border-box; }
+  .st-row-top{ display:contents; }
+  .st-row-top.st-animate-section{ opacity:1; transform:none; }
+  .st-box-calories{ order:1; }
+  .st-col-overview{ order:2; width:100%; grid-column:auto; grid-row:auto; border-left:none; }
+  .st-row-middle{ order:3; display:flex; flex-direction:column; gap:10px; }
+  .st-box-weight{ order:4; }
+  .st-row-bottom{ display:none; }
+  .st-row-middle-grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "steps workout"
+      "water water";
+    gap:12px;
+  }
+  .st-box-steps{ grid-area: steps; }
+  .st-box-workout{ grid-area: workout; }
+  .st-box-water{ grid-area: water; }
   .st-header{ flex-direction:column; align-items:flex-start; }
   .st-cal-grid{ grid-template-columns: minmax(0, 1fr); }
+  .st-cal-right{ min-width:0; overflow:hidden; }
+  .st-cal-meta-row{ grid-template-columns: repeat(3, minmax(0, 1fr)); gap:8px; }
+  .st-cal-meta-row .c{ padding:8px 6px; gap:8px; }
+  .st-cal-meta-row .st-cal-icon{ width:30px; height:30px; min-width:30px; }
+  .st-cal-meta-row .v{ font-size:14px; }
+  .st-cal-meta-row .lb{ font-size:10px; }
+  .st-cal-circle{ width:220px; height:220px; margin:0 auto; }
+  .st-timeline-body{ max-width:100%; }
 }
 
 @media (max-width: 640px) {
@@ -1218,7 +1242,7 @@
   }
 
   .st-page {
-    padding: 12px 8px;
+    padding: 12px 8px 24px;
   }
 
   .st-header {
@@ -1245,7 +1269,7 @@
 
 @media (max-width: 480px) {
   .st-page {
-    padding: 10px 6px;
+    padding: 10px 6px 30px;
   }
 
   .st-header {
@@ -1269,22 +1293,10 @@
   }
 }
 
-/* Additional mobile fixes: stack main grid, avoid sidebar overflow, shrink rings */
-@media (max-width: 768px) {
-  .st-grid-layout{ display:flex; flex-direction:column; gap:18px; }
-  .st-grid-layout > * { width:100%; min-width:0; box-sizing:border-box; }
-  .st-col-overview{ order:99; width:100%; grid-column:auto; grid-row:auto; border-left:none; }
-  .st-row-top, .st-row-middle, .st-row-bottom{ order:1; width:100%; }
-  .st-cal-right{ min-width:0; overflow:hidden; }
-  .st-cal-meta-row{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .st-cal-circle{ width:220px; height:220px; margin:0 auto; }
-  .st-timeline-body{ max-width:100%; }
-}
-
 @media (max-width: 640px) {
   .st-cal-circle{ width:180px; height:180px; }
-  .st-cal-right .st-cal-meta-row{ grid-template-columns: 1fr; }
-  .st-cal-meta-row .c{ padding:8px; }
+  .st-cal-right .st-cal-meta-row{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .st-cal-meta-row .c{ padding:6px 6px; }
   .st-wu-wrap input{ width:80px; }
   .st-btn-add-corner{ top:8px; right:8px; }
   .st-card{ padding:10px; }
