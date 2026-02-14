@@ -1,3 +1,6 @@
+.exd-page {
+  width: 100%;
+}
 
 .exd-inner {
   max-width: 1400px;
@@ -5,7 +8,6 @@
 }
 
 /* Loading / error */
-
 .exd-state {
   padding: 40px 0;
   text-align: center;
@@ -18,7 +20,6 @@
 }
 
 /* ===== BACK BUTTON ===== */
-
 .exd-back {
   background: transparent;
   display: inline-flex;
@@ -40,7 +41,6 @@
 }
 
 /* ===== MAIN LAYOUT 2/3 - 1/3 ===== */
-
 .exd-layout {
   display: grid;
   grid-template-columns: minmax(0, 2.1fr) minmax(320px, 1fr);
@@ -55,13 +55,11 @@
 }
 
 /* ===== LEFT SIDE ===== */
-
 .exd-left {
   min-width: 0;
 }
 
 /* Video */
-
 .exd-video-wrap {
   overflow: hidden;
   background: #020617;
@@ -84,7 +82,6 @@
 }
 
 /* Title */
-
 .exd-title {
   margin: 18px 0 10px;
   font-size: 32px;
@@ -94,7 +91,6 @@
 }
 
 /* Tags (nhóm cơ) */
-
 .exd-tags {
   display: flex;
   flex-wrap: wrap;
@@ -125,12 +121,11 @@
 }
 
 /* Tabs */
-
 .exd-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.30);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   padding-left: 12px;
 }
 
@@ -165,7 +160,6 @@
 }
 
 /* Tab content — KHÔNG còn box */
-
 .exd-tab-panel {
   margin-top: 18px;
   padding: 0;
@@ -180,7 +174,6 @@
 }
 
 /* Rich HTML */
-
 .exd-html p,
 .exd-html li {
   font-size: 14px;
@@ -228,7 +221,6 @@
 }
 
 /* ===== MUSCLE CARD ===== */
-
 .exd-muscle-card {
   margin-top: 24px;
   padding: 18px 18px 20px;
@@ -271,13 +263,11 @@
 
 .exd-muscle-img-frame img {
   display: block;
-  width: 340px;          /* to hơn so với bản trước */
+  width: 340px;
   max-width: 100%;
   height: auto;
   object-fit: cover;
 }
-
-/* Right text */
 
 .exd-muscle-right {
   display: flex;
@@ -324,21 +314,19 @@
   color: #fff;
   gap: 30px;
 }
-.exd-muscle-label-primary{
+
+.exd-muscle-label-primary {
   font-size: 18px;
   font-weight: 500;
   color: #fff;
   gap: 30px;
 }
-.exd-muscle-label-primary span{
-  color: #d30016;
 
+.exd-muscle-label-primary span {
+  color: #d30016;
 }
 
-
-
 /* ===== RIGHT SIDE ===== */
-
 .exd-right {
   min-width: 0;
   display: flex;
@@ -355,7 +343,6 @@
 }
 
 /* Summary card */
-
 .exd-summary-card {
   padding: 18px 18px 20px;
   border-radius: 4px;
@@ -411,18 +398,9 @@
   font-size: 24px;
 }
 
-.exd-summary-icon.met {
-  color: #f20d0d;
-}
-
-.exd-summary-icon.type {
-  color: #f20d0d;
-}
-
-.exd-summary-icon.level {
-  color: #f20d0d;
-}
-
+.exd-summary-icon.met,
+.exd-summary-icon.type,
+.exd-summary-icon.level,
 .exd-summary-icon.equip {
   color: #f20d0d;
 }
@@ -441,7 +419,6 @@
 }
 
 /* ===== Các bài tập khác ===== */
-
 .exd-related {
   padding: 16px 18px 18px;
   border-radius: 4px;
@@ -467,10 +444,11 @@
   border: 4px solid #1f2937;
   box-shadow: 0 4px 12px rgba(47, 67, 143, 0.32);
   cursor: pointer;
+  text-align: left;
 }
 
 .exd-related-item:hover {
-  border:1px solid #f00519;
+  border: 1px solid #f00519;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(240, 5, 25, 0.15);
 }
@@ -504,4 +482,224 @@
   margin-top: 8px;
   font-size: 12px;
   color: #9ca3af;
+}
+
+/* =========================
+   RESPONSIVE (MOBILE ONLY)
+   ========================= */
+@media (max-width: 768px) {
+  .exd-inner {
+    padding: 0 14px 28px;
+  }
+
+  .exd-layout {
+    gap: 18px;
+  }
+
+
+  .exd-video-wrap {
+    border-radius: 14px;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.55);
+  }
+
+  .exd-title {
+    margin: 14px 0 8px;
+    font-size: 24px;
+    line-height: 1.22;
+  }
+
+  .exd-tags {
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .exd-tag {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  .exd-tabs {
+    flex-wrap: nowrap;
+    gap: 14px;
+    padding-left: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .exd-tabs::-webkit-scrollbar {
+    height: 0;
+  }
+
+  .exd-tab {
+    flex: 0 0 auto;
+    padding: 0 0 10px;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+
+  .exd-tab.active::after {
+    width: 34px;
+  }
+
+  .exd-tab-panel {
+    margin-top: 14px;
+  }
+
+  .exd-html p,
+  .exd-html li {
+    font-size: 13px;
+    line-height: 1.72;
+  }
+
+  .exd-muscle-card {
+    margin-top: 18px;
+    padding: 14px 14px 16px;
+    border-radius: 12px;
+  }
+
+  .exd-muscle-title {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+
+  .exd-muscle-body {
+    gap: 12px;
+  }
+
+  .exd-muscle-img-frame {
+    border-radius: 12px;
+  }
+
+  .exd-muscle-img-frame img {
+    width: 280px;
+  }
+
+  .exd-muscle-line {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .exd-dot {
+    width: 10px;
+    height: 10px;
+    margin-top: 6px;
+    flex: 0 0 auto;
+  }
+
+  .exd-muscle-label-primary {
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  .exd-muscle-label {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .exd-right {
+    max-width: none;
+    margin: 0;
+    gap: 14px;
+  }
+
+  .exd-summary-card,
+  .exd-related {
+    border-radius: 12px;
+    padding: 14px 14px 16px;
+  }
+
+  .exd-summary-title {
+    font-size: 18px;
+  }
+
+  .exd-summary-sub {
+    font-size: 13px;
+  }
+
+  .exd-summary-item {
+    gap: 12px;
+    padding: 10px 0;
+  }
+
+  .exd-summary-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .exd-summary-text .label {
+    font-size: 12px;
+  }
+
+  .exd-summary-text .value {
+    font-size: 13px;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .exd-related-list {
+    margin-top: 12px;
+    gap: 10px;
+  }
+
+  .exd-related-item {
+    grid-template-columns: 64px 1fr auto;
+    padding: 10px;
+    border-width: 1px;
+    border-radius: 12px;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+  }
+
+  .exd-related-thumb img {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+  }
+
+  .exd-related-meta .title {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .exd-related-meta .sub {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 420px) {
+  .exd-inner {
+    padding: 0 12px 24px;
+  }
+
+  .exd-title {
+    font-size: 21px;
+  }
+
+  .exd-video-wrap {
+    border-radius: 12px;
+  }
+
+  .exd-related-item {
+    grid-template-columns: 58px 1fr auto;
+    padding: 9px;
+  }
+
+  .exd-related-thumb img {
+    width: 58px;
+    height: 58px;
+  }
+
+  .exd-summary-title {
+    font-size: 17px;
+  }
+}
+
+@media (hover: none) {
+  .exd-related-item:hover {
+    transform: none;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+    border: 1px solid #1f2937;
+  }
+
 }
