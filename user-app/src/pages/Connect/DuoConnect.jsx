@@ -11,6 +11,14 @@ import UserSideModal from "../UserProfile/UserSideModal";
 import ChatBox from "../Chat/ChatBox";
 import { getChatConversationSummary } from "../../api/chat";
 import { getSocket } from "../../lib/socket";
+import PremiumGateModal from "../../components/PremiumGateModal/PremiumGateModal";
+import {
+  PREMIUM_UPGRADE_PATH,
+  isPremiumGateError,
+  extractGateMessage,
+  extractApiMessage,
+} from "../../utils/premiumGate";
+
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -22,8 +30,19 @@ const genderKey=(g)=>{const v=norm(g); if(!v) return null; if(["male","nam","m",
 const genderLabel=(k)=>k==="male"?"Nam":k==="female"?"Nữ":k==="other"?"Khác":"—";
 const addrLabel=(addr)=>{const a=addr||{}; const parts=[a.ward,a.district,a.city].map(s=>(s||"").toString().trim()).filter(Boolean); return parts.join(" - ");};
 
-export default function DuoConnect({ onLeftRoom }) {
+export default function DuoConnect({ onLeftRoom, onSwitchRoomType, onOpenSecondSlot }) {
   const nav = useNavigate();
+  const [statusData, setStatusData] = useState(null);
+
+  // ✅ ĐÃ SỬA: State pg và handlers phải nằm TRONG component, ngay đầu hàm
+  const [pg, setPg] = useState({ open: false, title: "", message: "" });
+  const openGate = (message, title = "Cần nâng cấp Premium") =>
+    setPg({ open: true, title, message: String(message || "").trim() });
+  const closeGate = () => setPg((p) => ({ ...p, open: false }));
+  const goUpgrade = () => {
+    closeGate();
+    nav(PREMIUM_UPGRADE_PATH);
+  };
 
   const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState(null);
@@ -95,7 +114,11 @@ export default function DuoConnect({ onLeftRoom }) {
       const data=pickOkData(res)||{};
       setStreakData(data);
     }catch(e){
-      setStreakErr(e?.response?.data?.message||"Không thể tải streak của phòng ghép đôi.");
+      if(isPremiumGateError(e)){
+        openGate(extractGateMessage(e,"Bạn cần nâng cấp Premium để xem streak chi tiết của phòng."));
+        return;
+      }
+      setStreakErr(extractApiMessage(e,"Không thể tải streak của phòng ghép đôi."));
     }finally{
       setStreakLoading(false);
     }
@@ -109,20 +132,23 @@ export default function DuoConnect({ onLeftRoom }) {
         setLoading(true);
 
         const [stRaw, meRaw] = await Promise.all([getMatchStatus(), getMe().catch(()=>null)]);
-        const statusData = stRaw?.data ?? stRaw;
-        const activeRoomId = statusData?.activeRoomId;
-        const activeRoomType = statusData?.activeRoomType;
+        const s0 = stRaw?.data ?? stRaw;
+        const sd = s0?.data ?? s0;
+        setStatusData(sd);
 
-        if (!activeRoomId || activeRoomType !== "duo") {
+        const duoId = sd?.duoRoomId || null;
+
+        if (!duoId) {
           toast.info("Hiện bạn chưa tham gia phòng kết nối 1:1 nào.");
           if (typeof onLeftRoom === "function") onLeftRoom();
           else nav("/ket-noi");
           return;
         }
+        
 
         const meData = meRaw || null;
 
-        const roomRes = await api.get(`/match/rooms/${activeRoomId}`);
+        const roomRes = await api.get(`/match/rooms/${duoId}`);
         const payload = roomRes?.data ?? roomRes;
         const roomData = payload?.data ?? payload ?? null;
 
@@ -132,8 +158,14 @@ export default function DuoConnect({ onLeftRoom }) {
         setMe(meData);
       } catch (e) {
         console.error("Load duo room error:", e);
+
+        if (isPremiumGateError(e)) {
+          openGate(extractGateMessage(e, "Bạn cần nâng cấp Premium để truy cập phòng kết nối 1:1."));
+          return;
+        }
+
         if (!cancelled) {
-          toast.error(e?.response?.data?.message || e?.response?.data?.error || "Không thể tải thông tin phòng ghép đôi.");
+          toast.error(extractApiMessage(e, "Không thể tải thông tin phòng ghép đôi."));
           if (typeof onLeftRoom === "function") onLeftRoom();
           else nav("/ket-noi");
         }
@@ -318,8 +350,15 @@ export default function DuoConnect({ onLeftRoom }) {
       else nav("/ket-noi");
     } catch (e) {
       console.error("leaveMatchRoom error:", e);
-      toast.error(e?.response?.data?.message || e?.response?.data?.error || "Không thể rời phòng. Vui lòng thử lại.");
+
+      if (isPremiumGateError(e)) {
+        openGate(extractGateMessage(e, "Bạn cần nâng cấp Premium để thực hiện thao tác này."));
+        return;
+      }
+
+      toast.error(extractApiMessage(e, "Không thể rời phòng. Vui lòng thử lại."));
     } finally {
+
       setLeaving(false);
     }
   };
@@ -347,7 +386,18 @@ export default function DuoConnect({ onLeftRoom }) {
     <div className="cn-duo-page">
       {/* ===== HEADER ===== */}
       <header className="cn-duo-header">
-        <div className="cn-duo-header-left"><div className="cn-duo-badge">Phòng ghép đôi 1:1</div></div>
+         <div className="cn-duo-header-left">
+          <div className="cn-room-tabs">
+            <button type="button" className="cn-room-tab is-active">Kết nối Duo - 1:1</button>
+            {statusData?.groupRoomId ? (
+              <button type="button" className="cn-room-tab" onClick={()=>onSwitchRoomType?.("group")}>Kết nối Team - Nhóm</button>
+            ) : (
+              <button type="button" className="cn-room-tab is-add" onClick={()=>onOpenSecondSlot?.("duo")} aria-label="Thêm kết nối">
+                <i className="fa-solid fa-plus" />
+              </button>
+            )}
+          </div>
+        </div>
         <div className="cn-duo-header-right">
           <button type="button" className="cn-duo-more-btn" onClick={handleOpenMenu}><i className="fa-solid fa-ellipsis-vertical" /></button>
           {menuOpen && (
@@ -400,7 +450,7 @@ export default function DuoConnect({ onLeftRoom }) {
         )}
         {activeTab === "chat" && (
           <section className="cn-duo-main">
-            <ChatBox conversationId={roomId} meId={myId} members={[slotMe,slotPartner].filter(Boolean)} height={chatHeight}/>
+            <ChatBox conversationId={roomId} meId={String(myId || "")} members={[slotMe, slotPartner].filter(Boolean)} height={chatHeight} />
           </section>
         )}
       </div>
@@ -429,6 +479,14 @@ export default function DuoConnect({ onLeftRoom }) {
         onClose={closeUserModal}
         onViewProfile={handleViewPublicProfile}
         onStartChat={handleStartChat}
+      />
+
+      <PremiumGateModal
+        open={pg.open}
+        title={pg.title}
+        message={pg.message}
+        onClose={closeGate}
+        onUpgrade={goUpgrade}
       />
     </div>
   );

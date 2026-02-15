@@ -1,4 +1,3 @@
-// user-app/src/pages/Connect/TeamConnect.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Connect.css";
@@ -13,6 +12,14 @@ import UserSideModal from "../UserProfile/UserSideModal";
 import ChatBox from "../Chat/ChatBox";
 import { getChatConversationSummary } from "../../api/chat";
 import { getSocket } from "../../lib/socket";
+import PremiumGateModal from "../../components/PremiumGateModal/PremiumGateModal";
+import {
+  PREMIUM_UPGRADE_PATH,
+  isPremiumUser,
+  isPremiumGateError,
+  extractGateMessage,
+  extractApiMessage,
+} from "../../utils/premiumGate";
 
 const API_ORIGIN=(api?.defaults?.baseURL||"").replace(/\/+$/,"");
 const toAbs=(u)=>{if(!u)return u;try{return new URL(u,API_ORIGIN).toString()}catch{return u}};
@@ -29,11 +36,9 @@ const genderKey=(g)=>{
   return "other";
 };
 
-// Map mọi kiểu object (raw user / member normalized / req.user) -> user card giống TabNearby
 function toUserSideCard(x){
   if(!x) return null;
 
-  // Case: raw user doc (có profile)
   if(x?.profile || x?.username || x?.email || x?._id){
     const u=x||{};
     const p=u.profile||{};
@@ -55,7 +60,6 @@ function toUserSideCard(x){
     return { id, nickname, imageUrl, bio, age, gender, locationLabel, goal, trainingTypes, intensityLabel, isGroup:false };
   }
 
-  // Case: member normalized hoặc req.user
   const id=String(x.id||x.userId||x._id||"");
   const nickname=x.nickname||x.name||"Người dùng FitMatch";
   const imageUrl=toAbs(x.avatarUrl||x.imageUrl||"")||"";
@@ -69,7 +73,6 @@ function toUserSideCard(x){
 
   return { id, nickname, imageUrl, bio, age, gender, locationLabel, goal, trainingTypes, intensityLabel, isGroup:false };
 }
-
 
 function getInitials(name){if(!name)return"FM";return String(name).trim().split(/\s+/).map(p=>p?.[0]).join("").slice(0,2).toUpperCase();}
 const safeArr=(v)=>Array.isArray(v)?v:[];
@@ -119,19 +122,30 @@ function normReqItem(x){
   };
 }
 
-// Helper tạo mã nhóm 6 ký tự cuối từ id
 function getShortRoomCode(id){
   const raw=String(id||"").trim();
   if(!raw) return "";
   return raw.slice(-6);
 }
 
-export default function TeamConnect({ onLeftRoom }){
+export default function TeamConnect({ onLeftRoom, onSwitchRoomType, onOpenSecondSlot }){
   const nav=useNavigate();
   const [loading,setLoading]=useState(true);
   const [room,setRoom]=useState(null);
   const roomId=room?._id?String(room._id):null;
   const [me,setMe]=useState(null);
+  const [statusData,setStatusData]=useState(null);
+
+  const [pg, setPg] = useState({ open: false, title: "", message: "" });
+  const openGate = (message, title = "Cần nâng cấp Premium") =>
+    setPg({ open: true, title, message: String(message || "").trim() });
+  const closeGate = () => setPg((p) => ({ ...p, open: false }));
+  const goUpgrade = () => {
+    closeGate();
+    nav(PREMIUM_UPGRADE_PATH);
+  };
+
+  const isPremium = useMemo(() => isPremiumUser(me), [me]);
 
   const [chatHeight,setChatHeight]=useState(670);
 
@@ -139,10 +153,10 @@ export default function TeamConnect({ onLeftRoom }){
   const [leaveModalOpen,setLeaveModalOpen]=useState(false);
   const [leaving,setLeaving]=useState(false);
 
-  const [topTab,setTopTab]=useState("setup"); // setup | guidelines | chat
+  const [topTab,setTopTab]=useState("setup"); 
   const socket=useMemo(()=>getSocket(),[]);
   const [chatUnread,setChatUnread]=useState(0);
-  const [reqTab,setReqTab]=useState("pending"); // pending | accepted | rejected
+  const [reqTab,setReqTab]=useState("pending");
 
   const [reqLoading,setReqLoading]=useState(false);
   const [reqErr,setReqErr]=useState("");
@@ -161,7 +175,7 @@ export default function TeamConnect({ onLeftRoom }){
 
   const [imgOpen,setImgOpen]=useState(false);
 
-  const [confirm,setConfirm]=useState({open:false,mode:null,req:null}); // mode: accept|reject
+  const [confirm,setConfirm]=useState({open:false,mode:null,req:null}); 
   const [confirming,setConfirming]=useState(false);
 
   const [manageOpen,setManageOpen]=useState(false);
@@ -171,7 +185,6 @@ export default function TeamConnect({ onLeftRoom }){
   const [streakErr,setStreakErr]=useState("");
   const [streakData,setStreakData]=useState(null);
 
-  // state cho copy mã nhóm
   const [copiedCode,setCopiedCode]=useState(false);
 
   const loadTeamStreaks=async(id)=>{
@@ -182,7 +195,11 @@ export default function TeamConnect({ onLeftRoom }){
       const data=pickOkData(res)||{};
       setStreakData(data);
     }catch(e){
-      setStreakErr(e?.response?.data?.message||"Không thể tải streak của nhóm.");
+      if(isPremiumGateError(e)){
+        openGate(extractGateMessage(e,"Bạn cần nâng cấp Premium để xem streak chi tiết của nhóm."));
+        return;
+      }
+      setStreakErr(extractApiMessage(e,"Không thể tải streak của nhóm."));
     }finally{ setStreakLoading(false); }
   };
 
@@ -204,14 +221,13 @@ export default function TeamConnect({ onLeftRoom }){
   },[]);
 
   const myId=me?._id||me?.id||null;
-    // ===== USER SIDE MODAL =====
   const [userModalOpen,setUserModalOpen]=useState(false);
   const [userModalTarget,setUserModalTarget]=useState(null);
 
   const openUserModal=(anyUser)=>{
     const card=toUserSideCard(anyUser);
     if(!card?.id) return;
-    if(myId && String(card.id)===String(myId)) return; // không mở hồ sơ của chính mình
+    if(myId && String(card.id)===String(myId)) return;
     setUserModalTarget(card);
     setUserModalOpen(true);
   };
@@ -233,28 +249,39 @@ export default function TeamConnect({ onLeftRoom }){
   };
 
   const loadRoom=async()=>{
-    const [stRaw,meRaw]=await Promise.all([getMatchStatus(),getMe().catch(()=>null)]);
-    const statusData=stRaw?.data ?? stRaw;
-    const activeRoomId=statusData?.activeRoomId;
-    const activeRoomType=statusData?.activeRoomType;
+    const [stRaw, meRaw] = await Promise.all([getMatchStatus(), getMe().catch(()=>null)]);
+    const s = pickOkData(stRaw) || null;
+    const meData = pickOkData(meRaw) || null;
 
-    if(!activeRoomId || activeRoomType!=="group"){
+    setStatusData(s);
+    setMe(meData);
+
+    const groupId = s?.groupRoomId ? String(s.groupRoomId) : null;
+
+    if(!groupId){
       toast.info("Hiện bạn chưa tham gia phòng kết nối nhóm nào.");
       if(typeof onLeftRoom==="function") onLeftRoom(); else nav("/ket-noi");
       return null;
     }
 
-    const roomRes=await api.get(`/match/rooms/${activeRoomId}`);
+    const roomRes=await api.get(`/match/rooms/${groupId}`);
     const roomData=pickRoomData(roomRes);
     setRoom(roomData);
-    setMe(meRaw||null);
     return roomData;
   };
 
   useEffect(()=>{let cancelled=false;
     (async()=>{
       try{ setLoading(true); const rd=await loadRoom(); if(cancelled) return; if(!rd) return; }
-      catch(e){ console.error(e); toast.error(e?.response?.data?.message||e?.response?.data?.error||"Không thể tải phòng nhóm."); if(typeof onLeftRoom==="function") onLeftRoom(); else nav("/ket-noi"); }
+      catch(e){
+        console.error(e);
+        if(isPremiumGateError(e)){
+          openGate(extractGateMessage(e,"Bạn cần nâng cấp Premium để truy cập phòng kết nối nhóm."));
+          return;
+        }
+        toast.error(extractApiMessage(e,"Không thể tải phòng nhóm."));
+        if(typeof onLeftRoom==="function") onLeftRoom(); else nav("/ket-noi");
+      }
       finally{ if(!cancelled) setLoading(false); }
     })();
     return()=>{cancelled=true;};
@@ -296,7 +323,7 @@ export default function TeamConnect({ onLeftRoom }){
         trainingTypes,
         intensityLabel,
 
-        rawUser:u, // giữ lại nếu cần
+        rawUser:u,
       };
     });
   },[room]);
@@ -404,7 +431,6 @@ export default function TeamConnect({ onLeftRoom }){
 
   useEffect(()=>{ if(roomId) loadMyViews(roomId); },[roomId]);
 
-  // migrate localStorage cũ -> DB (chạy 1 lần khi có roomId)
   useEffect(()=>{
     if(!roomId) return;
     const k=`fm_team_views_${roomId}`;
@@ -462,7 +488,6 @@ export default function TeamConnect({ onLeftRoom }){
   const onUpd=(p={})=>{
     if(String(p?.conversationId||"")!==String(roomId)) return;
 
-    // đang ở tab chat => luôn coi là đã đọc
     if(topTab==="chat"){ setChatUnread(0); return; }
 
     const unreadRaw=p?.unread ?? p?.unreadCount ?? p?.data?.unread;
@@ -470,7 +495,6 @@ export default function TeamConnect({ onLeftRoom }){
 
     if(Number.isFinite(unread)) setChatUnread(unread);
       else{
-        // fallback (trường hợp payload không có unread)
         const sid=String(p?.lastMessage?.senderId||p?.lastMessage?.sender?._id||"");
         if(myId && sid && sid!==String(myId)) setChatUnread(v=>v+1);
       }
@@ -482,11 +506,23 @@ export default function TeamConnect({ onLeftRoom }){
 
   const onAccept=async(r)=>{
     try{ await api.patch(`/match/requests/${r.id}/accept`); toast.success("Đã duyệt yêu cầu."); await Promise.all([loadRequests(roomId), loadRoom()]); }
-    catch(e){ toast.error(e?.response?.data?.message||e?.response?.data?.error||"Không thể duyệt yêu cầu."); await Promise.all([loadRequests(roomId), loadRoom()]); }
+    catch(e){
+      if(isPremiumGateError(e)){
+        openGate(extractGateMessage(e,"Tính năng này yêu cầu nâng cấp Premium để tiếp tục."));
+        return;
+      }
+      toast.error(extractApiMessage(e,"Không thể duyệt yêu cầu.")); await Promise.all([loadRequests(roomId), loadRoom()]);
+    }
   };
   const onReject=async(r)=>{
     try{ await api.patch(`/match/requests/${r.id}/reject`); toast.info("Đã từ chối yêu cầu."); await loadRequests(roomId); }
-    catch(e){ toast.error(e?.response?.data?.message||e?.response?.data?.error||"Không thể từ chối yêu cầu."); await loadRequests(roomId); }
+    catch(e){
+      if(isPremiumGateError(e)){
+        openGate(extractGateMessage(e,"Tính năng này yêu cầu nâng cấp Premium để tiếp tục."));
+        return;
+      }
+      toast.error(extractApiMessage(e,"Không thể từ chối yêu cầu.")); await loadRequests(roomId);
+    }
   };
 
   const openConfirm=(mode,r)=>{ if(!isOwner) return toast.info("Chỉ chủ phòng mới có thể duyệt yêu cầu."); setConfirm({open:true,mode,req:r}); };
@@ -509,7 +545,14 @@ export default function TeamConnect({ onLeftRoom }){
     if(!isOwner){ toast.info("Chỉ chủ phòng mới được đổi chế độ tham gia."); return; }
     setJoinPolicy(next);
     try{ await api.patch(`/match/rooms/${roomId}`, { joinPolicy: next }); toast.success("Đã cập nhật chế độ tham gia."); await loadRoom(); }
-    catch(e){ toast.error(e?.response?.data?.message||"Không thể cập nhật chế độ."); setJoinPolicy(team?.joinPolicy||"request"); }
+    catch(e){
+      if(isPremiumGateError(e)){
+        openGate(extractGateMessage(e,"Tính năng này yêu cầu nâng cấp Premium để tiếp tục."));
+        setJoinPolicy(team?.joinPolicy||"request");
+        return;
+      }
+      toast.error(extractApiMessage(e,"Không thể cập nhật chế độ.")); setJoinPolicy(team?.joinPolicy||"request");
+    }
   };
 
   const openEdit=()=>{
@@ -544,6 +587,18 @@ export default function TeamConnect({ onLeftRoom }){
     const nextMax=Number(editForm.maxMembers)||5;
     if(nextMax<curCnt) return toast.error(`Số thành viên tối đa không thể nhỏ hơn ${curCnt} (số thành viên hiện tại).`);
 
+    const premiumLimit = 10;
+    const standardLimit = 5;
+    const maxAllowed = isPremium ? premiumLimit : standardLimit;
+
+    if(nextMax > maxAllowed){
+      openGate(
+        `Gói hiện tại chỉ cho phép tối đa ${maxAllowed} thành viên/nhóm. Nâng cấp Premium để mở rộng nhóm đến ${premiumLimit} thành viên.`,
+        "Mở rộng giới hạn nhóm"
+      );
+      return;
+    }
+
     try{
       setSavingEdit(true);
 
@@ -566,13 +621,16 @@ export default function TeamConnect({ onLeftRoom }){
       setEditForm(s=>({...s,coverFile:null}));
       await loadRoom();
     }catch(e){
-      toast.error(e?.response?.data?.message||"Không thể cập nhật nhóm.");
+      if(isPremiumGateError(e)){
+        openGate(extractGateMessage(e,"Tính năng này yêu cầu nâng cấp Premium để tiếp tục."));
+        return;
+      }
+      toast.error(extractApiMessage(e,"Không thể cập nhật nhóm."));
     }finally{
       setSavingEdit(false);
     }
   };
 
-  // copy mã nhóm 6 số
   const copyTeamCode=async(e)=>{
     e?.stopPropagation?.();
     if(!teamCode) return;
@@ -594,7 +652,13 @@ export default function TeamConnect({ onLeftRoom }){
       toast.info("Bạn đã rời khỏi nhóm.");
       setLeaveModalOpen(false);
       if(typeof onLeftRoom==="function") onLeftRoom(); else nav("/ket-noi");
-    }catch(e){ toast.error(e?.response?.data?.message||e?.response?.data?.error||"Không thể rời nhóm."); }
+    }catch(e){
+      if(isPremiumGateError(e)){
+        openGate(extractGateMessage(e,"Bạn cần nâng cấp Premium để thực hiện thao tác này."));
+        return;
+      }
+      toast.error(extractApiMessage(e,"Không thể rời nhóm."));
+    }
     finally{ setLeaving(false); }
   };
 
@@ -614,7 +678,11 @@ export default function TeamConnect({ onLeftRoom }){
       setManageOpen(false);
       await Promise.all([loadRoom(), loadRequests(roomId).catch(()=>null)]);
     }catch(e){
-      toast.error(e?.response?.data?.message||e?.response?.data?.error||"Không thể cập nhật thành viên.");
+      if(isPremiumGateError(e)){
+        openGate(extractGateMessage(e,"Tính năng này yêu cầu nâng cấp Premium để tiếp tục."));
+        return;
+      }
+      toast.error(extractApiMessage(e,"Không thể cập nhật thành viên."));
     }finally{
       setManageSaving(false);
     }
@@ -641,7 +709,19 @@ export default function TeamConnect({ onLeftRoom }){
   return (
     <div className="tc-page">
       <header className="tc-header">
-        <div className="tc-header-left"><div className="tc-badge">Phòng kết nối nhóm</div></div>
+        <div className="tc-header-left">
+          <button type="button" className="tc-badge is-active">Kết nối Team - Nhóm</button>
+
+          {statusData?.duoRoomId ? (
+            <button type="button" className="tc-badge" onClick={() => onSwitchRoomType?.("duo")}>
+              Ghép đôi 1:1
+            </button>
+          ) : (
+            <button type="button" className="cn-room-tab is-add" onClick={() => onOpenSecondSlot?.("group")} aria-label="Thêm kết nối">
+              <i className="fa-solid fa-plus" />
+            </button>
+          )}
+        </div>
         <div className="tc-header-right">
           <button type="button" className="tc-more-btn" onClick={()=>setMenuOpen(v=>!v)}><i className="fa-solid fa-ellipsis-vertical"/></button>
             {menuOpen && (
@@ -972,6 +1052,14 @@ export default function TeamConnect({ onLeftRoom }){
         onClose={closeUserModal}
         onViewProfile={handleViewPublicProfile}
         onStartChat={handleStartChat}
+      />
+
+      <PremiumGateModal
+        open={pg.open}
+        title={pg.title}
+        message={pg.message}
+        onClose={closeGate}
+        onUpgrade={goUpgrade}
       />
     </div>
   );
