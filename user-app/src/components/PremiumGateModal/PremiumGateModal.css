@@ -12,9 +12,8 @@
 .pg-modal{
   width:min(560px,100%);
   background:#020617;
-  border:1px solid rgba(239,68,68,.32);
-  border-radius:14px;
-  box-shadow:0 18px 50px rgba(0,0,0,.72);
+  border:1px solid #fac800;
+  border-radius:4px;
   overflow:hidden;
 }
 
@@ -24,7 +23,6 @@
   justify-content:space-between;
   gap:12px;
   padding:14px 16px;
-  border-bottom:1px solid #1f2937;
 }
 
 .pg-title{
@@ -32,12 +30,12 @@
   display:flex;
   align-items:center;
   gap:10px;
-  font-size:14px;
-  font-weight:900;
-  color:#f9fafb;
+  font-size:16px;
+  font-weight:600;
+  color:#fff;
 }
 
-.pg-title i{ color:#ef4444; }
+.pg-title i{ color:#fac800; }
 
 .pg-close{
   width:34px;
@@ -52,14 +50,13 @@
 .pg-close:hover{ background:#111827; }
 
 .pg-body{
-  padding:14px 16px 2px;
+  padding:4px 18px 2px;
 }
 
 .pg-msg{
   margin:0 0 12px;
-  color:#cbd5e1;
+  color:#f9fafb;
   font-size:13px;
-  line-height:1.5;
 }
 
 .pg-foot{
@@ -67,8 +64,6 @@
   justify-content:flex-end;
   gap:10px;
   padding:12px 16px;
-  border-top:1px solid #1f2937;
-  background:rgba(15,23,42,.35);
 }
 
 .pg-btn{
@@ -76,9 +71,8 @@
   background:#111827;
   color:#e5e7eb;
   border-radius:999px;
-  padding:10px 14px;
+  padding:8px 14px;
   font-size:13px;
-  font-weight:800;
   cursor:pointer;
 }
 

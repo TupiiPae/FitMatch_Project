@@ -2,7 +2,7 @@ import "./PremiumGateModal.css";
 
 export default function PremiumGateModal({
   open,
-  title = "Cần nâng cấp Premium",
+  title = "Nâng cấp Premium",
   message = "",
   onClose,
   onUpgrade,
@@ -18,9 +18,9 @@ export default function PremiumGateModal({
             <i className="fa-solid fa-crown" />
             {title}
           </h3>
-          <button type="button" className="pg-close" onClick={onClose} aria-label="Đóng">
+          {/* <button type="button" className="pg-close" onClick={onClose} aria-label="Đóng">
             <i className="fa-solid fa-xmark" />
-          </button>
+          </button> */}
         </div>
 
         <div className="pg-body">
