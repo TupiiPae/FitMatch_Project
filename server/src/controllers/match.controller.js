@@ -48,6 +48,113 @@ async function findActiveRoomOfUser(userId) {
   });
 }
 
+function isPremiumActive(u) {
+  const exp = u?.premium?.expiresAt ? new Date(u.premium.expiresAt).getTime() : 0;
+  return !!(exp && exp > Date.now());
+}
+
+async function listActiveConnectRooms(userId) {
+  return MatchRoom.find({
+    type: { $in: ["duo", "group"] },
+    "members.user": userId,
+    status: { $in: ["active", "full"] },
+  })
+    .select("_id type")
+    .lean();
+}
+
+function pickRoom(rooms, type) {
+  return (rooms || []).find((r) => r?.type === type) || null;
+}
+
+function buildConnectFlags(rooms) {
+  const duo = pickRoom(rooms, "duo");
+  const group = pickRoom(rooms, "group");
+  return {
+    hasDuo: !!duo,
+    hasGroup: !!group,
+    duoRoomId: duo ? String(duo._id) : null,
+    groupRoomId: group ? String(group._id) : null,
+  };
+}
+
+function deny(res, { status = 409, error, message }) {
+  return res.status(status).json({ ok: false, error, message });
+}
+
+async function assertConnectSlot({ userId, wantType, userDoc = null, rooms = null }) {
+  const [u, rs] = await Promise.all([
+    userDoc
+      ? Promise.resolve(userDoc)
+      : User.findById(userId).select("premium").lean(),
+    rooms ? Promise.resolve(rooms) : listActiveConnectRooms(userId),
+  ]);
+
+  const prem = isPremiumActive(u);
+  const f = buildConnectFlags(rs);
+
+  if (f.hasDuo && f.hasGroup) {
+    return {
+      ok: false,
+      error: "connect_limit_reached",
+      message:
+        "Bạn đã có đủ 1 kết nối đôi và 1 kết nối nhóm. Hãy rời 1 kết nối trước khi kết nối thêm.",
+      isPremium: prem,
+      ...f,
+    };
+  }
+
+  if (wantType === "duo") {
+    if (f.hasDuo) {
+      return {
+        ok: false,
+        error: "duo_slot_taken",
+        message: prem
+          ? "Bạn đã có kết nối đôi. Chỉ có thể kết nối thêm nhóm."
+          : "Bạn đã có kết nối đôi. Hãy rời kết nối hiện tại trước khi kết nối mới.",
+        isPremium: prem,
+        ...f,
+      };
+    }
+    if (!prem && f.hasGroup) {
+      return {
+        ok: false,
+        error: "premium_required",
+        message:
+          "Tài khoản miễn phí chỉ được kết nối 1 người hoặc 1 nhóm. Nâng cấp Premium để kết nối cả hai.",
+        isPremium: prem,
+        ...f,
+      };
+    }
+  }
+
+  if (wantType === "group") {
+    if (f.hasGroup) {
+      return {
+        ok: false,
+        error: "group_slot_taken",
+        message: prem
+          ? "Bạn đã có kết nối nhóm. Chỉ có thể kết nối thêm kết nối đôi."
+          : "Bạn đã có kết nối nhóm. Hãy rời nhóm hiện tại trước khi tham gia nhóm khác.",
+        isPremium: prem,
+        ...f,
+      };
+    }
+    if (!prem && f.hasDuo) {
+      return {
+        ok: false,
+        error: "premium_required",
+        message:
+          "Tài khoản miễn phí chỉ được kết nối 1 người hoặc 1 nhóm. Nâng cấp Premium để kết nối cả hai.",
+        isPremium: prem,
+        ...f,
+      };
+    }
+  }
+
+  return { ok: true, isPremium: prem, ...f };
+}
+
 const GOAL_LABELS = {
   giam_can: "Giảm cân",
   duy_tri: "Duy trì",
@@ -334,27 +441,42 @@ export async function getMatchStatus(req, res, next) {
     if (!userId)
       return res.status(401).json({ success: false, message: "Unauthorized" });
 
-    const [me, room] = await Promise.all([
+    const [me, rooms] = await Promise.all([
       User.findById(userId)
-        .select("connectDiscoverable hasAddressForConnect profile")
+        .select("connectDiscoverable hasAddressForConnect profile premium") 
         .lean(),
-      findActiveRoomOfUser(userId),
+      listActiveConnectRooms(userId),
     ]);
+
     if (!me)
       return res
         .status(404)
         .json({ success: false, message: "Không tìm thấy người dùng" });
 
+    const flags = buildConnectFlags(rooms);
+    
+    const prem = isPremiumActive(me);
+    const grandfathered = !prem && flags.hasDuo && flags.hasGroup;
+    const prefer = String(req.query?.prefer || "").toLowerCase();
+
+    let activeRoomId = null;
+    let activeRoomType = null;
+    if (prefer === "group") {
+      activeRoomId = flags.groupRoomId || flags.duoRoomId || null;
+      activeRoomType = flags.groupRoomId ? "group" : flags.duoRoomId ? "duo" : null;
+    } else {
+      activeRoomId = flags.duoRoomId || flags.groupRoomId || null;
+      activeRoomType = flags.duoRoomId ? "duo" : flags.groupRoomId ? "group" : null;
+    }
+
     const hasAddr = me.hasAddressForConnect || hasAddress(me.profile || {});
 
-    // pending duo incoming (toUser)
     const incomingDuo = await MatchRequest.countDocuments({
       toUser: userId,
       status: "pending",
       type: "duo",
     });
 
-    // pending group incoming (toRoom) chỉ tính nếu user là owner của room đó
     const ownerRooms = await MatchRoom.find({
       type: "group",
       status: { $in: ["active", "full"] },
@@ -363,6 +485,7 @@ export async function getMatchStatus(req, res, next) {
     })
       .select("_id")
       .lean();
+      
     const ownerRoomIds = ownerRooms.map((x) => x._id);
     const incomingGroup = ownerRoomIds.length
       ? await MatchRequest.countDocuments({
@@ -372,17 +495,24 @@ export async function getMatchStatus(req, res, next) {
         })
       : 0;
 
-    // outgoing pending (fromUser) (duo + group)
     const outgoing = await MatchRequest.countDocuments({
       fromUser: userId,
       status: "pending",
     });
-
+    // -------------------------------------------------------------------
     return responseOk(res, {
       discoverable: !!me.connectDiscoverable,
       hasAddressForConnect: !!hasAddr,
-      activeRoomId: room ? room._id : null,
-      activeRoomType: room ? room.type : null,
+      activeRoomId,
+      activeRoomType,
+      duoRoomId: flags.duoRoomId,
+      groupRoomId: flags.groupRoomId,
+      hasDuo: flags.hasDuo,
+      hasGroup: flags.hasGroup,
+      isPremium: prem,
+      grandfathered,
+      connectMode: (prem || grandfathered) ? "AND" : "OR",
+
       pendingRequestsCount: incomingDuo + incomingGroup + outgoing,
     });
   } catch (err) {
@@ -497,14 +627,8 @@ export async function createGroupRoom(req, res, next) {
     if (!userId)
       return res.status(401).json({ success: false, message: "Unauthorized" });
 
-    const activeRoom = await findActiveRoomOfUser(userId);
-    if (activeRoom) {
-      return res.status(409).json({
-        ok: false,
-        error: "user_already_in_room",
-        message: "Bạn đã tham gia một phòng kết nối khác, hãy rời phòng trước khi tạo nhóm mới.",
-      });
-    }
+    const gate = await assertConnectSlot({ userId, wantType: "group" });
+    if (!gate.ok) return deny(res, { error: gate.error, message: gate.message });
 
     const file = req.file;
     if (!file)
@@ -622,7 +746,6 @@ export async function createGroupRoom(req, res, next) {
   }
 }
 
-// POST /api/match/requests (gửi lời mời / join group)
 export async function createMatchRequest(req, res, next) {
   try {
     const fromUserId = getUserIdFromReq(req);
@@ -633,16 +756,6 @@ export async function createMatchRequest(req, res, next) {
     if (!["duo", "group"].includes(type))
       return res.status(400).json({ ok: false, error: "invalid_type" });
 
-    // Check đang ở room khác?
-    const activeRoom = await findActiveRoomOfUser(fromUserId);
-    if (activeRoom) {
-      return res.status(409).json({
-        ok: false,
-        error: "user_already_in_room",
-        message: "Bạn đã tham gia một phòng kết nối khác, hãy rời phòng trước khi gửi lời mời mới.",
-      });
-    }
-
     const fromUser = await User.findById(fromUserId).lean();
     if (!fromUser)
       return res.status(404).json({ ok: false, error: "from_user_not_found" });
@@ -651,12 +764,20 @@ export async function createMatchRequest(req, res, next) {
     const fromGoalKey = fromUser.connectGoalKey || fromUser.profile?.goal || null;
     const fromGoalLabel = fromUser.connectGoalLabel || goalLabelFromKey(fromGoalKey) || "";
 
-    // ===== DUO =====
     if (type === "duo") {
       if (!targetUserId)
         return res.status(400).json({ ok: false, error: "missing_target_user" });
       if (String(targetUserId) === String(fromUserId))
         return res.status(400).json({ ok: false, error: "cannot_invite_self" });
+
+      const fromRooms = await listActiveConnectRooms(fromUserId);
+      const gateFrom = await assertConnectSlot({
+        userId: fromUserId,
+        wantType: "duo",
+        userDoc: fromUser,
+        rooms: fromRooms,
+      });
+      if (!gateFrom.ok) return deny(res, { error: gateFrom.error, message: gateFrom.message });
 
       const targetUser = await User.findById(targetUserId).lean();
       if (!targetUser) return res.status(404).json({ ok: false, error: "user_not_found" });
@@ -667,7 +788,20 @@ export async function createMatchRequest(req, res, next) {
           message: "Người dùng hiện không cho phép tìm kiếm.",
         });
 
-      // tránh spam trùng request
+      const targetRooms = await listActiveConnectRooms(targetUserId);
+      const gateTarget = await assertConnectSlot({
+        userId: targetUserId,
+        wantType: "duo",
+        userDoc: targetUser,
+        rooms: targetRooms,
+      });
+      if (!gateTarget.ok) {
+        return deny(res, {
+          error: "target_not_eligible",
+          message: "Người dùng này đang trong phòng kết nối.",
+        });
+      }
+
       const existed = await MatchRequest.findOne({
         type: "duo",
         fromUser: fromUserId,
@@ -696,7 +830,6 @@ export async function createMatchRequest(req, res, next) {
       return responseOk(res, { request: doc });
     }
 
-    // ===== GROUP =====
     if (!targetRoomId)
       return res.status(400).json({ ok: false, error: "missing_target_room" });
 
@@ -704,16 +837,35 @@ export async function createMatchRequest(req, res, next) {
     if (!room || room.type !== "group")
       return res.status(404).json({ ok: false, error: "room_not_found" });
 
+    const alreadyMember = (room.members || []).some(
+      (m) => String(m.user) === String(fromUserId)
+    );
+    if (alreadyMember) {
+      return responseOk(res, {
+        roomId: room._id,
+        roomType: room.type,
+        joined: true,
+        duplicated: true,
+      });
+    }
+    const fromRooms = await listActiveConnectRooms(fromUserId);
+    const gateFrom = await assertConnectSlot({
+      userId: fromUserId,
+      wantType: "group",
+      userDoc: fromUser,
+      rooms: fromRooms,
+    });
+    if (!gateFrom.ok) return deny(res, { error: gateFrom.error, message: gateFrom.message });
+
     const currentCount = room.members?.length || 0;
     if (currentCount >= (room.maxMembers || 5))
       return res.status(409).json({ ok: false, error: "group_full", message: "Nhóm đã đủ người." });
 
-    // nếu room open -> join thẳng, không tạo request
     if ((room.joinPolicy || "request") === "open") {
       const now = new Date();
       const members = room.members || [];
       const existed = members.find((m) => String(m.user) === String(fromUserId));
-      if (!existed) members.push({ user: fromUserId, role: "member", joinedAt: now }); // ✅ add joinedAt
+      if (!existed) members.push({ user: fromUserId, role: "member", joinedAt: now });
       else if (!existed.joinedAt) existed.joinedAt = now;
       room.members = members;
 
@@ -731,7 +883,6 @@ export async function createMatchRequest(req, res, next) {
         .filter((m) => m.role === "owner")
         .map((m) => String(m.user));
 
-      // ✅ thông báo "thành viên mới tham gia" cho owner (room open)
       for (const oid of ownerIds) {
         if (!oid || oid === String(fromUserId)) continue;
         await notifySafe({
@@ -752,7 +903,6 @@ export async function createMatchRequest(req, res, next) {
       });
     }
 
-    // joinPolicy request -> tạo MatchRequest
     const existed = await MatchRequest.findOne({
       type: "group",
       fromUser: fromUserId,
@@ -773,7 +923,6 @@ export async function createMatchRequest(req, res, next) {
       .filter((m) => m.role === "owner")
       .map((m) => String(m.user));
 
-    // ✅ realtime cho chủ nhóm: có người gửi yêu cầu vào nhóm
     for (const oid of ownerIds) {
       if (!oid) continue;
       await notifySafe({
@@ -883,7 +1032,6 @@ export async function acceptRequest(req, res, next) {
       if (String(reqDoc.toUser._id) !== String(userId))
         return res.status(403).json({ ok: false, error: "not_allowed" });
     } else if (reqDoc.type === "group") {
-      // chỉ owner của phòng mới accept
       const roomId = reqDoc.toRoom?._id || reqDoc.toRoom;
       if (!roomId) return res.status(404).json({ ok: false, error: "room_not_found" });
       const okOwner = await isOwnerOfRoom(userId, roomId);
@@ -895,33 +1043,38 @@ export async function acceptRequest(req, res, next) {
         });
     }
 
-    // Check fromUser đã ở room khác chưa
-    const roomOfFrom = await findActiveRoomOfUser(reqDoc.fromUser._id);
-    if (roomOfFrom) {
-      reqDoc.status = "rejected";
-      reqDoc.resolvedAt = new Date();
-      await reqDoc.save();
-      return res.status(409).json({
-        ok: false,
-        error: "user_already_in_room",
-        message: "Người gửi đã tham gia kết nối khác. Lời mời hết hiệu lực.",
-      });
-    }
-
     let room;
 
     if (reqDoc.type === "duo") {
-      // Check toUser đã ở room khác chưa
-      const roomOfTo = await findActiveRoomOfUser(reqDoc.toUser._id);
-      if (roomOfTo) {
+      const [fromRooms, toRooms] = await Promise.all([
+        listActiveConnectRooms(reqDoc.fromUser._id),
+        listActiveConnectRooms(reqDoc.toUser._id),
+      ]);
+
+      const gateFrom = await assertConnectSlot({
+        userId: reqDoc.fromUser._id,
+        wantType: "duo",
+        userDoc: reqDoc.fromUser,
+        rooms: fromRooms,
+      });
+      if (!gateFrom.ok) {
         reqDoc.status = "rejected";
         reqDoc.resolvedAt = new Date();
         await reqDoc.save();
-        return res.status(409).json({
-          ok: false,
-          error: "user_already_in_room",
-          message: "Một trong hai người đã tham gia kết nối. Lời mời hết hiệu lực.",
-        });
+        return deny(res, { error: gateFrom.error, message: "Người gửi không còn đủ điều kiện để kết nối đôi." });
+      }
+
+      const gateTo = await assertConnectSlot({
+        userId: reqDoc.toUser._id,
+        wantType: "duo",
+        userDoc: reqDoc.toUser,
+        rooms: toRooms,
+      });
+      if (!gateTo.ok) {
+        reqDoc.status = "rejected";
+        reqDoc.resolvedAt = new Date();
+        await reqDoc.save();
+        return deny(res, { error: gateTo.error, message: "Bạn không còn đủ điều kiện để kết nối đôi." });
       }
 
       const now = new Date();
@@ -929,8 +1082,8 @@ export async function acceptRequest(req, res, next) {
         type: "duo",
         createdBy: reqDoc.fromUser._id,
         members: [
-          { user: reqDoc.fromUser._id, role: "owner", joinedAt: now }, // ✅ add joinedAt
-          { user: reqDoc.toUser._id, role: "member", joinedAt: now }, // ✅ add joinedAt
+          { user: reqDoc.fromUser._id, role: "owner", joinedAt: now },
+          { user: reqDoc.toUser._id, role: "member", joinedAt: now },
         ],
         maxMembers: 2,
       });
@@ -938,6 +1091,25 @@ export async function acceptRequest(req, res, next) {
       room = await MatchRoom.findById(reqDoc.toRoom._id);
       if (!room || room.type !== "group")
         return res.status(404).json({ ok: false, error: "room_not_found" });
+
+      const alreadyMember = (room.members || []).some(
+        (m) => String(m.user) === String(reqDoc.fromUser._id)
+      );
+      if (!alreadyMember) {
+        const fromRooms = await listActiveConnectRooms(reqDoc.fromUser._id);
+        const gateFrom = await assertConnectSlot({
+          userId: reqDoc.fromUser._id,
+          wantType: "group",
+          userDoc: reqDoc.fromUser,
+          rooms: fromRooms,
+        });
+        if (!gateFrom.ok) {
+          reqDoc.status = "rejected";
+          reqDoc.resolvedAt = new Date();
+          await reqDoc.save();
+          return deny(res, { error: gateFrom.error, message: gateFrom.message });
+        }
+      }
 
       const currentCount = room.members?.length || 0;
       if (currentCount >= (room.maxMembers || 5)) {
@@ -950,7 +1122,7 @@ export async function acceptRequest(req, res, next) {
       const now = new Date();
       const members = room.members || [];
       const existed = members.find((m) => String(m.user) === String(reqDoc.fromUser._id));
-      if (!existed) members.push({ user: reqDoc.fromUser._id, role: "member", joinedAt: now }); // ✅ add joinedAt
+      if (!existed) members.push({ user: reqDoc.fromUser._id, role: "member", joinedAt: now });
       else if (!existed.joinedAt) existed.joinedAt = now;
       room.members = members;
 
@@ -969,7 +1141,6 @@ export async function acceptRequest(req, res, next) {
     reqDoc.resolvedAt = new Date();
     await reqDoc.save();
 
-    // ✅ notify người gửi request
     if (reqDoc.type === "duo") {
       await notifySafe({
         to: String(reqDoc.fromUser?._id || reqDoc.fromUser),
@@ -1003,16 +1174,14 @@ export async function acceptRequest(req, res, next) {
         },
       });
 
-      // ✅ thông báo cho các thành viên còn lại: có thành viên mới đã tham gia
       const joinerId = String(reqDoc.fromUser?._id || reqDoc.fromUser);
       const joinerName = pickName(reqDoc.fromUser);
-
       const ids = roomMemberIds(room);
       for (const toId of ids) {
         if (toId === joinerId) continue;
         await notifySafe({
           to: toId,
-          from: String(userId), // owner duyệt
+          from: String(userId),
           type: "group_member_joined",
           title: "Thành viên mới đã tham gia",
           body: `${joinerName} đã tham gia nhóm "${room?.name || "Nhóm tập luyện"}".`,

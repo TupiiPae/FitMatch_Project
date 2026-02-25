@@ -5,6 +5,7 @@ import {
   acceptMatchRequest,
   rejectMatchRequest,
   cancelMatchRequest,
+  getMatchStatus,
 } from "../../api/match";
 import { toast } from "react-toastify";
 import ConnectRequestConfirmModal from "./ConnectRequestConfirmModal";
@@ -12,6 +13,14 @@ import DuoConnect from "./DuoConnect";
 import TeamConnect from "./TeamConnect";
 import api from "../../lib/api";
 import UserSideModal from "../UserProfile/UserSideModal";
+import PremiumGateModal from "../../components/PremiumGateModal/PremiumGateModal";
+import {
+  PREMIUM_UPGRADE_PATH,
+  isPremiumGateError,
+  extractGateMessage,
+  extractApiMessage,
+} from "../../utils/premiumGate";
+
 
 const API_ORIGIN = (api?.defaults?.baseURL || "").replace(/\/+$/,"");
 const toAbs = (u) => { if(!u) return u; try{ return new URL(u,API_ORIGIN).toString() }catch{ return u } };
@@ -54,7 +63,6 @@ const userToCard=(u)=>{
   const nickname=p.nickname||u?.username||u?.email||"Người dùng FitMatch";
   const avatarAbs = p.avatarUrl ? toAbs(p.avatarUrl) : (u?.avatarUrl ? toAbs(u.avatarUrl) : null);
 
-  // ưu tiên connect fields (đúng logic Connect)
   const bio=(u?.connectBio||p.bio||p.intro||p.about||u?.bio||"").toString().trim();
 
   const dob=p.birthDate||p.dob||p.ngaySinh||p.birthday||u?.dob||u?.birthDate||null;
@@ -75,7 +83,7 @@ const pickUserPayload=(res)=>{
   return payload?.user ?? payload?.data?.user ?? payload?.data ?? payload ?? null;
 };
 
-const mergeReqMetaToCard=(card, meta, side /* "from" | "to" */)=>{
+const mergeReqMetaToCard=(card, meta, side)=>{
   if(!card || !meta) return card;
   const pre=side==="to"?"to":"from";
   const g=(...keys)=>{for(const k of keys){const v=meta?.[k]; if(v!=null && String(v).trim()!=="") return v;} return null;};
@@ -111,8 +119,6 @@ export default function TabMyConnections({
   activeRoomType,
   onEnteredRoom,
   onLeftRoom,
-
-  // ✅ thêm 2 props mới từ ConnectSidebar
   navIntent,
   onConsumeNavIntent,
 }) {
@@ -124,6 +130,15 @@ export default function TabMyConnections({
     [currentUser]
   );
 
+  const [pg, setPg] = useState({ open: false, title: "", message: "" });
+  const openGate = (message, title = "Cần nâng cấp Premium") =>
+    setPg({ open: true, title, message: String(message || "").trim() });
+  const closeGate = () => setPg((p) => ({ ...p, open: false }));
+  const goUpgrade = () => {
+    closeGate();
+    nav(PREMIUM_UPGRADE_PATH);
+  };
+
   const [incoming, setIncoming] = useState([]);
   const [outgoing, setOutgoing] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -132,17 +147,46 @@ export default function TabMyConnections({
   const [confirmState, setConfirmState] = useState({ open: false, mode: null, requestId: null, targetName: "" });
   const [confirmLoading, setConfirmLoading] = useState(false);
 
-  // ===== USER SIDE MODAL =====
   const [userModalOpen,setUserModalOpen]=useState(false);
   const [userModalTarget,setUserModalTarget]=useState(null);
   const [userFetching,setUserFetching]=useState(false);
 
-  // ===== NAV / FOCUS REQUEST =====
   const requestsAnchorRef = useRef(null);
   const [focusReqId, setFocusReqId] = useState(null);
   const [flashReqId, setFlashReqId] = useState(null);
 
-  // lấy requestId/tab từ query (phòng khi refresh)
+  // --- NEW STATES FOR STATUS & VIEWS ---
+  const [ms, setMs] = useState(null);
+  const [msLoading, setMsLoading] = useState(true);
+  const [roomView, setRoomView] = useState(null); // "duo" | "group"
+  const [plusOpen, setPlusOpen] = useState(false);
+
+  const unwrap = (r) => {
+    const p = r?.data ?? r;
+    return p?.data ?? p;
+  };
+
+  async function loadStatus() {
+    try {
+      setMsLoading(true);
+      const r = await getMatchStatus();
+      const s = unwrap(r) || {};
+      setMs(s);
+
+      setRoomView((cur) => {
+        if (cur === "duo" && s?.duoRoomId) return "duo";
+        if (cur === "group" && s?.groupRoomId) return "group";
+        if (s?.duoRoomId) return "duo";
+        if (s?.groupRoomId) return "group";
+        return null;
+      });
+    } finally {
+      setMsLoading(false);
+    }
+  }
+
+  useEffect(() => { loadStatus(); }, []);
+
   useEffect(()=>{
     const qs = new URLSearchParams(loc?.search || "");
     const qTab = (qs.get("tab") || "").toLowerCase();
@@ -153,23 +197,17 @@ export default function TabMyConnections({
       return;
     }
     if(qTab.includes("request")) {
-      // tab=requests nhưng không có requestId -> scroll tới anchor
       setFocusReqId(null);
-      // scroll sau khi load xong
     }
   },[loc?.search]);
 
-  // nhận navIntent từ ConnectSidebar (click notification)
   useEffect(()=>{
     if(!navIntent) return;
-
     if(navIntent?.requestId){
       setFocusReqId(String(navIntent.requestId));
     } else if (navIntent?.tab === "requests") {
       setFocusReqId(null);
     }
-
-    // consume để lần sau không chạy lại
     onConsumeNavIntent?.();
   }, [navIntent, onConsumeNavIntent]);
 
@@ -191,9 +229,7 @@ export default function TabMyConnections({
       try{ res=await api.get(`/user/${uid}`); }
       catch{
         try{ res=await api.get(`/users/${uid}`); }
-        catch{
-          res=await api.get(`/user/public/${uid}`);
-        }
+        catch{ res=await api.get(`/user/public/${uid}`); }
       }
 
       const full=pickUserPayload(res);
@@ -231,7 +267,13 @@ export default function TabMyConnections({
       setOutgoing(Array.isArray(payload?.outgoing) ? payload.outgoing : []);
     } catch (e) {
       console.error("getMyRequests error:", e);
-      const msg = e?.response?.data?.message || e?.response?.data?.error || "Không thể tải danh sách lời mời.";
+      if (isPremiumGateError(e)) {
+        openGate(extractGateMessage(e, "Bạn cần nâng cấp Premium để xem danh sách yêu cầu kết nối."));
+        setIncoming([]);
+        setOutgoing([]);
+        return;
+      }
+      const msg = extractApiMessage(e, "Không thể tải danh sách lời mời.");
       setErrorMsg(msg);
       setIncoming([]);
       setOutgoing([]);
@@ -242,14 +284,12 @@ export default function TabMyConnections({
 
   useEffect(() => { load(); }, []);
 
-  const handleLeftRoomInternal = () => { onLeftRoom && onLeftRoom(); load(); };
+  const handleLeftRoomInternal = () => { onLeftRoom && onLeftRoom(); load(); loadStatus(); };
 
-  // ✅ scroll tới request/anchor sau khi data load xong
   useEffect(()=>{
     if(loading) return;
     if(errorMsg) return;
 
-    // nếu có requestId -> scroll tới đúng row
     if(focusReqId){
       const el = document.getElementById(`req-${focusReqId}`);
       if(el){
@@ -260,7 +300,6 @@ export default function TabMyConnections({
       }
     }
 
-    // nếu tab=requests mà không có requestId -> scroll tới anchor
     const qs = new URLSearchParams(loc?.search || "");
     const qTab = (qs.get("tab") || "").toLowerCase();
     const wantsRequests = (navIntent?.tab === "requests") || qTab.includes("request");
@@ -300,8 +339,11 @@ export default function TabMyConnections({
       closeConfirm();
     } catch (e) {
       console.error("handleConfirm error:", e);
-      const msg = e?.response?.data?.message || e?.response?.data?.error || "Không thể thực hiện thao tác. Vui lòng thử lại.";
-      toast.error(msg);
+      if (isPremiumGateError(e)) {
+        openGate(extractGateMessage(e, "Tính năng này yêu cầu nâng cấp Premium để tiếp tục."));
+        return;
+      }
+      toast.error(extractApiMessage(e, "Không thể thực hiện thao tác. Vui lòng thử lại."));
     } finally {
       setConfirmLoading(false);
     }
@@ -312,12 +354,14 @@ export default function TabMyConnections({
   const outgoingGroupRequests = outgoing.filter((r) => normType(r.type) === "group");
   const hasRequests = incomingRequests.length + outgoingUserRequests.length + outgoingGroupRequests.length > 0;
 
-  const roomTypeNorm = normType(activeRoomType);
-  const isInDuoRoom = !!activeRoomId && roomTypeNorm === "duo";
-  if (isInDuoRoom) return <section className="cn-myconnections"><DuoConnect onLeftRoom={handleLeftRoomInternal} /></section>;
-
-  const isInGroupRoom = !!activeRoomId && roomTypeNorm === "group";
-  if (isInGroupRoom) return <section className="cn-myconnections"><TeamConnect onLeftRoom={handleLeftRoomInternal} /></section>;
+  const handleOpenPlus = () => {
+    if (!ms?.isPremium) {
+      openGate("Tài khoản miễn phí chỉ được kết nối 1 người hoặc 1 nhóm. Nâng cấp Premium để kết nối cả hai.");
+      return;
+    }
+    setPlusOpen(true);
+    load(); // load request list để hiện trong modal
+  };
 
   const highlightStyle = (id) => {
     if(!id) return null;
@@ -326,6 +370,244 @@ export default function TabMyConnections({
       : null;
   };
 
+  const hasAnyRoom = !!(ms?.duoRoomId || ms?.groupRoomId);
+
+  // --- RENDERING LOGIC ---
+  if (msLoading) {
+    return <section className="cn-myconnections"><div className="cn-empty"><p>Đang tải...</p></div></section>;
+  }
+
+  if (hasAnyRoom) {
+    return (
+      <section className="cn-myconnections">
+        {roomView === "duo" && ms?.duoRoomId && (
+          <DuoConnect
+            onLeftRoom={() => { onLeftRoom?.(); loadStatus(); load(); }}
+            onSwitchRoomType={(t) => setRoomView(t)}
+            onOpenSecondSlot={handleOpenPlus}
+          />
+        )}
+
+        {roomView === "group" && ms?.groupRoomId && (
+          <TeamConnect
+            onLeftRoom={() => { onLeftRoom?.(); loadStatus(); load(); }}
+            onSwitchRoomType={(t) => setRoomView(t)}
+            onOpenSecondSlot={handleOpenPlus}
+          />
+        )}
+
+        {plusOpen && (
+          <div className="cn-modal-backdrop" onClick={() => setPlusOpen(false)}>
+            <div className="cn-modal" onClick={(e) => e.stopPropagation()}>
+              <h3 className="cn-modal-title">Thêm kết nối</h3>
+
+              <div className="cn-plus-body">
+                {roomView === "duo" && (
+                  <>
+                    <p className="cn-modal-text">Danh sách yêu cầu kết nối nhóm bạn đã gửi.</p>
+
+                    {outgoingGroupRequests.length ? (
+                      <div className="cn-plus-list">
+                        {outgoingGroupRequests.map((req) => {
+                          const room = req.toRoom || {};
+                          const groupName = room.name || "Nhóm tập luyện";
+                          const imageUrl = toAbs(room.coverImageUrl || room.imageUrl || null);
+                          const thumbSrc = String(imageUrl || "").trim();
+
+                          return (
+                            <article key={req._id} className="cn-plus-item">
+                              <div className="cn-plus-avatar is-square">
+                                {thumbSrc ? (
+                                  <img
+                                    src={thumbSrc}
+                                    alt={groupName}
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = DEFAULT_AVATAR;
+                                    }}
+                                  />
+                                ) : (
+                                  <span>{String(groupName).slice(0, 1)}</span>
+                                )}
+                              </div>
+
+                              <div className="cn-plus-meta">
+                                <div className="cn-plus-name">{groupName}</div>
+                                <div className="cn-plus-sub">Đang chờ chủ nhóm duyệt</div>
+                              </div>
+
+                              <div className="cn-plus-actions">
+                                <button
+                                  type="button"
+                                  className="cn-plus-btn danger"
+                                  onClick={() => openConfirm("cancel_group", req, groupName)}
+                                >
+                                  Hủy yêu cầu
+                                </button>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="cn-myconnections-placeholder">Bạn chưa gửi yêu cầu tham gia nhóm nào.</p>
+                    )}
+                  </>
+                )}
+
+                {roomView === "group" && (
+                  <>
+                    <p className="cn-modal-text">Các lời mời ghép đôi 1:1 đang chờ xử lý.</p>
+
+                    {incomingRequests.length ? (
+                      <>
+                        <div className="cn-plus-section-title">Lời mời đến</div>
+                        <div className="cn-plus-list">
+                          {incomingRequests.map((req) => {
+                            const fromUser = req.fromUser || {};
+                            const profile = fromUser.profile || {};
+                            const nickname = profile.nickname || fromUser.username || "Người dùng FitMatch";
+                            const avatarAbs = profile.avatarUrl ? toAbs(profile.avatarUrl) : null;
+                            const thumbSrc = String(avatarAbs || "").trim() || DEFAULT_AVATAR;
+
+                            return (
+                              <article key={req._id} className="cn-plus-item">
+                                <div
+                                  className="cn-plus-avatar"
+                                  onClick={() => openUserModal(fromUser, req, "from")}
+                                  style={{ cursor: "pointer" }}
+                                >
+                                  <img
+                                    src={thumbSrc}
+                                    alt={nickname}
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = DEFAULT_AVATAR;
+                                    }}
+                                  />
+                                </div>
+
+                                <div className="cn-plus-meta">
+                                  <div className="cn-plus-name">{nickname}</div>
+                                  <div className="cn-plus-sub">Muốn kết nối 1:1 với bạn</div>
+                                </div>
+
+                                <div className="cn-plus-actions">
+                                  <button
+                                    type="button"
+                                    className="cn-plus-btn success"
+                                    onClick={() => openConfirm("accept_duo", req, nickname)}
+                                  >
+                                    Xác nhận
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="cn-plus-btn neutral"
+                                    onClick={() => openConfirm("reject_duo", req, nickname)}
+                                  >
+                                    Từ chối
+                                  </button>
+                                </div>
+                              </article>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : null}
+
+                    {outgoingUserRequests.length ? (
+                      <>
+                        <div className="cn-plus-section-title" style={{ marginTop: 10 }}>
+                          Bạn đã gửi
+                        </div>
+                        <div className="cn-plus-list">
+                          {outgoingUserRequests.map((req) => {
+                            const toUser = req.toUser || {};
+                            const profile = toUser.profile || {};
+                            const nickname = profile.nickname || toUser.username || "Người dùng FitMatch";
+                            const avatarAbs = profile.avatarUrl ? toAbs(profile.avatarUrl) : null;
+                            const thumbSrc = String(avatarAbs || "").trim() || DEFAULT_AVATAR;
+
+                            return (
+                              <article key={req._id} className="cn-plus-item">
+                                <div
+                                  className="cn-plus-avatar"
+                                  onClick={() => openUserModal(toUser, req, "to")}
+                                  style={{ cursor: "pointer" }}
+                                >
+                                  <img
+                                    src={thumbSrc}
+                                    alt={nickname}
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = DEFAULT_AVATAR;
+                                    }}
+                                  />
+                                </div>
+
+                                <div className="cn-plus-meta">
+                                  <div className="cn-plus-name">{nickname}</div>
+                                  <div className="cn-plus-sub">Bạn đã gửi lời mời 1:1</div>
+                                </div>
+
+                                <div className="cn-plus-actions">
+                                  <button
+                                    type="button"
+                                    className="cn-plus-btn danger"
+                                    onClick={() => openConfirm("cancel_duo", req, nickname)}
+                                  >
+                                    Hủy lời mời
+                                  </button>
+                                </div>
+                              </article>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : null}
+
+                    {!incomingRequests.length && !outgoingUserRequests.length && (
+                      <p className="cn-myconnections-placeholder">Hiện chưa có lời mời 1:1 nào.</p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="cn-modal-actions">
+                <button type="button" className="cn-modal-btn ghost" onClick={() => setPlusOpen(false)}>
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ConnectRequestConfirmModal
+          open={confirmState.open}
+          mode={confirmState.mode}
+          targetName={confirmState.targetName}
+          onClose={closeConfirm}
+          onConfirm={async () => {
+            await handleConfirm();
+            await loadStatus();
+            await load();
+            if (confirmState.mode === "accept_duo") setRoomView("duo");
+          }}
+          loading={confirmLoading}
+        />
+
+        <PremiumGateModal
+          open={pg.open}
+          title={pg.title}
+          message={pg.message}
+          onClose={closeGate}
+          onUpgrade={goUpgrade}
+        />
+      </section>
+    );
+  }
+
+  // --- RENDER FALLBACK: NO ROOMS (Hiển thị danh sách requests) ---
   return (
     <section className="cn-myconnections">
       <header className="cn-main-header">
@@ -333,7 +615,6 @@ export default function TabMyConnections({
         <p>Tìm kiếm những người có cùng mục tiêu và lịch tập, tạo nhóm tối đa 5 người để cùng nhau hoàn thành mục tiêu.</p>
       </header>
 
-      {/* ✅ anchor để scroll khi tab=requests */}
       <div ref={requestsAnchorRef} />
 
       {loading && <div className="cn-empty" style={{ marginTop: 6 }}><p>Đang tải danh sách lời mời...</p></div>}
@@ -498,7 +779,12 @@ export default function TabMyConnections({
         mode={confirmState.mode}
         targetName={confirmState.targetName}
         onClose={closeConfirm}
-        onConfirm={handleConfirm}
+        onConfirm={async () => {
+          await handleConfirm();
+          await loadStatus();
+          await load();
+          if (confirmState.mode === "accept_duo") setRoomView("duo");
+        }}
         loading={confirmLoading}
       />
 
@@ -509,6 +795,14 @@ export default function TabMyConnections({
         onClose={closeUserModal}
         onViewProfile={handleViewPublicProfile}
         onStartChat={handleStartChat}
+      />
+
+      <PremiumGateModal
+        open={pg.open}
+        title={pg.title}
+        message={pg.message}
+        onClose={closeGate}
+        onUpgrade={goUpgrade}
       />
     </section>
   );
