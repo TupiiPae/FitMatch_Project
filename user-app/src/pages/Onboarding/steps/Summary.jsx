@@ -80,8 +80,10 @@ export default function Summary() {
     const g = localStorage.getItem("goal") || "";
     const h = Number(localStorage.getItem("heightCm")) || 170;
     const w = Number(localStorage.getItem("weightKg")) || 65;
-    const t = Number(localStorage.getItem("targetWeightKg")) || w;
-    const wk = Number(localStorage.getItem("weeklyChangeKg")) || 0;
+    const tRaw = Number(localStorage.getItem("targetWeightKg"));
+    const t = g === "duy_tri" ? w : (Number.isNaN(tRaw) ? w : tRaw);
+    const wkRaw = Number(localStorage.getItem("weeklyChangeKg"));
+    const wk = g === "duy_tri" ? 0.1 : (Number.isNaN(wkRaw) ? 0.1 : wkRaw);
     const it = localStorage.getItem("trainingIntensity") || "";
     setGoal(g); setHeight(h); setWeight(w); setTarget(t); setWeekly(wk); setInten(it);
   };
@@ -129,13 +131,27 @@ export default function Summary() {
   const scaleMarks = [18.5, 25, 30, 35];
 
   const handleConfirm = async () => {
+    const mucTieu = localStorage.getItem("goal");
+    const canNangHienTai = Number(localStorage.getItem("weightKg"));
+    const storedTarget = Number(localStorage.getItem("targetWeightKg"));
+    const canNangMongMuon = mucTieu === "duy_tri"
+      ? canNangHienTai
+      : (Number.isNaN(storedTarget) ? canNangHienTai : storedTarget);
+    const storedWeekly = Number(localStorage.getItem("weeklyChangeKg"));
+    const mucTieuTuan = mucTieu === "duy_tri" ? 0.1 : (Number.isNaN(storedWeekly) ? 0.1 : storedWeekly);
+
+    if (mucTieu === "duy_tri" && Number.isFinite(canNangHienTai)) {
+      localStorage.setItem("targetWeightKg", String(canNangHienTai));
+      localStorage.setItem("weeklyChangeKg", "0.1");
+    }
+
     const payload = {
       tenGoi: localStorage.getItem("nickname"),
-      mucTieu: localStorage.getItem("goal"),
+      mucTieu,
       chieuCao: Number(localStorage.getItem("heightCm")),
-      canNangHienTai: Number(localStorage.getItem("weightKg")),
-      canNangMongMuon: Number(localStorage.getItem("targetWeightKg")),
-      mucTieuTuan: Number(localStorage.getItem("weeklyChangeKg")),
+      canNangHienTai,
+      canNangMongMuon,
+      mucTieuTuan,
       cuongDoLuyenTap: localStorage.getItem("trainingIntensity"),
       gioiTinh: localStorage.getItem("sex"),
       ngaySinh: localStorage.getItem("dob"),
